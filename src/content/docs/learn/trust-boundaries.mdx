@@ -1,0 +1,89 @@
+---
+title: Never trust a number the client can type
+description: Three defects Kinetix shipped and fixed — a price, a shipping fee and a wallet balance the buyer could set — and the one question that would have caught each of them.
+sidebar:
+  order: 4
+---
+
+import TrustDiagram from "../../../components/TrustDiagram.astro";
+
+Every request body is written by someone you do not control. Some of its fields are genuinely the
+client's to decide: which product, how many, which delivery tier, how much to top up. Others are
+**facts that belong to a service** — what a product costs, what a courier charges, whether money
+actually arrived. When a request carries a fact it does not own and the server believes it, the client
+decides the outcome.
+
+Kinetix shipped that mistake three times. Each was found by following a number from the request to the
+place where money moved, each is fixed, and each fix is running in production. This lesson replays all
+three, before and after.
+
+## Play it
+
+Each tab shows one case. The request card marks every field: red for a fact the client should not be
+stating, grey for a legitimate choice, green for a value asked of its owner.
+
+<TrustDiagram />
+
+## Nothing was broken, which is the point
+
+In all three cases every service did its job correctly. pricing discounted the base it was given,
+escrow held the amount it was asked to hold, the wallet credited what it was told to credit. Each
+service's own tests were green while the defect was live. The fault lived **between**
+services: a number crossed a trust boundary and nobody asked where it came from.
+
+The fixes are just as uniform, and none of them is validation. A minimum and a maximum cannot tell a
+real price from an invented one. Each fix **removed the field** from the request and **asked the
+owner** instead:
+
+| Case | Fixed in | What the request lost | Who answers now |
+| --- | --- | --- | --- |
+| Unit price | [order `ed04256`](https://github.com/WildanFrananda/kinetix-order-service/commit/ed0425605e1e36e12f2126055f38f1e502cf8255) | `UnitPrice`, `ProductTitle`, `CategoryId`, `MerchantPrincipalId` | catalog |
+| Shipping fee | [order `1efad89`](https://github.com/WildanFrananda/kinetix-order-service/commit/1efad89e336e9688725fc83edbb13371fab0e0f3) | `BaseShippingFee`, `DistanceKm` | matching and pricing |
+| Wallet top-up | [payment `e26b065`](https://github.com/WildanFrananda/kinetix-payment-service/commit/e26b065dbdc19a3e3c3f3c216e5d9945e78214ff) | the power to credit; the amount became a charge | Midtrans |
+
+## The question to ask of every field
+
+Before a field is accepted, ask: **who owns this fact?** If the answer is not the caller, the field
+does not belong in the request.
+
+| Field | Owner | What to do |
+| --- | --- | --- |
+| `ProductId`, `Quantity` | the buyer | Accept |
+| Price, title, category, merchant of a product | catalog | Remove; ask catalog |
+| `ShippingServiceTier` | the buyer | Accept, and refuse a tier that is not offered |
+| Shipping fee, distance | matching and pricing | Remove; ask for a quote |
+| Top-up amount | the buyer, as the amount to charge | Accept, but credit only what was paid |
+| "This payment succeeded" | the payment provider | Verify the signature, then ask the provider |
+
+## Belt and braces
+
+Removing the field closes the hole. Kinetix also adds a second check where the cost of being wrong is
+money:
+
+- **Ask again at the moment of charge.** Checkout looks every product up in catalog a second time,
+  rather than trusting the price saved in the cart. That second lookup is what protected carts created
+  before the fix, which stay in Redis for fourteen days.
+- **Cross-check two owners.** pricing's final shipping fee must be a discount of the quote pricing
+  itself gave; anything else refuses the checkout before an order exists.
+- **Treat a message about money as a prompt, not a fact.** A signed payment notification only tells
+  payment to go and look. The credit is decided by Midtrans's status API, and only when its amount
+  equals the amount recorded when the charge was made.
+- **Record first, credit once.** The top-up is recorded as `PENDING` under an idempotency key before
+  Midtrans is called, and credited under a lock on the wallet's owner, so a repeated notification
+  cannot credit twice.
+
+## How these were found
+
+Not by a scanner. Each was found by picking a number that ends up in a payment — a price, a fee, a
+balance — and tracing it backwards hop by hop to the first place it was set. In all three cases the
+first place was a request DTO. The trace is short: the price went from `AddCartItemRequest` to the cart,
+to `PriceLine`, to `CalculatePrice`, to the escrow hold — four hops, and none of them asked
+catalog. Doing that once for every amount that reaches a payment is a cheap audit, and it is worth
+repeating whenever a new field is added to a request.
+
+## Takeaways
+
+- A client may choose. It may not state facts that another service owns.
+- Remove such fields rather than validating them; a bound cannot tell true from false.
+- Re-resolve the facts at the moment money moves, not only when they first enter.
+- For money reported from outside, verify the sender, then ask the source directly.

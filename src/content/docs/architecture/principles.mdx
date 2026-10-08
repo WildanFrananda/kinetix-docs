@@ -1,0 +1,81 @@
+---
+title: Architecture principles
+description: The eight rules Kinetix is built on, why each one exists, and the line of code that enforces it.
+sidebar:
+  order: 2
+---
+
+A principle that nothing enforces is a wish. Each rule below links to where the code holds it in place,
+at a fixed commit, so you can check that it is still true.
+
+## 1. Every piece of data has one owner
+
+Each service owns its tables and its database, and no other service reads them. A service that needs
+another's data asks the owner over gRPC and gets the owner's answer, not a copy that may be stale or
+forged.
+
+catalog shows live stock by
+[asking warehouse](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/infrastructure/grpc/bin_stock_client.py#L44),
+and order prices a checkout by
+[asking catalog](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Infrastructure/Grpc/CatalogProductDirectory.cs#L22)
+for each product. The [system map](/architecture/system-map/) draws every one of these questions.
+
+## 2. A message is defined once
+
+Every message that crosses a service boundary is defined in `kinetix-contracts`, in Protocol Buffers,
+and every service generates its code from there instead of keeping its own copy. A change that would
+break a running caller — a field number reused, a type narrowed —
+[fails the contracts build](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/.github/workflows/ci.yml#L49-L88)
+unless it is written down as an intended break.
+
+## 3. There is one door from outside
+
+Browsers, apps and integrations reach Kinetix only through the
+[Kong gateway](https://github.com/WildanFrananda/kinetix-api-gateway/blob/bb836a1020e40cf739ad7b579d499b79f6245906/config/gateway.pkl),
+which decides which paths are public, which need a token, and how fast a caller may go. A service with
+no route there — notification, communication — cannot be reached from the internet at all.
+
+## 4. Only identity decides who is calling
+
+Accounts and passwords live in identity and nowhere else, and identity is the only service that issues
+access tokens. It signs them with RS256 and publishes its public keys; every other service
+[accepts only RS256 and checks the signature against those keys](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/lib/kinetix/token_verifier.rb#L35-L66)
+itself, without calling identity on every request. A service that wants to know more about a caller —
+a merchant's status, a principal's name — asks identity over gRPC.
+
+## 5. Services prove who they are to each other
+
+Calls between services travel over mutual TLS, and each service's certificate carries a SPIFFE
+identity. Every gRPC server in the estate keeps a list of the services allowed to call it —
+[required, with no default](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Security/PeerAuthorizationInterceptor.cs#L8-L27)
+— and
+[refuses any caller not on it](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Security/PeerAuthorizationInterceptor.cs#L96-L105),
+whatever its network address. Being inside the network is not a credential.
+
+## 6. When in doubt, refuse
+
+A decision that depends on an answer the system could not get is not made with a guess. If pricing is
+unreachable, a checkout is
+[refused with `PRICING_UNAVAILABLE`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Controllers/OrderController.cs#L38-L43)
+rather than charged at a remembered or default price; a missing setting stops a service at start-up
+rather than letting it run on a fallback.
+
+## 7. Anything that moves money or stock can be repeated safely
+
+Networks retry, users double-click, sweepers run again. So every operation that takes money or stock
+carries a key that makes a repeat harmless: checkout honours an
+[`Idempotency-Key`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Controllers/OrderController.cs#L31),
+warehouse
+[records every reservation against its key](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/app/services/inventory/idempotent_operation.rb#L77-L116)
+and replays the first answer, and pricing keeps a ledger row per order that a second redeem finds
+instead of counting twice. [The checkout saga](/learn/checkout-saga/) depends on all of them.
+
+## 8. A failure is never reported as an answer
+
+"Nothing found", "out of stock" and "could not ask" are different facts, and the system keeps them
+apart. A refused checkout answers
+[409 with the reason](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Controllers/OrderController.cs#L90-L95),
+an unreachable dependency 503, an internal fault 502; warehouse names
+[which row a timed-out wait was on](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/app/services/inventory/idempotent_operation.rb#L102-L116).
+A failure dressed as a definite business answer — "no stock" when the stock service simply did not
+answer — sends people to fix the wrong thing, which is why it is treated as a defect in its own right.

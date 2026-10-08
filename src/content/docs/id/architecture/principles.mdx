@@ -1,0 +1,85 @@
+---
+title: Prinsip arsitektur
+description: Delapan aturan yang menjadi dasar Kinetix, kenapa masing-masing ada, dan baris kode yang menegakkannya.
+sourceHash: "59fca4b22080"
+sidebar:
+  order: 2
+---
+
+Prinsip yang tidak ditegakkan apa pun hanyalah harapan. Setiap aturan di bawah menautkan tempat kode
+menjaganya, pada commit tertentu, sehingga kamu bisa memeriksa apakah ia masih benar.
+
+## 1. Setiap data punya satu pemilik
+
+Setiap service memiliki tabel dan database-nya sendiri, dan tidak ada service lain yang membacanya.
+Service yang butuh data milik service lain bertanya ke pemiliknya lewat gRPC dan mendapat jawaban dari
+pemiliknya, bukan salinan yang mungkin basi atau dipalsukan.
+
+catalog menampilkan stok live dengan
+[bertanya ke warehouse](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/infrastructure/grpc/bin_stock_client.py#L44),
+dan order menghitung harga checkout dengan
+[bertanya ke catalog](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Infrastructure/Grpc/CatalogProductDirectory.cs#L22)
+untuk setiap produk. [Peta sistem](/id/architecture/system-map/) menggambar setiap pertanyaan semacam itu.
+
+## 2. Sebuah pesan didefinisikan sekali
+
+Setiap pesan yang melintasi batas service didefinisikan di `kinetix-contracts`, dalam Protocol Buffers,
+dan setiap service menghasilkan kodenya dari sana alih-alih menyimpan salinannya sendiri. Perubahan
+yang akan merusak pemanggil yang sedang berjalan — nomor field dipakai ulang, tipe dipersempit —
+[menggagalkan build kontrak](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/.github/workflows/ci.yml#L49-L88)
+kecuali dicatat sebagai perubahan yang memang disengaja.
+
+## 3. Hanya ada satu pintu dari luar
+
+Browser, aplikasi, dan integrasi hanya bisa menjangkau Kinetix lewat
+[Kong gateway](https://github.com/WildanFrananda/kinetix-api-gateway/blob/bb836a1020e40cf739ad7b579d499b79f6245906/config/gateway.pkl),
+yang menentukan path mana yang publik, mana yang butuh token, dan seberapa cepat seorang pemanggil boleh
+mengirim. Service yang tidak punya rute di sana — notification, communication — sama sekali tidak bisa
+dijangkau dari internet.
+
+## 4. Hanya identity yang menentukan siapa pemanggilnya
+
+Akun dan password hanya ada di identity, dan identity satu-satunya service yang menerbitkan access
+token. Ia menandatanganinya dengan RS256 dan memublikasikan public key-nya; setiap service lain
+[hanya menerima RS256 dan memeriksa tanda tangannya terhadap key tersebut](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/lib/kinetix/token_verifier.rb#L35-L66)
+sendiri, tanpa memanggil identity di setiap request. Service yang ingin tahu lebih banyak tentang
+pemanggilnya — status sebuah merchant, nama sebuah principal — bertanya ke identity lewat gRPC.
+
+## 5. Service saling membuktikan identitasnya
+
+Panggilan antar-service berjalan lewat mutual TLS, dan sertifikat setiap service membawa identitas
+SPIFFE. Setiap server gRPC di seluruh sistem menyimpan daftar service yang boleh memanggilnya —
+[wajib diisi, tanpa default](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Security/PeerAuthorizationInterceptor.cs#L8-L27)
+— dan
+[menolak pemanggil mana pun yang tidak ada di sana](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Security/PeerAuthorizationInterceptor.cs#L96-L105),
+apa pun alamat jaringannya. Berada di dalam jaringan bukanlah kredensial.
+
+## 6. Kalau ragu, tolak
+
+Keputusan yang bergantung pada jawaban yang tidak berhasil didapat tidak diambil dengan menebak. Kalau
+pricing tidak bisa dijangkau, checkout
+[ditolak dengan `PRICING_UNAVAILABLE`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Controllers/OrderController.cs#L38-L43)
+alih-alih ditagih dengan harga yang diingat atau harga default; pengaturan yang hilang menghentikan
+service saat start-up alih-alih membiarkannya berjalan dengan nilai cadangan.
+
+## 7. Apa pun yang memindahkan uang atau stok aman untuk diulang
+
+Jaringan mengulang request, pengguna mengklik dua kali, sweeper berjalan lagi. Jadi setiap operasi yang
+mengambil uang atau stok membawa kunci yang membuat pengulangan tidak berbahaya: checkout menghormati
+[`Idempotency-Key`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Controllers/OrderController.cs#L31),
+warehouse
+[mencatat setiap reservasi terhadap kuncinya](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/app/services/inventory/idempotent_operation.rb#L77-L116)
+dan memutar ulang jawaban pertamanya, dan pricing menyimpan baris ledger per order yang ditemukan oleh
+redeem kedua alih-alih menghitung dua kali. [Saga checkout](/id/learn/checkout-saga/) bergantung pada
+semuanya.
+
+## 8. Kegagalan tidak pernah dilaporkan sebagai jawaban
+
+"Tidak ditemukan", "stok habis", dan "tidak bisa bertanya" adalah fakta yang berbeda, dan sistem
+memisahkannya. Checkout yang ditolak menjawab
+[409 beserta alasannya](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Controllers/OrderController.cs#L90-L95),
+dependensi yang tidak terjangkau 503, kesalahan internal 502; warehouse menyebutkan
+[baris mana yang sedang ditunggu ketika penantiannya habis](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/app/services/inventory/idempotent_operation.rb#L102-L116).
+Kegagalan yang didandani sebagai jawaban bisnis yang pasti — "stok habis" padahal service stok hanya
+tidak menjawab — membuat orang memperbaiki hal yang salah, itulah sebabnya ia diperlakukan sebagai
+defect tersendiri.

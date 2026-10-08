@@ -1,0 +1,17 @@
+---
+import { catalogueFor } from "../diagrams/engine/catalogue_for";
+import { localeOf } from "../diagrams/engine/locale_of";
+import { localizeScenarios } from "../diagrams/engine/localize_scenarios";
+import { playerLabels } from "../diagrams/engine/player_labels";
+import Trust from "../diagrams/trust/Trust.svelte";
+import { trustLabels } from "../diagrams/trust/trust_labels";
+import { trustScenarios } from "../diagrams/trust/trust_scenarios";
+import DiagramTranscript from "./DiagramTranscript.astro";
+
+const catalogue = catalogueFor(localeOf(Astro.locals.starlightRoute.entryMeta.lang));
+const variants = localizeScenarios(trustScenarios, catalogue);
+const labels = playerLabels(catalogue);
+---
+
+<Trust client:visible variants={variants} labels={labels} sceneLabels={trustLabels(catalogue)} />
+<DiagramTranscript variants={variants} labels={labels} />

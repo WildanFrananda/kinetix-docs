@@ -1,0 +1,92 @@
+---
+title: Jangan percaya angka yang bisa diketik client
+description: Tiga defect yang pernah dikirim Kinetix lalu diperbaiki — harga, ongkir, dan saldo wallet yang bisa ditentukan pembeli — dan satu pertanyaan yang akan menangkap ketiganya.
+sourceHash: "540e6d63ba31"
+sidebar:
+  order: 4
+---
+
+import TrustDiagram from "../../../../components/TrustDiagram.astro";
+
+Setiap body request ditulis oleh seseorang yang tidak kamu kendalikan. Sebagian field-nya memang hak
+client untuk memutuskan: produk yang mana, berapa banyak, tier pengiriman yang mana, berapa yang mau di-top
+up. Sebagian lain adalah **fakta milik sebuah service** — berapa harga sebuah produk, berapa tarif
+kurir, apakah uangnya benar-benar masuk. Ketika request membawa fakta yang bukan miliknya dan server
+mempercayainya, client-lah yang menentukan hasilnya.
+
+Kinetix pernah mengirim kesalahan itu tiga kali. Masing-masing ditemukan dengan menelusuri sebuah angka
+dari request sampai ke tempat uang berpindah, masing-masing sudah diperbaiki, dan setiap perbaikannya
+sudah berjalan di production. Pelajaran ini memutar ulang ketiganya, sebelum dan sesudah.
+
+## Mainkan
+
+Setiap tab menampilkan satu kasus. Kartu request menandai setiap field: merah untuk fakta yang
+seharusnya tidak dinyatakan client, abu-abu untuk pilihan yang sah, hijau untuk nilai yang ditanyakan ke
+pemiliknya.
+
+<TrustDiagram />
+
+## Tidak ada yang rusak, dan justru itu intinya
+
+Di ketiga kasus, setiap service mengerjakan tugasnya dengan benar. pricing memberi diskon pada angka
+dasar yang diberikan kepadanya, escrow menahan jumlah yang diminta, wallet mengkreditkan apa yang
+diperintahkan. Test milik setiap service tetap hijau selama defect-nya hidup. Kesalahannya ada **di
+antara** service: sebuah angka melintasi batas kepercayaan dan tidak ada yang bertanya dari mana asalnya.
+
+Perbaikannya pun seragam, dan tidak satu pun berupa validasi. Batas minimum dan maksimum tidak bisa
+membedakan harga asli dari harga karangan. Setiap perbaikan **menghapus field-nya** dari request dan
+**bertanya ke pemiliknya**:
+
+| Kasus | Diperbaiki di | Yang hilang dari request | Yang menjawab sekarang |
+| --- | --- | --- | --- |
+| Harga satuan | [order `ed04256`](https://github.com/WildanFrananda/kinetix-order-service/commit/ed0425605e1e36e12f2126055f38f1e502cf8255) | `UnitPrice`, `ProductTitle`, `CategoryId`, `MerchantPrincipalId` | catalog |
+| Ongkos kirim | [order `1efad89`](https://github.com/WildanFrananda/kinetix-order-service/commit/1efad89e336e9688725fc83edbb13371fab0e0f3) | `BaseShippingFee`, `DistanceKm` | matching dan pricing |
+| Top-up wallet | [payment `e26b065`](https://github.com/WildanFrananda/kinetix-payment-service/commit/e26b065dbdc19a3e3c3f3c216e5d9945e78214ff) | kuasa untuk mengkreditkan; nominalnya menjadi tagihan | Midtrans |
+
+## Pertanyaan untuk setiap field
+
+Sebelum sebuah field diterima, tanyakan: **siapa pemilik fakta ini?** Kalau jawabannya bukan si
+pemanggil, field itu tidak pantas ada di request.
+
+| Field | Pemilik | Yang dilakukan |
+| --- | --- | --- |
+| `ProductId`, `Quantity` | pembeli | Terima |
+| Harga, judul, kategori, merchant sebuah produk | catalog | Hapus; tanyakan ke catalog |
+| `ShippingServiceTier` | pembeli | Terima, dan tolak tier yang tidak ditawarkan |
+| Ongkir, jarak | matching dan pricing | Hapus; minta kutipan |
+| Nominal top-up | pembeli, sebagai jumlah yang akan ditagih | Terima, tapi kreditkan hanya yang sudah dibayar |
+| "Pembayaran ini berhasil" | penyedia pembayaran | Verifikasi tanda tangannya, lalu tanyakan ke penyedianya |
+
+## Lapis pengaman tambahan
+
+Menghapus field-nya menutup lubangnya. Kinetix juga menambahkan pengecekan kedua di tempat yang
+taruhannya uang:
+
+- **Tanyakan lagi pada saat penagihan.** Checkout mencari setiap produk di catalog sekali lagi,
+  alih-alih mempercayai harga yang tersimpan di keranjang. Pencarian kedua itulah yang melindungi
+  keranjang yang dibuat sebelum perbaikan, yang tetap ada di Redis selama empat belas hari.
+- **Cocokkan dua pemilik.** Ongkir akhir dari pricing harus berupa diskon dari kutipan yang diberikan
+  pricing sendiri; selain itu, checkout ditolak sebelum order ada.
+- **Perlakukan pesan tentang uang sebagai pemicu, bukan fakta.** Notifikasi pembayaran yang
+  bertanda tangan hanya menyuruh payment untuk memeriksa. Kreditnya diputuskan oleh API status Midtrans,
+  dan hanya ketika nominalnya sama dengan nominal yang tercatat saat tagihan dibuat.
+- **Catat dulu, kreditkan sekali.** Top-up dicatat sebagai `PENDING` di bawah idempotency key sebelum
+  Midtrans dipanggil, dan dikreditkan di bawah lock pemilik wallet, sehingga notifikasi yang berulang
+  tidak bisa mengkreditkan dua kali.
+
+## Bagaimana defect ini ditemukan
+
+Bukan oleh scanner. Masing-masing ditemukan dengan memilih sebuah angka yang berakhir di pembayaran —
+harga, ongkir, saldo — lalu menelusurinya mundur, lompatan demi lompatan, sampai ke tempat pertama angka
+itu ditetapkan. Di ketiga kasus, tempat pertama itu adalah DTO request. Jejaknya pendek: harga berjalan
+dari `AddCartItemRequest` ke keranjang, ke `PriceLine`, ke `CalculatePrice`, ke escrow hold — empat
+lompatan, dan tidak satu pun bertanya ke catalog. Melakukan itu sekali untuk setiap nominal yang sampai ke
+pembayaran adalah audit yang murah, dan layak diulang setiap kali sebuah field baru ditambahkan ke
+request.
+
+## Intisari
+
+- Client boleh memilih. Client tidak boleh menyatakan fakta milik service lain.
+- Hapus field semacam itu alih-alih memvalidasinya; sebuah batas tidak bisa membedakan benar dari salah.
+- Ambil ulang faktanya pada saat uang berpindah, bukan hanya saat pertama kali masuk.
+- Untuk uang yang dilaporkan dari luar, verifikasi pengirimnya, lalu tanyakan langsung ke sumbernya.
