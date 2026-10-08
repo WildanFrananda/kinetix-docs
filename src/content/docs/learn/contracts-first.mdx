@@ -1,0 +1,132 @@
+---
+title: The contract comes first
+description: How Kinetix keeps one wire format across services written in different languages — a single protobuf repository, a lint rule that knows what money is, and a breaking-change gate with exactly one door.
+sidebar:
+  order: 6
+---
+
+import ContractsDiagram from "../../../components/ContractsDiagram.astro";
+
+Kinetix services call each other over gRPC, and each is written in a different language. For a call to
+work, both ends must agree on what every message looks like, field number by field number. Protobuf
+makes that agreement a file. The question is where the file lives.
+
+For a while it lived everywhere. Before the contracts repository,
+[nine protobuf packages were spread over 43 files](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/README.md#L7-L19)
+in the service repositories, and three of those packages had already drifted: three copies of
+`pricing.v1`, all different, each declaring the same package name. Nothing reported it. A drifted
+contract does not fail to compile; it delivers a field empty, at the far end of a call chain, in
+production.
+
+So the rule became: **no `.proto` outside
+[`kinetix-contracts`](https://github.com/WildanFrananda/kinetix-contracts/tree/cbd5d56df761b920ce1125d755d02c7c1f2f0491/proto)
+may define a wire type**. Services consume generated code; they never write their own copy. This lesson
+is about what has to stand guard over that one repository, now that every service depends on it.
+
+## Play it
+
+Four changes go through the pipeline: one that should pass, one that is valid protobuf but wrong for
+money, one that breaks readers by accident, and one that breaks them on purpose.
+
+<ContractsDiagram />
+
+## Lint that knows what money is
+
+`buf lint` with the
+[`STANDARD` rules](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/buf.yaml#L22-L29)
+checks names and layout. Kinetix adds two rules of its own through a buf plugin,
+[moneylint](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/tools/moneylint/main.go#L60-L128):
+
+| Rule | Refuses |
+| --- | --- |
+| `MONEY_NO_FLOATING_POINT` | a money field declared `double` or `float` |
+| `MONEY_USE_COMMON_TYPE` | a message that declares its own amount and currency instead of importing the shared type |
+
+The shared type is
+[`common.v1.Money`](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/proto/common/v1/common.proto#L5-L8):
+an `int64` count of minor units and a currency code. A binary float cannot hold `0.1` exactly, so a
+total summed in one language can differ by a unit from the same total summed in another — and in a
+system where order, pricing and payment each handle the same checkout total in a different language,
+that unit is a reconciliation failure.
+
+moneylint decides what is money
+[by the field's name](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/tools/moneylint/main.go#L17-L30):
+`fee`, `price`, `total`, `amount` and a few more, with `quantity`, `rate` and `percent` exempt. That is a
+heuristic, and it is deliberately conservative — a rule that cries wolf is a rule someone disables. A
+float called `x` would pass. What makes the rule trustworthy within its scope is that CI
+[feeds it a violation on every run](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/.github/workflows/ci.yml#L115-L153)
+and fails if it stays quiet. A lint rule nobody has seen fail is not known to work.
+
+## A gate with one door
+
+`buf breaking` compares the contract with an earlier version and reports every change that would break
+a reader generated from it. Kinetix runs it under the
+[`FILE` rules](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/buf.yaml#L41-L43),
+the strictest category, which also catches changes that keep the bytes on the wire compatible but break
+generated code.
+
+A gate that only says "no" would eventually be switched off, because some breaks are the fix. So the
+check is wrapped in
+[`tools/breaking-gate`](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/tools/breaking-gate#L1-L21),
+and the only way through it is to write the break down:
+
+- Every finding buf reports must appear, word for word, in
+  [`docs/BREAKING.md`](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/docs/BREAKING.md#L1-L12)
+  under the version being released. One that does not fails the gate and names itself.
+- Only the message is compared, not the line and column, which
+  [move with every edit](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/tools/breaking-gate#L51-L53).
+  A register that had to be renumbered would be a register nobody keeps.
+- There is no flag and no environment variable. A declared line that matches no real finding excuses
+  nothing, and a CI job
+  [deletes a file nobody declared](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/.github/workflows/ci.yml#L155-L200)
+  to prove the gate still refuses it.
+
+It runs twice: on every pull request against `main`, and again
+[when a release tag is pushed](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/.github/workflows/release.yml#L63-L75),
+against the previous tag.
+
+## A break, declared
+
+The fourth run in the diagram is a real release. Two identity responses carried a `bool has_location`
+beside a `GeoPoint location`. Every language but one could tell the two apart; in C++, protoc
+generates `has_location()` for both, and the communication service could not compile the contract at
+all.
+
+Removing the flag was the fix, and
+[the v1.0.20 entry](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/docs/BREAKING.md#L16-L59)
+shows what a declared break costs. It names buf's findings, says why, and gives the change for each
+language. It also records a trap found on the way:
+
+- identity had always sent `location`, and used the flag to say whether it meant anything. An address
+  that was never geocoded went out as `{0, 0}`. Without the flag, that is a real coordinate in the
+  Atlantic, and dispatch would route a courier to it.
+- So identity now omits the field when there is no location, and the entry says which service to deploy
+  first — identity, so that the window in between fails closed rather than sending couriers out to sea.
+
+The field numbers became
+[`reserved`](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/proto/identity/v1/identity.proto#L68),
+so neither can return meaning something else. Reserving does not make the deletion compatible — a
+reader that used the field still loses it — which is why buf still reports it and the register still
+has to declare it.
+
+## One tag, everywhere
+
+A release is a git tag, and
+[the tag is the version](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/.github/workflows/release.yml#L3-L25):
+nothing computes or bumps one. The workflow generates the code once and publishes those same bytes to
+npm, PyPI, RubyGems and Packagist. A service consumes either one of those packages or the `.proto`
+files themselves, fetched at a pinned tag and commit and generated in its own build. That pins the
+version just as firmly, on one condition: **a release tag is never moved**.
+
+Each service pins its own version and moves when it chooses. That is what makes additive changes free:
+a service on an older pin keeps working. A declared break is the one case where it may not, which is
+why its entry says what to change and which service to deploy first.
+
+## Takeaways
+
+- Keep one copy of a wire type. A second copy is a future divergence that no compiler will report.
+- Put rules about meaning, like how money is represented, in the contract's lint, so no service has to
+  remember them — and prove the rule fails when it should.
+- Compatible and correct are separate checks. A float money field breaks no reader and is still wrong.
+- Let breaking changes through only when they are written down, word for word, where consumers read
+  before upgrading.

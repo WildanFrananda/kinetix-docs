@@ -1,0 +1,17 @@
+---
+import { contractLabels } from "../diagrams/contracts/contract_labels";
+import { contractScenarios } from "../diagrams/contracts/contract_scenarios";
+import Contracts from "../diagrams/contracts/Contracts.svelte";
+import { catalogueFor } from "../diagrams/engine/catalogue_for";
+import { localeOf } from "../diagrams/engine/locale_of";
+import { localizeScenarios } from "../diagrams/engine/localize_scenarios";
+import { playerLabels } from "../diagrams/engine/player_labels";
+import DiagramTranscript from "./DiagramTranscript.astro";
+
+const catalogue = catalogueFor(localeOf(Astro.locals.starlightRoute.entryMeta.lang));
+const variants = localizeScenarios(contractScenarios, catalogue);
+const labels = playerLabels(catalogue);
+---
+
+<Contracts client:visible variants={variants} labels={labels} sceneLabels={contractLabels(catalogue)} />
+<DiagramTranscript variants={variants} labels={labels} />

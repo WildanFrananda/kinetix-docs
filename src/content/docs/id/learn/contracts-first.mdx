@@ -1,0 +1,143 @@
+---
+title: Kontrak lebih dulu
+description: Cara Kinetix menjaga satu format wire di antara service yang ditulis dalam bahasa berbeda — satu repository protobuf, aturan lint yang paham apa itu uang, dan gerbang breaking change dengan tepat satu pintu.
+sourceHash: "dbdaabc2f632"
+sidebar:
+  order: 6
+---
+
+import ContractsDiagram from "../../../../components/ContractsDiagram.astro";
+
+Service Kinetix saling memanggil lewat gRPC, dan masing-masing ditulis dalam bahasa yang berbeda. Agar
+sebuah panggilan berhasil, kedua ujungnya harus sepakat tentang bentuk setiap message, sampai ke nomor
+field-nya. Protobuf menjadikan kesepakatan itu sebuah file. Pertanyaannya, file itu tinggal di mana.
+
+Untuk sementara waktu, file itu tinggal di mana-mana. Sebelum ada repository kontrak,
+[sembilan package protobuf tersebar di 43 file](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/README.md#L7-L19)
+di repository service, dan tiga di antaranya sudah menyimpang: tiga salinan `pricing.v1`, semuanya
+berbeda, dan semuanya mendeklarasikan nama package yang sama. Tidak ada yang melaporkannya. Kontrak yang
+menyimpang tidak gagal di-compile; ia mengirimkan field yang kosong, di ujung jauh sebuah rantai
+panggilan, di production.
+
+Maka aturannya menjadi: **tidak ada `.proto` di luar
+[`kinetix-contracts`](https://github.com/WildanFrananda/kinetix-contracts/tree/cbd5d56df761b920ce1125d755d02c7c1f2f0491/proto)
+yang boleh mendefinisikan tipe wire**. Service memakai kode hasil generate; mereka tidak pernah menulis
+salinannya sendiri. Pelajaran ini membahas apa yang harus menjaga satu repository itu, sekarang setelah
+setiap service bergantung padanya.
+
+## Mainkan
+
+Empat perubahan melewati pipeline: satu yang semestinya lolos, satu yang sah sebagai protobuf tetapi
+salah untuk uang, satu yang merusak pembaca tanpa sengaja, dan satu yang merusaknya dengan sengaja.
+
+<ContractsDiagram />
+
+## Lint yang paham apa itu uang
+
+`buf lint` dengan
+[aturan `STANDARD`](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/buf.yaml#L22-L29)
+memeriksa nama dan tata letak. Kinetix menambahkan dua aturannya sendiri lewat plugin buf,
+[moneylint](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/tools/moneylint/main.go#L60-L128):
+
+| Aturan | Menolak |
+| --- | --- |
+| `MONEY_NO_FLOATING_POINT` | field uang yang dideklarasikan sebagai `double` atau `float` |
+| `MONEY_USE_COMMON_TYPE` | message yang mendeklarasikan nominal dan mata uangnya sendiri alih-alih meng-import tipe bersama |
+
+Tipe bersama itu adalah
+[`common.v1.Money`](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/proto/common/v1/common.proto#L5-L8):
+bilangan `int64` dalam satuan terkecil mata uang, ditambah kode mata uangnya. Float biner tidak bisa
+menyimpan `0.1` dengan tepat, sehingga total yang dijumlahkan di satu bahasa bisa berbeda satu satuan dari
+total yang sama yang dijumlahkan di bahasa lain — dan di sistem tempat order, pricing, dan payment
+masing-masing menangani total checkout yang sama dalam bahasa berbeda, selisih satu satuan itu adalah
+kegagalan rekonsiliasi.
+
+moneylint menentukan apa yang termasuk uang
+[dari nama field-nya](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/tools/moneylint/main.go#L17-L30):
+`fee`, `price`, `total`, `amount`, dan beberapa lainnya, dengan `quantity`, `rate`, dan `percent`
+dikecualikan. Itu heuristik, dan sengaja dibuat konservatif — aturan yang sering salah alarm adalah aturan
+yang akhirnya dimatikan orang. Float bernama `x` akan lolos. Yang membuat aturan ini bisa dipercaya dalam
+cakupannya adalah CI
+[menyodorkan sebuah pelanggaran di setiap run](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/.github/workflows/ci.yml#L115-L153)
+dan gagal kalau aturannya diam saja. Aturan lint yang belum pernah terlihat gagal belum terbukti bekerja.
+
+## Gerbang dengan satu pintu
+
+`buf breaking` membandingkan kontrak dengan versi sebelumnya dan melaporkan setiap perubahan yang akan
+merusak pembaca yang di-generate darinya. Kinetix menjalankannya dengan
+[aturan `FILE`](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/buf.yaml#L41-L43),
+kategori paling ketat, yang juga menangkap perubahan yang tetap kompatibel di level byte wire tetapi
+merusak kode hasil generate.
+
+Gerbang yang hanya bisa berkata "tidak" lama-lama akan dimatikan, karena sebagian breaking justru
+perbaikannya. Jadi pengecekannya dibungkus dalam
+[`tools/breaking-gate`](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/tools/breaking-gate#L1-L21),
+dan satu-satunya jalan untuk melewatinya adalah menuliskan breaking-nya:
+
+- Setiap temuan yang dilaporkan buf harus muncul, kata demi kata, di
+  [`docs/BREAKING.md`](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/docs/BREAKING.md#L1-L12)
+  di bawah versi yang sedang dirilis. Temuan yang tidak tercantum menggagalkan gerbang dan menyebut
+  dirinya sendiri.
+- Yang dibandingkan hanya pesannya, bukan baris dan kolomnya, yang
+  [berpindah setiap kali file diedit](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/tools/breaking-gate#L51-L53).
+  Register yang harus dinomori ulang adalah register yang tidak akan dirawat siapa pun.
+- Tidak ada flag dan tidak ada environment variable. Baris deklarasi yang tidak cocok dengan temuan
+  nyata tidak memaafkan apa pun, dan sebuah job CI
+  [menghapus file yang tidak dideklarasikan siapa pun](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/.github/workflows/ci.yml#L155-L200)
+  untuk membuktikan gerbangnya tetap menolak.
+
+Gerbang ini berjalan dua kali: di setiap pull request terhadap `main`, dan sekali lagi
+[saat tag rilis di-push](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/.github/workflows/release.yml#L63-L75),
+terhadap tag sebelumnya.
+
+## Breaking yang dideklarasikan
+
+Run keempat di diagram adalah rilis sungguhan. Dua response identity membawa `bool has_location` di
+samping `GeoPoint location`. Setiap bahasa kecuali satu bisa membedakan keduanya; di C++, protoc
+men-generate `has_location()` untuk keduanya, dan service communication sama sekali tidak bisa
+meng-compile kontraknya.
+
+Menghapus flag itu adalah perbaikannya, dan
+[entri v1.0.20](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/docs/BREAKING.md#L16-L59)
+menunjukkan berapa harga sebuah breaking yang dideklarasikan. Entri itu menyebut temuan buf, menjelaskan
+alasannya, dan memberikan perubahan untuk setiap bahasa. Ia juga mencatat jebakan yang ditemukan di
+tengah jalan:
+
+- identity selalu mengirim `location`, dan memakai flag itu untuk menyatakan apakah nilainya bermakna.
+  Alamat yang belum pernah di-geocode dikirim sebagai `{0, 0}`. Tanpa flag, itu adalah koordinat nyata
+  di Samudra Atlantik, dan dispatch akan mengarahkan kurir ke sana.
+- Karena itu identity sekarang tidak mengirim field-nya sama sekali kalau tidak ada lokasi, dan entri itu
+  menyebut service mana yang di-deploy duluan — identity, supaya jeda di antaranya gagal secara tertutup
+  alih-alih mengirim kurir ke tengah laut.
+
+Nomor field-nya dijadikan
+[`reserved`](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/proto/identity/v1/identity.proto#L68),
+sehingga tidak satu pun bisa kembali dengan arti lain. Me-reserve tidak membuat penghapusannya
+kompatibel — pembaca yang memakai field itu tetap kehilangannya — dan karena itulah buf tetap
+melaporkannya dan register tetap harus mendeklarasikannya.
+
+## Satu tag, di mana-mana
+
+Sebuah rilis adalah sebuah git tag, dan
+[tag itulah versinya](https://github.com/WildanFrananda/kinetix-contracts/blob/cbd5d56df761b920ce1125d755d02c7c1f2f0491/.github/workflows/release.yml#L3-L25):
+tidak ada yang menghitung atau menaikkan versi. Workflow-nya men-generate kode sekali dan mempublikasikan
+byte yang sama itu ke npm, PyPI, RubyGems, dan Packagist. Sebuah service memakai salah satu package
+tersebut, atau file `.proto`-nya langsung, diambil pada tag dan commit yang di-pin lalu di-generate di
+build-nya sendiri. Itu mengunci versinya sama kuatnya, dengan satu syarat: **tag rilis tidak pernah
+dipindahkan**.
+
+Setiap service mem-pin versinya sendiri dan pindah kapan pun ia mau. Itulah yang membuat perubahan aditif
+gratis: service yang masih di pin lama tetap berjalan. Breaking yang dideklarasikan adalah satu-satunya
+kasus yang mungkin tidak, dan karena itulah entrinya menyebut apa yang harus diubah dan service mana yang
+di-deploy duluan.
+
+## Intisari
+
+- Simpan satu salinan untuk setiap tipe wire. Salinan kedua adalah penyimpangan di masa depan yang tidak
+  akan dilaporkan compiler mana pun.
+- Letakkan aturan tentang makna, seperti cara uang direpresentasikan, di lint kontraknya, supaya tidak
+  ada service yang perlu mengingatnya — dan buktikan aturannya gagal ketika memang seharusnya gagal.
+- Kompatibel dan benar adalah dua pengecekan terpisah. Field uang bertipe float tidak merusak pembaca
+  mana pun dan tetap salah.
+- Loloskan breaking change hanya kalau sudah dituliskan, kata demi kata, di tempat yang dibaca consumer
+  sebelum upgrade.
