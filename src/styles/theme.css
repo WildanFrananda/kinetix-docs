@@ -146,7 +146,7 @@ nav.sidebar summary .large {
   color: var(--sl-color-accent);
 }
 
-.sl-markdown-content :not(pre) > code {
+.sl-markdown-content :not(pre) > code:not(:where(.not-content *)) {
   padding: 0.08em 0.32em;
   border: 1px solid var(--kx-rule);
   border-radius: 2px;

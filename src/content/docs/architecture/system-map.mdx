@@ -1,0 +1,39 @@
+---
+title: System map
+description: Every service, the calls between them and what enters from outside — drawn from the code, with every arrow linked to the line that makes the call.
+sidebar:
+  order: 1
+---
+
+import ArchitectureMapDiagram from "../../../components/ArchitectureMapDiagram.astro";
+
+This map is drawn from the code, not from a plan. Every arrow is a call that exists and is wired in the
+caller, and every call links to the line that makes it, at the commit the map was drawn from. Select a
+box to trace it.
+
+<ArchitectureMapDiagram />
+
+## Reading the map
+
+**Everything from outside enters through the gateway.** Browsers, integrations and the courier app
+talk only to Kong. Select the gateway to see which services it exposes and on which paths; notification
+and communication have no public route at all.
+
+**order is the busiest caller.** Checkout is a saga that order coordinates: prices and vouchers from
+pricing, stock from warehouse, an escrow hold from payment, shipping options and a courier from
+matching. Two of those conversations run both ways — warehouse reports a packed parcel back with
+`FulfillmentPacked`, and matching reports a delivered one with `OrderDelivered`.
+
+**identity is the most called.** Services ask it who a principal is, which merchant a seller is and
+whether a merchant may trade. Access tokens are not checked by calling identity: each service verifies
+them itself against identity's published signing keys, fetched over HTTP, so those fetches do not appear
+as arrows.
+
+**search keeps its own index.** It polls catalog, identity and order for everything that changed since
+its last checkpoint, and writes the result into Typesense. The `ChangedSince` calls are that feed.
+
+## What is not on it
+
+- Calls made only by one-off data migrations.
+- Traffic inside a single service, such as matching's in-process events.
+- notification serves its API, but no service calls it yet. communication is built but not deployed.

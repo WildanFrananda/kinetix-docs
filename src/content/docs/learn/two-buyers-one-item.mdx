@@ -21,6 +21,9 @@ order sends, what it has read, and what it believes it holds.
 
 <StockRaceDiagram />
 
+Prefer a terminal? [Reproduce the race in psql](/learn/reproduce-the-race-in-psql/) walks through the
+same steps by hand, with two sessions against a real PostgreSQL.
+
 ## The read is the bug, not the write
 
 Reserving stock is a read-modify-write: read `reserved_quantity`, decide whether enough is available,

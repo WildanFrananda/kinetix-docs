@@ -1,0 +1,42 @@
+---
+title: Peta sistem
+description: Setiap service, panggilan di antara mereka, dan apa yang masuk dari luar — digambar dari kodenya, dengan setiap panah menautkan baris yang melakukan panggilan itu.
+sourceHash: "66068eed4af1"
+sidebar:
+  order: 1
+---
+
+import ArchitectureMapDiagram from "../../../../components/ArchitectureMapDiagram.astro";
+
+Peta ini digambar dari kode, bukan dari rencana. Setiap panah adalah panggilan yang benar-benar ada dan
+tersambung di sisi pemanggil, dan setiap panggilan menautkan baris yang melakukannya, pada commit tempat
+peta ini digambar. Pilih sebuah kotak untuk menelusurinya.
+
+<ArchitectureMapDiagram />
+
+## Cara membaca peta
+
+**Semua yang datang dari luar masuk lewat gateway.** Browser, integrasi, dan aplikasi kurir hanya
+berbicara dengan Kong. Pilih gateway untuk melihat service mana yang dibukanya dan di path apa;
+notification dan communication sama sekali tidak punya rute publik.
+
+**order adalah pemanggil tersibuk.** Checkout adalah saga yang dikoordinasikan order: harga dan voucher
+dari pricing, stok dari warehouse, escrow hold dari payment, opsi pengiriman dan kurir dari matching.
+Dua dari percakapan itu berjalan dua arah — warehouse melaporkan paket yang sudah dikemas lewat
+`FulfillmentPacked`, dan matching melaporkan paket yang sudah terkirim lewat `OrderDelivered`.
+
+**identity adalah yang paling sering dipanggil.** Service menanyakan siapa sebuah principal, merchant
+mana seorang seller, dan apakah sebuah merchant boleh berdagang. Access token tidak diperiksa dengan
+memanggil identity: setiap service memverifikasinya sendiri terhadap signing key yang dipublikasikan
+identity, diambil lewat HTTP, sehingga pengambilan itu tidak muncul sebagai panah.
+
+**search memelihara indeksnya sendiri.** Ia menanyakan catalog, identity, dan order tentang semua yang
+berubah sejak checkpoint terakhirnya, lalu menulis hasilnya ke Typesense. Panggilan `ChangedSince`
+itulah feed-nya.
+
+## Yang tidak digambar
+
+- Panggilan yang hanya dilakukan oleh migrasi data sekali jalan.
+- Lalu lintas di dalam satu service, seperti event in-process milik matching.
+- notification melayani API-nya, tapi belum ada service yang memanggilnya. communication sudah dibangun
+  tapi belum di-deploy.

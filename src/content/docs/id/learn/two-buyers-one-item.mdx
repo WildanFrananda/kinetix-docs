@@ -1,7 +1,7 @@
 ---
 title: Dua pembeli, satu barang
 description: Bagaimana warehouse mencegah dua order yang datang bersamaan me-reserve unit yang sama — row lock yang diambil saat membaca, dan kenapa melindungi tulisan saja tidak cukup.
-sourceHash: "0163b75eb52b"
+sourceHash: "65c52d66356a"
 sidebar:
   order: 1
 ---
@@ -21,6 +21,9 @@ Jalankan **Tanpa FOR UPDATE** dulu, lalu pindah ke **Dengan FOR UPDATE**. Setiap
 SQL yang dikirim tiap order, apa yang sudah dibacanya, dan berapa unit yang ia kira sudah ia pegang.
 
 <StockRaceDiagram />
+
+Lebih suka terminal? [Reproduksi race di psql](/id/learn/reproduce-the-race-in-psql/) menelusuri
+langkah yang sama secara manual, dengan dua sesi ke PostgreSQL sungguhan.
 
 ## Yang salah adalah bacaannya, bukan tulisannya
 

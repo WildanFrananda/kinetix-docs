@@ -1,0 +1,267 @@
+---
+title: Reproduce the race in psql
+description: Make PostgreSQL lose an update with two terminals, stop it with SELECT … FOR UPDATE, then bound the wait with lock_timeout. About ten minutes, Docker only.
+sidebar:
+  order: 2
+---
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+In this tutorial you make PostgreSQL lose an update on purpose, using two terminals as two orders.
+Then you stop it the way warehouse does, and finally put a limit on how long the second order waits.
+The explanation of _why_ each step behaves as it does is in
+[Two buyers, one item](/learn/two-buyers-one-item/); here you only watch it happen.
+
+You need Docker. Every command and every output below was run against `postgres:16-alpine`.
+
+## Set up
+
+<Steps>
+
+1. Start PostgreSQL 16 in a container that removes itself when stopped:
+
+   ```sh
+   docker run --rm --name kinetix-race -e POSTGRES_PASSWORD=race -d postgres:16-alpine
+   ```
+
+2. Open a terminal and connect. This is **Terminal A**, the first order:
+
+   ```sh
+   docker exec -it kinetix-race psql -U postgres
+   ```
+
+3. In Terminal A, create the bin with three units of `SKU-C`. The check constraint is deliberate:
+   watch whether it saves you.
+
+   ```sql title="Terminal A"
+   CREATE TABLE bin_inventories (
+     id bigint PRIMARY KEY,
+     sku text NOT NULL,
+     quantity integer NOT NULL,
+     reserved_quantity integer NOT NULL DEFAULT 0,
+     CHECK (reserved_quantity <= quantity)
+   );
+   INSERT INTO bin_inventories (id, sku, quantity) VALUES (1, 'SKU-C', 3);
+   ```
+
+4. Open a second terminal and connect the same way. This is **Terminal B**, the second order:
+
+   ```sh
+   docker exec -it kinetix-race psql -U postgres
+   ```
+
+</Steps>
+
+## Part 1 — lose an update
+
+Both orders want all three units. Each one reads, decides, then writes.
+
+<Steps>
+
+1. In **Terminal A**, start a transaction and read what is available:
+
+   ```sql title="Terminal A"
+   BEGIN;
+   SELECT quantity - reserved_quantity AS available FROM bin_inventories WHERE id = 1;
+   ```
+
+   ```txt title="Output"
+   BEGIN
+    available
+   -----------
+            3
+   (1 row)
+   ```
+
+2. In **Terminal B**, do exactly the same. B sees three units too, because A has written nothing yet.
+
+   ```sql title="Terminal B"
+   BEGIN;
+   SELECT quantity - reserved_quantity AS available FROM bin_inventories WHERE id = 1;
+   ```
+
+3. In **Terminal A**, reserve all three. The value is the one A computed from its read: 0 + 3.
+
+   ```sql title="Terminal A"
+   UPDATE bin_inventories SET reserved_quantity = 3 WHERE id = 1;
+   ```
+
+   ```txt title="Output"
+   UPDATE 1
+   ```
+
+4. In **Terminal B**, reserve all three as well:
+
+   ```sql title="Terminal B"
+   UPDATE bin_inventories SET reserved_quantity = 3 WHERE id = 1;
+   ```
+
+   **Terminal B does not answer.** PostgreSQL makes the second write wait for the row lock A took with
+   its `UPDATE`. If you open a third terminal, you can see it waiting (your `pid` will differ):
+
+   ```sql title="Terminal C"
+   SELECT pid, wait_event_type, wait_event, left(query, 50) AS query
+   FROM pg_stat_activity WHERE wait_event_type = 'Lock';
+   ```
+
+   ```txt title="Output"
+    pid | wait_event_type |  wait_event   |                       query
+   -----+-----------------+---------------+----------------------------------------------------
+     91 | Lock            | transactionid | UPDATE bin_inventories SET reserved_quantity = 3 W
+   (1 row)
+   ```
+
+5. In **Terminal A**, commit. Terminal B wakes up at once and prints `UPDATE 1`.
+
+   ```sql title="Terminal A"
+   COMMIT;
+   ```
+
+6. In **Terminal B**, commit too:
+
+   ```sql title="Terminal B"
+   COMMIT;
+   ```
+
+7. Look at the row from either terminal:
+
+   ```sql title="Terminal A"
+   SELECT quantity, reserved_quantity FROM bin_inventories WHERE id = 1;
+   ```
+
+   ```txt title="Output"
+    quantity | reserved_quantity
+   ----------+-------------------
+           3 |                 3
+   (1 row)
+   ```
+
+</Steps>
+
+Both transactions committed and both orders were told they hold three units: six promised, three on
+the shelf. The row says three are reserved. The check constraint never fired, because neither write
+stored an illegal value — B simply wrote over A.
+
+## Part 2 — take the lock at the read
+
+Now the read itself takes the row lock, with `FOR UPDATE`, which is what warehouse does.
+
+<Steps>
+
+1. In **Terminal A**, put the shelf back, then start again — this time with a locking read:
+
+   ```sql title="Terminal A"
+   UPDATE bin_inventories SET reserved_quantity = 0 WHERE id = 1;
+   BEGIN;
+   SELECT quantity - reserved_quantity AS available FROM bin_inventories WHERE id = 1 FOR UPDATE;
+   ```
+
+   ```txt title="Output"
+   UPDATE 1
+   BEGIN
+    available
+   -----------
+            3
+   (1 row)
+   ```
+
+2. In **Terminal B**, ask for the same row the same way:
+
+   ```sql title="Terminal B"
+   BEGIN;
+   SELECT quantity - reserved_quantity AS available FROM bin_inventories WHERE id = 1 FOR UPDATE;
+   ```
+
+   This time **B waits at the read**. It has not seen any number yet, so it has nothing stale to act
+   on.
+
+3. In **Terminal A**, reserve and commit:
+
+   ```sql title="Terminal A"
+   UPDATE bin_inventories SET reserved_quantity = 3 WHERE id = 1;
+   COMMIT;
+   ```
+
+   ```txt title="Output"
+   UPDATE 1
+   COMMIT
+   ```
+
+4. Terminal B's read completes as soon as A commits, and it returns the row as A left it:
+
+   ```txt title="Output in Terminal B"
+    available
+   -----------
+            0
+   (1 row)
+   ```
+
+   Nothing is available, so B gives up. In warehouse this is where the call is refused with
+   `INSUFFICIENT_STOCK`:
+
+   ```sql title="Terminal B"
+   ROLLBACK;
+   ```
+
+</Steps>
+
+## Part 3 — put a limit on the wait
+
+A lock turns a race into a queue. Without a limit, one slow transaction holds up every order for the
+same product. Warehouse sets `lock_timeout` for its own transaction only; here is the same thing by
+hand.
+
+<Steps>
+
+1. In **Terminal A**, take the lock and keep it:
+
+   ```sql title="Terminal A"
+   BEGIN;
+   SELECT quantity - reserved_quantity AS available FROM bin_inventories WHERE id = 1 FOR UPDATE;
+   ```
+
+2. In **Terminal B**, allow at most two seconds of waiting, then ask for the row:
+
+   ```sql title="Terminal B"
+   BEGIN;
+   SET LOCAL lock_timeout = '2s';
+   SELECT quantity - reserved_quantity AS available FROM bin_inventories WHERE id = 1 FOR UPDATE;
+   ```
+
+   After two seconds:
+
+   ```txt title="Output in Terminal B"
+   ERROR:  canceling statement due to lock timeout
+   CONTEXT:  while locking tuple (0,5) in relation "bin_inventories"
+   ```
+
+   The tuple position in the `CONTEXT` line will differ on your machine. `SET LOCAL` limits the
+   setting to this transaction, which is why warehouse uses the same form.
+
+3. End both transactions:
+
+   ```sql title="Terminal B"
+   ROLLBACK;
+   ```
+
+   ```sql title="Terminal A"
+   ROLLBACK;
+   ```
+
+</Steps>
+
+## Clean up
+
+Leave both `psql` sessions with `\q`, then stop the container. It was started with `--rm`, so
+stopping it also removes it.
+
+```sh
+docker stop kinetix-race
+```
+
+<Aside>
+  You have now seen the three behaviours warehouse depends on: a write that waits but still loses an
+  update, a locking read that makes the second order decide on the true count, and a wait that ends
+  with an error instead of hanging. [Two buyers, one item](/learn/two-buyers-one-item/) shows where
+  each one lives in warehouse's code.
+</Aside>

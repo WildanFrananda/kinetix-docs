@@ -1,0 +1,68 @@
+---
+import ArchitectureMap from "../diagrams/architecture/ArchitectureMap.svelte";
+import { architectureEdges } from "../diagrams/architecture/architecture_edges";
+import { architectureMapLabels } from "../diagrams/architecture/architecture_map_labels";
+import { architectureNodes } from "../diagrams/architecture/architecture_nodes";
+import { localizeMapEdges } from "../diagrams/architecture/localize_map_edges";
+import { localizeMapNodes } from "../diagrams/architecture/localize_map_nodes";
+import { catalogueFor } from "../diagrams/engine/catalogue_for";
+import { localeOf } from "../diagrams/engine/locale_of";
+
+const catalogue = catalogueFor(localeOf(Astro.locals.starlightRoute.entryMeta.lang));
+const nodes = localizeMapNodes(architectureNodes, catalogue);
+const edges = localizeMapEdges(architectureEdges, catalogue);
+const labels = architectureMapLabels(catalogue);
+const callers = nodes.filter((node) => edges.some((edge) => edge.from === node.id));
+const labelOf = (id: string): string => nodes.find((node) => node.id === id)?.label ?? id;
+---
+
+<ArchitectureMap client:visible nodes={nodes} edges={edges} labels={labels} />
+
+<details class="transcript">
+  <summary>{catalogue["player.transcript"]}</summary>
+  {
+    callers.map((node) => (
+      <section>
+        <p class="caller">
+          {node.label} — {labels.calls}
+        </p>
+        <ul>
+          {edges
+            .filter((edge) => edge.from === node.id)
+            .map((edge) => (
+              <li>
+                <strong>{labelOf(edge.to)}</strong>
+                {edge.calls.length > 0 && ": "}
+                {edge.calls.map((call, index) => (
+                  <>
+                    {index > 0 && ", "}
+                    <a href={call.source.href}>
+                      <code>{call.operation}</code>
+                    </a>
+                    {call.note && ` (${call.note})`}
+                  </>
+                ))}
+              </li>
+            ))}
+        </ul>
+      </section>
+    ))
+  }
+</details>
+
+<style>
+  .transcript {
+    margin-top: -0.75rem;
+    font-size: var(--sl-text-sm);
+  }
+
+  .transcript summary {
+    cursor: pointer;
+    color: var(--sl-color-gray-2);
+  }
+
+  .caller {
+    font-family: var(--sl-font-mono);
+    font-weight: 600;
+  }
+</style>
