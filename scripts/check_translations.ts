@@ -13,7 +13,7 @@ const translations = readPages(join(contentRoot, translationLocale), []);
 const report = translationReport(sources, translations);
 
 for (const entry of report.filter((candidate) => candidate.status !== "current")) {
-  const hint = entry.expectedHash === undefined ? "" : `  sourceHash: ${entry.expectedHash}`;
+  const hint = entry.expectedHash === undefined ? "" : `  sourceHash: "${entry.expectedHash}"`;
 
   console.log(`${entry.status.padEnd(10)}${entry.slug}${hint}`);
 }

@@ -1,0 +1,110 @@
+---
+title: Two buyers, one item
+description: How warehouse stops two simultaneous orders from reserving the same units — a row lock taken at the read, and why protecting the write alone is not enough.
+sidebar:
+  order: 1
+---
+
+import StockRaceDiagram from "../../../components/StockRaceDiagram.astro";
+
+Three units of a product sit on one shelf. Two checkouts reach warehouse within the same millisecond,
+each asking for all three. Warehouse has to promise every unit at most once, and nothing in either
+request says the other one exists.
+
+This lesson follows one gRPC call, `ReserveStock`, through warehouse's Rails code and shows the line
+that makes it safe — and what goes wrong without it.
+
+## Play it
+
+Run **Without FOR UPDATE** first, then switch to **With FOR UPDATE**. Every step shows the SQL each
+order sends, what it has read, and what it believes it holds.
+
+<StockRaceDiagram />
+
+## The read is the bug, not the write
+
+Reserving stock is a read-modify-write: read `reserved_quantity`, decide whether enough is available,
+write the new total. In warehouse the write is
+[one line](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/app/services/inventory/reserve_stock_service.rb#L120):
+
+```ruby
+bin.update!(reserved_quantity: bin.reserved_quantity.to_i + @quantity)
+```
+
+The new total is computed in Ruby, from the value that was read. What reaches Postgres is
+`UPDATE bin_inventories SET reserved_quantity = 3 WHERE id = 1` — a constant.
+
+Postgres does protect the write. An `UPDATE` takes a lock on the row, and a second `UPDATE` of the
+same row waits until the first transaction ends. That is why, in the diagram, B's write waits. But B
+waits in order to write a number it decided on _before_ the wait began, and under PostgreSQL's
+default [Read Committed](https://www.postgresql.org/docs/16/transaction-iso.html#XACT-READ-COMMITTED)
+isolation nothing tells B that what it read has since changed.
+
+That is a **lost update**, and it is silent:
+
+- Both transactions commit. Neither sees an error.
+- No constraint is violated. `reserved_quantity = 3` never exceeds `quantity = 3`, so even a check
+  constraint `reserved_quantity <= quantity` would have accepted both writes. `bin_inventories` does
+  not define one; the row lock is the guard.
+- The row itself looks correct. Only the two reservations, three units each, show six units promised
+  against three on the shelf.
+
+## Take the lock at the read
+
+Warehouse reads the bins with a
+[locking read](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/app/services/inventory/reserve_stock_service.rb#L86):
+
+```ruby
+bins = BinInventory.where(sku: @sku).order(:id).lock("FOR UPDATE").to_a
+```
+
+[`SELECT … FOR UPDATE`](https://www.postgresql.org/docs/16/sql-select.html#SQL-FOR-UPDATE-SHARE)
+takes the row lock when the row is read, not when it is written. B's read now waits instead of B's
+write. When A commits, B's read completes and returns the row as A left it, so B decides on the true
+count and is
+[refused with `INSUFFICIENT_STOCK`](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/app/services/inventory/reserve_stock_service.rb#L107-L116).
+
+Three details keep this correct under real traffic:
+
+1. **Every bin of the SKU, always in `id` order.** Two reservations for the same SKU lock the same
+   rows in the same sequence, so neither can hold one row while waiting for a row the other holds.
+2. **Ledger rows before bin rows.** Before it touches a bin, the call inserts an idempotency claim and
+   a reservation ledger row. A release takes the same rows in the same order. When the two took them
+   in opposite orders, a reserve racing a release deadlocked; a
+   [spec with two real database connections](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/spec/rpc/bin_stock_service_concurrency_spec.rb#L195-L220)
+   now holds that order in place.
+3. **One transaction around all of it.**
+   [`IdempotentOperation`](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/app/services/inventory/idempotent_operation.rb#L85-L96)
+   opens the transaction and the reservation runs inside it. A refusal returns `commit: false`, the
+   transaction rolls back, and the claim and ledger rows it inserted disappear with it.
+
+## A lock turns a race into a queue
+
+A queue needs a limit, or one slow transaction stalls every order for the same product. Warehouse
+sets `lock_timeout`
+[for its own transaction only](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/app/services/inventory/idempotent_operation.rb#L26-L32)
+— the `true` in `set_config('lock_timeout', …, true)` scopes the setting to the current transaction.
+The limit comes from `WAREHOUSE_STOCK_LOCK_TIMEOUT_SECONDS`, defaults to 15 seconds and is clamped
+between 1 and 120.
+
+When a wait runs out, nothing has changed, and the caller is told which row was busy:
+
+| Code | The wait was on |
+| --- | --- |
+| `RESERVATION_IN_PROGRESS` | The idempotency claim of an identical request still in flight |
+| `STOCK_LEDGER_BUSY` | This order's own reservation row, held by its own release |
+| `STOCK_LOCK_TIMEOUT` | A bin row held by a different order |
+
+Each code is
+[asserted against a real second connection](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/spec/rpc/bin_stock_service_concurrency_spec.rb#L319-L401),
+so a change that folds two of them together turns exactly one example red.
+
+## Takeaways
+
+- A read-modify-write is safe only if nothing can change the row between the read and the write.
+  Either take the lock at the read with `FOR UPDATE`, or make the write conditional — for example
+  `SET reserved_quantity = reserved_quantity + 3 WHERE quantity - reserved_quantity >= 3`, then check
+  how many rows changed. Warehouse uses the locking read because it has to compare several bins and
+  check who owns them before it writes.
+- Lock rows in one consistent order everywhere, or two correct transactions can deadlock each other.
+- Bound every wait, and when one runs out, say which wait it was.

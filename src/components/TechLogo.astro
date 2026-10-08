@@ -1,0 +1,119 @@
+---
+import { logos } from "../site/logos";
+import type { TechLogoProps } from "../site/types/tech_logo_props.type";
+
+type Props = TechLogoProps;
+
+const { tech, size = "md", showName = false, fallback = "monogram" } = Astro.props;
+const source = tech.logo === undefined ? undefined : logos[tech.logo];
+const words = tech.name.split(/[\s./+-]+/).filter((word) => word.length > 0);
+const monogram =
+  words.length > 1
+    ? words
+        .slice(0, 2)
+        .map((word) => word.charAt(0).toUpperCase())
+        .join("")
+    : `${tech.name.charAt(0).toUpperCase()}${tech.name.charAt(1).toLowerCase()}`;
+---
+
+<span
+  class:list={["tech", `tech-${size}`, { "text-only": source === undefined && fallback === "none" }]}
+  title={tech.version ? `${tech.name} ${tech.version}` : tech.name}
+>
+  {
+    (source !== undefined || fallback === "monogram") && (
+      <span class="tile">
+        {source ? <img src={source} alt="" loading="lazy" decoding="async" /> : <span class="monogram">{monogram}</span>}
+      </span>
+    )
+  }
+  {
+    showName && (
+      <span class="label">
+        <span class="name">{tech.name}</span>
+        {tech.version && <span class="version">{tech.version}</span>}
+      </span>
+    )
+  }
+  {!showName && <span class="sr-only">{tech.name}</span>}
+</span>
+
+<style>
+  .tech {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-width: 0;
+    vertical-align: middle;
+  }
+
+  .tile {
+    display: grid;
+    place-items: center;
+    flex: none;
+    border: 1px solid var(--kx-rule);
+    border-radius: 2px;
+    background: var(--kx-tile);
+  }
+
+  .tech-sm .tile {
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0.28rem;
+  }
+
+  .tech-md .tile {
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0.35rem;
+  }
+
+  .tech-lg .tile {
+    width: 3rem;
+    height: 3rem;
+    padding: 0.45rem;
+    border-radius: 2px;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .monogram {
+    color: #171614;
+    font-family: var(--sl-font-mono);
+    font-size: 0.66rem;
+    font-weight: 600;
+  }
+
+  .tech-lg .monogram {
+    font-size: 0.9rem;
+  }
+
+  .text-only .label {
+    padding: 0.15rem 0.5rem;
+    border: 1px solid var(--kx-rule);
+    border-radius: 2px;
+  }
+
+  .label {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.25;
+  }
+
+  .name {
+    color: var(--sl-color-white);
+    font-weight: 600;
+    font-size: var(--sl-text-sm);
+  }
+
+  .version {
+    color: var(--sl-color-gray-3);
+    font-family: var(--sl-font-mono);
+    font-size: var(--sl-text-2xs);
+  }
+</style>

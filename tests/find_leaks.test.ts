@@ -27,6 +27,18 @@ describe("findLeaks", () => {
     expect(findLeaks("schema 300.12.1.9", builtinLeakRules)).toEqual([]);
   });
 
+  test("a four-part version is permitted only where it is written as a version", () => {
+    const text = [
+      'framework: { name: "Rails", version: "8.1.3.1" }',
+      'techs: [tech("Rails", "8.1.3.1", "rails")]',
+      "The server answers on 8.1.3.1 today.",
+      'note: "8.1.3.1"'
+    ].join("\n");
+    const lines = findLeaks(text, builtinLeakRules).map((finding) => finding.line);
+
+    expect(lines).toEqual([3, 4]);
+  });
+
   test("a sandbox payment key is flagged", () => {
     const findings = findLeaks("key: SB-Mid-server-AbCdEf123456", builtinLeakRules);
 

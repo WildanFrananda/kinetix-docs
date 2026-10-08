@@ -2,12 +2,26 @@
 title: Kinetix
 description: Arsitektur, kontrak, dan keputusan engineering Kinetix, platform e-commerce dan fulfilment real-time yang dibangun dari sebelas service dalam sebelas bahasa.
 template: splash
-sourceHash: 739ad6b1bc22
+sourceHash: "c7b5cdc38ae5"
+eyebrow: Dokumentasi engineering
 hero:
   tagline: Platform e-commerce dan fulfilment real-time, didokumentasikan dari kodenya — untuk engineer yang membangun di atasnya, dan untuk engineer yang ingin belajar desain backend terdistribusi dari sistem yang benar-benar berjalan.
+  actions:
+    - text: Mulai belajar
+      link: /id/learn/two-buyers-one-item/
+      variant: primary
+      icon: right-arrow
+    - text: Tech stack
+      link: /id/architecture/tech-stack/
+      variant: secondary
+    - text: GitHub
+      link: https://github.com/WildanFrananda
+      variant: minimal
+      icon: external
 ---
 
 import { Aside, Card, CardGrid } from "@astrojs/starlight/components";
+import ServiceList from "../../../components/ServiceList.astro";
 
 ## Tentang situs ini
 
@@ -33,24 +47,15 @@ menautkan kode itu pada commit tertentu, jadi yang kamu baca adalah yang berjala
 
 ## Service
 
-| Service | Tanggung jawab | Bahasa |
-| --- | --- | --- |
-| [identity](https://github.com/WildanFrananda/kinetix-identity-service) | Akun, autentikasi, token, persetujuan merchant | TypeScript |
-| [catalog](https://github.com/WildanFrananda/kinetix-catalog-service) | Produk dan kategori | Python |
-| [pricing](https://github.com/WildanFrananda/kinetix-pricing-service) | Harga, diskon, voucher, flash sale, tarif ongkir | Rust |
-| [order](https://github.com/WildanFrananda/kinetix-order-service) | Keranjang, checkout, pesanan, retur | C# |
-| [payment](https://github.com/WildanFrananda/kinetix-payment-service) | Pembayaran, escrow, wallet | Java |
-| [warehouse](https://github.com/WildanFrananda/kinetix-warehouse-service) | Inventori bin, reservasi stok, fulfilment task | Ruby |
-| [matching](https://github.com/WildanFrananda/kinetix-matching-service) | Alokasi dan dispatch kurir | Elixir |
-| [review](https://github.com/WildanFrananda/kinetix-review-service) | Ulasan produk | PHP |
-| [notification](https://github.com/WildanFrananda/kinetix-notification-service) | Notifikasi pelanggan | Scala |
-| [communication](https://github.com/WildanFrananda/kinetix-communication-service) | Chat real-time | C++ |
-| [search](https://github.com/WildanFrananda/kinetix-search-service) | Pencarian produk | Go |
+Sebelas service, masing-masing dalam bahasa yang berbeda, masing-masing satu-satunya pemilik datanya.
+Pilih salah satu untuk membuka source-nya.
+
+<ServiceList />
 
 Di sekelilingnya ada [API gateway](https://github.com/WildanFrananda/kinetix-api-gateway) (Kong),
 [aplikasi kurir](https://github.com/WildanFrananda/kinetix-courier-mobile) (Flutter), dan
 [kontrak](https://github.com/WildanFrananda/kinetix-contracts) (Protocol Buffers) yang diikuti semua
-service.
+service. Stack lengkap beserta versinya ada di halaman [tech stack](/id/architecture/tech-stack/).
 
 <Aside title="Situs ini sedang ditulis">
   Sebuah bagian baru muncul setelah isinya diverifikasi terhadap kode, tidak sebelumnya. Halaman

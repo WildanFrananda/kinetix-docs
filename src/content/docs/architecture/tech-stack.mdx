@@ -1,0 +1,50 @@
+---
+title: Tech stack
+description: Every language, framework, library and platform component Kinetix runs on, with the version pinned in each repository.
+sidebar:
+  order: 1
+---
+
+import TechStack from "../../../components/TechStack.astro";
+
+Kinetix gives every service its own language on purpose: one domain, eleven idioms, and contracts
+that have to hold between all of them. The versions below are the ones pinned in each repository's
+manifest or lockfile, not the ones its README mentions; a version with no evidence in the repository
+is left out rather than guessed.
+
+## Services
+
+Each service owns its database and is reached only through gRPC from other services, or through the
+gateway from outside.
+
+<TechStack group="services" />
+
+## Edge, contracts and clients
+
+The gateway is the only door from the internet. The contracts are the only definition of a message
+on the wire. The courier app is the first client.
+
+<TechStack group="edge" />
+
+## Platform
+
+Shared middleware every service may use, and the machinery that lets services trust each other.
+
+<TechStack group="platform" />
+
+## Delivery
+
+How code becomes a running system.
+
+<TechStack group="delivery" />
+
+## Planned
+
+Not built yet. Recorded here so the direction is visible: native customer apps on both mobile
+platforms, one backoffice for every service, and a recommendation service.
+
+<TechStack group="planned" />
+
+## This site
+
+<TechStack group="docs" />

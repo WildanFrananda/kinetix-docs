@@ -8,7 +8,8 @@ export const collections = {
     loader: docsLoader(),
     schema: docsSchema({
       extend: z.object({
-        sourceHash: z.string().regex(/^[0-9a-f]{12}$/).optional()
+        sourceHash: z.string().regex(/^[0-9a-f]{12}$/).optional(),
+        eyebrow: z.string().optional()
       })
     })
   })

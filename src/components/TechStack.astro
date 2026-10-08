@@ -1,0 +1,121 @@
+---
+import { catalogueFor } from "../diagrams/engine/catalogue_for";
+import { localeOf } from "../diagrams/engine/locale_of";
+import { stackGroups } from "../site/stack_groups";
+import type { TechStackProps } from "../site/types/tech_stack_props.type";
+import TechLogo from "./TechLogo.astro";
+
+type Props = TechStackProps;
+
+const catalogue = catalogueFor(localeOf(Astro.locals.starlightRoute.entryMeta.lang));
+const entries = stackGroups[Astro.props.group];
+---
+
+<div class="stack not-content">
+  {
+    entries.map((entry) => (
+      <article class="entry">
+        <header>
+          <span class="name">{entry.name}</span>
+          {entry.repository && (
+            <a class="repository" href={entry.repository}>
+              GitHub ↗
+            </a>
+          )}
+        </header>
+        <p class="summary">{catalogue[entry.summary]}</p>
+        <dl>
+          {entry.layers.map((layer) => (
+            <div class="layer">
+              <dt>{catalogue[layer.role]}</dt>
+              <dd>
+                {layer.techs.map((tech) => (
+                  <TechLogo tech={tech} size="sm" showName fallback="none" />
+                ))}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </article>
+    ))
+  }
+</div>
+
+<style>
+  .stack {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+    gap: 0.9rem;
+    margin: 1.25rem 0 2rem;
+  }
+
+  .entry {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 1rem 1.1rem 1.1rem;
+    border: 1px solid var(--kx-rule);
+    border-top: 2px solid var(--sl-color-white);
+    border-radius: 0;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .name {
+    color: var(--sl-color-white);
+    font-family: var(--sl-font-mono);
+    font-size: var(--sl-text-lg);
+    font-weight: 600;
+  }
+
+  .repository {
+    color: var(--sl-color-accent);
+    font-family: var(--sl-font-mono);
+    font-size: var(--sl-text-xs);
+    text-decoration: none;
+  }
+
+  .summary {
+    margin: 0;
+    color: var(--sl-color-gray-2);
+    font-size: var(--sl-text-sm);
+    line-height: 1.5;
+  }
+
+  dl {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    margin: 0.25rem 0 0;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--kx-rule);
+  }
+
+  .layer {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    align-items: start;
+    gap: 0.5rem;
+  }
+
+  dt {
+    padding-top: 0.3rem;
+    color: var(--sl-color-gray-3);
+    font-family: var(--sl-font-mono);
+    font-size: var(--sl-text-2xs);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  dd {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.9rem;
+    margin: 0;
+  }
+</style>

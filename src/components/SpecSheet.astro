@@ -1,0 +1,88 @@
+---
+import { catalogueFor } from "../diagrams/engine/catalogue_for";
+import { localeOf } from "../diagrams/engine/locale_of";
+import { services } from "../site/services";
+
+const catalogue = catalogueFor(localeOf(Astro.locals.starlightRoute.entryMeta.lang));
+const languages = new Set(services.map((service) => service.language.name)).size;
+const rows = [
+  { label: catalogue["hero.spec.services"], value: String(services.length) },
+  { label: catalogue["hero.spec.languages"], value: String(languages) },
+  { label: catalogue["hero.spec.entry"], value: catalogue["hero.gateway"] },
+  { label: catalogue["hero.spec.calls"], value: catalogue["hero.spec.callsValue"] },
+  { label: catalogue["hero.spec.contracts"], value: catalogue["hero.spec.contractsValue"] },
+  { label: catalogue["hero.spec.data"], value: catalogue["hero.spec.dataValue"] },
+  { label: catalogue["hero.spec.identity"], value: catalogue["hero.spec.identityValue"] }
+];
+---
+
+<section class="spec" aria-label={catalogue["hero.spec.title"]}>
+  <p class="spec-title">{catalogue["hero.spec.title"]}</p>
+  <dl>
+    {
+      rows.map((row) => (
+        <div class="row">
+          <dt>{row.label}</dt>
+          <dd>{row.value}</dd>
+        </div>
+      ))
+    }
+  </dl>
+</section>
+
+<style>
+  .spec {
+    width: min(100%, 24rem);
+    border: 1px solid var(--sl-color-white);
+    border-radius: var(--kx-radius);
+    background: var(--sl-color-black);
+    font-size: var(--sl-text-sm);
+  }
+
+  .spec-title {
+    margin: 0;
+    padding: 0.55rem 0.9rem;
+    border-bottom: 1px solid var(--sl-color-white);
+    background: var(--sl-color-white);
+    color: var(--sl-color-black);
+    font-family: var(--sl-font-mono);
+    font-size: var(--sl-text-2xs);
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  dl {
+    margin: 0;
+    padding: 0.35rem 0.9rem 0.6rem;
+  }
+
+  .row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.45rem 0;
+    border-bottom: 1px dotted var(--kx-rule-strong);
+  }
+
+  .row:last-child {
+    border-bottom: 0;
+  }
+
+  dt {
+    flex: none;
+    color: var(--sl-color-gray-3);
+    font-family: var(--sl-font-mono);
+    font-size: var(--sl-text-2xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  dd {
+    flex: 1;
+    margin: 0;
+    color: var(--sl-color-white);
+    font-weight: 500;
+    text-align: end;
+  }
+</style>

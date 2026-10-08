@@ -1,0 +1,52 @@
+---
+title: Tech stack
+description: Setiap bahasa, framework, library, dan komponen platform yang dipakai Kinetix, dengan versi yang dipin di tiap repositori.
+sourceHash: "20d267911e03"
+sidebar:
+  order: 1
+---
+
+import TechStack from "../../../../components/TechStack.astro";
+
+Kinetix sengaja memberi setiap service bahasanya sendiri: satu domain, sebelas idiom, dan kontrak yang
+harus tetap berlaku di antara semuanya. Versi di bawah adalah yang dipin di manifest atau lockfile tiap
+repositori, bukan yang disebut README-nya; versi yang tidak punya bukti di repositori dibiarkan kosong,
+bukan ditebak.
+
+## Service
+
+Setiap service memiliki database-nya sendiri dan hanya bisa dijangkau lewat gRPC dari service lain,
+atau lewat gateway dari luar.
+
+<TechStack group="services" />
+
+## Edge, kontrak, dan client
+
+Gateway adalah satu-satunya pintu dari internet. Kontrak adalah satu-satunya definisi sebuah pesan di
+jaringan. Aplikasi kurir adalah client pertama.
+
+<TechStack group="edge" />
+
+## Platform
+
+Middleware bersama yang boleh dipakai setiap service, dan mekanisme yang membuat service bisa saling
+percaya.
+
+<TechStack group="platform" />
+
+## Delivery
+
+Bagaimana kode menjadi sistem yang berjalan.
+
+<TechStack group="delivery" />
+
+## Rencana
+
+Belum dibangun. Dicatat di sini supaya arahnya terlihat: aplikasi customer native di kedua platform
+mobile, satu backoffice untuk semua service, dan sebuah recommendation service.
+
+<TechStack group="planned" />
+
+## Situs ini
+
+<TechStack group="docs" />

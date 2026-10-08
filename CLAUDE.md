@@ -18,7 +18,10 @@ link to internal ones, because every reader of this site would get a dead link.
 
 `bun run check:leaks` enforces what a pattern can catch; concrete values are kept in the
 `DOCS_DENYLIST` secret so that the list is not itself published. A red `leaks` job is fixed by moving
-the content to the internal repository, never by loosening a rule.
+the content to the internal repository, never by loosening a rule. The one argued exception: a dotted
+quad written as a version literal — `version: "8.1.3.1"` or the version argument of `tech(…)` — is a
+version, not an address (`scripts/lib/is_version_literal.ts`); the same digits anywhere else are still
+flagged.
 
 ## How a page is written
 
@@ -71,6 +74,58 @@ types, plus a learning track. Directory names under `src/content/docs/`:
 
 Operations, incident handling, disaster recovery procedures, infrastructure detail and cost belong to
 `kinetix-docs-internal`.
+
+## Interactive diagrams
+
+Interactive, animated diagrams are the reason this site is built on Starlight. They are Svelte 5
+islands under `src/diagrams/`:
+
+- `engine/StepPlayer.svelte` is generic: scenario variants, play/pause/step/speed, a scrubber,
+  keyboard control, an `aria-live` narration and the source link of each step. It renders a scene
+  through a snippet and knows nothing about any one diagram.
+- A diagram is **typed scenario data** (`Scenario<State>`): actors, the statement each step sends, a
+  full state snapshot after every step, and a commit-pinned source link. Snapshots, not diffs, so
+  stepping backwards is always exact. The scene component (e.g. `stock-race/StockRaceScene.svelte`)
+  only draws a state.
+- Every scenario must be **verified before it is drawn** — against the code, and where it describes
+  database or network behaviour, against a real run. The stock race was reproduced in two live
+  Postgres sessions before its steps were written.
+- Text lives in `src/catalogue/en.json` and `id.json`, never in components or scenario files. A
+  `satisfies Record<Locale, Catalogue>` makes a key missing from `id.json` a type error.
+- An Astro wrapper in `src/components/` reads the page's content language
+  (`starlightRoute.entryMeta.lang`), localises the scenarios on the server, mounts the island with
+  `client:visible`, and renders a text transcript beside it for readers without JavaScript and for
+  search.
+- Motion respects `prefers-reduced-motion` everywhere: `svelte/motion`'s `prefersReducedMotion` for
+  transitions and tweens, a media query for CSS animation.
+
+## Design system
+
+The look is an engineering manual, not a product landing page. The user rejected the first design —
+violet-to-cyan gradients, gradient text, glow, an orbit of logos, pill buttons — as "vibe coding".
+Do not bring any of it back.
+
+- Paper and ink with one accent: off-white `#f7f5f0` and near-black `#171614` in light mode, warm
+  charcoal in dark, and signal orange (`--sl-color-accent`) for links, the current page and the
+  hero kicker. No gradients, no shadows, no glow, no hover lift.
+- Tokens are in `src/styles/theme.css`: Starlight's colour variables for both themes, plus `--kx-rule`,
+  `--kx-rule-strong`, `--kx-surface`, `--kx-tile`, `--kx-lane-a`, `--kx-lane-b`, `--kx-radius` (3px).
+  Components use these and Starlight's variables, never literal colours.
+- Type: Source Serif 4 for headings, IBM Plex Sans for text, IBM Plex Mono for code and for small
+  uppercase labels. All self-hosted from Fontsource.
+- Structure is drawn with rules: a 2px ink rule over a list or table, 1px rules between rows, a rule
+  above every `h2` (on `.sl-heading-wrapper.level-h2` — Starlight renders the `h2` inline).
+- The hero is a Starlight component override (`components/overrides/Hero.astro`) that keeps
+  Starlight's contract (`h1#_top` with `data-page-title`, tagline, `LinkButton` actions) beside a
+  spec sheet whose service and language counts are computed from `src/site/services.ts`.
+- Technology logos are devicon SVGs imported with `?url` through `src/site/logos.ts`, drawn by
+  `TechLogo.astro` on a paper tile. A technology with no logo is a text label in the stack listing
+  and a two-letter monogram only where a tile is required. A wordmark that is unreadable at tile size
+  (gRPC) is not used.
+- Anything rendered inside page content that is not prose carries `not-content`, or Starlight's
+  markdown spacing pushes its children apart.
+- Check every visual change at a true 390 px viewport through CDP (plain headless `--screenshot`
+  cannot go below ~500 px), in light and dark, and measure `scrollWidth` against `innerWidth`.
 
 ## Verification
 

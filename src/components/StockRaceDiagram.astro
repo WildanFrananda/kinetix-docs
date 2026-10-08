@@ -1,0 +1,17 @@
+---
+import { catalogueFor } from "../diagrams/engine/catalogue_for";
+import { localeOf } from "../diagrams/engine/locale_of";
+import { localizeScenarios } from "../diagrams/engine/localize_scenarios";
+import { playerLabels } from "../diagrams/engine/player_labels";
+import StockRace from "../diagrams/stock-race/StockRace.svelte";
+import { stockRaceLabels } from "../diagrams/stock-race/stock_race_labels";
+import { stockRaceScenarios } from "../diagrams/stock-race/stock_race_scenarios";
+import DiagramTranscript from "./DiagramTranscript.astro";
+
+const catalogue = catalogueFor(localeOf(Astro.locals.starlightRoute.entryMeta.lang));
+const variants = localizeScenarios(stockRaceScenarios, catalogue);
+const labels = playerLabels(catalogue);
+---
+
+<StockRace client:visible variants={variants} labels={labels} sceneLabels={stockRaceLabels(catalogue)} />
+<DiagramTranscript variants={variants} labels={labels} />

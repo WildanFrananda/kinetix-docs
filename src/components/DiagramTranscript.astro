@@ -1,0 +1,57 @@
+---
+import type { DiagramTranscriptProps } from "../diagrams/types/diagram_transcript_props.type";
+
+type Props = DiagramTranscriptProps;
+
+const { variants, labels } = Astro.props;
+---
+
+<details class="transcript">
+  <summary>{labels.transcript}</summary>
+  {
+    variants.map((variant) => (
+      <section>
+        <p class="title">{variant.title}</p>
+        <p>{variant.introduction}</p>
+        <ol>
+          {variant.steps.map((step) => (
+            <li>
+              <strong>{step.actorLabel}</strong>
+              <pre>{step.statement}</pre>
+              <p>{step.narration}</p>
+              {step.source && (
+                <p>
+                  {labels.source}: <a href={step.source.href}><code>{step.source.label}</code></a>
+                </p>
+              )}
+            </li>
+          ))}
+        </ol>
+        <p><strong>{labels.outcome}.</strong> {variant.outcome}</p>
+      </section>
+    ))
+  }
+</details>
+
+<style>
+  .transcript {
+    margin-top: -0.75rem;
+    font-size: var(--sl-text-sm);
+  }
+
+  .transcript summary {
+    cursor: pointer;
+    color: var(--sl-color-gray-2);
+  }
+
+  .title {
+    font-weight: 600;
+  }
+
+  pre {
+    margin: 0.25rem 0;
+    padding: 0.4rem 0.6rem;
+    font-size: var(--sl-text-xs);
+    white-space: pre-wrap;
+  }
+</style>

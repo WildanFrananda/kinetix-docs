@@ -31,7 +31,7 @@ English pages live in `src/content/docs/`, Indonesian ones at the same path unde
 `src/content/docs/id/`. An Indonesian page records which revision of the English page it translates:
 
 ```yaml
-sourceHash: 739ad6b1bc22
+sourceHash: "739ad6b1bc22"
 ```
 
 `bun run check:translations` prints the hash to record. When the English page changes, the

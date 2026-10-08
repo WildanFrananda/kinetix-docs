@@ -1,5 +1,6 @@
 import type { LeakRule } from "../types/leak_rule.type";
 import { isPublishableAddress } from "./is_publishable_address";
+import { isVersionLiteral } from "./is_version_literal";
 
 const neverPermitted = (): boolean => false;
 
@@ -42,6 +43,6 @@ export const builtinLeakRules: readonly LeakRule[] = [
   {
     name: "ipv4-address",
     pattern: /\b(?:\d{1,3}\.){3}\d{1,3}\b/g,
-    permits: isPublishableAddress
+    permits: (match, line) => isPublishableAddress(match) || isVersionLiteral(match, line)
   }
 ];

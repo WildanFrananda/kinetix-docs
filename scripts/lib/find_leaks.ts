@@ -6,12 +6,17 @@ export function findLeaks(text: string, rules: readonly LeakRule[]): LeakFinding
 
   for (const rule of rules) {
     for (const match of text.matchAll(rule.pattern)) {
-      if (!rule.permits(match[0])) {
-        const preceding = text.slice(0, match.index);
-        const line = preceding.split("\n").length;
-        const column = match.index - preceding.lastIndexOf("\n");
+      const preceding = text.slice(0, match.index);
+      const lineStart = preceding.lastIndexOf("\n") + 1;
+      const lineEnd = text.indexOf("\n", match.index);
+      const lineText = text.slice(lineStart, lineEnd === -1 ? text.length : lineEnd);
 
-        findings.push({ rule: rule.name, line, column });
+      if (!rule.permits(match[0], lineText)) {
+        findings.push({
+          rule: rule.name,
+          line: preceding.split("\n").length,
+          column: match.index - lineStart + 1
+        });
       }
     }
   }
