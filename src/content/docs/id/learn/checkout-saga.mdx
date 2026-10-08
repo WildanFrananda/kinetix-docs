@@ -1,0 +1,156 @@
+---
+title: Saga checkout
+description: Bagaimana order mengambil voucher, stok flash sale, stok di rak, uang, dan task gudang dari empat service yang tidak berbagi database — lalu mengembalikan semuanya ketika ada satu langkah yang gagal.
+sourceHash: "1902a65741d9"
+sidebar:
+  order: 3
+---
+
+import SagaDiagram from "../../../../components/SagaDiagram.astro";
+
+Checkout di Kinetix mengambil sesuatu dari empat service. pricing melepas redemption voucher dan stok
+flash sale, warehouse me-reserve unit di rak dan membuka task picking, payment memindahkan uang ke
+escrow. Masing-masing hidup di service-nya sendiri dan database PostgreSQL-nya sendiri, jadi tidak ada
+satu transaksi yang bisa menahan semuanya lalu me-rollback-nya bersama-sama.
+
+order menyelesaikannya dengan **saga**: rangkaian langkah lokal, masing-masing di-commit oleh service
+pemiliknya, dan untuk tiap langkah ada kompensasi yang membatalkannya. Kalau ada langkah yang gagal,
+langkah-langkah yang sudah diambil dibatalkan dengan urutan terbalik. Pelajaran ini menelusuri saga itu
+di kode order, langkah demi langkah.
+
+## Mainkan
+
+Empat jalannya checkout yang sama. Perhatikan log saga di bagian bawah: setiap baris muncul sebelum
+panggilannya dikirim.
+
+<SagaDiagram />
+
+## Sebelum saga dimulai
+
+[`CheckoutAsync`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Application/Services/OrderService.cs#L34-L138)
+mengerjakan semua yang bisa dikerjakan **sebelum ada apa pun yang ditahan**:
+
+- Request berulang dengan `Idempotency-Key` yang sama mendapat order yang sudah dibuat, bukan order
+  kedua.
+- Produk di keranjang diambil dari catalog, kutipan ongkir dari matching dan pricing, dan harga dari
+  `CalculatePrice` milik pricing. Kalau pricing tidak bisa menjawab, checkout berhenti di sini.
+- Kalau angka dari pricing tidak bisa ditagihkan apa adanya — ongkir yang bukan diskon dari kutipannya
+  sendiri, jumlah yang tidak bisa ditahan escrow — checkout ditolak **sebelum baris order ada**.
+  Menolak paling murah selagi belum ada yang harus dikembalikan.
+
+Baru setelah itu order ditulis sebagai `PENDING_PAYMENT` dan saga dimulai. Baris order sengaja ditulis
+lebih dulu: kalau saga gagal, order tetap ada sebagai `CANCELLED` dengan alasannya, jadi checkout yang
+gagal menjelaskan dirinya sendiri alih-alih terlihat seperti checkout yang tidak pernah terjadi.
+
+## Langkah maju
+
+[`RunForwardAsync`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Application/Checkout/CheckoutSagaRunner.cs#L144-L251)
+mengambil lima jenis langkah, selalu dengan urutan ini:
+
+| Langkah | Service | Kenapa di posisi ini |
+| --- | --- | --- |
+| `RedeemVoucher` | pricing | Murah diambil dan dikembalikan; menolak lebih awal kalau voucher sudah habis |
+| `AllocateFlashSaleStock` | pricing | Barang paling langka di keranjang — [diklaim sebelum rak](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/tests/CheckoutSagaRunnerTests.cs#L743), jadi kalau habis, yang harus dibatalkan paling sedikit |
+| `ReserveStock`, satu per produk | warehouse | Satu baris per produk, jadi masing-masing bisa dilepas sendiri |
+| `CreateEscrowHold` | payment | Uang baru diambil setelah barangnya pasti ada |
+| `CreateFulfillmentOrder` | warehouse | Terakhir: warehouse hanya disuruh mengambil order yang semua hold-nya sudah nyata |
+
+### Tulis langkahnya sebelum memanggil
+
+[`BeginStep`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Application/Checkout/CheckoutSagaRunner.cs#L674-L696)
+menyimpan barisnya sebagai `Attempting` dan meng-commit-nya **sebelum** panggilan dikirim;
+[`Settle`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Application/Checkout/CheckoutSagaRunner.cs#L698-L716)
+memindahkannya ke `Done` atau `Failed` setelah jawabannya datang. Urutannya penting. Kalau dicatat
+setelah panggilan, proses yang mati di antara keduanya meninggalkan stok atau uang tertahan tanpa ada
+apa pun di database yang menunjuk ke sana. Dicatat sebelumnya, kemungkinan terburuknya adalah baris
+`Attempting` untuk sesuatu yang tidak pernah terjadi — tidak berbahaya, karena membatalkannya tidak
+menemukan apa pun untuk dibatalkan. Sebuah test
+[memastikan barisnya ada sebelum panggilan](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/tests/CheckoutSagaRunnerTests.cs#L794).
+
+### Failed tidak sama dengan Attempting
+
+- **`Failed`** berarti service-nya menolak dengan tegas. warehouse menolak di dalam transaksi yang sama
+  yang seharusnya mengambil unitnya, pricing tanpa menyentuh counter. Tidak ada yang ditahan, jadi
+  barisnya tidak dikompensasi.
+- **`Attempting`** berarti tidak ada jawaban yang datang: panggilannya
+  [melempar exception](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Application/Checkout/CheckoutSagaRunner.cs#L62-L67)
+  atau kehabisan waktu. order tidak bisa tahu apakah pekerjaannya terjadi, jadi barisnya **tetap**
+  dikompensasi.
+
+Uang adalah satu-satunya pengecualian yang dicek dua kali oleh order: bahkan escrow hold yang ditolak
+pun dicocokkan ke ledger payment lewat `GetEscrowStatus` sebelum order menerima bahwa tidak ada yang
+diambil.
+
+## Membatalkannya
+
+[Kompensasi](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Application/Checkout/CheckoutSagaRunner.cs#L259-L267)
+memilih setiap baris yang masih `Done` atau `Attempting`, yang terbaru lebih dulu, lalu meminta service
+pemiliknya mengembalikannya: `ReleaseVoucherRedemption`, `ReleaseFlashSaleAllocation`, `ReleaseStock`,
+`RefundEscrow`, `CancelFulfillmentTask`. Satu pelepasan yang gagal tidak menghentikan yang lain.
+Putarannya lalu berakhir di salah satu dari
+[tiga state](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Application/Checkout/CheckoutSagaRunner.cs#L353-L363):
+
+| State | Artinya | Yang terjadi berikutnya |
+| --- | --- | --- |
+| `Compensated` | Semua hold sudah dikembalikan | Tidak ada; order `CANCELLED` |
+| `Stuck` | Masih ada yang ditahan setelah error sementara | Putaran berikutnya, setelah jeda yang makin panjang |
+| `Abandoned` | Error permanen, atau putaran keenam gagal | Baris log `GIVING UP` untuk diselesaikan manusia |
+
+Jedanya
+[30 detik, berlipat ganda tiap putaran, maksimal 30 menit, dengan jitter](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Application/Checkout/CompensationPolicy.cs#L39-L45),
+paling banyak enam putaran. Error yang tidak bisa diperbaiki dengan mencoba ulang — `FailedPrecondition`,
+`InvalidArgument`, `NotFound`, `PermissionDenied`, `Unauthenticated` —
+[langsung abandon](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Application/Checkout/CompensationPolicy.cs#L53-L62)
+alih-alih menghabiskan jatah putaran. Pembatalan sebagian tidak pernah dilaporkan sebagai pembatalan
+penuh: pelepasan yang gagal
+[membuat saga `Stuck`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/tests/CheckoutSagaRunnerTests.cs#L240),
+dan percobaan ulang
+[hanya mengirim ulang yang masih ditahan](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/tests/CheckoutSagaRunnerTests.cs#L284).
+
+### Siapa yang menjalankan putaran berikutnya
+
+[`StuckSagaSweeper`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Infrastructure/Background/StuckSagaSweeper.cs#L75-L80)
+bangun setiap menit dan
+[memilih](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Infrastructure/Persistence/SagaLeaseStore.cs#L271-L294)
+saga yang `Stuck` dan sudah jatuh tempo, masih `Compensating`, atau masih `Running` lima menit setelah
+terakhir disentuh — checkout yang prosesnya mati di tengah jalan.
+
+Dua worker tidak boleh membatalkan saga yang sama bersamaan, jadi setiap saga dijalankan di bawah sebuah
+**lease**: pemilik dan batas waktu yang ditulis di baris saga, yang dicek oleh setiap tulisan
+berikutnya. Worker yang lease-nya sudah habis atau berpindah tangan mendapati tulisannya tidak cocok
+dengan apa pun, lalu berhenti. Checkout memegang lease selama ia berjalan,
+[sweeper tidak bisa merebutnya dari checkout yang masih hidup](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/tests/CheckoutSagaRunnerTests.cs#L379),
+dan
+[worker yang kehilangan lease tidak bisa menulis `Completed` di atas pembatalan](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/tests/CheckoutSagaRunnerTests.cs#L403).
+
+## Kenapa kompensasi bisa dilakukan sama sekali
+
+Counter tidak bisa dikompensasi. `used_count - 1` tidak bisa tahu apakah order _ini_ yang mengambil
+satu, jadi pelepasan yang diulang mengembalikan kuota yang tidak dipegang siapa pun, dan redeem yang
+diulang mengambil jatah kedua. Karena itu setiap peserta menyimpan **baris ledger per order**, dan
+counter-nya hanyalah cache darinya: pricing punya
+[`voucher_redemptions` dan `flash_sale_allocations`](https://github.com/WildanFrananda/kinetix-pricing-service/blob/c571662c07a12c5db946b79e8de442b2df7e7a9d/migrations/20260907000001_quota_ledger/up.sql#L15-L37),
+masing-masing unik per nomor order, dan warehouse punya `stock_reservations` dari
+[pelajaran pertama](/id/learn/two-buyers-one-item/). Constraint unik itulah idempotency-nya: redeem dua
+kali menemukan barisnya dan menjawab "already redeemed", melepas sesuatu yang tidak pernah diambil
+menjawab "already released" — dan keduanya dihitung sukses, persis yang dibutuhkan saga yang sedang
+membatalkan diri setelah gagal di awal.
+
+## Yang dilihat pelanggan
+
+Checkout yang berhasil menjawab `201 Created` dengan order yang `PAID`, dan baru setelah itu keranjang
+dikosongkan. Yang ditolak menjawab
+[`409 CHECKOUT_ROLLED_BACK`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Controllers/OrderController.cs#L90-L95)
+beserta nomor order dan alasan dari service yang menolak — sebuah jawaban, bukan kerusakan. Kalau
+pembatalannya masih `Stuck`, pelanggan sudah menerima jawaban itu; sisanya berlangsung di belakang.
+
+## Intisari
+
+- Tanpa transaksi bersama, setiap langkah butuh pemilik yang meng-commit-nya dan kompensasi yang
+  membatalkannya, dan setiap kompensasi harus idempotent.
+- Catat niat sebelum bertindak. Baris `Attempting` yang tidak bisa kamu jelaskan lebih murah daripada
+  hold yang tidak diingat siapa pun.
+- Perlakukan "tidak ada jawaban" sebagai "mungkin sudah terjadi" dan kompensasi; perlakukan penolakan
+  tegas sebagai "tidak ada yang ditahan".
+- Jangan pernah melaporkan pembatalan sebagian sebagai pembatalan penuh. Ulangi yang sementara dengan
+  backoff, berhenti pada yang permanen, dan tinggalkan baris yang jelas untuk ditemukan manusia.

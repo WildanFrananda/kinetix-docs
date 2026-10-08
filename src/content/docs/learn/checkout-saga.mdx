@@ -1,0 +1,147 @@
+---
+title: The checkout saga
+description: How order takes a voucher, flash-sale stock, shelf stock, money and a warehouse task from four services that share no database — and gives every one of them back when any step fails.
+sidebar:
+  order: 3
+---
+
+import SagaDiagram from "../../../components/SagaDiagram.astro";
+
+A checkout in Kinetix takes something from four services. pricing gives up a voucher redemption and
+flash-sale stock, warehouse reserves units on a shelf and opens a picking task, payment moves money into
+escrow. Each of those lives in its own service and its own PostgreSQL database, so there is no
+transaction that can hold all of them and roll them back together.
+
+order solves this with a **saga**: a sequence of local steps, each one committed by the service that
+owns it, and for each step a compensation that undoes it. If any step fails, the steps already taken
+are undone in reverse. This lesson follows the saga through order's code, step by step.
+
+## Play it
+
+Four runs of the same checkout. Watch the saga log at the bottom: every row appears before its call goes
+out.
+
+<SagaDiagram />
+
+## Before the saga starts
+
+[`CheckoutAsync`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Application/Services/OrderService.cs#L34-L138)
+does everything it can **before anything is held**:
+
+- A repeated request with the same `Idempotency-Key` gets the order it already created, not a second
+  one.
+- The cart's products come from catalog, the shipping quote from matching and pricing, and the price
+  from pricing's `CalculatePrice`. If pricing cannot answer, checkout stops here.
+- If pricing's numbers cannot be charged as they stand — a shipping fee that is not a discount of its
+  own quote, an amount escrow cannot hold — the checkout is refused **before an order row exists**.
+  Refusing is cheapest while there is nothing to give back.
+
+Only then is the order written, as `PENDING_PAYMENT`, and the saga started. The order row comes first on
+purpose: if the saga fails, the order stays as `CANCELLED` with a reason, so a failed checkout explains
+itself instead of looking like one that never happened.
+
+## The forward pass
+
+[`RunForwardAsync`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Application/Checkout/CheckoutSagaRunner.cs#L144-L251)
+takes five kinds of step, always in this order:
+
+| Step | Service | Why it sits here |
+| --- | --- | --- |
+| `RedeemVoucher` | pricing | Cheap to take and to give back; refuses early when the voucher is spent |
+| `AllocateFlashSaleStock` | pricing | The scarcest thing in the cart — [claimed before the shelf](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/tests/CheckoutSagaRunnerTests.cs#L743), so running out costs the least to undo |
+| `ReserveStock`, one per product | warehouse | One row per product, so each can be released on its own |
+| `CreateEscrowHold` | payment | Money is taken only once the goods are known to exist |
+| `CreateFulfillmentOrder` | warehouse | Last: warehouse is told to pick only an order whose every hold is real |
+
+### Write the step before the call
+
+[`BeginStep`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Application/Checkout/CheckoutSagaRunner.cs#L674-L696)
+saves the row as `Attempting` and commits it **before** the call goes out;
+[`Settle`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Application/Checkout/CheckoutSagaRunner.cs#L698-L716)
+moves it to `Done` or `Failed` after the answer. The order matters. Recorded after the call, a process
+that dies between the two leaves stock or money held with nothing in the database pointing at it.
+Recorded before, the worst case is an `Attempting` row for something that never happened — harmless,
+because undoing it finds nothing to undo. A test
+[asserts the row exists before the call](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/tests/CheckoutSagaRunnerTests.cs#L794).
+
+### Failed is not the same as Attempting
+
+- **`Failed`** means the service explicitly refused. warehouse refuses inside the same transaction that
+  would have taken the units, pricing without touching the counter. Nothing is held, so the row is not
+  compensated.
+- **`Attempting`** means no answer arrived: the call
+  [threw](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Application/Checkout/CheckoutSagaRunner.cs#L62-L67)
+  or timed out. order cannot know whether the work happened, so the row **is** compensated.
+
+Money is the one exception that order double-checks: even a refused escrow hold is checked against
+payment's ledger with `GetEscrowStatus` before order accepts that nothing was taken.
+
+## Undoing it
+
+[Compensation](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Application/Checkout/CheckoutSagaRunner.cs#L259-L267)
+selects every row still `Done` or `Attempting`, newest first, and asks the owning service to give it
+back: `ReleaseVoucherRedemption`, `ReleaseFlashSaleAllocation`, `ReleaseStock`, `RefundEscrow`,
+`CancelFulfillmentTask`. One release that fails does not stop the others. The round then ends in one of
+[three states](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Application/Checkout/CheckoutSagaRunner.cs#L353-L363):
+
+| State | Meaning | What happens next |
+| --- | --- | --- |
+| `Compensated` | Every hold was given back | Nothing; the order is `CANCELLED` |
+| `Stuck` | Something is still held after a transient error | Another round, after a growing delay |
+| `Abandoned` | A permanent error, or the sixth round failed | A `GIVING UP` log line for a person to settle |
+
+The delay is
+[30 seconds, doubling each round, capped at 30 minutes, with jitter](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Application/Checkout/CompensationPolicy.cs#L39-L45),
+for at most six rounds. Errors that a retry cannot fix — `FailedPrecondition`, `InvalidArgument`,
+`NotFound`, `PermissionDenied`, `Unauthenticated` —
+[abandon at once](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Application/Checkout/CompensationPolicy.cs#L53-L62)
+instead of spending the budget. A partial unwind is never reported as a complete one: a failed release
+[leaves the saga `Stuck`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/tests/CheckoutSagaRunnerTests.cs#L240),
+and a retry
+[re-sends only what is still held](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/tests/CheckoutSagaRunnerTests.cs#L284).
+
+### Who runs the next round
+
+[`StuckSagaSweeper`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Infrastructure/Background/StuckSagaSweeper.cs#L75-L80)
+wakes every minute and
+[selects](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Infrastructure/Persistence/SagaLeaseStore.cs#L271-L294)
+sagas that are `Stuck` and due, still `Compensating`, or still `Running` five minutes after anyone last
+touched them — a checkout whose process died part-way.
+
+Two workers must never unwind the same saga at once, so every saga is driven under a **lease**: an
+owner and an expiry written on the saga's row, which every later write checks. A worker whose lease has
+expired or changed hands finds that its writes match nothing and stops. The checkout holds the lease
+while it runs,
+[a sweeper cannot take it from a live checkout](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/tests/CheckoutSagaRunnerTests.cs#L379),
+and
+[a worker that has lost its lease cannot write `Completed` over an unwind](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/tests/CheckoutSagaRunnerTests.cs#L403).
+
+## Why compensation is possible at all
+
+A counter cannot be compensated. `used_count - 1` cannot tell whether _this_ order took one, so a
+retried release hands back quota nobody held, and a retried redeem takes a second helping. Every
+participant therefore keeps a **ledger row per order**, and the counter is a cache of it: pricing has
+[`voucher_redemptions` and `flash_sale_allocations`](https://github.com/WildanFrananda/kinetix-pricing-service/blob/c571662c07a12c5db946b79e8de442b2df7e7a9d/migrations/20260907000001_quota_ledger/up.sql#L15-L37),
+each unique on the order number, and warehouse has the `stock_reservations` from the
+[first lesson](/learn/two-buyers-one-item/). The unique constraint is the idempotency: redeeming twice
+finds the row and answers "already redeemed", releasing something never taken answers "already
+released" — and both count as success, which is exactly what a saga unwinding after an early failure
+needs.
+
+## What the customer sees
+
+A successful checkout answers `201 Created` with an order that is `PAID`, and only then is the cart
+emptied. A refused one answers
+[`409 CHECKOUT_ROLLED_BACK`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Controllers/OrderController.cs#L90-L95)
+with the order number and the reason from the service that refused — an answer, not a fault. If the
+unwind is still `Stuck`, the customer already has that answer; the rest happens in the background.
+
+## Takeaways
+
+- Without a shared transaction, every step needs an owner that commits it and a compensation that
+  undoes it, and every compensation must be idempotent.
+- Record intent before acting. An `Attempting` row you cannot explain is cheaper than a hold nothing
+  remembers.
+- Treat "no answer" as "maybe done" and compensate it; treat an explicit refusal as "nothing held".
+- Never report a partial unwind as complete. Retry the transient with backoff, stop on the permanent,
+  and leave a person a clear line to find.

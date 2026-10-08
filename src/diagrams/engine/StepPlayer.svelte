@@ -255,6 +255,15 @@
     color: var(--sl-color-gray-3);
   }
 
+  .source a {
+    color: var(--sl-color-accent);
+    text-decoration: none;
+  }
+
+  .source a:hover {
+    text-decoration: underline;
+  }
+
   .outcome {
     padding: 0.5rem 0.75rem;
     border-left: 3px solid var(--sl-color-accent);

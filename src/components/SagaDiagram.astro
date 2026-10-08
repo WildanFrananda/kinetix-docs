@@ -1,0 +1,24 @@
+---
+import { catalogueFor } from "../diagrams/engine/catalogue_for";
+import { localeOf } from "../diagrams/engine/locale_of";
+import { localizeScenarios } from "../diagrams/engine/localize_scenarios";
+import { playerLabels } from "../diagrams/engine/player_labels";
+import Saga from "../diagrams/saga/Saga.svelte";
+import { sagaLabels } from "../diagrams/saga/saga_labels";
+import { sagaScenarios } from "../diagrams/saga/saga_scenarios";
+import { logos } from "../site/logos";
+import DiagramTranscript from "./DiagramTranscript.astro";
+
+const catalogue = catalogueFor(localeOf(Astro.locals.starlightRoute.entryMeta.lang));
+const variants = localizeScenarios(sagaScenarios, catalogue);
+const labels = playerLabels(catalogue);
+const laneLogos = {
+  order: logos.csharp,
+  pricing: logos.rust,
+  warehouse: logos.ruby,
+  payment: logos.java
+};
+---
+
+<Saga client:visible variants={variants} labels={labels} sceneLabels={sagaLabels(catalogue)} logos={laneLogos} />
+<DiagramTranscript variants={variants} labels={labels} />
