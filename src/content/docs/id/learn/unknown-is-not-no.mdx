@@ -1,0 +1,156 @@
+---
+title: Tidak tahu bukan berarti tidak
+description: Ketika sebuah dependency tidak menjawab, pemanggilnya tidak tahu — dan Kinetix dulu tetap menyatakan sesuatu yang pasti. Empat kasus kegagalan yang dilaporkan sebagai jawaban bisnis, sudah diperbaiki, dan satu bentuk yang sama di setiap perbaikannya.
+sourceHash: "de8fb48f7998"
+sidebar:
+  order: 7
+---
+
+import OutageDiagram from "../../../../components/OutageDiagram.astro";
+
+Setiap panggilan ke service lain punya tiga kemungkinan hasil, bukan dua. Service lain itu menjawab ya,
+menjawab tidak, atau tidak menjawab sama sekali. Hasil ketiga bukan berarti tidak. Artinya **pemanggil
+tidak tahu**, dan pemanggil dari pemanggil itu semestinya mendengar persis hal tersebut.
+
+Kesalahan yang mudah dibuat adalah melipat hasil ketiga ke salah satu dari dua hasil lainnya. Sebuah
+`catch` mengembalikan nilai default, nilai default itu tampak seperti jawaban sungguhan, dan semua yang
+ada di hilir memperlakukannya sebagai jawaban sungguhan. Kinetix cukup sering membuat kesalahan ini
+sampai menjadi kelas defect yang paling sering ditemukan di codebase: kegagalan yang dilaporkan sebagai
+jawaban bisnis yang pasti. Pelajaran ini memutar ulang empat kasus. Semuanya sudah diperbaiki, dan setiap
+perbaikannya sudah berjalan di production.
+
+## Mainkan
+
+Setiap tab adalah satu pertanyaan yang diajukan sebuah service ke service lain. Tiga langkahnya sama di
+setiap tab: service lain menjawab, service lain mati dan kode lama yang berjalan, service lain mati dan
+kode yang sudah diperbaiki yang berjalan.
+
+<OutageDiagram />
+
+## Semuanya berniat baik
+
+Tidak satu pun fallback ini dibuat sembarangan. Masing-masing adalah keputusan bahwa jawaban yang turun
+kualitas lebih baik daripada error: halaman produk tetap harus tampil, checkout tetap harus berjalan.
+Kodenya bahkan mencatat gangguan itu ke log. Client stok
+[menulis "warehouse did not answer"](https://github.com/WildanFrananda/kinetix-catalog-service/blob/4875c7b19b7ce3bf5f9bb8dfa77f933479bd7b77/core/infrastructure/grpc/bin_stock_client.py#L34-L36)
+ke log, lalu
+[mengembalikan nol](https://github.com/WildanFrananda/kinetix-catalog-service/blob/4875c7b19b7ce3bf5f9bb8dfa77f933479bd7b77/core/infrastructure/grpc/bin_stock_client.py#L115-L117)
+ke pemanggilnya, di bawah docstring yang menyebut apa yang diketahui service dalam kasus itu: tidak ada.
+
+Masalahnya ada pada apa yang dilakukan pemanggil dengan nilai default itu. Jawaban salah yang disampaikan
+dengan yakin lebih mahal daripada penolakan:
+
+- pelanggan ditagih harga normal saat flash sale;
+- pelanggan diberi tahu barangnya habis padahal tidak;
+- merchant yang sudah terverifikasi diberi tahu akunnya belum terverifikasi;
+- pengguna yang sedang login diberi tahu token sahnya tidak valid.
+
+Test tetap hijau sepanjang waktu, karena nilai default adalah nilai yang sepenuhnya sah. Fallback
+pricing baru ketahuan ketika sebuah run end-to-end menghentikan container pricing dan **tidak ada yang
+berubah**. Dependency yang bisa dimatikan tanpa membuat satu test pun gagal adalah dependency yang tidak
+dicek oleh test mana pun.
+
+## Perbaikannya punya satu bentuk
+
+Setiap perbaikan mengikuti tiga langkah yang sama. Pertama, jadikan "tidak tahu" keadaan tersendiri,
+berbeda dari setiap jawaban negatif yang sungguhan. Kedua, bawa keadaan itu sampai ke batas sistem.
+Ketiga, biarkan batas itu menyatakannya dengan jujur.
+
+Dalam kasus stok, keadaan itu benar-benar harfiah. `StockStatus` punya
+[anggota ketiga](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/domain/entities/stock_status.py#L4-L7),
+jumlah yang tidak bisa dibaca bernilai `None` alih-alih `0`, dan
+[`_status_of`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/application/services/product_service.py#L202-L208)
+memetakan jumlah yang hilang ke `UNKNOWN` sebelum membandingkannya dengan nol. Dalam tiga kasus lainnya,
+keadaan itu berupa exception yang tidak diubah menjadi nilai oleh siapa pun di sepanjang jalan ke atas:
+[`PricingUnavailableException`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Controllers/OrderController.cs#L38-L43),
+[`IdentityUnavailableError`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/api/views/product_view.py#L14-L25),
+dan
+[`IdentityKeysUnavailable`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/infrastructure/security/identity_keys_unavailable.py#L5-L11).
+
+| Pertanyaan | "Tidak" yang sungguhan | Tidak bisa ditanyakan |
+| --- | --- | --- |
+| Berapa harga order ini? | — | `503 PRICING_UNAVAILABLE`, tidak ada yang ditulis |
+| Apakah barang ini tersedia? | `"stock_status": "out_of_stock"` | `"stock_status": "unknown"`, jumlah `null` |
+| Bolehkah merchant ini berjualan? | `403`, dengan alasan dari identity | `503 IDENTITY_UNAVAILABLE`, `Retry-After: 15` |
+| Apakah token ini sah? | `401 Invalid token` | `503`, "token tidak ditolak" |
+
+Perbaikannya masuk di
+[order `628d000`](https://github.com/WildanFrananda/kinetix-order-service/commit/628d000ccff9544867f3e1d27c49cb2f48c1862c)
+dan
+[catalog `ddfd2b3`](https://github.com/WildanFrananda/kinetix-catalog-service/commit/ddfd2b3d054e30e82565d7a1b782aaaa3d55dee4),
+dan keduanya ada di setiap tag rilis yang pernah dipublikasikan kedua service itu sejak saat itu.
+
+## Tolak, atau turunkan kualitas dengan jujur
+
+Tidak tahu tidak selalu berarti menolak. Yang menentukan adalah apa yang dilakukan pemanggil
+selanjutnya:
+
+- **Ketika jawabannya memindahkan uang atau mengubah data, tolak.** Checkout tidak boleh menagih harga
+  yang tidak pernah dikutip siapa pun, dan catalog tidak boleh membuat produk untuk merchant yang tidak
+  bisa dicek. Keduanya menjawab 503, yang memberi tahu client bahwa tidak ada yang terjadi dan request-nya
+  boleh di-retry.
+- **Ketika jawabannya hanya dibaca, turunkan kualitasnya — tetapi dengan jujur.** Daftar produk dengan
+  satu jumlah stok yang tidak terbaca tetap layak ditampilkan. Jumlah itu ditampilkan sebagai tidak
+  diketahui, dan toko yang memutuskan cara menyajikannya. Ia tidak pernah ditampilkan sebagai nol.
+
+Kode status membawa perbedaan ini. 503 berarti service untuk sementara tidak bisa menjawab. 403 dan 401
+adalah vonis atas pemanggil. Client biasanya me-retry 503 dan membuang tokennya setelah menerima 401,
+sehingga mengirim kode yang salah memicu reaksi yang salah.
+
+## Kegagalan tidak selalu berarti gangguan
+
+Melipat kasus error ke arah sebaliknya adalah kesalahan yang berlawanan. Tidak setiap exception dari
+pengambilan kunci berarti identity sedang mati. Ketika kumpulan kunci berhasil dimuat dan tidak ada kunci
+yang cocok dengan yang disebut token, identity memang tidak menandatangani token itu, dan
+[itu tetap 401](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/infrastructure/security/identity_token_authentication.py#L34-L40).
+Hanya cara-cara *gagal mendapatkan* kunci yang menjadi 503: koneksi yang ditolak, kumpulan kunci yang
+kosong, HTML di tempat yang seharusnya JSON.
+
+catalog membedakannya dari pesan error library-nya. Mencocokkan string itu rapuh, jadi
+[sebuah test menguncinya](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/tests/unit/test_identity_token_authentication_unit.py#L57-L66):
+kalau upgrade PyJWT mengubah kata-kata pesannya, suite gagal sebelum pengecekan token diam-diam berubah
+arti.
+
+Client di catalog juga berada di belakang circuit breaker. Ketika breaker terbuka, client tidak melakukan
+panggilan sama sekali, dan hasilnya
+[tidak diketahui, sama seperti ketika warehouse tidak menjawab](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/infrastructure/grpc/bin_stock_client.py#L46-L48).
+Breaker membuat hasil "tidak bisa ditanyakan" datang lebih cepat. Breaker tidak boleh mengubah arti hasil
+itu.
+
+## Beri setiap kegagalan namanya sendiri
+
+Begitu gangguan tidak lagi disamarkan sebagai jawaban, masing-masing butuh nama yang bisa ditindaklanjuti
+client. order mengunci ini dalam satu test:
+[tidak ada dua kegagalan checkout yang dirender sama](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/tests/OrderControllerTests.cs#L174-L210).
+Sebelas kegagalan menghasilkan sebelas pasangan status dan kode yang berbeda:
+
+- `503` berarti sebuah dependency sedang mati; coba lagi.
+- `502` berarti sebuah jawaban di dalam Kinetix tidak bisa dipakai; kesalahannya ada di sisi Kinetix,
+  jadi retry kemungkinan besar tidak membantu.
+- `409` berarti checkout sudah dimulai lalu di-rollback.
+- `4xx` berarti request-nya sendiri yang perlu diubah.
+
+## Cara menemukannya di kode sendiri
+
+- Baca setiap `catch`, `except`, dan `rescue` yang **mengembalikan nilai** alih-alih melempar exception,
+  lalu tanyakan apa yang akan disimpulkan pemanggil dari nilai itu. `catch` kosong yang mengembalikan
+  sesuatu adalah defect ini tanpa samaran sama sekali.
+- Bandingkan baris log dengan nilai yang dikembalikan di sebelahnya. Kalau log-nya bilang "unreachable"
+  dan nilai kembaliannya `0`, kamu menemukan satu.
+- Matikan setiap dependency dalam test end-to-end dan pastikan ada yang gagal. Test yang tetap hijau
+  tidak sedang menguji dependency itu.
+- Tulis sepasang test seperti milik catalog: satu ketika warehouse
+  [tidak bisa menjawab dan stoknya tidak diketahui](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/tests/unit/test_product_service_unit.py#L97),
+  dan satu ketika warehouse
+  [menjawab nol dan stoknya habis](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/tests/unit/test_product_service_unit.py#L123).
+  Masing-masing menjaga agar perbaikannya tidak kebablasan.
+
+## Intisari
+
+- "Tidak bisa ditanyakan" adalah hasil ketiga. Jangan pernah biarkan ia menjadi nol, `None`, atau
+  penolakan.
+- Bawa ia ke batas sistem sebagai keadaan tersendiri, lalu tolak ketika jawabannya memindahkan uang, dan
+  turunkan kualitas dengan jujur ketika ia hanya dibaca.
+- Hanya service pemilik sebuah fakta yang boleh berkata tidak. Yang lain hanya boleh berkata mereka tidak
+  bisa mengetahuinya.
+- Dependency yang bisa dimatikan tanpa membuat test gagal belum diuji.

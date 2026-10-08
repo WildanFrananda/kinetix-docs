@@ -177,6 +177,10 @@ nav.sidebar summary .large {
   border-bottom: 1px solid var(--kx-rule);
 }
 
+.sl-markdown-content td code:not(:where(.not-content *)) {
+  overflow-wrap: anywhere;
+}
+
 .card {
   border: 1px solid var(--kx-rule) !important;
   border-radius: var(--kx-radius) !important;

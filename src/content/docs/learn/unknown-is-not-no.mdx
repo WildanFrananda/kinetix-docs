@@ -1,0 +1,145 @@
+---
+title: Unknown is not no
+description: When a dependency does not answer, the caller does not know — and Kinetix used to say something definite anyway. Four fixed cases of a failure reported as a business answer, and the one shape every fix takes.
+sidebar:
+  order: 7
+---
+
+import OutageDiagram from "../../../components/OutageDiagram.astro";
+
+Every call to another service has three possible results, not two. The other service says yes, it says
+no, or it does not answer at all. The third result does not mean no. It means **the caller does not
+know**, and the caller's own caller should hear exactly that.
+
+The easy mistake is to fold the third result into one of the other two. A `catch` returns a default, the
+default looks like a real answer, and everything downstream treats it as one. Kinetix made this mistake
+often enough that it is the most common defect class found in the codebase: a failure reported as a
+definite business answer. This lesson replays four cases. Each one is fixed, and each fix is running in
+production.
+
+## Play it
+
+Each tab is one question a service asks another. The three steps are the same in every tab: the other
+service answers, the other service is down and the old code runs, the other service is down and the fixed
+code runs.
+
+<OutageDiagram />
+
+## Every one of them was well meant
+
+None of these fallbacks was careless. Each was a decision that a degraded answer beats an error: a
+product page should still load, checkout should still go through. The code even logged the outage. The
+stock client
+[wrote "warehouse did not answer"](https://github.com/WildanFrananda/kinetix-catalog-service/blob/4875c7b19b7ce3bf5f9bb8dfa77f933479bd7b77/core/infrastructure/grpc/bin_stock_client.py#L34-L36)
+to the log and then
+[returned zero](https://github.com/WildanFrananda/kinetix-catalog-service/blob/4875c7b19b7ce3bf5f9bb8dfa77f933479bd7b77/core/infrastructure/grpc/bin_stock_client.py#L115-L117)
+to the caller, under a docstring that says what the service knows in that case: nothing.
+
+The trouble is what the caller does with the default. A confident wrong answer costs more than a refusal:
+
+- a customer is charged list price during a flash sale;
+- a customer is told an item is sold out when it is not;
+- a verified merchant is told their account is not verified;
+- a signed-in user is told their valid token is invalid.
+
+The tests stayed green throughout, because a default is a perfectly valid value. The pricing fallback was
+found only when an end-to-end run stopped the pricing container and **nothing observable changed**. A
+dependency you can switch off without failing a test is a dependency no test is checking.
+
+## The fix has one shape
+
+Every fix follows the same three steps. First, make "unknown" a state of its own, distinct from every real
+negative answer. Second, carry that state up to the boundary. Third, let the boundary say it honestly.
+
+In the stock case, the state is literal. `StockStatus` has
+[a third member](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/domain/entities/stock_status.py#L4-L7),
+a quantity that could not be read is `None` rather than `0`, and
+[`_status_of`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/application/services/product_service.py#L202-L208)
+maps a missing quantity to `UNKNOWN` before it ever compares with zero. In the other three cases, the state
+is an exception that nothing converts into a value on the way up:
+[`PricingUnavailableException`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Controllers/OrderController.cs#L38-L43),
+[`IdentityUnavailableError`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/api/views/product_view.py#L14-L25)
+and
+[`IdentityKeysUnavailable`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/infrastructure/security/identity_keys_unavailable.py#L5-L11).
+
+| Question | A real "no" | Could not ask |
+| --- | --- | --- |
+| What does this order cost? | — | `503 PRICING_UNAVAILABLE`, nothing written |
+| Is this item in stock? | `"stock_status": "out_of_stock"` | `"stock_status": "unknown"`, quantity `null` |
+| May this merchant sell? | `403`, with identity's reason | `503 IDENTITY_UNAVAILABLE`, `Retry-After: 15` |
+| Is this token valid? | `401 Invalid token` | `503`, "the token was not rejected" |
+
+The fixes landed in
+[order `628d000`](https://github.com/WildanFrananda/kinetix-order-service/commit/628d000ccff9544867f3e1d27c49cb2f48c1862c)
+and
+[catalog `ddfd2b3`](https://github.com/WildanFrananda/kinetix-catalog-service/commit/ddfd2b3d054e30e82565d7a1b782aaaa3d55dee4),
+and both are in every release tag either service has published since.
+
+## Refuse, or degrade honestly
+
+Unknown does not always mean refuse. What matters is what the caller does next:
+
+- **When the answer moves money or changes a record, refuse.** Checkout cannot charge a price nobody
+  quoted, and catalog cannot create a product for a merchant it could not check. Both answer 503, which
+  tells the client that nothing happened and that the request can be retried.
+- **When the answer is only read, degrade — but honestly.** A product list with one unreadable stock
+  count is still worth showing. It shows the count as unknown, and the storefront decides how to present
+  that. It never shows it as zero.
+
+The status codes carry this distinction. 503 means the service is temporarily unable to answer. 403 and
+401 are verdicts on the caller. A client typically retries a 503 and discards its token after a 401, so
+sending the wrong one triggers the wrong reaction.
+
+## A failure is not always an outage
+
+Folding the error cases the other way is the opposite mistake. Not every exception from the key fetch
+means identity is down. When the key set loads and contains no key matching the one the token names,
+identity really did not sign the token, and
+[that is still a 401](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/infrastructure/security/identity_token_authentication.py#L34-L40).
+Only the ways of *not getting* the keys are 503: a refused connection, an empty set, HTML in place of
+JSON.
+
+catalog tells these apart by the library's error message. Matching on a string is fragile, so
+[a test pins it](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/tests/unit/test_identity_token_authentication_unit.py#L57-L66):
+if a PyJWT upgrade rewords the message, the suite fails before the token check silently changes meaning.
+
+catalog's clients also sit behind a circuit breaker. When it is open, the client does not make the call
+at all, and the result is
+[unknown, just as if warehouse had not answered](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/infrastructure/grpc/bin_stock_client.py#L46-L48).
+A breaker makes "could not ask" arrive faster. It must not change what that result means.
+
+## Give every failure its own name
+
+Once outages are no longer disguised as answers, each one needs a name a client can act on. order pins
+this in a single test:
+[no two checkout failures render the same way](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/tests/OrderControllerTests.cs#L174-L210).
+Eleven failures produce eleven distinct status and code pairs:
+
+- `503` means a dependency is down; try again.
+- `502` means an answer inside Kinetix could not be used; the fault is on Kinetix's side, so retrying is
+  unlikely to help.
+- `409` means the checkout started and was rolled back.
+- `4xx` means the request itself needs to change.
+
+## How to find it in your own code
+
+- Read every `catch`, `except` and `rescue` that **returns a value** instead of raising, and ask what a
+  caller would conclude from that value. A bare `catch` that returns something is this defect with no
+  disguise at all.
+- Compare the log line with the return beside it. If the log says "unreachable" and the return says `0`,
+  you have found one.
+- Switch each dependency off in an end-to-end test and check that something fails. A test that stays
+  green is not testing that dependency.
+- Write the pair of tests catalog has: one where warehouse
+  [cannot answer and stock is unknown](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/tests/unit/test_product_service_unit.py#L97),
+  and one where warehouse
+  [answers zero and stock is out](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/tests/unit/test_product_service_unit.py#L123).
+  Each half guards against the fix overcorrecting.
+
+## Takeaways
+
+- "Could not ask" is a third result. Never let it become a zero, a `None` or a refusal.
+- Carry it to the boundary as its own state, then refuse when the answer moves money and degrade honestly
+  when it is only read.
+- Only the service that owns a fact may say no. Everyone else may only say they could not find out.
+- A dependency that can be switched off without failing a test is not under test.

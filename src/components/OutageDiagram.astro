@@ -1,0 +1,17 @@
+---
+import { catalogueFor } from "../diagrams/engine/catalogue_for";
+import { localeOf } from "../diagrams/engine/locale_of";
+import { localizeScenarios } from "../diagrams/engine/localize_scenarios";
+import { playerLabels } from "../diagrams/engine/player_labels";
+import Outage from "../diagrams/outage/Outage.svelte";
+import { outageLabels } from "../diagrams/outage/outage_labels";
+import { outageScenarios } from "../diagrams/outage/outage_scenarios";
+import DiagramTranscript from "./DiagramTranscript.astro";
+
+const catalogue = catalogueFor(localeOf(Astro.locals.starlightRoute.entryMeta.lang));
+const variants = localizeScenarios(outageScenarios, catalogue);
+const labels = playerLabels(catalogue);
+---
+
+<Outage client:visible variants={variants} labels={labels} sceneLabels={outageLabels(catalogue)} />
+<DiagramTranscript variants={variants} labels={labels} />
