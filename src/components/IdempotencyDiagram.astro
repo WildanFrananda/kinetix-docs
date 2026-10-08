@@ -1,0 +1,17 @@
+---
+import { catalogueFor } from "../diagrams/engine/catalogue_for";
+import { localeOf } from "../diagrams/engine/locale_of";
+import { localizeScenarios } from "../diagrams/engine/localize_scenarios";
+import { playerLabels } from "../diagrams/engine/player_labels";
+import Idempotency from "../diagrams/idempotency/Idempotency.svelte";
+import { idemLabels } from "../diagrams/idempotency/idem_labels";
+import { idemScenarios } from "../diagrams/idempotency/idem_scenarios";
+import DiagramTranscript from "./DiagramTranscript.astro";
+
+const catalogue = catalogueFor(localeOf(Astro.locals.starlightRoute.entryMeta.lang));
+const variants = localizeScenarios(idemScenarios, catalogue);
+const labels = playerLabels(catalogue);
+---
+
+<Idempotency client:visible variants={variants} labels={labels} sceneLabels={idemLabels(catalogue)} />
+<DiagramTranscript variants={variants} labels={labels} />

@@ -1,0 +1,101 @@
+---
+title: Request yang sama, dua kali
+description: Kenapa setiap panggilan yang memindahkan uang atau stok di Kinetix aman untuk diulang — kunci, unique index, dan sidik jari request, dari tombol checkout sampai ke reservasi stok.
+sourceHash: "7dd198117186"
+sidebar:
+  order: 5
+---
+
+import IdempotencyDiagram from "../../../../components/IdempotencyDiagram.astro";
+
+Timeout adalah jawaban paling ambigu yang bisa diberikan jaringan. Request-nya mungkin tidak pernah
+sampai, mungkin gagal, atau mungkin berhasil sepenuhnya dan hanya response-nya yang hilang. Pemanggil
+tidak bisa membedakan ketiganya, dan reaksi aman untuk ketiganya sama: coba lagi. Jadi setiap operasi
+yang mengambil uang atau stok harus tetap benar ketika dijalankan dua kali — **idempotency** — dan
+Kinetix membangunnya dengan cara yang sama di setiap lapisan.
+
+## Mainkan
+
+Empat jalannya: retry tanpa kunci, retry dengan kunci, kunci yang dipakai ulang untuk request berbeda,
+dan dua panggilan identik yang datang bersamaan.
+
+<IdempotencyDiagram />
+
+## Tiga bagiannya
+
+Setiap operasi idempotent di Kinetix punya tiga bagian yang sama.
+
+**Kunci yang menamai request-nya.** Di pintu depan, client yang memilihnya: checkout membaca
+[header `Idempotency-Key`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Controllers/OrderController.cs#L31),
+dipilih sekali per pembelian dan diulang di setiap retry. Antar-service, tidak ada yang perlu
+mengingatnya: order
+[menurunkan kuncinya dari nomor order](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Infrastructure/Grpc/EscrowGrpcClient.cs#L140-L141)
+(`order:ORD-…`), dan warehouse
+[memakai `reserve:<order>:<sku>`](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/app/rpc/bin_stock_service_handler.rb#L207-L216)
+ketika pemanggil tidak mengirim kunci. Kunci yang berasal dari bisnis itu sendiri adalah kunci yang
+otomatis dikirim oleh setiap retry.
+
+**Catatan yang tidak diizinkan database ada dua kali.** Jaminannya adalah unique constraint, bukan
+membaca lalu menulis. Order
+[unik per pelanggan dan kunci](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Infrastructure/Persistence/OrderDbContext.cs#L46);
+ledger voucher dan flash sale milik pricing
+[unik per nomor order](https://github.com/WildanFrananda/kinetix-pricing-service/blob/c571662c07a12c5db946b79e8de442b2df7e7a9d/migrations/20260907000001_quota_ledger/up.sql#L15-L37);
+warehouse
+[mengklaim kuncinya dengan menyisipkannya](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/app/services/inventory/idempotent_operation.rb#L77-L116)
+di dalam transaksi yang sama yang me-reserve stoknya. Dua salinan yang sama-sama lolos pengecekan tetap
+tidak bisa sama-sama tersimpan.
+
+**Sidik jari dari untuk apa kunci itu dipakai.** Sebuah kunci menamai satu request, jadi pengulangan
+harus berupa request yang sama. payment menyimpan sidik jari bersama setiap kunci escrow dan
+[membandingkannya di setiap pengulangan](https://github.com/WildanFrananda/kinetix-payment-service/blob/c08f8cb6298e76495f6b259b239e20b1cd3231de/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L578-L591):
+request yang sama mendapat kembali jawaban tersimpan, request yang berbeda ditolak dengan
+[`IDEMPOTENCY_KEY_REUSED`](https://github.com/WildanFrananda/kinetix-payment-service/blob/c08f8cb6298e76495f6b259b239e20b1cd3231de/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/grpc/PaymentGrpcServerService.java#L199-L202)
+dan tidak ada yang diterapkan. warehouse melakukan hal yang sama dengan digest request dan
+[menolak kunci yang dipakai ulang untuk jumlah berbeda](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/spec/rpc/bin_stock_service_spec.rb#L141).
+
+## Putar ulang, jangan hitung ulang
+
+Ketika sebuah pengulangan dikenali, service mengembalikan **jawaban yang ia berikan pertama kali**,
+bukan jawaban baru. warehouse menyimpan response-nya dan
+[memutar ulang byte-nya persis](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/spec/rpc/bin_stock_service_spec.rb#L121).
+Menghitung ulang akan salah secara diam-diam: saat retry datang, rak sudah berubah, dan "sisa stok" yang
+dihitung ulang akan menggambarkan saat yang berbeda dari saat reservasinya dibuat.
+
+## Dua sekaligus
+
+Sebuah retry bisa menyalip panggilan yang sedang ia ulang. Di warehouse, salinan kedua mencoba menyisipkan
+kunci yang sama,
+[tertahan di unique index](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/spec/rpc/bin_stock_service_concurrency_spec.rb#L92-L114)
+sampai yang pertama commit, lalu memutar ulang jawabannya; rentetan panggilan identik
+[menggerakkan counter tepat satu kali](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/spec/rpc/bin_stock_service_concurrency_spec.rb#L267-L277).
+payment mengantrekan semua yang menyangkut satu order di belakang
+[advisory lock](https://github.com/WildanFrananda/kinetix-payment-service/blob/c08f8cb6298e76495f6b259b239e20b1cd3231de/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L74-L103)
+dan, kalau dua sisipan tetap bertabrakan di kuncinya, memutar ulang yang menang.
+
+## Di mana pintu depan lebih longgar
+
+Checkout di pintu depan adalah yang paling sederhana, dan layak dijelaskan dengan tepat apa yang ia
+lakukan dan tidak lakukan:
+
+- Kuncinya **opsional** di checkout, sementara top-up wallet menolak request tanpa kunci. Client yang
+  tidak mengirimnya tidak mendapat perlindungan: response yang hilang ditambah retry berarti dua order.
+- order
+  [mencari kuncinya](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Application/Services/OrderService.cs#L36-L47)
+  dan mengembalikan order yang ditemukan, tapi **tidak menyimpan sidik jari**: keranjang berbeda dengan
+  kunci yang sama mendapat kembali order pertama, bukan penolakan.
+- Kalau dua salinan lolos pengecekan di detik yang sama, unique index membiarkan satu tersimpan dan
+  membuat yang lain gagal dengan error. Itu tidak pernah berarti tagihan kedua, tapi yang kalah tidak
+  mendapat jawaban yang menang.
+
+Setiap service hanya bisa seketat yang diizinkan pemanggil terlemahnya, itulah sebabnya service di bawah
+checkout — payment, warehouse, pricing — tidak bergantung pada kunci checkout sama sekali dan
+menegakkan kuncinya sendiri.
+
+## Intisari
+
+- Perlakukan timeout sebagai "mungkin sudah terjadi". Pemanggil mengulang; server harus membuatnya tidak
+  berbahaya.
+- Namai request-nya dengan kunci — dipilih client di pintu depan, diturunkan dari bisnis antar-service.
+- Biarkan unique constraint yang memutuskan apa yang sudah terjadi. Pengecekan saja adalah race.
+- Simpan untuk apa kunci itu dipakai, tolak request berbeda di bawahnya, dan putar ulang jawaban pertama
+  persis.

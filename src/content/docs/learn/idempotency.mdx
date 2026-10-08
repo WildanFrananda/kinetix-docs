@@ -1,0 +1,99 @@
+---
+title: The same request, twice
+description: Why every call that moves money or stock in Kinetix can be repeated safely — keys, unique indexes and request fingerprints, from the checkout button down to a stock reservation.
+sidebar:
+  order: 5
+---
+
+import IdempotencyDiagram from "../../../components/IdempotencyDiagram.astro";
+
+A timeout is the most ambiguous answer a network can give. The request may never have arrived, it may
+have failed, or it may have worked completely and only the response was lost. The caller cannot tell
+these apart, and the safe reaction to all three is the same: try again. So every operation that takes
+money or stock has to survive being performed twice — **idempotency** — and Kinetix builds it the same
+way at every layer.
+
+## Play it
+
+Four runs: a retry with no key, a retry with a key, a key reused for a different request, and two
+identical calls arriving at once.
+
+<IdempotencyDiagram />
+
+## The three parts
+
+Every idempotent operation in Kinetix has the same three parts.
+
+**A key that names the request.** At the edge the client chooses it: checkout reads an
+[`Idempotency-Key` header](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Controllers/OrderController.cs#L31),
+picked once per purchase and repeated on every retry. Between services nobody has to remember one:
+order
+[derives the key from the order number](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Infrastructure/Grpc/EscrowGrpcClient.cs#L140-L141)
+(`order:ORD-…`), and warehouse
+[falls back to `reserve:<order>:<sku>`](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/app/rpc/bin_stock_service_handler.rb#L207-L216)
+when the caller sends none. A key that comes from the business itself is a key every retry sends
+automatically.
+
+**A record that the database will not let exist twice.** The guarantee is a unique constraint, never a
+read followed by a write. Orders are
+[unique on customer and key](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Infrastructure/Persistence/OrderDbContext.cs#L46);
+pricing's voucher and flash-sale ledgers are
+[unique on the order number](https://github.com/WildanFrananda/kinetix-pricing-service/blob/c571662c07a12c5db946b79e8de442b2df7e7a9d/migrations/20260907000001_quota_ledger/up.sql#L15-L37);
+warehouse
+[claims the key by inserting it](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/app/services/inventory/idempotent_operation.rb#L77-L116)
+inside the same transaction that reserves the stock. Two copies that race past a lookup still cannot
+both insert.
+
+**A fingerprint of what the key was used for.** A key names one request, so a repeat must be the same
+request. payment stores a fingerprint with every escrow key and
+[compares it on every repeat](https://github.com/WildanFrananda/kinetix-payment-service/blob/c08f8cb6298e76495f6b259b239e20b1cd3231de/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L578-L591):
+the same request gets the stored answer back, a different one is refused with
+[`IDEMPOTENCY_KEY_REUSED`](https://github.com/WildanFrananda/kinetix-payment-service/blob/c08f8cb6298e76495f6b259b239e20b1cd3231de/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/grpc/PaymentGrpcServerService.java#L199-L202)
+and nothing is applied. warehouse does the same with a request digest and
+[refuses a key reused for a different quantity](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/spec/rpc/bin_stock_service_spec.rb#L141).
+
+## Replay, don't recompute
+
+When a repeat is recognised, the service returns **the answer it gave the first time**, not a fresh
+one. warehouse stores the response itself and
+[replays the exact bytes](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/spec/rpc/bin_stock_service_spec.rb#L121).
+Recomputing would be wrong in a quiet way: by the time the retry arrives, the shelf has changed, and a
+recomputed "remaining stock" would describe a different moment from the one the reservation was made
+in.
+
+## Two at once
+
+A retry can overtake the call it is retrying. In warehouse the second copy tries to insert the same key,
+[blocks on the unique index](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/spec/rpc/bin_stock_service_concurrency_spec.rb#L92-L114)
+until the first commits, and then replays its answer; a burst of identical calls
+[moves the counter exactly once](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/spec/rpc/bin_stock_service_concurrency_spec.rb#L267-L277).
+payment serialises everything for one order behind an
+[advisory lock](https://github.com/WildanFrananda/kinetix-payment-service/blob/c08f8cb6298e76495f6b259b239e20b1cd3231de/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L74-L103)
+and, if two inserts still collide on the key, replays the winner.
+
+## Where the edge is looser
+
+Checkout at the edge is the simplest of these, and it is worth being precise about what it does and
+does not do:
+
+- The key is **optional** at checkout, while the wallet top-up refuses a request without one. A client
+  that omits it gets no protection: a lost response plus a retry is two orders.
+- order
+  [looks the key up](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Application/Services/OrderService.cs#L36-L47)
+  and returns the order it finds, but stores **no fingerprint**: a different cart under the same key gets
+  the first order back rather than a refusal.
+- If two copies pass the lookup at the same instant, the unique index lets one insert and makes the
+  other fail with an error. That is never a second charge, but the loser does not get the winner's
+  answer.
+
+Each service is only as strict as its weakest caller lets it be, which is why the services underneath
+checkout — payment, warehouse, pricing — do not rely on checkout's key at all and enforce their own.
+
+## Takeaways
+
+- Treat a timeout as "maybe done". The caller retries; the server must make that harmless.
+- Name the request with a key — chosen by the client at the edge, derived from the business between
+  services.
+- Let a unique constraint decide what already happened. A lookup alone is a race.
+- Store what the key was used for, refuse a different request under it, and replay the first answer
+  exactly.
