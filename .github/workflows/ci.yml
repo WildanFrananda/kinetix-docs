@@ -1,0 +1,86 @@
+name: CI
+
+# This repository is public and so is everything it builds. A red `leaks` job means a page or
+# asset holds something that belongs in kinetix-docs-internal; fix it by moving the content, not
+# by widening a rule. The matched text is never printed, because Actions logs here are public too.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # Starlight reads each page's last-updated date from git history.
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+        env:
+          DOCS_SITE_URL: ${{ vars.DOCS_SITE_URL }}
+      - run: bun test
+      - run: bun run check:translations
+      - run: bun run build
+        env:
+          DOCS_SITE_URL: ${{ vars.DOCS_SITE_URL }}
+
+  leaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install --frozen-lockfile
+      # A fork's pull request is given no secrets, so only there may the list be empty.
+      - name: Require the denylist
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+        run: test -n "$DOCS_DENYLIST" || { echo "the DOCS_DENYLIST secret is missing or empty"; exit 1; }
+        env:
+          DOCS_DENYLIST: ${{ secrets.DOCS_DENYLIST }}
+      # Concrete values (hostnames, addresses, bucket names) live in a secret, one per line, so
+      # the list of what must not be published is not itself published.
+      - run: bun run check:leaks
+        env:
+          DOCS_DENYLIST: ${{ secrets.DOCS_DENYLIST }}
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Vercel's own Git integration is switched off in vercel.json: it deploys on push without waiting
+  # for this workflow, so a page that fails `leaks` would already be public. Production is deployed
+  # from here, and only after both jobs pass.
+  deploy:
+    needs: [verify, leaks]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install --frozen-lockfile
+      - run: bunx vercel@59.26.0 pull --yes --environment=production --token="$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      - run: bunx vercel@59.26.0 build --prod --token="$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          DOCS_SITE_URL: ${{ vars.DOCS_SITE_URL }}
+      - run: bunx vercel@59.26.0 deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

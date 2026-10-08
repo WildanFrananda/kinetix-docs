@@ -1,0 +1,56 @@
+---
+title: Kinetix
+description: Architecture, contracts and engineering decisions of Kinetix, a real-time e-commerce and fulfilment platform built from eleven services in eleven languages.
+template: splash
+hero:
+  tagline: A real-time e-commerce and fulfilment platform, documented from the code outward — for engineers who build against it, and for engineers who want to learn distributed backend design from a system that actually runs.
+---
+
+import { Aside, Card, CardGrid } from "@astrojs/starlight/components";
+
+## What this site is
+
+Kinetix runs catalogue, checkout, payment, warehouse fulfilment and courier dispatch as independent
+services. Each service owns its data and its database. Services talk to each other over gRPC, against
+contracts defined once in `kinetix-contracts`. Outside traffic enters through a single Kong gateway,
+and identity is the only service that decides who a caller is.
+
+These pages explain why it is built that way, what each service is responsible for, and the
+contracts between them. Every page is written against the code it describes and links to that code
+at a fixed commit, so what you read is what runs.
+
+<CardGrid>
+  <Card title="Building against Kinetix" icon="puzzle">
+    Contracts, endpoints, authentication and error semantics for clients and integrations.
+  </Card>
+  <Card title="Learning backend from Kinetix" icon="open-book">
+    Real problems — overselling, double charges, partial failure across services — and the code
+    that solves them, step by step. Assumes you know HTTP, SQL and one backend language.
+  </Card>
+</CardGrid>
+
+## Services
+
+| Service | Owns | Language |
+| --- | --- | --- |
+| [identity](https://github.com/WildanFrananda/kinetix-identity-service) | Accounts, authentication, tokens, merchant approval | TypeScript |
+| [catalog](https://github.com/WildanFrananda/kinetix-catalog-service) | Products and categories | Python |
+| [pricing](https://github.com/WildanFrananda/kinetix-pricing-service) | Prices, discounts, vouchers, flash sales, shipping rates | Rust |
+| [order](https://github.com/WildanFrananda/kinetix-order-service) | Cart, checkout, orders, returns | C# |
+| [payment](https://github.com/WildanFrananda/kinetix-payment-service) | Payments, escrow, wallet | Java |
+| [warehouse](https://github.com/WildanFrananda/kinetix-warehouse-service) | Bin inventory, stock reservation, fulfilment tasks | Ruby |
+| [matching](https://github.com/WildanFrananda/kinetix-matching-service) | Courier allocation and dispatch | Elixir |
+| [review](https://github.com/WildanFrananda/kinetix-review-service) | Product reviews | PHP |
+| [notification](https://github.com/WildanFrananda/kinetix-notification-service) | Customer notifications | Scala |
+| [communication](https://github.com/WildanFrananda/kinetix-communication-service) | Real-time chat | C++ |
+| [search](https://github.com/WildanFrananda/kinetix-search-service) | Product search | Go |
+
+Around them sit the [API gateway](https://github.com/WildanFrananda/kinetix-api-gateway) (Kong),
+the [courier app](https://github.com/WildanFrananda/kinetix-courier-mobile) (Flutter) and the
+[contracts](https://github.com/WildanFrananda/kinetix-contracts) (Protocol Buffers) every service
+conforms to.
+
+<Aside title="This site is being written">
+  A section appears when its content has been verified against the code, not before. Pages are
+  available in English and Bahasa Indonesia; a page not yet translated is shown in English.
+</Aside>
