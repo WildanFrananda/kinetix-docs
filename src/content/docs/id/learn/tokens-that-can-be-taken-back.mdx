@@ -1,0 +1,132 @@
+---
+title: Token yang bisa ditarik kembali
+description: Cara Kinetix menjaga token bertanda tangan tetap terkendali — access token lima belas menit, refresh token sekali pakai yang membongkar salinan curian, dan klaim jenis token yang dicek setiap service. Dengan dua celah yang ditemukan saat pelajaran ini ditulis, keduanya sudah diperbaiki dan di-deploy.
+sourceHash: "5c3b6f0a0fa4"
+sidebar:
+  order: 9
+---
+
+import RefreshDiagram from "../../../../components/RefreshDiagram.astro";
+
+identity menandatangani setiap token dengan kunci RS256, dan setiap service lain memverifikasi token
+sendiri, terhadap kunci publik yang dipublikasikan identity. Tidak ada yang memanggil identity di setiap
+request, dan itulah yang membuat service lain tetap berjalan saat identity sedang sibuk. Harganya, token
+yang sudah ditandatangani tidak bisa ditarik kembali: siapa pun yang memegang token sah akan dipercaya
+sampai token itu kedaluwarsa.
+
+Jadi kendalinya diletakkan di tempat yang bisa dipegang. Access token hidup
+[lima belas menit](https://github.com/WildanFrananda/kinetix-identity-service/blob/332ebf33c0b0038e4c9a748c9120f034add78abc/src/application/services/token.service.ts#L40-L41).
+Kredensial tiga puluh hari adalah refresh token, dan token itu disimpan oleh identity, hanya berlaku
+tepat sekali, dan membongkar salinan yang dicuri.
+
+## Mainkan
+
+Empat run terhadap endpoint refresh yang sama: pemakaian biasa, token curian yang diputar ulang, pencuri
+yang me-refresh duluan, dan keduanya pada saat yang sama — sebelum dan sesudah perbaikan yang dijelaskan
+di bawah.
+
+<RefreshDiagram />
+
+## Tiga token, satu kunci
+
+identity menerbitkan tiga jenis token. Ketiganya ditandatangani dengan kunci yang sama, untuk issuer yang
+sama dan audience yang sama:
+
+| Token | Umur | Kegunaan |
+| --- | --- | --- |
+| `access` | 15 menit | memanggil setiap service lain |
+| `refresh` | 30 hari | mendapatkan pasangan baru dari identity, sekali |
+| `mfa_challenge` | 5 menit | membuktikan password, sebelum faktor kedua |
+
+Satu-satunya yang membedakan ketiganya adalah satu klaim,
+[`token_use`](https://github.com/WildanFrananda/kinetix-identity-service/blob/332ebf33c0b0038e4c9a748c9120f034add78abc/src/application/services/token.service.ts#L77).
+Service yang mengecek tanda tangan, issuer, audience, dan masa berlaku lalu berhenti di situ akan menerima
+ketiganya — dan gateway tidak bisa membantu, karena ia memverifikasi tanda tangan dan masa berlaku tetapi
+tidak bisa membaca klaim itu. Jadi setiap service yang menerima token mengeceknya sendiri:
+
+| Service | Lokasi |
+| --- | --- |
+| identity | [`token.service.ts`](https://github.com/WildanFrananda/kinetix-identity-service/blob/332ebf33c0b0038e4c9a748c9120f034add78abc/src/application/services/token.service.ts#L116-L121) |
+| order | [`AccessTokenValidation.cs`](https://github.com/WildanFrananda/kinetix-order-service/blob/3d2bdb0fccbe0671905ce656ce1044eb1446c282/Security/AccessTokenValidation.cs#L22-L29) |
+| catalog | [`token_verifier.py`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/infrastructure/security/token_verifier.py#L63-L65) |
+| warehouse | [`token_verifier.rb`](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/lib/kinetix/token_verifier.rb#L57) |
+| matching | [`token_verifier.ex`](https://github.com/WildanFrananda/kinetix-matching-service/blob/3af0339159cc5481bdde8c5186cc0cbcd6774161/lib/fleet_pulse/security/token_verifier.ex#L150) |
+| pricing | [`jwt.rs`](https://github.com/WildanFrananda/kinetix-pricing-service/blob/c571662c07a12c5db946b79e8de442b2df7e7a9d/src/security/jwt.rs#L180-L182) |
+| payment | [`TokenUseValidator.java`](https://github.com/WildanFrananda/kinetix-payment-service/blob/c08f8cb6298e76495f6b259b239e20b1cd3231de/modules/api/src/main/java/com/kinetix/payment/api/security/TokenUseValidator.java#L14-L18) |
+| review | [`TokenVerifier.php`](https://github.com/WildanFrananda/kinetix-review-service/blob/70802b6957d655e27dc2b5d4e8b2c41204ed759f/app/Security/TokenVerifier.php#L50-L52) |
+
+Setiap tautan menunjuk commit yang sedang dijalankan service tersebut.
+
+**Salah satunya belum melakukannya, sampai 8 Oktober 2026.** order memvalidasi semuanya kecuali jenis
+token. Refresh token menjadi kunci tiga puluh hari ke keranjang dan order milik pelanggan di sana, dan
+untuk akun yang mengaktifkan autentikasi dua faktor, password saja — lewat token `mfa_challenge` — sudah
+cukup untuk masuk. Celah ini ditemukan saat pelajaran ini ditulis, dengan menjalankan pengaturan validasi
+order yang persis sama terhadap ketiga jenis token, lalu
+[diperbaiki](https://github.com/WildanFrananda/kinetix-order-service/commit/9d88c49ac22d7404851c5ae90cd3926c4c2676e0)
+dengan pengecekan setelah validasi dan test yang menyalakan server sungguhan lalu mengirimkan setiap jenis
+token.
+
+## Pin algoritmanya, dan ketahui test mana yang menjaga pin itu
+
+Setiap verifier hanya menerima RS256. Serangan yang menarik bukanlah `alg: none` atau HS256 —
+library-nya sudah menolak keduanya ketika kuncinya adalah kunci publik RSA. Yang menarik adalah **PS256
+dan RS512**, yang terverifikasi dengan kunci RSA yang sama dan diterima secara default. Test di identity
+[memalsukan keduanya](https://github.com/WildanFrananda/kinetix-identity-service/blob/332ebf33c0b0038e4c9a748c9120f034add78abc/test/token.service.spec.ts#L164-L186).
+
+Menghapus pin di identity membuat tepat dua test itu gagal, sementara test `alg: none` dan HS256 tetap
+hijau. Test yang lolos baik dengan maupun tanpa baris yang katanya ia lindungi, sebenarnya tidak
+melindungi baris itu.
+
+## Sekali pakai, dan family-nya
+
+Setiap refresh menandai token yang diserahkan sebagai terpakai, mencatat penggantinya, lalu
+[menerbitkan token berikutnya ke dalam family yang sama](https://github.com/WildanFrananda/kinetix-identity-service/blob/332ebf33c0b0038e4c9a748c9120f034add78abc/src/application/services/token.service.ts#L198-L205).
+Token yang datang untuk kedua kalinya hanya mungkin berarti dua pihak memegangnya, dan identity tidak bisa
+membedakan mana yang jujur, jadi ia
+[mencabut seluruh family](https://github.com/WildanFrananda/kinetix-identity-service/blob/332ebf33c0b0038e4c9a748c9120f034add78abc/src/application/services/token.service.ts#L189-L192).
+Pemilik login lagi; pencuri tidak punya apa-apa lagi untuk di-refresh.
+
+## Race yang ditemukan pelajaran ini
+
+Pengecekan di atas harus sudah melihat pemakaian pertama sebelum pemakaian kedua datang. Di identity
+v0.1.10 hal itu tidak dijamin: rotasi
+[membaca baris, mengeceknya, membuat pasangan baru, dan baru setelah itu menandai token lama terpakai](https://github.com/WildanFrananda/kinetix-identity-service/blob/6b185b723ba48fd69a8b47a18f3be286694d54e2/src/application/services/token.service.ts#L162-L195).
+Dua request dengan token yang sama, berselisih beberapa milidetik, sama-sama membaca "belum terpakai" dan
+sama-sama lolos.
+
+Itu ditunjukkan, bukan diduga: token service milik identity sendiri terhadap Postgres sungguhan, dua
+refresh ditembakkan bersamaan, dua puluh kali. Keduanya diterima setiap kali — dua cabang aktif, tidak ada
+yang dicabut.
+
+[Perbaikannya](https://github.com/WildanFrananda/kinetix-identity-service/commit/f76315c3f529de3c4d81a7d465337dc70cf870c0)
+menjalankan rotasi dalam transaksi yang
+[lebih dulu mengunci baris token itu](https://github.com/WildanFrananda/kinetix-identity-service/blob/332ebf33c0b0038e4c9a748c9120f034add78abc/src/application/services/token.service.ts#L174-L179).
+Request kedua menunggu, lalu melihat hasil kerja request pertama dan mencabut family-nya — termasuk token
+yang baru saja diberikan kepada request pertama. Sebuah
+[test membalapkan dua refresh di database sungguhan](https://github.com/WildanFrananda/kinetix-identity-service/blob/332ebf33c0b0038e4c9a748c9120f034add78abc/test/refresh_rotation_race.spec.ts#L67-L98);
+test itu gagal terhadap v0.1.10 dan lolos terhadap v0.1.11, yang kini berjalan di production.
+
+Pengecekan yang diikuti penulisan adalah race setiap kali dua pemanggil bisa datang bersamaan. Repository
+tiruan di unit test tidak bisa menunjukkannya, karena tiruan tidak punya konkurensi; hanya database yang
+bisa.
+
+## Apa yang dijangkau revokasi, dan apa yang tidak
+
+Logout mencabut family refresh token dan mencatat id access token di database milik identity sendiri, dan
+identity
+[menolak access token yang sudah dicabut](https://github.com/WildanFrananda/kinetix-identity-service/blob/332ebf33c0b0038e4c9a748c9120f034add78abc/src/application/services/token.service.ts#L123-L126).
+Service yang memverifikasi sendiri tidak memeriksa daftar itu — hanya communication, yang meminta identity
+memverifikasi untuknya, yang memeriksanya — sehingga access token yang sudah dicabut tetap berlaku di
+sana sampai kedaluwarsa. Itulah harga dari tidak memanggil identity di setiap request — dan alasan access
+token hidup lima belas menit, bukan sehari.
+
+## Intisari
+
+- Token bertanda tangan tidak bisa ditarik kembali. Buat umurnya pendek, dan simpan kredensial berumur
+  panjang di tempat yang bisa dicabut.
+- Buat refresh token sekali pakai dan kelompokkan dalam family, supaya pemakaian kedua membongkar salinan
+  curian.
+- Token yang ditandatangani dengan kunci yang sama hanya dibedakan oleh sebuah klaim. Setiap verifier wajib
+  mengeceknya.
+- Pin algoritmanya, dan pastikan test mana yang gagal ketika pin itu dihapus.
+- Uji pengecekan-lalu-penulisan terhadap database sungguhan dengan dua pemanggil sekaligus.

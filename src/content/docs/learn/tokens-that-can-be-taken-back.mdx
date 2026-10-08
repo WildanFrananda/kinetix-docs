@@ -1,0 +1,120 @@
+---
+title: Tokens that can be taken back
+description: How Kinetix keeps signed tokens under control — fifteen-minute access tokens, single-use refresh tokens that betray a stolen copy, and a type claim every service checks. With two flaws found while writing this lesson, both now fixed and deployed.
+sidebar:
+  order: 9
+---
+
+import RefreshDiagram from "../../../components/RefreshDiagram.astro";
+
+identity signs every token with an RS256 key, and every other service verifies tokens on its own, against
+the public keys identity publishes. Nothing calls identity on each request, which is what lets the
+services stay up when identity is busy. The cost is that a signed token cannot be recalled: anyone who
+holds a valid one is believed until it expires.
+
+So control is placed where it can be held. Access tokens live
+[fifteen minutes](https://github.com/WildanFrananda/kinetix-identity-service/blob/332ebf33c0b0038e4c9a748c9120f034add78abc/src/application/services/token.service.ts#L40-L41).
+The thirty-day credential is the refresh token, and that one is stored by identity, works exactly once,
+and gives a stolen copy away.
+
+## Play it
+
+Four runs of the same refresh endpoint: ordinary use, a stolen token replayed, a thief who refreshes
+first, and both at the same instant — before and after the fix described below.
+
+<RefreshDiagram />
+
+## Three tokens, one key
+
+identity issues three kinds of token. All three are signed with the same key, for the same issuer and
+the same audience:
+
+| Token | Lives | What it is for |
+| --- | --- | --- |
+| `access` | 15 minutes | calling every other service |
+| `refresh` | 30 days | getting a new pair from identity, once |
+| `mfa_challenge` | 5 minutes | proving the password, before the second factor |
+
+The only thing that tells them apart is one claim,
+[`token_use`](https://github.com/WildanFrananda/kinetix-identity-service/blob/332ebf33c0b0038e4c9a748c9120f034add78abc/src/application/services/token.service.ts#L77).
+A service that checks the signature, issuer, audience and expiry and stops there accepts all three — and
+the gateway cannot help, because it verifies signatures and expiry but cannot read that claim. So every
+service that accepts a token checks it itself:
+
+| Service | Where |
+| --- | --- |
+| identity | [`token.service.ts`](https://github.com/WildanFrananda/kinetix-identity-service/blob/332ebf33c0b0038e4c9a748c9120f034add78abc/src/application/services/token.service.ts#L116-L121) |
+| order | [`AccessTokenValidation.cs`](https://github.com/WildanFrananda/kinetix-order-service/blob/3d2bdb0fccbe0671905ce656ce1044eb1446c282/Security/AccessTokenValidation.cs#L22-L29) |
+| catalog | [`token_verifier.py`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/infrastructure/security/token_verifier.py#L63-L65) |
+| warehouse | [`token_verifier.rb`](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/lib/kinetix/token_verifier.rb#L57) |
+| matching | [`token_verifier.ex`](https://github.com/WildanFrananda/kinetix-matching-service/blob/3af0339159cc5481bdde8c5186cc0cbcd6774161/lib/fleet_pulse/security/token_verifier.ex#L150) |
+| pricing | [`jwt.rs`](https://github.com/WildanFrananda/kinetix-pricing-service/blob/c571662c07a12c5db946b79e8de442b2df7e7a9d/src/security/jwt.rs#L180-L182) |
+| payment | [`TokenUseValidator.java`](https://github.com/WildanFrananda/kinetix-payment-service/blob/c08f8cb6298e76495f6b259b239e20b1cd3231de/modules/api/src/main/java/com/kinetix/payment/api/security/TokenUseValidator.java#L14-L18) |
+| review | [`TokenVerifier.php`](https://github.com/WildanFrananda/kinetix-review-service/blob/70802b6957d655e27dc2b5d4e8b2c41204ed759f/app/Security/TokenVerifier.php#L50-L52) |
+
+Every link is the commit that service currently runs.
+
+**One of them did not, until 8 October 2026.** order validated everything but the type. A refresh token was a
+thirty-day key to a customer's cart and orders there, and for an account with two-factor authentication
+turned on, the password alone — through the `mfa_challenge` token — was enough to get in. It was found while this lesson was being
+written, by running order's exact validation settings against all three token types, and
+[fixed](https://github.com/WildanFrananda/kinetix-order-service/commit/9d88c49ac22d7404851c5ae90cd3926c4c2676e0)
+with a check after validation and a test that starts a real server and sends it each type.
+
+## Pin the algorithm, and know which test holds the pin
+
+Every verifier accepts RS256 and nothing else. The interesting attacks are not `alg: none` or HS256 —
+the libraries refuse those anyway when the key is an RSA public key. They are **PS256 and RS512**,
+which verify against the same RSA key and are accepted by default. identity's tests
+[forge both](https://github.com/WildanFrananda/kinetix-identity-service/blob/332ebf33c0b0038e4c9a748c9120f034add78abc/test/token.service.spec.ts#L164-L186).
+
+Removing the pin from identity makes exactly those two tests fail and leaves the `alg: none` and HS256
+tests green. A test that passes with and without the line it claims to protect is not protecting it.
+
+## Single use, and the family
+
+Each refresh marks the presented token used, records what replaced it, and
+[issues the next one into the same family](https://github.com/WildanFrananda/kinetix-identity-service/blob/332ebf33c0b0038e4c9a748c9120f034add78abc/src/application/services/token.service.ts#L198-L205).
+A token that arrives a second time can only mean two parties hold it, and identity cannot tell which one is
+honest, so it
+[revokes the whole family](https://github.com/WildanFrananda/kinetix-identity-service/blob/332ebf33c0b0038e4c9a748c9120f034add78abc/src/application/services/token.service.ts#L189-L192).
+The owner signs in again; the thief has nothing left to refresh.
+
+## The race this lesson found
+
+The check above has to see the first use before the second arrives. In identity v0.1.10 it did not have
+to: rotation
+[read the row, checked it, minted a new pair and only then marked the old token used](https://github.com/WildanFrananda/kinetix-identity-service/blob/6b185b723ba48fd69a8b47a18f3be286694d54e2/src/application/services/token.service.ts#L162-L195).
+Two requests with the same token, a few milliseconds apart, both read "unused" and both got through.
+
+That was shown, not reasoned about: identity's own token service against a real Postgres, two refreshes
+fired together, twenty times. Both were accepted every time — two live branches, nothing revoked.
+
+The [fix](https://github.com/WildanFrananda/kinetix-identity-service/commit/f76315c3f529de3c4d81a7d465337dc70cf870c0)
+runs rotation in a transaction that
+[locks the token's row first](https://github.com/WildanFrananda/kinetix-identity-service/blob/332ebf33c0b0038e4c9a748c9120f034add78abc/src/application/services/token.service.ts#L174-L179).
+The second request waits, then sees the first one's work and revokes the family — including the token the
+first one was just given. A
+[test races two refreshes on a real database](https://github.com/WildanFrananda/kinetix-identity-service/blob/332ebf33c0b0038e4c9a748c9120f034add78abc/test/refresh_rotation_race.spec.ts#L67-L98);
+it fails against v0.1.10 and passes against v0.1.11, which is now in production.
+
+A check followed by a write is a race whenever two callers can arrive together. A fake repository in a
+unit test cannot show it, because a fake has no concurrency; only the database can.
+
+## What revocation does and does not reach
+
+Logging out revokes the refresh family and records the access token's id in identity's own database,
+and identity
+[refuses a revoked access token](https://github.com/WildanFrananda/kinetix-identity-service/blob/332ebf33c0b0038e4c9a748c9120f034add78abc/src/application/services/token.service.ts#L123-L126).
+The services that verify on their own do not consult that list — only communication, which asks identity
+to verify for it, does — so a revoked access token keeps working there until it expires. That is the trade made for not calling identity on every request — and
+the reason the access token lives fifteen minutes rather than a day.
+
+## Takeaways
+
+- A signed token cannot be recalled. Keep it short-lived, and keep the long-lived credential where it can
+  be revoked.
+- Make refresh tokens single-use and group them into families, so a second use exposes a stolen copy.
+- Tokens signed with the same key are told apart only by a claim. Every verifier must check it.
+- Pin the algorithm, and confirm which test fails when the pin is removed.
+- Test a check-then-write against a real database with two callers at once.

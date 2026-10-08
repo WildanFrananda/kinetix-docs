@@ -1,0 +1,17 @@
+---
+import { catalogueFor } from "../diagrams/engine/catalogue_for";
+import { localeOf } from "../diagrams/engine/locale_of";
+import { localizeScenarios } from "../diagrams/engine/localize_scenarios";
+import { playerLabels } from "../diagrams/engine/player_labels";
+import Refresh from "../diagrams/refresh/Refresh.svelte";
+import { refreshLabels } from "../diagrams/refresh/refresh_labels";
+import { refreshScenarios } from "../diagrams/refresh/refresh_scenarios";
+import DiagramTranscript from "./DiagramTranscript.astro";
+
+const catalogue = catalogueFor(localeOf(Astro.locals.starlightRoute.entryMeta.lang));
+const variants = localizeScenarios(refreshScenarios, catalogue);
+const labels = playerLabels(catalogue);
+---
+
+<Refresh client:visible variants={variants} labels={labels} sceneLabels={refreshLabels(catalogue)} />
+<DiagramTranscript variants={variants} labels={labels} />
