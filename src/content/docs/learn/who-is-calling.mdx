@@ -1,0 +1,130 @@
+---
+title: Who is calling?
+description: How a Kinetix gRPC server knows which service sent a request — mutual TLS against one CA, a SPIFFE identity in the certificate, and an allow list that turns "one of ours" into "a caller this service expects". Replayed from a real run.
+sidebar:
+  order: 8
+---
+
+import HandshakeDiagram from "../../../components/HandshakeDiagram.astro";
+
+Inside a private network it is tempting to trust the network: if a request reached pricing's port, it
+must have come from another Kinetix service. But a port does not know who connected to it. Anything that
+gets onto the network — a compromised container, a debugging tool left running, a misrouted job — reaches
+the same port with the same request.
+
+So a Kinetix gRPC server does not ask *where* a call came from. It asks the caller to prove *which
+service* it is, and then decides whether that service may call it at all.
+
+## Play it
+
+The four runs below are a real session against pricing's server code at
+[`c571662`](https://github.com/WildanFrananda/kinetix-pricing-service/tree/c571662c07a12c5db946b79e8de442b2df7e7a9d):
+its own TLS setup, its own guard, development certificates, and an allow list naming only `order`. Every
+alert, status and log line shown is what that run printed.
+
+<HandshakeDiagram />
+
+## Four checks, two layers
+
+The first two checks happen inside the TLS handshake, before a single request exists:
+
+1. **Does the caller present a certificate?** Plain TLS lets only the server prove who it is. pricing's
+   server configuration
+   [names a client CA](https://github.com/WildanFrananda/kinetix-pricing-service/blob/c571662c07a12c5db946b79e8de442b2df7e7a9d/src/security/mtls.rs#L54-L58),
+   which makes the handshake mutual: no certificate, no connection.
+2. **Was it signed by Kinetix's CA?** Only that CA counts. order makes the same choice explicitly, with a
+   [custom root trust](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Security/ServiceIdentity.cs#L44-L50)
+   and
+   [a listener that requires a certificate](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Program.cs#L145-L151).
+   Trusting the operating system's roots instead would accept any certificate a public CA has ever
+   signed.
+
+The last two happen in application code, on every call:
+
+3. **Which service does it name?** The identity is a
+   [SPIFFE ID](https://spiffe.io/docs/latest/spiffe-about/spiffe-concepts/#spiffe-id) such as
+   `spiffe://kinetix.local/service/order`, carried in the certificate's URI subject alternative name.
+   pricing
+   [reads it from the peer certificate](https://github.com/WildanFrananda/kinetix-pricing-service/blob/c571662c07a12c5db946b79e8de442b2df7e7a9d/src/security/spiffe.rs#L37-L58)
+   and takes the service name after `/service/`.
+4. **Is that service allowed?**
+   [`PeerGuard`](https://github.com/WildanFrananda/kinetix-pricing-service/blob/c571662c07a12c5db946b79e8de442b2df7e7a9d/src/security/peer_guard.rs#L28-L47)
+   compares the name against the allow list and refuses everything else.
+
+## Why mTLS alone is not enough
+
+Every Kinetix service holds a certificate from the same CA. A valid certificate therefore proves only
+that the caller is *one of ours* — and payment's certificate in the third run is perfectly valid.
+
+The allow list is what turns "one of ours" into "a caller pricing expects". It is the difference between
+authentication and authorisation, and it is why a compromised service can still reach only the services
+that already expected to hear from it.
+
+## Read the identity exactly
+
+The identity check is string handling, and string handling is where it goes wrong:
+
+- **Use the URI SAN.** The subject's common name is a display label. The URI SAN is the identity the CA
+  asserted.
+- **Match the whole prefix, including the slashes.** A check for "starts with `spiffe://kinetix.local`"
+  also accepts `spiffe://kinetix.local.example.com/…`. pricing's tests
+  [refuse exactly that](https://github.com/WildanFrananda/kinetix-pricing-service/blob/c571662c07a12c5db946b79e8de442b2df7e7a9d/tests/spiffe_trust_domain_test.rs#L36-L57),
+  along with an ID that names no service and a URI that is not SPIFFE at all.
+- **Know what your prefix function returns on a miss.** Rust's `strip_prefix`
+  [returns nothing](https://github.com/WildanFrananda/kinetix-pricing-service/blob/c571662c07a12c5db946b79e8de442b2df7e7a9d/src/security/spiffe.rs#L31-L35)
+  when the prefix is absent, and C#'s
+  [`ServiceOf`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Security/SpiffePeer.cs#L52-L57)
+  checks before it slices. A "remove the prefix if present" helper returns its input unchanged, and the
+  whole ID becomes a service name.
+
+## Refuse at start-up, not at request time
+
+A misconfigured guard is worse than none, because it looks like protection. So both halves fail before
+the server accepts a connection:
+
+- The allow list is
+  [required, and an empty one is refused](https://github.com/WildanFrananda/kinetix-pricing-service/blob/c571662c07a12c5db946b79e8de442b2df7e7a9d/src/security/peer_guard.rs#L12-L26)
+  — an unset list must never be read as "allow everyone". order's interceptor
+  [does the same](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Security/PeerAuthorizationInterceptor.cs#L15-L26).
+- The certificate is
+  [loaded and checked at boot](https://github.com/WildanFrananda/kinetix-pricing-service/blob/c571662c07a12c5db946b79e8de442b2df7e7a9d/src/security/mtls.rs#L13-L52),
+  and pricing
+  [starts no server](https://github.com/WildanFrananda/kinetix-pricing-service/blob/c571662c07a12c5db946b79e8de442b2df7e7a9d/src/main.rs#L81-L84)
+  without it. A server that quietly falls back to plaintext when its certificate is missing can run
+  unprotected for months.
+- On the calling side, order
+  [rewrites `http://` to `https://`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Program.cs#L105-L109)
+  for every mesh address, so a stale setting cannot produce a plaintext call.
+
+## Tell the caller little, tell the log everything
+
+A refused caller gets `PERMISSION_DENIED` and one sentence: it is not permitted. It is not told which
+services are, because that is a list of identities worth stealing. The server's log carries the detail —
+in the run, `peer=payment` — so an operator can see who was refused and why.
+
+## A certificate problem looks like a network problem
+
+In the run, both handshake failures reached the client as `UNAVAILABLE: failed to connect to all
+addresses` — the same status a stopped server produces. The real reason appeared only in the TLS alert:
+`CERTIFICATE_REQUIRED` and `UNKNOWN_CA`. When a call between services fails as `UNAVAILABLE` while the
+server is plainly running, look at certificates before the network.
+
+The same applies to the certificate's purpose. Many Kinetix services are both a gRPC server and a client,
+so each certificate is valid for both server and client authentication. A certificate valid for only one
+direction fails the handshake in the other — again, as a connection error.
+
+## Service identity is not user identity
+
+mTLS tells pricing that *order* is calling. It says nothing about which customer order is acting for.
+That is a separate question with a separate answer: the user is identified at the edge by a token that
+identity signs, as the
+[architecture principles](/architecture/principles/) describe. A call between services carries both,
+and neither replaces the other.
+
+## Takeaways
+
+- Being on the network is not a credential. Ask every caller to prove which service it is.
+- mTLS proves the caller is one of yours. An allow list decides whether it is one this service expects.
+- Trust one CA, read the identity from the URI SAN, and match it exactly.
+- Fail at start-up when the certificate or the allow list is missing, never at request time.
+- Refuse with little detail and log with a lot.

@@ -1,0 +1,17 @@
+---
+import { catalogueFor } from "../diagrams/engine/catalogue_for";
+import { localeOf } from "../diagrams/engine/locale_of";
+import { localizeScenarios } from "../diagrams/engine/localize_scenarios";
+import { playerLabels } from "../diagrams/engine/player_labels";
+import Handshake from "../diagrams/handshake/Handshake.svelte";
+import { handshakeLabels } from "../diagrams/handshake/handshake_labels";
+import { handshakeScenarios } from "../diagrams/handshake/handshake_scenarios";
+import DiagramTranscript from "./DiagramTranscript.astro";
+
+const catalogue = catalogueFor(localeOf(Astro.locals.starlightRoute.entryMeta.lang));
+const variants = localizeScenarios(handshakeScenarios, catalogue);
+const labels = playerLabels(catalogue);
+---
+
+<Handshake client:visible variants={variants} labels={labels} sceneLabels={handshakeLabels(catalogue)} />
+<DiagramTranscript variants={variants} labels={labels} />

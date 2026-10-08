@@ -1,0 +1,134 @@
+---
+title: Siapa yang memanggil?
+description: Bagaimana server gRPC Kinetix tahu service mana yang mengirim request — mutual TLS terhadap satu CA, identitas SPIFFE di dalam sertifikat, dan daftar izin yang mengubah "salah satu dari kita" menjadi "pemanggil yang diharapkan service ini". Diputar ulang dari run sungguhan.
+sourceHash: "8e5e2cf7e946"
+sidebar:
+  order: 8
+---
+
+import HandshakeDiagram from "../../../../components/HandshakeDiagram.astro";
+
+Di dalam jaringan privat, godaan terbesarnya adalah memercayai jaringan: kalau sebuah request sampai di
+port pricing, pasti ia datang dari service Kinetix lain. Padahal sebuah port tidak tahu siapa yang
+tersambung ke sana. Apa pun yang berhasil masuk ke jaringan — container yang dibobol, alat debugging yang
+lupa dimatikan, job yang salah arah — mencapai port yang sama dengan request yang sama.
+
+Jadi server gRPC Kinetix tidak bertanya *dari mana* sebuah panggilan datang. Ia meminta pemanggil
+membuktikan *service mana* dirinya, lalu memutuskan apakah service itu boleh memanggilnya sama sekali.
+
+## Mainkan
+
+Empat run di bawah ini adalah sesi sungguhan terhadap kode server pricing di
+[`c571662`](https://github.com/WildanFrananda/kinetix-pricing-service/tree/c571662c07a12c5db946b79e8de442b2df7e7a9d):
+konfigurasi TLS-nya sendiri, guard-nya sendiri, sertifikat development, dan daftar izin yang hanya
+menyebut `order`. Setiap alert, status, dan baris log yang ditampilkan adalah yang dicetak oleh run itu.
+
+<HandshakeDiagram />
+
+## Empat pengecekan, dua lapisan
+
+Dua pengecekan pertama terjadi di dalam TLS handshake, sebelum satu request pun ada:
+
+1. **Apakah pemanggil menyertakan sertifikat?** TLS biasa hanya membuat server membuktikan siapa
+   dirinya. Konfigurasi server pricing
+   [menyebut sebuah CA client](https://github.com/WildanFrananda/kinetix-pricing-service/blob/c571662c07a12c5db946b79e8de442b2df7e7a9d/src/security/mtls.rs#L54-L58),
+   yang membuat handshake-nya menjadi mutual: tanpa sertifikat, tidak ada koneksi.
+2. **Apakah sertifikat itu ditandatangani CA Kinetix?** Hanya CA itu yang dihitung. order membuat
+   pilihan yang sama secara eksplisit, dengan
+   [custom root trust](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Security/ServiceIdentity.cs#L44-L50)
+   dan
+   [listener yang mewajibkan sertifikat](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Program.cs#L145-L151).
+   Memercayai root milik sistem operasi justru akan menerima sertifikat apa pun yang pernah
+   ditandatangani CA publik.
+
+Dua pengecekan terakhir terjadi di kode aplikasi, di setiap panggilan:
+
+3. **Service mana yang disebutnya?** Identitasnya adalah sebuah
+   [SPIFFE ID](https://spiffe.io/docs/latest/spiffe-about/spiffe-concepts/#spiffe-id) seperti
+   `spiffe://kinetix.local/service/order`, yang dibawa di URI subject alternative name sertifikat.
+   pricing
+   [membacanya dari sertifikat peer](https://github.com/WildanFrananda/kinetix-pricing-service/blob/c571662c07a12c5db946b79e8de442b2df7e7a9d/src/security/spiffe.rs#L37-L58)
+   dan mengambil nama service setelah `/service/`.
+4. **Apakah service itu diizinkan?**
+   [`PeerGuard`](https://github.com/WildanFrananda/kinetix-pricing-service/blob/c571662c07a12c5db946b79e8de442b2df7e7a9d/src/security/peer_guard.rs#L28-L47)
+   membandingkan nama itu dengan daftar izin dan menolak semua yang lain.
+
+## Kenapa mTLS saja tidak cukup
+
+Setiap service Kinetix memegang sertifikat dari CA yang sama. Sertifikat yang sah karena itu hanya
+membuktikan bahwa pemanggil adalah *salah satu dari kita* — dan sertifikat payment di run ketiga
+sepenuhnya sah.
+
+Daftar izin itulah yang mengubah "salah satu dari kita" menjadi "pemanggil yang diharapkan pricing". Itu
+perbedaan antara autentikasi dan otorisasi, dan itu sebabnya service yang dibobol tetap hanya bisa
+menjangkau service yang memang sudah menunggu panggilan darinya.
+
+## Baca identitasnya dengan tepat
+
+Pengecekan identitas adalah pengolahan string, dan di pengolahan string-lah kesalahan terjadi:
+
+- **Pakai URI SAN.** Common name di subject adalah label tampilan. URI SAN adalah identitas yang
+  dinyatakan CA.
+- **Cocokkan seluruh prefix, termasuk garis miringnya.** Pengecekan "diawali `spiffe://kinetix.local`"
+  juga menerima `spiffe://kinetix.local.example.com/…`. Test di pricing
+  [menolak persis kasus itu](https://github.com/WildanFrananda/kinetix-pricing-service/blob/c571662c07a12c5db946b79e8de442b2df7e7a9d/tests/spiffe_trust_domain_test.rs#L36-L57),
+  beserta ID yang tidak menyebut service dan URI yang sama sekali bukan SPIFFE.
+- **Ketahui apa yang dikembalikan fungsi prefix-mu saat tidak cocok.** `strip_prefix` di Rust
+  [tidak mengembalikan apa-apa](https://github.com/WildanFrananda/kinetix-pricing-service/blob/c571662c07a12c5db946b79e8de442b2df7e7a9d/src/security/spiffe.rs#L31-L35)
+  ketika prefix-nya tidak ada, dan
+  [`ServiceOf`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Security/SpiffePeer.cs#L52-L57)
+  di C# mengecek dulu sebelum memotong. Helper "hapus prefix kalau ada" mengembalikan input-nya tanpa
+  perubahan, dan seluruh ID pun menjadi nama service.
+
+## Tolak saat start-up, bukan saat request
+
+Guard yang salah konfigurasi lebih buruk daripada tidak ada guard sama sekali, karena ia tampak seperti
+perlindungan. Jadi kedua bagiannya gagal sebelum server menerima koneksi:
+
+- Daftar izin
+  [wajib ada, dan daftar kosong ditolak](https://github.com/WildanFrananda/kinetix-pricing-service/blob/c571662c07a12c5db946b79e8de442b2df7e7a9d/src/security/peer_guard.rs#L12-L26)
+  — daftar yang tidak diisi tidak boleh dibaca sebagai "izinkan semua". Interceptor di order
+  [melakukan hal yang sama](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Security/PeerAuthorizationInterceptor.cs#L15-L26).
+- Sertifikatnya
+  [dimuat dan dicek saat boot](https://github.com/WildanFrananda/kinetix-pricing-service/blob/c571662c07a12c5db946b79e8de442b2df7e7a9d/src/security/mtls.rs#L13-L52),
+  dan pricing
+  [tidak menyalakan server apa pun](https://github.com/WildanFrananda/kinetix-pricing-service/blob/c571662c07a12c5db946b79e8de442b2df7e7a9d/src/main.rs#L81-L84)
+  tanpanya. Server yang diam-diam beralih ke plaintext ketika sertifikatnya hilang bisa berjalan tanpa
+  perlindungan selama berbulan-bulan.
+- Di sisi pemanggil, order
+  [mengubah `http://` menjadi `https://`](https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Program.cs#L105-L109)
+  untuk setiap alamat mesh, sehingga setting yang usang tidak bisa menghasilkan panggilan plaintext.
+
+## Beri tahu pemanggil sedikit, beri tahu log semuanya
+
+Pemanggil yang ditolak menerima `PERMISSION_DENIED` dan satu kalimat: ia tidak diizinkan. Ia tidak diberi
+tahu service mana yang diizinkan, karena itu daftar identitas yang layak dicuri. Log server yang membawa
+rinciannya — di run tadi, `peer=payment` — sehingga operator bisa melihat siapa yang ditolak dan kenapa.
+
+## Masalah sertifikat terlihat seperti masalah jaringan
+
+Di run tadi, kedua kegagalan handshake sampai ke client sebagai `UNAVAILABLE: failed to connect to all
+addresses` — status yang sama dengan yang dihasilkan server yang mati. Alasan sebenarnya hanya muncul di
+alert TLS: `CERTIFICATE_REQUIRED` dan `UNKNOWN_CA`. Ketika panggilan antar-service gagal sebagai
+`UNAVAILABLE` padahal servernya jelas sedang berjalan, periksa sertifikat sebelum memeriksa jaringan.
+
+Hal yang sama berlaku untuk kegunaan sertifikat. Banyak service Kinetix sekaligus menjadi server dan
+client gRPC, jadi setiap sertifikat berlaku untuk autentikasi server maupun client. Sertifikat yang hanya
+berlaku untuk satu arah akan menggagalkan handshake di arah sebaliknya — lagi-lagi, sebagai error koneksi.
+
+## Identitas service bukan identitas pengguna
+
+mTLS memberi tahu pricing bahwa *order* yang memanggil. Ia tidak mengatakan apa pun tentang pelanggan mana
+yang sedang diwakili order. Itu pertanyaan terpisah dengan jawaban terpisah: pengguna diidentifikasi di
+edge lewat token yang ditandatangani identity, seperti dijelaskan di
+[prinsip arsitektur](/id/architecture/principles/). Panggilan antar-service membawa keduanya, dan yang
+satu tidak menggantikan yang lain.
+
+## Intisari
+
+- Berada di dalam jaringan bukanlah kredensial. Minta setiap pemanggil membuktikan service mana dirinya.
+- mTLS membuktikan bahwa pemanggil adalah salah satu milikmu. Daftar izin yang memutuskan apakah ia
+  pemanggil yang diharapkan service ini.
+- Percayai satu CA, baca identitas dari URI SAN, dan cocokkan dengan tepat.
+- Gagal saat start-up ketika sertifikat atau daftar izin tidak ada, jangan pernah saat request masuk.
+- Tolak dengan sedikit rincian, catat ke log dengan banyak rincian.
