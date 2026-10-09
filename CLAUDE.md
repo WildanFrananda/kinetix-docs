@@ -75,6 +75,17 @@ types, plus a learning track. Directory names under `src/content/docs/`:
 Operations, incident handling, disaster recovery procedures, infrastructure detail and cost belong to
 `kinetix-docs-internal`.
 
+## Service pages
+
+A page under `services/` is a reference page. Its tables — facts, the RPCs it serves with their callers,
+the operations it calls — are rendered by `ServiceFacts`, `ServiceServes` and `ServiceCalls` from
+`src/site/services.ts` and the architecture map's verified nodes and edges, through
+`src/site/service_connections.ts`. They are never typed into the page, so the map and the pages cannot
+disagree. The prose is checked against the version the service runs in production (read the tag from
+the deploy pins, then link that commit), and every claim about who may do what is read from the code
+before it is written — writing the order page found an authorisation defect, which was fixed and
+deployed before the page went out.
+
 ## Interactive diagrams
 
 Interactive, animated diagrams are the reason this site is built on Starlight. They are Svelte 5

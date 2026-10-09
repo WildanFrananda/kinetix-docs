@@ -1,0 +1,108 @@
+---
+title: order
+description: Carts, checkout, orders and returns — the service that turns a cart into a paid order by asking catalog, pricing, matching, warehouse and payment, and owning none of their facts.
+---
+
+import ServiceCalls from "../../../components/ServiceCalls.astro";
+import ServiceFacts from "../../../components/ServiceFacts.astro";
+import ServiceServes from "../../../components/ServiceServes.astro";
+
+order owns a customer's cart and every order from checkout until it is completed, cancelled or returned.
+It owns no price, no stock and no money. At checkout it asks the services that do, records their answers,
+and coordinates the steps that reserve and charge — so most of what order gets right is knowing which
+facts are not its own.
+
+The tables on this page are generated from the same verified data as the
+[system map](/architecture/system-map/), at the commits linked from each row. The prose is checked
+against order [v0.1.14](https://github.com/WildanFrananda/kinetix-order-service/tree/709434bb7dfa9e124eba8d198778ad22194f7ff1),
+the version in production.
+
+## At a glance
+
+<ServiceFacts service="order" />
+
+## What it serves over gRPC
+
+Other services tell order what happened to an order — packed, delivered, returned — and read orders back.
+Each row names who calls it, linked to the line that does.
+
+<ServiceServes service="order" />
+
+## What it calls
+
+<ServiceCalls service="order" />
+
+## How a checkout runs
+
+A checkout is a sequence of questions, each to the service that owns the answer, and then a saga that
+holds what was agreed:
+
+1. **The cart** is read from Redis. The prices in it are not trusted: order asks catalog for each product
+   again, because a cart can be fourteen days old — see
+   [Never trust a number the client can type](/learn/trust-boundaries/).
+2. **Shipping** is quoted by matching and priced by pricing, and **the total** comes from pricing. If
+   pricing cannot be asked, the checkout is refused with `503` rather than charged at a remembered price —
+   see [Unknown is not no](/learn/unknown-is-not-no/).
+3. **The saga** then reserves stock, redeems the voucher, allocates flash-sale stock and holds the money
+   in escrow, recording each step before it calls and compensating newest-first when one is refused — see
+   [The checkout saga](/learn/checkout-saga/).
+
+An `Idempotency-Key` header makes a retried checkout return the first order instead of creating a second
+— see [The same request, twice](/learn/idempotency/).
+
+## How the code is laid out
+
+| Directory | Holds |
+| --- | --- |
+| `Controllers/` | the HTTP surface: cart, checkout, orders, saga administration, health |
+| `Application/` | the checkout saga, the order and cart services, returns and delivery handling |
+| `Application/Ports/` | the interfaces the application needs — [one per collaborator](https://github.com/WildanFrananda/kinetix-order-service/tree/709434bb7dfa9e124eba8d198778ad22194f7ff1/Application/Ports), such as `IPricingClient` and `IStockClient` |
+| `Infrastructure/` | what implements those ports: gRPC clients and the gRPC server, EF Core persistence, background workers, observability |
+| `Domain/` | entities and enums, with no framework code |
+| `Security/` | service identity on the mesh, caller allow lists, token validation |
+
+The application depends on its ports, not on gRPC: the checkout saga is tested with fakes of
+`IPricingClient` and `IStockClient`, while `Infrastructure/Grpc/` is the only place that knows a
+collaborator is a remote service.
+
+## Data
+
+PostgreSQL, through EF Core, holds
+[orders and their items, checkout sagas and their steps, compensation attempts, courier shipping
+settlements, and returns](https://github.com/WildanFrananda/kinetix-order-service/blob/709434bb7dfa9e124eba8d198778ad22194f7ff1/Infrastructure/Persistence/OrderDbContext.cs#L9-L16).
+
+Redis holds carts, one per customer under
+[`cart:principal:{principal id}`](https://github.com/WildanFrananda/kinetix-order-service/blob/709434bb7dfa9e124eba8d198778ad22194f7ff1/Application/Services/CartService.cs#L12-L14),
+expiring fourteen days after the last change. A cart is the only thing order keeps outside its database,
+and nothing in it is believed at checkout.
+
+## Who may do what
+
+- **Customers** reach the cart and orders through the gateway with an access token — only an access
+  token, never the refresh or two-factor token signed by the same key; see
+  [Tokens that can be taken back](/learn/tokens-that-can-be-taken-back/).
+- **An order is read by its owner or by staff.**
+  [Anyone else gets the same `404`](https://github.com/WildanFrananda/kinetix-order-service/blob/709434bb7dfa9e124eba8d198778ad22194f7ff1/Controllers/OrderController.cs#L136-L146)
+  as for an order that does not exist, so the answer does not reveal that it does.
+- **Staff** — the `operator` and `admin` roles — also read the sagas that need attention.
+- **Other services** reach the gRPC port only with a certificate from Kinetix's CA naming a service on
+  order's allow list, and order checks the identity of every server it calls in return; see
+  [Who is calling?](/learn/who-is-calling/).
+
+## Running in the background
+
+| Worker | Does |
+| --- | --- |
+| `StuckSagaSweeper` | [unwinds checkouts that stopped part-way](https://github.com/WildanFrananda/kinetix-order-service/blob/709434bb7dfa9e124eba8d198778ad22194f7ff1/Infrastructure/Background/StuckSagaSweeper.cs#L45-L82) — it releases what was held and never pushes a checkout forward — in bounded rounds; see [The checkout saga](/learn/checkout-saga/) |
+| `ShippingSettlementSweeper` | every minute, [settles the shipping fees owed to couriers](https://github.com/WildanFrananda/kinetix-order-service/blob/709434bb7dfa9e124eba8d198778ad22194f7ff1/Infrastructure/Background/ShippingSettlementSweeper.cs#L12-L16) that payment has not yet confirmed, twenty at a time, backing off to an hour |
+
+## Operating it
+
+- `/health` answers when the process is up; `/health/ready`
+  [runs a real query](https://github.com/WildanFrananda/kinetix-order-service/blob/709434bb7dfa9e124eba8d198778ad22194f7ff1/Controllers/HealthController.cs#L19-L30)
+  and turns `503` while the instance drains after `SIGTERM`, so traffic stops before the process does.
+- `/metrics` serves Prometheus text with the names the platform contract gives order.
+- Every outbound gRPC call
+  [has a deadline](https://github.com/WildanFrananda/kinetix-order-service/blob/709434bb7dfa9e124eba8d198778ad22194f7ff1/Program.cs#L109-L114),
+  five seconds unless `KINETIX_GRPC_DEADLINE_SECONDS` says otherwise, so a dependency that hangs becomes
+  an answer instead of a stuck request.

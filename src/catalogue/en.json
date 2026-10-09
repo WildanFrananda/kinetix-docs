@@ -458,5 +458,16 @@
   "refresh.together.step3": "After the fix, rotation runs in a transaction that locks R1's row first. The first request holds the lock; the second waits for it.",
   "refresh.together.step4": "The first commits R2 and marks R1 used. Only then does the second read R1, find it used, and revoke the family — including the R2 just issued.",
   "refresh.together.step5": "So whichever request won, its new token is already dead: neither copy keeps the session.",
-  "refresh.together.outcome": "A check followed by a write is a race. Lock the row, or make the write conditional, so the second caller sees what the first did."
+  "refresh.together.outcome": "A check followed by a write is a race. Lock the row, or make the write conditional, so the second caller sees what the first did.",
+  "services.sheet.owns": "Owns",
+  "services.sheet.stack": "Stack",
+  "services.sheet.stores": "Data",
+  "services.sheet.routes": "Public routes",
+  "services.sheet.repository": "Repository",
+  "services.sheet.rpc": "RPC",
+  "services.sheet.calledBy": "Called by",
+  "services.sheet.noCaller": "nothing in the estate calls it yet",
+  "services.sheet.target": "Service",
+  "services.sheet.operation": "Operation",
+  "services.sheet.where": "Where"
 }

@@ -177,7 +177,7 @@ nav.sidebar summary .large {
   border-bottom: 1px solid var(--kx-rule);
 }
 
-.sl-markdown-content td code:not(:where(.not-content *)) {
+.sl-markdown-content td :is(code, a):not(:where(.not-content *)) {
   overflow-wrap: anywhere;
 }
 

@@ -1,0 +1,44 @@
+---
+import { catalogueFor } from "../diagrams/engine/catalogue_for";
+import { localeOf } from "../diagrams/engine/locale_of";
+import { outgoingCalls } from "../site/service_connections";
+import type { ServiceSheetProps } from "../site/types/service_sheet_props.type";
+
+type Props = ServiceSheetProps;
+
+const { service } = Astro.props;
+const catalogue = catalogueFor(localeOf(Astro.locals.starlightRoute.entryMeta.lang));
+const calls = outgoingCalls(service);
+---
+
+<table class="service-table">
+  <thead>
+    <tr>
+      <th>{catalogue["services.sheet.target"]}</th>
+      <th>{catalogue["services.sheet.operation"]}</th>
+      <th>{catalogue["services.sheet.where"]}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {
+      calls.map((call) => (
+        <tr>
+          <td>{call.target}</td>
+          <td>
+            <code>{call.operation.split(".").at(-1)!.split("/").map((part, index) => (<>{index > 0 && <>/<wbr /></>}{part}</>))}</code>
+          </td>
+          <td>
+            <a href={call.source.href}>{call.source.label}</a>
+          </td>
+        </tr>
+      ))
+    }
+  </tbody>
+</table>
+
+<style>
+  .service-table {
+    display: table;
+    width: 100%;
+  }
+</style>

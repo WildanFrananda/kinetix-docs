@@ -1,0 +1,49 @@
+---
+import { catalogueFor } from "../diagrams/engine/catalogue_for";
+import { localeOf } from "../diagrams/engine/locale_of";
+import { servedOperations } from "../site/service_connections";
+import type { ServiceSheetProps } from "../site/types/service_sheet_props.type";
+
+type Props = ServiceSheetProps;
+
+const { service } = Astro.props;
+const catalogue = catalogueFor(localeOf(Astro.locals.starlightRoute.entryMeta.lang));
+const served = servedOperations(service);
+---
+
+<table class="service-table">
+  <thead>
+    <tr>
+      <th>{catalogue["services.sheet.rpc"]}</th>
+      <th>{catalogue["services.sheet.calledBy"]}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {
+      served.map((entry) => (
+        <tr>
+          <td>
+            <code>{entry.operation.split(".").at(-1)!.split("/").map((part, index) => (<>{index > 0 && <>/<wbr /></>}{part}</>))}</code>
+          </td>
+          <td>
+            {entry.callers.length === 0
+              ? catalogue["services.sheet.noCaller"]
+              : entry.callers.map((caller, index) => (
+                  <>
+                    {index > 0 && ", "}
+                    <a href={caller.source.href}>{caller.service}</a>
+                  </>
+                ))}
+          </td>
+        </tr>
+      ))
+    }
+  </tbody>
+</table>
+
+<style>
+  .service-table {
+    display: table;
+    width: 100%;
+  }
+</style>

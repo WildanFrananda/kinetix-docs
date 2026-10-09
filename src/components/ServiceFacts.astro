@@ -1,0 +1,57 @@
+---
+import { catalogueFor } from "../diagrams/engine/catalogue_for";
+import { localeOf } from "../diagrams/engine/locale_of";
+import { serviceNode } from "../site/service_connections";
+import { services } from "../site/services";
+import type { ServiceSheetProps } from "../site/types/service_sheet_props.type";
+
+type Props = ServiceSheetProps;
+
+const { service } = Astro.props;
+const catalogue = catalogueFor(localeOf(Astro.locals.starlightRoute.entryMeta.lang));
+const node = serviceNode(service);
+const entry = services.find((candidate) => candidate.name === service);
+
+if (entry === undefined) {
+  throw new Error(`no service ${service} in src/site/services.ts`);
+}
+---
+
+<table class="service-table facts">
+  <tbody>
+    <tr>
+      <th scope="row">{catalogue["services.sheet.owns"]}</th>
+      <td>{catalogue[entry.owns]}</td>
+    </tr>
+    <tr>
+      <th scope="row">{catalogue["services.sheet.stack"]}</th>
+      <td>{entry.language.name} · {entry.framework.name}{entry.framework.version && ` ${entry.framework.version}`}</td>
+    </tr>
+    <tr>
+      <th scope="row">{catalogue["services.sheet.stores"]}</th>
+      <td>{node.stores.length === 0 ? "—" : node.stores.join(", ")}</td>
+    </tr>
+    <tr>
+      <th scope="row">{catalogue["services.sheet.routes"]}</th>
+      <td>{node.routes.length === 0 ? "—" : node.routes.map((route, index) => (<>{index > 0 && ", "}<code>{route}</code></>))}</td>
+    </tr>
+    <tr>
+      <th scope="row">{catalogue["services.sheet.repository"]}</th>
+      <td><a href={entry.repository}>{entry.repository.replace("https://github.com/", "")}</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<style>
+  .service-table {
+    display: table;
+    width: 100%;
+  }
+
+  .facts th {
+    width: 11rem;
+    border-bottom: 1px solid var(--kx-rule);
+    text-align: start;
+    vertical-align: top;
+  }
+</style>
