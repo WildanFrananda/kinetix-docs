@@ -1,0 +1,116 @@
+---
+title: warehouse
+description: Shelves, stock and fulfillment tasks — the service that knows how many units of a product a merchant has in which bin, promises each one to at most one order, and turns a paid order into a parcel.
+---
+
+import ServiceCalls from "../../../components/ServiceCalls.astro";
+import ServiceFacts from "../../../components/ServiceFacts.astro";
+import ServiceServes from "../../../components/ServiceServes.astro";
+
+warehouse owns what is physically on the shelves: the bins, the units of each product in each bin, which
+merchant those units belong to, and how many are already promised to orders. It also owns the work of
+turning a paid order into a parcel — a fulfillment task that the merchant packs and the warehouse reports
+to order when it is ready for a courier.
+
+The tables on this page are generated from the same verified data as the
+[system map](/architecture/system-map/), at the commits linked from each row. The prose is checked
+against warehouse [v0.1.19](https://github.com/WildanFrananda/kinetix-warehouse-service/tree/8f25e2643f631385ffb133b8c09b8e7a2dd14501),
+the version in production.
+
+## At a glance
+
+<ServiceFacts service="warehouse" />
+
+## What it serves over gRPC
+
+Catalog asks how much stock a merchant has, so a listing can show it. Order reserves stock during checkout
+and releases it when a checkout is undone, creates a fulfillment task once the order is paid, cancels it
+when the order is, and records the tracking number the fleet issued.
+
+<ServiceServes service="warehouse" />
+
+## What it calls
+
+<ServiceCalls service="warehouse" />
+
+## Promising a unit once
+
+A reservation
+[locks every bin that carries the product before it reads them](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/services/inventory/reserve_stock_service.rb#L84-L120),
+always in the same order, then keeps only the bins that belong to the order's merchant and reserves from
+one that can cover the whole quantity. Two checkouts for the last units cannot both succeed — the lesson
+[Two buyers, one item](/learn/two-buyers-one-item/) walks through this exact code, and
+[Reproduce the race in psql](/learn/reproduce-the-race-in-psql/) runs it by hand.
+
+Each reservation and release runs inside
+[one transaction with its own idempotency claim](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/services/inventory/idempotent_operation.rb#L78-L100),
+so the checkout saga can retry a step without reserving twice, and a refusal rolls back everything the
+step wrote. A merchant's stock is never sold on another merchant's behalf: units on a shelf with no
+recorded owner are refused rather than given to whoever asks.
+
+## Turning a paid order into a parcel
+
+Order creates a fulfillment task once the escrow holds the buyer's money. The merchant then moves it
+[forward only](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/services/fulfillment/task_transitions.rb):
+received, packing, packed — by hand or by scanning the parcel's SKUs. Reaching packed
+[tells order](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/services/fulfillment/advance_task_service.rb#L80-L96),
+which sends a courier; setting packed again re-sends that report if the first one did not get through.
+
+A task is cancelled only by order, which owns the order and has released the stock and refunded the buyer
+by then. A cancelled task cannot be packed or scanned again, and a move happens only if the task is still
+where the request found it, so two requests racing on one task cannot both move it. Order, in turn,
+accepts "packed" only for a paid order of the same merchant.
+
+## Who may do what
+
+- **A merchant** — a seller with an identity access token,
+  [only an access token](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/lib/kinetix/token_verifier.rb#L57),
+  see [Tokens that can be taken back](/learn/tokens-that-can-be-taken-back/) — sees and packs only its
+  own tasks, prints their labels, sets its same-day cutoff hour, and opens and receives returns, which
+  warehouse relays to order.
+- **The first time a seller is seen**, warehouse
+  [asks identity whether it may sell](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/services/merchants/resolve_service.rb#L29-L41)
+  and keeps its own record of the merchant after that. A merchant suspended later can still pack and ship
+  orders that were already paid — the buyer has paid and the parcel should still go; new sales are
+  stopped at checkout, where order asks identity again. If identity cannot be asked, the request is refused
+  with `503`; see [Unknown is not no](/learn/unknown-is-not-no/).
+- **An admin** runs the floor: creates bins, books goods in for a named merchant, and adjusts stock. An
+  adjustment
+  [cannot go below what is already reserved](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/services/inventory/adjust_stock_service.rb#L80-L82)
+  for orders, and goods on a shelf cannot change merchant by being booked in again.
+- **Other services** reach the gRPC port only with a certificate from Kinetix's CA naming a service on
+  warehouse's allow list; see [Who is calling?](/learn/who-is-calling/).
+
+## How the code is laid out
+
+The layers run in one direction, and their methods carry Sorbet signatures.
+
+| Directory | Holds |
+| --- | --- |
+| `app/controllers/` | the HTTP surface: authentication, the merchant's tasks, returns, the floor operations |
+| `app/rpc/` | the gRPC handlers order and catalog call |
+| `app/services/` | the work: stock reservation and receipt, fulfillment tasks and labels, merchant resolution |
+| `app/contracts/` | the interfaces services depend on — repositories, the identity lookup |
+| `app/repositories/` | ActiveRecord queries, behind those interfaces |
+| `app/models/` | persistence only, with no business rules |
+| `app/clients/` | the gRPC clients for identity and order |
+
+## Data
+
+PostgreSQL holds the bins, the stock of each product in each bin with its merchant and how much of it is
+reserved, the reservations and stock operations ledgers, fulfillment tasks with their lines and labels,
+and every receipt and adjustment. Rails' Solid Cache, Solid Queue and Action Cable keep their own
+databases beside it.
+
+## Operating it
+
+The same image runs as two containers: one serves HTTP, the other serves gRPC.
+
+- `/health` answers when the process is up; `/health/ready`
+  [runs a real query](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/controllers/health_controller.rb#L12-L18).
+  The gRPC container is probed over gRPC's own health protocol, with warehouse's own certificate.
+- `/metrics` serves Prometheus text with the names the platform contract gives warehouse.
+- A reservation waits for a row lock for at most
+  [its `lock_timeout`](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/services/inventory/idempotent_operation.rb#L16-L40),
+  fifteen seconds unless it is configured between one and 120, and set for its own transaction only. A
+  transaction stuck holding a row becomes a refusal instead of a queue that never moves.

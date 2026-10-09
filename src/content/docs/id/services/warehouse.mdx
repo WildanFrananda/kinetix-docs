@@ -1,0 +1,120 @@
+---
+title: warehouse
+description: Rak, stok, dan task fulfillment — service yang tahu berapa unit sebuah produk milik seorang merchant ada di bin mana, menjanjikan setiap unit ke paling banyak satu order, dan mengubah order yang sudah dibayar menjadi paket.
+sourceHash: "c98187529dcc"
+---
+
+import ServiceCalls from "../../../../components/ServiceCalls.astro";
+import ServiceFacts from "../../../../components/ServiceFacts.astro";
+import ServiceServes from "../../../../components/ServiceServes.astro";
+
+warehouse memiliki apa yang secara fisik ada di rak: bin-binnya, unit setiap produk di setiap bin, merchant
+pemilik unit tersebut, dan berapa yang sudah dijanjikan ke order. warehouse juga memiliki pekerjaan mengubah
+order yang sudah dibayar menjadi paket — sebuah task fulfillment yang dikemas merchant dan dilaporkan
+warehouse ke order ketika siap dijemput kurir.
+
+Tabel di halaman ini dibangkitkan dari data terverifikasi yang sama dengan
+[peta sistem](/id/architecture/system-map/), pada commit yang ditautkan dari setiap baris. Teksnya dicek
+terhadap warehouse
+[v0.1.19](https://github.com/WildanFrananda/kinetix-warehouse-service/tree/8f25e2643f631385ffb133b8c09b8e7a2dd14501),
+versi yang berjalan di production.
+
+## Sekilas
+
+<ServiceFacts service="warehouse" />
+
+## Yang dilayani lewat gRPC
+
+Catalog bertanya berapa stok yang dimiliki seorang merchant, supaya daftar produk bisa menampilkannya.
+Order me-reserve stok saat checkout dan melepasnya ketika checkout dibatalkan, membuat task fulfillment
+setelah order dibayar, membatalkannya ketika order dibatalkan, dan mencatat nomor resi yang diterbitkan
+fleet.
+
+<ServiceServes service="warehouse" />
+
+## Yang dipanggil
+
+<ServiceCalls service="warehouse" />
+
+## Menjanjikan satu unit satu kali
+
+Sebuah reservasi
+[mengunci setiap bin yang memuat produk itu sebelum membacanya](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/services/inventory/reserve_stock_service.rb#L84-L120),
+selalu dalam urutan yang sama, lalu hanya menyisakan bin milik merchant order itu dan me-reserve dari bin
+yang bisa menutup seluruh jumlahnya. Dua checkout untuk unit terakhir tidak bisa sama-sama berhasil —
+lesson [Dua pembeli, satu barang](/id/learn/two-buyers-one-item/) menelusuri kode ini persis, dan
+[Reproduksi race di psql](/id/learn/reproduce-the-race-in-psql/) menjalankannya dengan tangan.
+
+Setiap reservasi dan pelepasan berjalan di dalam
+[satu transaksi dengan klaim idempotency-nya sendiri](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/services/inventory/idempotent_operation.rb#L78-L100),
+sehingga saga checkout bisa me-retry sebuah langkah tanpa me-reserve dua kali, dan penolakan membatalkan
+semua yang ditulis langkah itu. Stok seorang merchant tidak pernah dijual atas nama merchant lain: unit di
+rak tanpa pemilik tercatat ditolak, bukan diberikan ke siapa pun yang meminta.
+
+## Mengubah order yang dibayar menjadi paket
+
+Order membuat task fulfillment setelah escrow menahan uang pembeli. Merchant lalu memajukannya
+[hanya ke depan](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/services/fulfillment/task_transitions.rb):
+received, packing, packed — dengan tangan atau dengan memindai SKU di paket. Mencapai packed
+[memberi tahu order](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/services/fulfillment/advance_task_service.rb#L80-L96),
+yang lalu mengirim kurir; mengeset packed lagi mengirim ulang laporan itu kalau yang pertama tidak sampai.
+
+Task hanya dibatalkan oleh order, yang memiliki order itu dan pada saat itu sudah melepas stok dan
+mengembalikan uang pembeli. Task yang sudah dibatalkan tidak bisa di-pack atau dipindai lagi, dan sebuah
+perpindahan hanya terjadi kalau task masih di tempat request menemukannya, sehingga dua request yang
+berebut satu task tidak bisa sama-sama memindahkannya. Order, sebaliknya, hanya menerima "packed" untuk
+order yang sudah dibayar dari merchant yang sama.
+
+## Siapa boleh melakukan apa
+
+- **Merchant** — seller dengan access token dari identity,
+  [hanya access token](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/lib/kinetix/token_verifier.rb#L57),
+  lihat [Token yang bisa ditarik kembali](/id/learn/tokens-that-can-be-taken-back/) — hanya melihat dan
+  mengemas task miliknya sendiri, mencetak labelnya, mengatur jam cutoff pengiriman hari yang sama, serta
+  membuka dan menerima retur, yang diteruskan warehouse ke order.
+- **Saat seorang seller pertama kali dikenal**, warehouse
+  [bertanya ke identity apakah ia boleh berjualan](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/services/merchants/resolve_service.rb#L29-L41)
+  dan setelah itu menyimpan catatan merchant-nya sendiri. Merchant yang di-suspend kemudian masih bisa
+  mengemas dan mengirim order yang sudah dibayar — pembeli sudah membayar dan paketnya tetap harus jalan;
+  penjualan baru dihentikan saat checkout, ketika order bertanya lagi ke identity. Kalau identity tidak bisa
+  ditanya, request ditolak dengan `503`; lihat [Tidak tahu bukan berarti tidak](/id/learn/unknown-is-not-no/).
+- **Admin** menjalankan gudang: membuat bin, mencatat barang masuk atas nama merchant tertentu, dan
+  menyesuaikan stok. Sebuah penyesuaian
+  [tidak bisa turun di bawah jumlah yang sudah di-reserve](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/services/inventory/adjust_stock_service.rb#L80-L82)
+  untuk order, dan barang di rak tidak bisa berganti merchant hanya karena dicatat masuk lagi.
+- **Service lain** menjangkau port gRPC hanya dengan sertifikat dari CA Kinetix yang menyebut service di daftar
+  izin warehouse; lihat [Siapa yang memanggil?](/id/learn/who-is-calling/).
+
+## Bagaimana kodenya disusun
+
+Lapisannya berjalan satu arah, dan method-nya membawa signature Sorbet.
+
+| Direktori | Isi |
+| --- | --- |
+| `app/controllers/` | permukaan HTTP: autentikasi, task milik merchant, retur, operasi gudang |
+| `app/rpc/` | handler gRPC yang dipanggil order dan catalog |
+| `app/services/` | pekerjaannya: reservasi dan penerimaan stok, task fulfillment dan label, resolusi merchant |
+| `app/contracts/` | interface yang dipakai service — repository, lookup ke identity |
+| `app/repositories/` | query ActiveRecord, di balik interface tersebut |
+| `app/models/` | hanya persistence, tanpa aturan bisnis |
+| `app/clients/` | client gRPC untuk identity dan order |
+
+## Data
+
+PostgreSQL menyimpan bin, stok setiap produk di setiap bin beserta merchant-nya dan berapa yang sudah
+di-reserve, ledger reservasi dan operasi stok, task fulfillment beserta baris dan labelnya, serta setiap
+penerimaan dan penyesuaian. Solid Cache, Solid Queue, dan Action Cable milik Rails menyimpan database
+masing-masing di sebelahnya.
+
+## Mengoperasikannya
+
+Image yang sama berjalan sebagai dua container: satu melayani HTTP, yang lain melayani gRPC.
+
+- `/health` menjawab ketika prosesnya hidup; `/health/ready`
+  [menjalankan query sungguhan](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/controllers/health_controller.rb#L12-L18).
+  Container gRPC diperiksa lewat protokol health milik gRPC sendiri, dengan sertifikat warehouse sendiri.
+- `/metrics` menyajikan teks Prometheus dengan nama-nama yang diberikan kontrak platform untuk warehouse.
+- Sebuah reservasi menunggu row lock paling lama
+  [selama `lock_timeout`-nya](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/services/inventory/idempotent_operation.rb#L16-L40),
+  lima belas detik kecuali dikonfigurasi antara satu dan 120, dan hanya berlaku untuk transaksinya sendiri.
+  Transaksi yang macet memegang sebuah baris menjadi penolakan, bukan antrean yang tidak pernah bergerak.
