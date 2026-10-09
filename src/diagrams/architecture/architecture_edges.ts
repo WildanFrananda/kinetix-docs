@@ -61,6 +61,22 @@ export const architectureEdges: readonly MapEdge[] = [
     ]
   },
   {
+    from: "pricing",
+    to: "identity",
+    kind: "grpc",
+    calls: [
+      { operation: "identity.v1.IdentityService/GetMerchantInfo", source: { label: "identity_merchant_directory.rs:39", href: "https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/clients/identity_merchant_directory.rs#L39" } }
+    ]
+  },
+  {
+    from: "pricing",
+    to: "catalog",
+    kind: "grpc",
+    calls: [
+      { operation: "catalog.v1.CatalogService/GetProduct", source: { label: "catalog_product_directory.rs:36", href: "https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/clients/catalog_product_directory.rs#L36" } }
+    ]
+  },
+  {
     from: "order",
     to: "pricing",
     kind: "grpc",

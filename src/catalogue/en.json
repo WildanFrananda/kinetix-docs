@@ -53,7 +53,7 @@
   "stockRace.withLock.outcome": "Three units on the shelf, three promised. B was refused on the true count instead of being given stock that no longer existed.",
   "service.identity.owns": "Accounts, authentication, tokens, merchant approval",
   "service.catalog.owns": "Products and categories",
-  "service.pricing.owns": "Prices, discounts, vouchers, flash sales, shipping rates",
+  "service.pricing.owns": "Discounts, vouchers, flash sales, shipping rates",
   "service.order.owns": "Cart, checkout, orders, returns",
   "service.payment.owns": "Payments, escrow, wallet",
   "service.warehouse.owns": "Bin inventory, stock reservation, fulfilment tasks",

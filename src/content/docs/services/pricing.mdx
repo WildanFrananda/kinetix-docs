@@ -1,0 +1,152 @@
+---
+title: pricing
+description: Discounts, vouchers, flash sales and the shipping rate card — the service that turns catalog's prices and matching's journey into the total a buyer pays, and keeps the ledgers that stop a promotion being spent twice.
+---
+
+import ServiceCalls from "../../../components/ServiceCalls.astro";
+import ServiceFacts from "../../../components/ServiceFacts.astro";
+import ServiceServes from "../../../components/ServiceServes.astro";
+
+pricing owns promotions — discounts, vouchers and flash sales — and the shipping rate card. It owns no
+product price and stores no total: order hands it the lines of a cart at catalog's prices and the journey
+matching quoted, and pricing answers with what the buyer pays. It also keeps the two ledgers that make a
+voucher's quota and a flash sale's stock impossible to spend twice.
+
+The tables on this page are generated from the same verified data as the
+[system map](/architecture/system-map/), at the commits linked from each row. The prose is checked
+against pricing [v0.1.10](https://github.com/WildanFrananda/kinetix-pricing-service/tree/76e134d02c6bffba658eede7db7553d5b108bc80),
+the version in production.
+
+## At a glance
+
+<ServiceFacts service="pricing" />
+
+## What it serves over gRPC
+
+Only order calls pricing over gRPC: before a checkout, to quote shipping and price the cart; during the
+checkout saga, to spend a voucher's quota and a flash sale's stock, and to give them back when a later
+step fails.
+
+<ServiceServes service="pricing" />
+
+## What it calls
+
+pricing calls out only when a seller files a promotion — identity, to learn which merchant the seller
+trades as and whether it may sell, and catalog, to learn who owns the product a promotion names.
+
+<ServiceCalls service="pricing" />
+
+## How a price is calculated
+
+1. **Each line starts at the base price order sends**, which is catalog's price for the product, never
+   the price stored in the cart — see [Never trust a number the client can type](/learn/trust-boundaries/).
+2. **A flash sale or a discount lowers the unit price.**
+   [A running flash sale that is cheaper wins](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/services/pricing_service.rs#L156-L189);
+   otherwise the discount that saves the most, among those that name the product, its category, or
+   nothing at all.
+3. **A voucher is checked against the subtotal** —
+   [active, unexpired, with quota left and the minimum spend met](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/traits/voucher_evaluator.rs#L15-L43)
+   — and takes a percentage, capped at its maximum, or a fixed amount, never more than the subtotal. A
+   promotion of any kind other than `PERCENTAGE` or `FIXED` applies nothing.
+4. **Shipping comes from the rate card** for the tier matching quoted:
+   [a base fee, plus a fee per kilometre, per kilogram, and per kilogram per hundred kilometres](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/models/shipping_rate.rs#L43-L59),
+   rounded to the cent. A tier with no rate
+   [is refused](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/services/pricing_service.rs#L107-L129),
+   not priced at nothing.
+5. **The total** is the subtotal, less the voucher, plus shipping. A voucher discounts the goods only: the
+   shipping fee is what the courier is paid, and no promotion reduces it.
+
+A promotion that cannot be read does not quietly drop out of the price. If the database does not answer,
+the calculation fails, and order refuses the checkout instead of charging a total that left the voucher
+out — see [Unknown is not no](/learn/unknown-is-not-no/).
+
+## Promotions and who owns them
+
+Every promotion has an owner, and
+[the owner decides which carts it reaches](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/traits/promotion_scope.rs#L1-L6):
+
+- **A promotion an admin creates belongs to the platform** and applies to every cart.
+- **A promotion a seller creates belongs to their merchant** — the merchant identity names for that
+  seller, and only while identity says it may sell — and applies only to that merchant's carts. A cart
+  holds one merchant's products, because order refuses a cart that spans two.
+- **A flash sale, or a discount that names a product, must name the seller's own product**, as catalog
+  records it. A seller's category discount needs no such check: it can only reach the seller's own cart.
+
+[These checks](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/services/promotion_service.rs#L25-L76)
+run before anything is written. If identity or catalog cannot be asked, the promotion is refused with
+`503` rather than filed on a guess.
+
+## Spending a promotion exactly once
+
+`RedeemVoucher` and `AllocateFlashSaleStock` each run in one transaction and write a ledger row per order,
+so a retried call finds its own row and answers as before instead of spending again. The spend itself is
+[one guarded statement](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/repositories/quota_repository.rs#L78-L94):
+
+```sql
+UPDATE vouchers
+SET used_count = used_count + 1
+WHERE code = $1
+  AND active
+  AND used_count < quota
+```
+
+The decision is made in the database, against the row as it is when the statement runs. When two
+checkouts race for a voucher's last use, the second waits on the first one's row lock and then re-checks
+the condition against the committed row — which no longer passes, so it updates nothing and is refused.
+This is the same race as in [Two buyers, one item](/learn/two-buyers-one-item/), closed by deciding in
+the statement rather than in the application. A voucher owned by one merchant is refused outright for
+another merchant's order.
+
+The release calls mark the ledger row released and give the use or the units back, which is how the
+checkout saga undoes a step — see [The checkout saga](/learn/checkout-saga/).
+
+## How the code is laid out
+
+| Directory | Holds |
+| --- | --- |
+| `src/routes/` | the HTTP surface: creating and reading promotions, health, metrics |
+| `src/grpc/` | the gRPC server order calls |
+| `src/services/` | the price calculation, who may own a promotion, the voucher preview |
+| `src/traits/` | the discount and voucher evaluators, and which carts a promotion reaches |
+| `src/repositories/` | Diesel repositories behind ports, and the two ledgers |
+| `src/clients/` | the gRPC clients for identity and catalog, behind ports |
+| `src/security/` | service identity on the mesh, the caller allow list, token verification |
+| `migrations/` | SQL migrations, embedded in the binary |
+
+The price calculation depends on repository ports and the ownership rules on directory ports, not on
+Diesel or gRPC, so both are tested with fakes and no database.
+
+## Data
+
+PostgreSQL, through Diesel, holds
+[discounts, vouchers and flash sales, each with its owning merchant or none; the voucher redemption and
+flash-sale allocation ledgers; and the shipping rate card](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/schema.rs).
+The migrations are compiled into the binary and
+[run by the same image with `--migrate`](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/main.rs#L45-L59),
+in a one-shot container that must finish before the service starts.
+
+## Who may do what
+
+- **Creating a promotion** takes an identity access token —
+  [only an access token](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/security/jwt.rs#L180-L182),
+  see [Tokens that can be taken back](/learn/tokens-that-can-be-taken-back/) — with
+  [the `admin` or `seller` role](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/guards/auth_guard.rs#L72-L99),
+  and then the ownership checks above.
+- **Reading** the active discounts, a voucher by its code and a product's flash sale needs no token. So
+  does the voucher preview, which takes the cart's merchant with the code and the subtotal and answers as
+  checkout would.
+- **Other services** reach the gRPC port only with a certificate from Kinetix's CA naming a service on
+  pricing's allow list, and pricing checks the name on every server it calls in return; see
+  [Who is calling?](/learn/who-is-calling/).
+
+## Operating it
+
+- `/health` answers when the process is up; `/health/ready`
+  [runs a real query](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/routes/health_routes.rs#L16-L38),
+  so the container is healthy only when the service can serve.
+- `/metrics` serves Prometheus text with the names the platform contract gives pricing.
+- Every call to identity and catalog
+  [has a five-second deadline](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/clients/identity_merchant_directory.rs#L11),
+  so a peer that hangs becomes a refusal instead of a stuck request.
+- On `SIGTERM` both servers stop taking work and finish what they hold, within
+  [a 25-second budget](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/main.rs#L37).

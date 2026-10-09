@@ -50,8 +50,8 @@ export const architectureNodes: readonly MapNode[] = [
     kind: "service",
     name: "warehouse",
     summary: "service.warehouse.owns",
-    x: 280,
-    y: 275,
+    x: 265,
+    y: 245,
     logo: "ruby",
     repository: `${github}/kinetix-warehouse-service`,
     serves: [
@@ -72,8 +72,8 @@ export const architectureNodes: readonly MapNode[] = [
     kind: "service",
     name: "catalog",
     summary: "service.catalog.owns",
-    x: 480,
-    y: 275,
+    x: 500,
+    y: 270,
     logo: "python",
     repository: `${github}/kinetix-catalog-service`,
     serves: [
@@ -164,8 +164,8 @@ export const architectureNodes: readonly MapNode[] = [
     kind: "service",
     name: "order",
     summary: "service.order.owns",
-    x: 380,
-    y: 420,
+    x: 375,
+    y: 450,
     logo: "csharp",
     repository: `${github}/kinetix-order-service`,
     serves: [

@@ -53,7 +53,7 @@
   "stockRace.withLock.outcome": "Tiga unit di rak, tiga dijanjikan. B ditolak berdasarkan hitungan yang benar, bukan diberi stok yang sudah tidak ada.",
   "service.identity.owns": "Akun, autentikasi, token, persetujuan merchant",
   "service.catalog.owns": "Produk dan kategori",
-  "service.pricing.owns": "Harga, diskon, voucher, flash sale, tarif ongkir",
+  "service.pricing.owns": "Diskon, voucher, flash sale, tarif ongkir",
   "service.order.owns": "Keranjang, checkout, pesanan, retur",
   "service.payment.owns": "Pembayaran, escrow, wallet",
   "service.warehouse.owns": "Inventori bin, reservasi stok, fulfilment task",

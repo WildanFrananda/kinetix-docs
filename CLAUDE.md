@@ -84,7 +84,10 @@ the operations it calls — are rendered by `ServiceFacts`, `ServiceServes` and 
 disagree. The prose is checked against the version the service runs in production (read the tag from
 the deploy pins, then link that commit), and every claim about who may do what is read from the code
 before it is written — writing the order page found an authorisation defect, which was fixed and
-deployed before the page went out.
+deployed before the page went out. Follow the money as well as the permissions: writing the pricing page
+found that a voucher could cut the courier's fee, because the discounted fee was what payment paid out.
+A new call between services is a new edge on the map, and the map may have to be re-laid out for it;
+`tests/architecture_map.test.ts` refuses a line that passes behind a box.
 
 ## Interactive diagrams
 
