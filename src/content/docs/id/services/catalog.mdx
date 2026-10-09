@@ -1,0 +1,144 @@
+---
+title: catalog
+description: Produk, kategori, dan harganya — service yang ditanya semua service lain tentang apa sebuah produk, siapa penjualnya, dan berapa harganya, dan satu-satunya yang memutuskan seorang seller boleh mendaftarkannya.
+sourceHash: "f320e1b2530c"
+---
+
+import ServiceCalls from "../../../../components/ServiceCalls.astro";
+import ServiceFacts from "../../../../components/ServiceFacts.astro";
+import ServiceServes from "../../../../components/ServiceServes.astro";
+
+catalog memiliki produk dan kategori: nama sebuah produk, merchant yang menjualnya, kategori tempat ia
+diletakkan, dan harganya. Order bertanya ke catalog berapa yang harus ditagih alih-alih percaya pada
+keranjang, pricing bertanya siapa pemilik sebuah produk sebelum mengizinkan seller memberi diskon, dan search
+menyalin seluruh katalog dari sini. Stok bukan milik catalog: catalog bertanya ke warehouse, dan mengatakannya
+terus terang ketika warehouse tidak bisa menjawab.
+
+Tabel di halaman ini dibangkitkan dari data terverifikasi yang sama dengan
+[peta sistem](/id/architecture/system-map/), pada commit yang ditautkan dari setiap baris. Teksnya dicek
+terhadap catalog
+[v0.1.15](https://github.com/WildanFrananda/kinetix-catalog-service/tree/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564),
+versi yang berjalan di production.
+
+## Sekilas
+
+<ServiceFacts service="catalog" />
+
+## Yang dilayani lewat gRPC
+
+Order dan pricing meminta satu produk berdasarkan SKU-nya. Search menelusuri seluruh katalog lewat change
+feed dan menghitung produk yang sedang dijual, untuk memastikan salinannya lengkap.
+
+<ServiceServes service="catalog" />
+
+Produk yang sudah ditarik
+[tidak ditemukan](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/repositories/django_product_repository.py#L79-L84)
+oleh `GetProduct`, sehingga keranjang yang masih memuatnya tidak bisa di-checkout. Change feed
+[melaporkannya sebagai dihapus](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/repositories/django_product_repository.py#L52-L58)
+alih-alih melewatkannya, dan dari situlah search tahu harus membuangnya.
+
+## Yang dipanggil
+
+<ServiceCalls service="catalog" />
+
+## Siapa boleh mendaftarkan produk
+
+Sebuah produk dibuat, diubah, dan ditarik oleh seller yang merchant-nya menjual produk itu, dan tidak oleh
+siapa pun yang lain:
+
+- **Seller harus diizinkan berjualan.** Sebelum menulis apa pun, catalog bertanya ke identity
+  [merchant mana yang dijalankan seller itu dan apakah merchant itu boleh berjualan](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/application/services/product_service.py#L120-L131).
+  Kalau identity tidak bisa ditanya, penulisan ditolak dengan `503` — gangguan tidak dibaca sebagai "seller
+  ini boleh" maupun "seller ini tidak boleh"; lihat [Tidak tahu bukan berarti tidak](/id/learn/unknown-is-not-no/).
+- **Produknya harus milik dia.** Mengubah atau menarik sebuah produk
+  [memerlukan kecocokan persis](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/application/services/product_service.py#L151-L192)
+  antara merchant produk itu dan merchant seller.
+- **Satu SKU menyebut satu produk.** Produk baru di-insert dan produk yang ada
+  [di-update berdasarkan id-nya](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/repositories/django_product_repository.py#L93-L115),
+  tidak pernah dicocokkan lewat SKU, sehingga SKU milik produk lain ditolak dengan `409` alih-alih menjangkau
+  produk tersebut.
+- **Produk yang dijual punya merchant.** Database sendiri menolak produk aktif tanpa merchant, lewat sebuah
+  [check constraint](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/models/product_model.py#L26-L34).
+
+Menarik sebuah produk membuatnya tidak aktif; produk tidak pernah dihapus, karena order, change feed, dan
+warehouse masih menyebutnya dengan SKU-nya.
+
+## Apa yang boleh tertulis di produk
+
+[Setiap field dicek](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/application/services/product_field_parser.py)
+sebelum disimpan, dan request yang gagal dijawab `400` dengan menyebut field-nya:
+
+- **Harga** lebih dari nol, paling banyak dua angka desimal, dan muat di kolomnya.
+- **Mata uang** adalah rupiah, satu-satunya mata uang yang dibayarkan order. Harga dalam mata uang lain akan
+  menjadi produk yang tidak bisa dibeli siapa pun.
+- **SKU** tidak berisi spasi atau garis miring, karena ia bagian dari URL; judul dan URL gambar muat di
+  kolomnya, dan URL gambar memakai `http` atau `https`.
+
+Satu halaman daftar produk berisi
+[paling banyak seratus produk](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/application/services/product_filter_parser.py#L7),
+karena setiap produk di dalamnya adalah pertanyaan ke warehouse.
+
+## Stok adalah jawaban warehouse
+
+catalog menampilkan stok tetapi tidak menyimpannya. Daftar produk bertanya ke warehouse sekali per merchant di
+halaman itu, dan ketika warehouse tidak bisa menjawab, stoknya
+[dilaporkan sebagai tidak diketahui](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/application/services/product_service.py#L44-L57)
+— bukan nol, yang akan memberi tahu pembeli bahwa barangnya habis hanya karena sebuah dependency lambat. Stok
+sebuah produk adalah salah satu dari tiga jawaban: tersedia, habis, atau tidak diketahui.
+
+## Kategori
+
+Kategori dikelola oleh [`admin`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/api/views/category_view.py#L20-L33)
+dan bisa dibaca siapa saja. Kategori yang masih berisi produk, termasuk yang sudah ditarik,
+[tidak dihapus](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/repositories/django_product_repository.py#L148-L157):
+request-nya dijawab `409` beserta jumlah produk di dalamnya. Menghapus kategori tidak pernah menghapus produk.
+
+## Bagaimana kodenya disusun
+
+catalog bersifat hexagonal: domain tidak tahu apa-apa tentang Django, dan dunia luar menjangkaunya hanya lewat
+port. Di dalam `core/`:
+
+| Direktori | Isi |
+| --- | --- |
+| `domain/` | entity, error, dan port — `ProductRepository` untuk yang dimiliki catalog, `...ServicePort` untuk yang dimiliki service lain |
+| `application/` | service produk dan kategori, dan parser yang mengecek apa yang boleh tertulis di request |
+| `infrastructure/` | model Django dan repository, client dan server gRPC, keamanan mesh, circuit breaker, observability |
+| `api/` | view Django REST Framework yang tipis dan wiring yang membangun service-nya |
+
+Service-nya diuji dengan tiruan setiap port tanpa database; repository, change feed, dan aturan yang dijaga
+database diuji terhadap PostgreSQL.
+
+## Data
+
+PostgreSQL menyimpan produk dan kategori. Produk punya index pada `(updated_at, sku)`, yang ditelusuri change
+feed: sebuah cursor berisi timestamp dan SKU terakhir yang dikembalikan, sehingga sebuah halaman tidak pernah
+melewatkan atau mengulang produk, bahkan ketika banyak produk berubah pada saat yang sama.
+
+## Siapa boleh melakukan apa
+
+- **Siapa saja** membaca daftar produk, sebuah produk berdasarkan SKU-nya, dan kategori.
+- **Seller** — dengan access token dari identity,
+  [hanya access token](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/security/token_verifier.py#L64-L65),
+  lihat [Token yang bisa ditarik kembali](/id/learn/tokens-that-can-be-taken-back/) — membuat, mengubah, dan
+  menarik produk merchant-nya sendiri, dengan aturan di atas.
+- **Admin** mengelola kategori.
+- **Service lain** menjangkau port gRPC hanya dengan sertifikat dari CA Kinetix yang menyebut service di daftar
+  izin catalog; lihat [Siapa yang memanggil?](/id/learn/who-is-calling/).
+
+## Mengoperasikannya
+
+Image yang sama berjalan sebagai dua container: satu melayani HTTP lewat gunicorn, yang lain melayani gRPC.
+
+- `/health` menjawab ketika prosesnya hidup; `/health/ready`
+  [menjalankan query sungguhan](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/api/views/readiness_view.py#L11-L22).
+  Container gRPC diperiksa lewat protokol health milik gRPC sendiri.
+- `/metrics` menyajikan teks Prometheus dengan nama-nama yang diberikan kontrak platform untuk catalog.
+- Panggilan ke identity dan warehouse punya timeout lima detik dan berada di balik
+  [circuit breaker](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/resilience/circuit_breaker.py#L23-L29)
+  yang terbuka setelah tiga
+  [kegagalan peer](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/resilience/is_peer_fault.py)
+  berturut-turut dan mencoba lagi setelah lima belas detik. Penolakan adalah jawaban, bukan kegagalan, dan
+  tidak dihitung.
+- Saat `SIGTERM`, server gRPC
+  [melaporkan dirinya tidak melayani dan melakukan drain](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/management/commands/grpcserver.py#L91-L94)
+  paling lama sepuluh detik; gunicorn memberi worker HTTP 25 detik.

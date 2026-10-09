@@ -1,0 +1,140 @@
+---
+title: catalog
+description: Products, categories and their prices — the service every other one asks what a product is, who sells it and what it costs, and the only one that decides a seller may list it.
+---
+
+import ServiceCalls from "../../../components/ServiceCalls.astro";
+import ServiceFacts from "../../../components/ServiceFacts.astro";
+import ServiceServes from "../../../components/ServiceServes.astro";
+
+catalog owns products and categories: what a product is called, which merchant sells it, which category
+it is filed under, and its price. Order asks catalog what to charge rather than believing the cart, pricing
+asks it who owns a product before letting a seller discount it, and search copies the whole catalogue from
+it. Stock is not catalog's: it asks warehouse, and says so when warehouse cannot answer.
+
+The tables on this page are generated from the same verified data as the
+[system map](/architecture/system-map/), at the commits linked from each row. The prose is checked
+against catalog [v0.1.15](https://github.com/WildanFrananda/kinetix-catalog-service/tree/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564),
+the version in production.
+
+## At a glance
+
+<ServiceFacts service="catalog" />
+
+## What it serves over gRPC
+
+Order and pricing ask for one product by its SKU. Search walks the whole catalogue through a change feed
+and counts what is on sale, to check that its copy is complete.
+
+<ServiceServes service="catalog" />
+
+A product that has been withdrawn
+[is not found](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/repositories/django_product_repository.py#L79-L84)
+by `GetProduct`, so a cart that still holds one cannot be checked out. The change feed
+[reports it as removed](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/repositories/django_product_repository.py#L52-L58)
+rather than leaving it out, which is how search learns to drop it.
+
+## What it calls
+
+<ServiceCalls service="catalog" />
+
+## Who may list a product
+
+A product is created, changed and withdrawn by the seller whose merchant sells it, and by nobody else:
+
+- **The seller must be allowed to trade.** Before any write, catalog asks identity
+  [which merchant the seller trades as and whether it may sell](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/application/services/product_service.py#L120-L131).
+  If identity cannot be asked, the write is refused with `503` — an outage is not read as "this seller
+  may" or "this seller may not"; see [Unknown is not no](/learn/unknown-is-not-no/).
+- **The product must be theirs.** Changing or withdrawing a product
+  [takes an exact match](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/application/services/product_service.py#L151-L192)
+  between its merchant and the seller's.
+- **A SKU names one product.** A new product is inserted and an existing one is
+  [updated by its id](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/repositories/django_product_repository.py#L93-L115),
+  never matched by SKU, so a SKU that belongs to another product is refused with `409` instead of
+  reaching that product.
+- **A product on sale has a merchant.** The database itself refuses an active product without one,
+  through a [check constraint](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/models/product_model.py#L26-L34).
+
+Withdrawing a product sets it inactive; it is never deleted, because orders, the change feed and the
+warehouse all still name it by its SKU.
+
+## What a product may say
+
+[Every field is checked](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/application/services/product_field_parser.py)
+before it is stored, and a request that fails is answered `400` naming the field:
+
+- **The price** is more than zero, with at most two decimal places, and fits the column.
+- **The currency** is the rupiah, the only currency order settles in. A price in anything else would be a
+  listing nobody can buy.
+- **The SKU** has no spaces or slashes, because it is part of a URL; the title and the image URL fit their
+  columns, and the image URL is `http` or `https`.
+
+A listing page holds
+[at most a hundred products](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/application/services/product_filter_parser.py#L7),
+because every product on it is a question to warehouse.
+
+## Stock is warehouse's answer
+
+Catalog shows stock but does not hold it. A listing asks warehouse once per merchant on the page, and when
+warehouse cannot answer, the stock is
+[reported as unknown](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/application/services/product_service.py#L44-L57)
+— not as zero, which would tell a buyer something is sold out because a dependency was slow. A product's
+stock is one of three answers: in stock, out of stock, or unknown.
+
+## Categories
+
+Categories are managed by an [`admin`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/api/views/category_view.py#L20-L33)
+and read by anyone. A category that still holds products, withdrawn ones included,
+[is not deleted](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/repositories/django_product_repository.py#L148-L157):
+the request is answered `409` with how many products are in it. Deleting a category never deletes a product.
+
+## How the code is laid out
+
+catalog is hexagonal: the domain knows nothing of Django, and the outside world reaches it only through
+ports. Under `core/`:
+
+| Directory | Holds |
+| --- | --- |
+| `domain/` | entities, errors and the ports — `ProductRepository` for what catalog owns, `...ServicePort` for what another service owns |
+| `application/` | the product and category services, and the parsers that check what a request may say |
+| `infrastructure/` | Django models and the repository, the gRPC clients and server, mesh security, circuit breakers, observability |
+| `api/` | thin Django REST Framework views and the wiring that builds the services |
+
+The services are tested with fakes of every port and no database; the repository, the change feed and the
+rules the database enforces are tested against PostgreSQL.
+
+## Data
+
+PostgreSQL holds products and categories. Products carry an index on `(updated_at, sku)`, which is what
+the change feed walks: a cursor of the last timestamp and SKU it returned, so a page never skips or repeats
+a product even when many change in the same instant.
+
+## Who may do what
+
+- **Anyone** reads the listing, a product by its SKU, and the categories.
+- **A seller** — with an identity access token,
+  [only an access token](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/security/token_verifier.py#L64-L65),
+  see [Tokens that can be taken back](/learn/tokens-that-can-be-taken-back/) — creates, changes and
+  withdraws their own merchant's products, under the rules above.
+- **An admin** manages categories.
+- **Other services** reach the gRPC port only with a certificate from Kinetix's CA naming a service on
+  catalog's allow list; see [Who is calling?](/learn/who-is-calling/).
+
+## Operating it
+
+The same image runs as two containers: one serves HTTP through gunicorn, the other serves gRPC.
+
+- `/health` answers when the process is up; `/health/ready`
+  [runs a real query](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/api/views/readiness_view.py#L11-L22).
+  The gRPC container is probed over gRPC's own health protocol.
+- `/metrics` serves Prometheus text with the names the platform contract gives catalog.
+- Calls to identity and warehouse have a five-second timeout and sit behind
+  [a circuit breaker](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/resilience/circuit_breaker.py#L23-L29)
+  that opens after three
+  [peer faults](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/resilience/is_peer_fault.py)
+  in a row and tries again after fifteen seconds. A refusal is an answer, not a fault, and does not
+  count towards it.
+- On `SIGTERM` the gRPC server
+  [reports itself not serving and drains](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/management/commands/grpcserver.py#L91-L94)
+  for up to ten seconds; gunicorn gives HTTP workers 25 seconds.

@@ -52,7 +52,7 @@
   "stockRace.withLock.step5": "Tidak ada bin yang bisa menutup tiga unit, jadi warehouse menolak dengan INSUFFICIENT_STOCK dan me-rollback transaksi B, beserta baris ledger milik B.",
   "stockRace.withLock.outcome": "Tiga unit di rak, tiga dijanjikan. B ditolak berdasarkan hitungan yang benar, bukan diberi stok yang sudah tidak ada.",
   "service.identity.owns": "Akun, autentikasi, token, persetujuan merchant",
-  "service.catalog.owns": "Produk dan kategori",
+  "service.catalog.owns": "Produk, harga, dan kategori",
   "service.pricing.owns": "Diskon, voucher, flash sale, tarif ongkir",
   "service.order.owns": "Keranjang, checkout, pesanan, retur",
   "service.payment.owns": "Pembayaran, escrow, wallet",

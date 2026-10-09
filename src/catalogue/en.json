@@ -52,7 +52,7 @@
   "stockRace.withLock.step5": "No bin can cover three units, so warehouse refuses with INSUFFICIENT_STOCK and rolls B's transaction back, taking B's ledger rows with it.",
   "stockRace.withLock.outcome": "Three units on the shelf, three promised. B was refused on the true count instead of being given stock that no longer existed.",
   "service.identity.owns": "Accounts, authentication, tokens, merchant approval",
-  "service.catalog.owns": "Products and categories",
+  "service.catalog.owns": "Products, prices and categories",
   "service.pricing.owns": "Discounts, vouchers, flash sales, shipping rates",
   "service.order.owns": "Cart, checkout, orders, returns",
   "service.payment.owns": "Payments, escrow, wallet",
