@@ -76,11 +76,11 @@ const serviceEntries: readonly StackEntry[] = [
   ]),
   service("payment", [
     { role: "stack.role.language", techs: [tech("Java", "21", "java")] },
-    { role: "stack.role.framework", techs: [tech("Spring Boot", "3.5.16", "spring"), tech("Tomcat", "10.1.59")] },
-    { role: "stack.role.grpc", techs: [tech("grpc-java", "1.68.2")] },
+    { role: "stack.role.framework", techs: [tech("Spring Boot", "4.1.1", "spring"), tech("Tomcat", "11.0.26")] },
+    { role: "stack.role.grpc", techs: [tech("grpc-java", "1.83.1")] },
     { role: "stack.role.data", techs: [postgres, tech("Spring Data JPA"), tech("Liquibase")] },
     { role: "stack.role.tests", techs: [tech("JUnit Jupiter", "6.1.3"), tech("Mockito", "5.14.2")] },
-    { role: "stack.role.tooling", techs: [tech("Gradle", "8.12")] }
+    { role: "stack.role.tooling", techs: [tech("Gradle", "8.14.6")] }
   ]),
   service("warehouse", [
     { role: "stack.role.language", techs: [tech("Ruby", "4.0.6", "ruby")] },

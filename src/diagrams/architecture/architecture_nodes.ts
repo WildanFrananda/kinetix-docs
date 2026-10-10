@@ -153,7 +153,8 @@ export const architectureNodes: readonly MapNode[] = [
       "payment.v1.PaymentService/ReleaseEscrow",
       "payment.v1.PaymentService/RefundEscrow",
       "payment.v1.PaymentService/SettleShippingFee",
-      "payment.v1.PaymentService/GetEscrowStatus"
+      "payment.v1.PaymentService/GetEscrowStatus",
+      "payment.v1.PaymentService/RefundGoods"
     ],
     routes: ["/api/v1/payment"],
     stores: [postgres],

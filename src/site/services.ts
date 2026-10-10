@@ -36,7 +36,7 @@ export const services: readonly Service[] = [
     repository: `${github}/kinetix-payment-service`,
     owns: "service.payment.owns",
     language: { name: "Java", logo: "java" },
-    framework: { name: "Spring Boot", logo: "spring", version: "3.5.16" }
+    framework: { name: "Spring Boot", logo: "spring", version: "4.1.1" }
   },
   {
     name: "warehouse",

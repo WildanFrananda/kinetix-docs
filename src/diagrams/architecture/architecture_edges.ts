@@ -123,10 +123,12 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "payment",
     kind: "grpc",
     calls: [
-      { operation: "payment.v1.PaymentService/CreateEscrowHold", source: { label: "EscrowGrpcClient.cs:49", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Infrastructure/Grpc/EscrowGrpcClient.cs#L49" } },
-      { operation: "payment.v1.PaymentService/RefundEscrow", source: { label: "EscrowGrpcClient.cs:73", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Infrastructure/Grpc/EscrowGrpcClient.cs#L73" } },
-      { operation: "payment.v1.PaymentService/SettleShippingFee", source: { label: "EscrowGrpcClient.cs:107", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Infrastructure/Grpc/EscrowGrpcClient.cs#L107" } },
-      { operation: "payment.v1.PaymentService/GetEscrowStatus", source: { label: "EscrowGrpcClient.cs:128", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/82834065c34981f1c69a88b3d3317d20396358d9/Infrastructure/Grpc/EscrowGrpcClient.cs#L128" } }
+      { operation: "payment.v1.PaymentService/CreateEscrowHold", source: { label: "EscrowGrpcClient.cs:49", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/47f3a62482646bb5e43957fd44000eed39f608ed/Infrastructure/Grpc/EscrowGrpcClient.cs#L49" } },
+      { operation: "payment.v1.PaymentService/RefundEscrow", source: { label: "EscrowGrpcClient.cs:73", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/47f3a62482646bb5e43957fd44000eed39f608ed/Infrastructure/Grpc/EscrowGrpcClient.cs#L73" } },
+      { operation: "payment.v1.PaymentService/ReleaseEscrow", source: { label: "EscrowGrpcClient.cs:95", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/47f3a62482646bb5e43957fd44000eed39f608ed/Infrastructure/Grpc/EscrowGrpcClient.cs#L95" } },
+      { operation: "payment.v1.PaymentService/RefundGoods", source: { label: "EscrowGrpcClient.cs:110", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/47f3a62482646bb5e43957fd44000eed39f608ed/Infrastructure/Grpc/EscrowGrpcClient.cs#L110" } },
+      { operation: "payment.v1.PaymentService/SettleShippingFee", source: { label: "EscrowGrpcClient.cs:137", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/47f3a62482646bb5e43957fd44000eed39f608ed/Infrastructure/Grpc/EscrowGrpcClient.cs#L137" } },
+      { operation: "payment.v1.PaymentService/GetEscrowStatus", source: { label: "EscrowGrpcClient.cs:158", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/47f3a62482646bb5e43957fd44000eed39f608ed/Infrastructure/Grpc/EscrowGrpcClient.cs#L158" } }
     ]
   },
   {
