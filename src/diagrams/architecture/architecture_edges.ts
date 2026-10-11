@@ -22,8 +22,8 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "midtrans",
     kind: "external",
     calls: [
-      { operation: "POST /v2/charge", source: { label: "MidtransPaymentGatewayAdapter.java:82", href: "https://github.com/WildanFrananda/kinetix-payment-service/blob/c08f8cb6298e76495f6b259b239e20b1cd3231de/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/gateway/MidtransPaymentGatewayAdapter.java#L82" } },
-      { operation: "GET /v2/{reference}/status", source: { label: "MidtransPaymentGatewayAdapter.java:108", href: "https://github.com/WildanFrananda/kinetix-payment-service/blob/c08f8cb6298e76495f6b259b239e20b1cd3231de/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/gateway/MidtransPaymentGatewayAdapter.java#L108" } }
+      { operation: "POST /v2/charge", source: { label: "MidtransPaymentGatewayAdapter.java:82", href: "https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/gateway/MidtransPaymentGatewayAdapter.java#L82" } },
+      { operation: "GET /v2/{reference}/status", source: { label: "MidtransPaymentGatewayAdapter.java:108", href: "https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/gateway/MidtransPaymentGatewayAdapter.java#L108" } }
     ]
   },
   {

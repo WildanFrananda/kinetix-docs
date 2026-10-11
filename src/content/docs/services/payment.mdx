@@ -1,0 +1,191 @@
+---
+title: payment
+description: Wallets, top-ups and escrow — the service that holds a checkout's money until order says where it goes, and credits a top-up only once Midtrans confirms it was paid.
+---
+
+import ServiceCalls from "../../../components/ServiceCalls.astro";
+import ServiceFacts from "../../../components/ServiceFacts.astro";
+import ServiceServes from "../../../components/ServiceServes.astro";
+
+payment owns the wallets — a customer's balance, a merchant's and a courier's earnings — the top-ups
+that put money into a customer's wallet through Midtrans, and the escrow that holds a checkout's money
+between the buyer and the people it is owed to. It decides none of the timing. Order tells it when to
+hold, when to pay the courier, when to refund and when to pay the merchant; payment's job is to move
+exactly that money, once, and to refuse anything that would not add up.
+
+The tables on this page are generated from the same verified data as the
+[system map](/architecture/system-map/), at the commits linked from each row. The prose is checked
+against payment [v0.1.10](https://github.com/WildanFrananda/kinetix-payment-service/tree/afc4f61b28905705a6227e2c085ed04b2703a695),
+the version in production.
+
+## At a glance
+
+<ServiceFacts service="payment" />
+
+## What it serves over gRPC
+
+Escrow is reached only over gRPC, and only order calls it: to hold the money at checkout, and later to
+settle, refund or release it as the order's life plays out.
+
+<ServiceServes service="payment" />
+
+## What it calls
+
+payment calls out only to Midtrans: to create the charge for a top-up, and to ask whether it was paid.
+
+<ServiceCalls service="payment" />
+
+## How a checkout's money moves
+
+1. **Held at checkout.** `CreateEscrowHold`
+   [debits the customer's wallet the order's total](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L328-L385)
+   — or refuses with `INSUFFICIENT_BALANCE` — and adds the merchant's share to the merchant's pending
+   balance. The shipping fee is pending for the courier; at checkout no courier has been dispatched yet,
+   so it waits in a holding account for unassigned couriers' fees. A hold
+   [must balance](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/domain/src/main/java/com/kinetix/payment/domain/entity/EscrowHold.java#L46-L78):
+   the total is the merchant's share plus the fee, or nothing is held.
+2. **The courier is paid on delivery.** When matching reports a delivery, order calls
+   `SettleShippingFee` naming the courier who made it, and
+   [the fee moves to that courier's wallet](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L149-L224)
+   from wherever it is held. A settled fee cannot be pointed at a second courier, and a refunded order
+   has no fee left to pay. If the merchant was paid before the courier's report arrived, the fee waited
+   in the holding account, and
+   [only a fee that order put there](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L226-L237)
+   is paid out of it — the account holds every order's fees together, and paying one that was never kept
+   there would spend another courier's.
+3. **Returned goods are refunded from the merchant's share.** `RefundGoods`
+   [lowers the merchant's pending balance and credits the customer](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L290-L322),
+   only while the money is still held, and
+   [never for more than the merchant still has coming](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/domain/src/main/java/com/kinetix/payment/domain/entity/EscrowHold.java#L88-L118).
+   The shipping fee is never part of it. How much a return is worth is order's calculation — see
+   [order's returns](/services/order/#returns).
+4. **The merchant is paid when the order completes.** `ReleaseEscrow`
+   [moves what is left of the merchant's share to their available balance](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L446-L498),
+   and a fee no courier has claimed yet becomes available in the holding account. payment has no timer
+   of its own: order asks for the release once the return window has closed — see
+   [When the merchant is paid](/services/order/#when-the-merchant-is-paid).
+5. **A cancelled order is refunded whole.** `RefundEscrow`
+   [gives the customer back what is still held](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L557-L558)
+   — the total less any goods already refunded — and cancels the merchant's and the courier's pending
+   amounts. It is refused once the merchant has been paid, and
+   [once the courier has been paid](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L542-L548)
+   for a delivery that happened: refunding the fee then would take it from no account at all.
+
+A wallet never goes below zero to make a movement fit. Moving money out of a balance that does not hold
+it
+[throws](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/domain/src/main/java/com/kinetix/payment/domain/entity/EscrowAmount.java#L15-L23)
+instead of clamping, because a clamp turns a bookkeeping error into money that quietly stops existing.
+Every movement also writes a ledger row under
+[a reference that names it](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L631-L650)
+— `escrow:hold:{order}`, `escrow:release:{order}`, `escrow:goods:{order}:{refunded so far}` and so on —
+and the reference is unique, so one movement cannot be recorded twice.
+
+## Moving money exactly once
+
+Every escrow call can be retried, so every one is idempotent:
+
+- **A key and a fingerprint.** order sends an idempotency key with each call; one that arrives without a
+  key [is keyed by its order number](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L706-L716).
+  payment records a fingerprint of the request with the key, and a repeat with the same fingerprint
+  answers `already_applied` without moving anything. The same key with a different request
+  [is refused](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L652-L665)
+  as `IDEMPOTENCY_KEY_REUSED` — see [The same request, twice](/learn/idempotency/).
+- **Settlement needs no key.** The hold remembers which courier it paid, so a repeat for the same courier
+  is a no-op and one for another courier is refused.
+- **A refund that overtakes its hold is not lost.** If `RefundEscrow` arrives before the hold it undoes,
+  it is remembered: a hold that commits afterwards is unwound by the refund's retry, and a hold that
+  arrives later still
+  [is refused](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L336-L340).
+  This is the case the [checkout saga](/learn/checkout-saga/) creates when a compensation races the step
+  it compensates.
+- **One order at a time.** Everything for one order runs in a transaction that first takes
+  [a PostgreSQL advisory lock on the order number](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L75-L80),
+  so two calls for the same order never interleave. The wallets it touches are then locked by owner
+  [in a fixed order](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L698-L704),
+  so two orders that share a merchant cannot deadlock each other.
+
+## Top-ups
+
+A customer pays for checkouts from their wallet, and fills it through Midtrans:
+
+1. **The request** names an amount — [whole rupiah, at least IDR 1,000](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java#L280-L314)
+   — and a method: a bank virtual account, which needs a bank, or QRIS, which takes none. An
+   `Idempotency-Key` header is required.
+2. **The top-up is recorded as `PENDING` before Midtrans is called**, under the customer and the key, so
+   [a retry returns the same top-up](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java#L65-L91)
+   and its payment instructions instead of charging twice. If Midtrans gives no definite answer, the
+   top-up stays pending: the charge may exist, so the client is told to ask for its status rather than
+   start another.
+3. **Midtrans's notification is a prompt, not a fact.** Its signature is
+   [checked in constant time](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/gateway/MidtransPaymentGatewayAdapter.java#L135-L151),
+   and even a valid one only
+   [makes payment ask Midtrans's status API](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java#L134-L181).
+   The wallet is credited only when Midtrans says the charge settled
+   [for exactly the amount that was charged](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java#L183-L204);
+   any other amount credits nothing and is left for a person. See
+   [Never trust a number the client can type](/learn/trust-boundaries/).
+4. **A notification that never comes** does not leave the money in limbo. Every five minutes,
+   [top-ups pending for longer than ten minutes are asked about](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/api/src/main/java/com/kinetix/payment/api/scheduling/ReconciliationScheduler.java#L47-L63),
+   a hundred at a time. If Midtrans cannot be reached, nothing is decided and the top-up is asked about
+   again — see [Unknown is not no](/learn/unknown-is-not-no/).
+
+## How the code is laid out
+
+| Module | Holds |
+| --- | --- |
+| `modules/domain/` | wallets, escrow holds and ledger entries, the ports the application needs, and the domain's exceptions — no Spring, no JPA |
+| `modules/application/` | `EscrowService`, `TopUpService` and `WalletService`: the rules on this page, against those ports |
+| `modules/infrastructure/` | what implements the ports: JPA persistence, the advisory lock, the Midtrans adapter, and the gRPC server with its caller check |
+| `modules/api/` | the Spring Boot application: HTTP controllers, token validation, the reconciliation schedule, health and metrics, the Liquibase changelog |
+
+The escrow rules are tested against fakes of the ports, and again on a real PostgreSQL database, where
+unique constraints, row locks and advisory locks behave as they do in production.
+
+## Data
+
+PostgreSQL, through JPA, holds the customer, merchant and courier wallets, the holding account for
+unassigned couriers' fees, escrow holds, the idempotency keys and fingerprints of escrow calls, and one ledger of
+transactions — top-ups and every escrow movement. The schema is
+[a Liquibase changelog](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/api/src/main/resources/db/changelog/db.changelog-master.yaml)
+generated from the JPA entities, applied by the same image under
+[the `migrate` profile](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/api/src/main/resources/application-migrate.yml)
+in a one-shot container that must finish before the service starts. The service itself only validates
+the schema it finds.
+
+## Who may do what
+
+- **The wallet routes** take an identity access token —
+  [RS256, from identity's key set, for Kinetix's audience, and only an access token](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/api/src/main/java/com/kinetix/payment/api/security/SecurityConfig.java#L45-L65);
+  see [Tokens that can be taken back](/learn/tokens-that-can-be-taken-back/).
+- **Each route reads the caller's own wallet.** None takes an account to look at: the wallet is the one
+  belonging to the principal in the token, so no token reads anyone else's balance. The role
+  [decides which routes it reaches](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/api/src/main/java/com/kinetix/payment/api/controller/WalletController.java#L75-L83)
+  — a customer the customer balance and top-ups, a seller the merchant balance, a courier the courier
+  balance. A top-up's status is
+  [shown only to the customer who started it](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java#L93-L101).
+- **Midtrans's notification** needs no token, because Midtrans sends it. Its signature is what admits
+  it, and all it can do is make payment ask Midtrans.
+- **No HTTP route moves escrow money.** Holding, settling, refunding and releasing are order's to ask
+  for, over gRPC, because each one rests on a fact order owns — that the parcel arrived, that the window
+  closed. A person's word over HTTP would decide those facts in the wrong place.
+- **Other services** reach the gRPC port only with a certificate from Kinetix's CA —
+  [the handshake requires one](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/api/src/main/resources/application.yml#L99-L105)
+  — and only if it names
+  [a service on payment's allow list](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/grpc/PeerAuthorizationInterceptor.java#L70-L100),
+  which in production holds order alone; see [Who is calling?](/learn/who-is-calling/).
+
+## Operating it
+
+- `/health` answers when the process is up; `/health/ready`
+  [runs a real query](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/api/src/main/java/com/kinetix/payment/api/controller/HealthController.java#L31-L48)
+  and turns `503` while the instance drains after `SIGTERM`.
+- `/metrics` serves Prometheus text with the names the platform contract gives payment.
+- An escrow transaction
+  [waits at most three seconds for a lock and runs for at most four](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/persistence/SpringTransactionRunner.java#L15-L16).
+  A call that loses that race
+  [is answered `ABORTED`](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/grpc/PaymentGrpcServerService.java#L219-L246),
+  which means try again. A refusal is `FAILED_PRECONDITION`, `NOT_FOUND` or `INVALID_ARGUMENT`, with the
+  reason in an error detail, and trying again will not change it.
+- Kinetix uses Midtrans's sandbox, in production as well. Moving to another environment is
+  [the base URL and the server key](https://github.com/WildanFrananda/kinetix-payment-service/blob/afc4f61b28905705a6227e2c085ed04b2703a695/modules/api/src/main/resources/application.yml#L35-L44)
+  and nothing else, and every call to Midtrans is bounded — five seconds to connect, fifteen to answer.

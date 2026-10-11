@@ -55,7 +55,7 @@
   "service.catalog.owns": "Produk, harga, dan kategori",
   "service.pricing.owns": "Diskon, voucher, flash sale, tarif ongkir",
   "service.order.owns": "Keranjang, checkout, pesanan, retur",
-  "service.payment.owns": "Pembayaran, escrow, wallet",
+  "service.payment.owns": "Wallet, top-up, escrow",
   "service.warehouse.owns": "Inventori bin, reservasi stok, fulfilment task",
   "service.matching.owns": "Alokasi dan dispatch kurir",
   "service.review.owns": "Ulasan produk",

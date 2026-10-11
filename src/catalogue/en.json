@@ -55,7 +55,7 @@
   "service.catalog.owns": "Products, prices and categories",
   "service.pricing.owns": "Discounts, vouchers, flash sales, shipping rates",
   "service.order.owns": "Cart, checkout, orders, returns",
-  "service.payment.owns": "Payments, escrow, wallet",
+  "service.payment.owns": "Wallets, top-ups, escrow",
   "service.warehouse.owns": "Bin inventory, stock reservation, fulfilment tasks",
   "service.matching.owns": "Courier allocation and dispatch",
   "service.review.owns": "Product reviews",
