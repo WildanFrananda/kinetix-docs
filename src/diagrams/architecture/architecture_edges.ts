@@ -163,7 +163,7 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "order",
     kind: "grpc",
     calls: [
-      { operation: "order.v1.OrderService/OrderDelivered", source: { label: "order_grpc.ex:66", href: "https://github.com/WildanFrananda/kinetix-matching-service/blob/3af0339159cc5481bdde8c5186cc0cbcd6774161/lib/fleet_pulse/clients/order_grpc.ex#L66" } }
+      { operation: "order.v1.OrderService/OrderDelivered", source: { label: "order_grpc.ex:66", href: "https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse/clients/order_grpc.ex#L66" } }
     ]
   },
   {

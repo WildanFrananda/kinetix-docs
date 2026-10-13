@@ -101,7 +101,7 @@ export const architectureNodes: readonly MapNode[] = [
       "shipping.v1.ShippingService/EstimateShippingOptions"
     ],
     routes: ["/api/v1/matching"],
-    stores: [postgres],
+    stores: [postgres, "MinIO"],
     deployed: true
   },
   {
