@@ -113,7 +113,9 @@ account number, and never a copy of the order.
 - **Nobody** chooses whom a review is about: the merchant and the courier come from order.
 - **To call order**, review presents
   [a certificate from Kinetix's CA](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Security/ServiceIdentity.php#L13-L21),
-  naming review, a service on order's allow list; see [Who is calling?](/learn/who-is-calling/).
+  naming review, and order
+  [lets review read an order and make no other call](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Security/PeerAllowList.cs#L57-L71);
+  see [Who is calling?](/learn/who-is-calling/).
 
 ## Operating it
 
