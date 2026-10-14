@@ -1,7 +1,7 @@
 ---
 title: Siapa yang memanggil?
 description: Bagaimana server gRPC Kinetix tahu service mana yang mengirim request — mutual TLS terhadap satu CA, identitas SPIFFE di dalam sertifikat, dan daftar izin yang mengubah "salah satu dari kita" menjadi "pemanggil yang diharapkan service ini". Diputar ulang dari run sungguhan.
-sourceHash: "8e5e2cf7e946"
+sourceHash: "02192fc44251"
 sidebar:
   order: 8
 ---
@@ -62,6 +62,30 @@ sepenuhnya sah.
 Daftar izin itulah yang mengubah "salah satu dari kita" menjadi "pemanggil yang diharapkan pricing". Itu
 perbedaan antara autentikasi dan otorisasi, dan itu sebabnya service yang dibobol tetap hanya bisa
 menjangkau service yang memang sudah menunggu panggilan darinya.
+
+## Sebut panggilannya, bukan hanya pemanggilnya
+
+Daftar service menjawab "bolehkah service ini memanggil saya?". Daftar itu tidak menjawab "bolehkah ia
+melakukan panggilan *ini*?", padahal pertanyaan kedua itulah yang melindungi data. identity menjawab
+apakah sebuah merchant boleh berjualan dan juga apa email, nomor telepon, dan alamat rumah seorang
+pelanggan, di port yang sama. Selama daftarnya hanya menyebut service, sertifikat yang dicuri dari search
+— yang hanya mengikuti change feed merchant — bisa membaca alamat pelanggan mana pun.
+
+Karena itu dua server yang memegang panggilan semacam itu memberi izin per panggilan. Sebuah entri
+berbentuk `peer`, `peer@package.Service`, atau `peer@package.Service/Method`, dan sebuah panggilan hanya
+diloloskan jika izin pemanggilnya menyebut method-nya atau service-nya:
+[order](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Security/PeerAllowList.cs#L57-L71)
+dan
+[identity](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/infrastructure/mesh/peer_allow_list.ts#L48-L63)
+membaca daftarnya dengan cara yang sama. Daftar identity memberi search change feed merchant dan tidak
+lebih, memberi notification profil pelanggan, dan tidak memberi siapa pun validasi token, karena tidak
+ada service yang berjalan yang memanggilnya. Tulis setiap izin dari panggilan yang memang dilakukan kode
+pemanggilnya, bukan dari apa yang mungkin suatu hari ia butuhkan.
+
+Tata bahasa yang lebih rinci mengubah cara sebuah daftar dirilis. Server yang lebih tua dari tata bahasa
+itu membaca `search@identity.v1.IdentityService/MerchantsChangedSince` sebagai satu nama service panjang
+yang tidak dibawa pemanggil mana pun, sehingga menolak semua pemanggil. Server mempelajari tata bahasanya
+dulu, selagi daftarnya masih menyebut nama service; baru setelah itu daftarnya diubah.
 
 ## Baca identitasnya dengan tepat
 
@@ -129,6 +153,8 @@ satu tidak menggantikan yang lain.
 - Berada di dalam jaringan bukanlah kredensial. Minta setiap pemanggil membuktikan service mana dirinya.
 - mTLS membuktikan bahwa pemanggil adalah salah satu milikmu. Daftar izin yang memutuskan apakah ia
   pemanggil yang diharapkan service ini.
+- Beri izin untuk panggilan, bukan hanya untuk pemanggil: service yang melakukan satu panggilan diizinkan
+  panggilan itu.
 - Percayai satu CA, baca identitas dari URI SAN, dan cocokkan dengan tepat.
 - Gagal saat start-up ketika sertifikat atau daftar izin tidak ada, jangan pernah saat request masuk.
 - Tolak dengan sedikit rincian, catat ke log dengan banyak rincian.

@@ -1,0 +1,203 @@
+---
+title: search
+description: Product search over a copy it keeps of other services' data. search owns no product, merchant or order; it follows each owner's change feed, rebuilds its copy whenever asked, and answers a shopper without a token.
+---
+
+import ServiceCalls from "../../../components/ServiceCalls.astro";
+import ServiceFacts from "../../../components/ServiceFacts.astro";
+import ServiceServes from "../../../components/ServiceServes.astro";
+
+search answers "which products match these words" fast enough to keep up with a shopper who is still
+typing. It owns nothing it answers about: catalog owns products, identity owns merchants, order owns
+orders. search keeps a copy of each in Typesense, a search engine built for ranked, typo-tolerant text
+search, follows each owner's change feed to keep the copy current, and can throw the copy away and build
+it again from the owners at any time.
+
+The tables on this page are generated from the same verified data as the
+[system map](/architecture/system-map/), at the commits linked from each row. The prose is checked
+against search [v1.0.0](https://github.com/WildanFrananda/kinetix-search-service/tree/1316183858b32d1123bc5aa5c7502b74d3e5ceee),
+the version in production.
+
+## At a glance
+
+<ServiceFacts service="search" />
+
+## What it serves
+
+Over HTTP, through the gateway,
+[two routes](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/httpapi/router.go#L20-L32),
+and neither needs a token: `/api/v1/products/search` finds products and `/api/v1/products/suggest`
+completes what a shopper is typing. What they return is what a shop window shows anyway — a product's
+title, description, category, list price and the principal of the merchant selling it.
+
+search serves the same two operations over gRPC, but nothing may call them. Its list of callers
+[is empty unless one is named](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/config/config.go#L42),
+production names none, and
+[an empty list lets nobody through](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/grpcapi/authorization.go#L53-L59).
+
+<ServiceServes service="search" />
+
+## What it calls
+
+search calls out only to read: each owner's change feed, and catalog's count of products when a rebuild
+checks its work.
+
+<ServiceCalls service="search" />
+
+## Finding products
+
+A search takes `q`, any number of `category`, a `sort` of `relevance`, `newest` or `price_asc`, and an
+`offset` and `limit`.
+[The query is checked before Typesense sees it](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/search/query.go#L70-L84):
+text longer than 256 bytes, or holding a control character, is `400 malformed_query`. A page holds 24
+products unless the request asks otherwise, and
+[never more than 100](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/search/query.go#L59-L68).
+
+Typesense matches the words against
+[the title, the category and the description, weighted four, two and one](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/typesense/schema.go#L26-L37),
+puts an exact match first, and counts the matches
+[by category, merchant and currency](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/typesense/schema.go#L39-L50),
+so a shop can show filters with a number beside each. A product in any of the categories asked for
+matches. Every value placed in a filter is
+[quoted, with backticks removed first](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/typesense/query.go#L10-L39),
+so a category cannot close the quote and add a clause of its own. Typesense pages by number rather than by
+offset, so
+[an offset is rounded down to the start of its page](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/typesense/query.go#L57-L63).
+
+The price in a hit is catalog's list price as of the last sync. search moves no money: what a buyer pays is
+worked out again at checkout, by [pricing](/services/pricing/), from what catalog holds at that moment.
+
+## Suggestions
+
+`suggest` takes what has been typed so far and answers
+[up to ten distinct product titles](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/typesense/searcher.go#L108-L149),
+or as many as `limit` asks for, up to a hundred. Nothing typed yet
+[is answered with no suggestions](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/httpapi/router.go#L57-L62),
+without asking Typesense.
+
+## How fresh an answer is
+
+Every search answer carries `index`: the time of the last change it includes, how old the index is, and
+whether it is stale.
+[The age is the time since the last sync pass that finished](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/querying/finder.go#L49-L60),
+and an index is stale
+[after ten minutes](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/config/config.go#L45-L51).
+A stale index still answers, with `200`: an older answer is more use to a shopper than none, and the
+client decides what to show. A sync pass saves its place even when nothing changed, so a quiet shop does
+not look stale — only a sync that has stopped working does.
+
+## Keeping up with the owners
+
+`syncd` runs every thirty seconds and, for each collection,
+[reads the owner's change feed](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/indexing/syncer.go#L40-L102)
+from where it last stopped — a cursor of the last change's time and id, kept in PostgreSQL — two hundred
+records at a time. It writes what changed into the live index, removes what the owner reports gone — a
+product catalog has taken off sale, for one — and only then saves the cursor. A page that fails leaves the
+cursor where it was, so the next pass reads the same page again: the index can fall behind, but it does
+not skip.
+[The failure is logged](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/cmd/syncd/main.go#L108-L128)
+with what it means: the cursor has not moved and the index is getting older.
+
+A record search cannot turn into a document — a product with no usable SKU, an order with no buyer — is
+[refused on its own](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/catalogclient/convert.go#L31-L52):
+it is
+[logged at `ERROR` with its id](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/indexing/refusals.go#L10-L30),
+the rest of the page is written, and the cursor moves on. Failing the page instead would fail it again on
+every pass, on the same record, and that collection would never move again.
+
+## Rebuilding a collection
+
+Each collection in Typesense is an alias pointing at a generation: a real collection named after the
+second it was built, such as `products_v1760000000`. A rebuild
+[builds a new generation from the start of the owner's feed](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/indexing/reindexer.go#L44-L144)
+while searches keep reading the old one, then checks its work. The new generation of products must hold at
+least as many documents as
+[catalog counts](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/catalogclient/client.go#L78-L87),
+less those refused; merchants and orders, which no owner counts, as many as the rebuild sent. Only then
+does it
+[point the alias at the new generation](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/typesense/index.go#L114-L125).
+A search never reads a half-built index, and a rebuild that came up short is not used.
+
+Rebuilds are run on demand, for one collection or all three. A new installation has nothing to search
+until the first one, and until then searchd reports that it is not ready.
+
+### A sync and a rebuild never interleave
+
+Both write a collection and both save its cursor. With nothing between them, a sync pass that began
+before a rebuild was promoted could write into the old generation after the alias had moved — the removal
+of a product taken off sale, say — and then save a cursor past the rebuild's, so the new generation would
+never hear of it. So each collection has
+[a PostgreSQL advisory lock](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/postgres/lock.go#L24-L56),
+[taken inside a transaction](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/postgres/queries.sql#L21-L22).
+A sync pass holds it for the whole pass; a rebuild holds it
+[only while it promotes and saves its cursor](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/indexing/reindexer.go#L114-L126),
+so a long rebuild does not stop the sync. The lock belongs to a transaction, so a process that dies while
+holding it lets go with its session.
+
+## Orders and merchants
+
+search also indexes merchants and orders, but neither the gateway nor the gRPC surface serves them. The
+code keeps orders private regardless:
+[an order search must be made on behalf of a principal](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/querying/finder.go#L34-L42),
+it
+[matches only orders that principal bought or sold](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/typesense/query.go#L17-L24),
+and
+[orders are never suggested](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/querying/finder.go#L63-L71).
+
+## When something is down
+
+Every failure carries a kind, and the kind decides the answer:
+[`400` for a malformed query, `503` when Typesense or PostgreSQL cannot answer, `500` for anything else](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/httpapi/status.go#L9-L24).
+The body names the kind and nothing else. Typesense is given five seconds and each owner's feed ten.
+
+## How the code is laid out
+
+| Directory | Holds |
+| --- | --- |
+| `internal/search` | the domain: documents, cursors, queries, error kinds and the ports the use cases need — standard library only, which [`bin/check-core-purity`](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/bin/check-core-purity) checks in CI |
+| `internal/querying` | finding and suggesting, and how fresh an answer is |
+| `internal/indexing` | the sync pass and the rebuild |
+| `internal/typesense` | the engine: schemas, generations and the alias, queries |
+| `internal/postgres` | the cursors and the collection lock, through sqlc |
+| `internal/catalogclient`, `identityclient`, `orderclient` | the change feeds, each turning its owner's records into documents |
+| `internal/httpapi`, `internal/grpcapi` | the two front doors |
+| `internal/wiring` | the dependency graph, built with dig; [`bin/check-boundaries`](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/bin/check-boundaries) keeps dig there and in `cmd/` |
+| `cmd/` | four programs: `searchd` serves, `syncd` follows, `reindex` rebuilds, `migrate` changes the schema |
+
+The four programs ship in one image, so the program answering searches and the one writing the index are
+never different versions.
+
+## Data
+
+Typesense holds three collections — products, merchants and orders — each an alias over its live
+generation. PostgreSQL holds
+[one cursor per collection](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/migrations/00001_search_state.sql#L2-L10)
+and when it was last saved. Nothing search stores is the truth: all of it can be rebuilt from the owners.
+
+## Who may do what
+
+- **Anyone** may search products and ask for suggestions, without a token: the results are what a shop
+  window shows.
+- **Nobody** may call the gRPC surface. Only health and reflection answer there, and only to a
+  certificate from Kinetix's CA:
+  [the handshake requires one, over TLS 1.3](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/grpcapi/credentials.go#L63-L68).
+- **To read its sources**, search presents a certificate naming search. identity
+  [lets it follow the merchant feed and make no other call](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/infrastructure/mesh/peer_allow_list.ts#L48-L63),
+  and order
+  [lets it follow the order feed and make no other call](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Security/PeerAllowList.cs#L57-L71);
+  see [Who is calling?](/learn/who-is-calling/).
+
+## Operating it
+
+- `searchd` serves both ports. `/health/live` answers when the process is up;
+  [`/health/ready`](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/wiring/http.go#L25-L46)
+  pings PostgreSQL and asks Typesense which generation is live, so the container is ready only when there
+  is something to search.
+- `syncd` serves no port, and its log is how it is watched:
+  [each page it applies](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/indexing/syncer.go#L83-L96)
+  is logged with how many records it wrote, removed and refused, and each failed pass says the cursor did
+  not move. Both log JSON to standard output.
+- On `SIGTERM`, searchd
+  [stops gRPC gracefully and gives HTTP fifteen seconds](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/cmd/searchd/main.go#L96-L101)
+  to finish. syncd stops at once; a page it had not finished is read again next time, because its cursor
+  was never saved.

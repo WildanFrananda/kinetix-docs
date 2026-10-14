@@ -1,7 +1,7 @@
 ---
 title: identity
 description: Akun, sign-in, token, dan principal — satu-satunya service yang boleh menyatakan siapa seseorang, peran apa yang ia pegang, dan apakah sebuah merchant boleh berjualan, sekaligus satu-satunya yang menandatangani token.
-sourceHash: "1aa30ab4c1ef"
+sourceHash: "42151853be2c"
 ---
 
 import ServiceCalls from "../../../../components/ServiceCalls.astro";
@@ -18,7 +18,7 @@ memverifikasi tanda tangan identity atau bertanya ke identity.
 Tabel di halaman ini dibangkitkan dari data terverifikasi yang sama dengan
 [peta sistem](/id/architecture/system-map/), pada commit yang ditautkan dari setiap baris. Teksnya
 dicek terhadap identity
-[v0.1.12](https://github.com/WildanFrananda/kinetix-identity-service/tree/a0de9b694d990adbe2465db3c6b2ae7bfe7cec53),
+[v1.0.0](https://github.com/WildanFrananda/kinetix-identity-service/tree/16fba71e46c89d6032b5ccc94a040af2fe97b1f1),
 versi yang berjalan di production.
 
 ## Sekilas
@@ -46,27 +46,27 @@ Setiap akun diberi principal — sebuah UUID yang mewakili orang yang sama di se
 menyimpan principal, tidak pernah nomor akun milik identity, sehingga sebuah service bisa dibangun ulang
 atau database dipulihkan tanpa orang tertukar tempat. identity menyimpan kaitan dari setiap id lokal sebuah
 service ke principal-nya sebagai alias:
-[principal sebuah akun dibuat saat akun itu pertama kali diberi token, yaitu saat registrasi](https://github.com/WildanFrananda/kinetix-identity-service/blob/a0de9b694d990adbe2465db3c6b2ae7bfe7cec53/src/application/services/principal_resolver.service.ts#L20-L51),
+[principal sebuah akun dibuat saat akun itu pertama kali diberi token, yaitu saat registrasi](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/application/services/principal_resolver.service.ts#L20-L51),
 dan ketika seorang seller disetujui, baris merchant-nya dialiaskan ke principal yang sama. Sebuah alias
-[tidak bisa dialihkan](https://github.com/WildanFrananda/kinetix-identity-service/blob/a0de9b694d990adbe2465db3c6b2ae7bfe7cec53/src/application/services/principal_resolver.service.ts#L63-L82)
+[tidak bisa dialihkan](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/application/services/principal_resolver.service.ts#L63-L82)
 ke principal lain setelah ada. Access token membawa principal sebagai subject-nya.
 
 ## Sign-in dan token
 
 - **Password** disimpan sebagai hash bcrypt. Sign-in dengan email yang tidak pernah terdaftar
-  [tetap menjalankan perbandingan](https://github.com/WildanFrananda/kinetix-identity-service/blob/a0de9b694d990adbe2465db3c6b2ae7bfe7cec53/src/application/services/auth_usecase.service.ts#L30-L52),
+  [tetap menjalankan perbandingan](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/application/services/auth_usecase.service.ts#L30-L52),
   sehingga jawabannya selama jawaban untuk password yang salah dan tidak membocorkan akun mana yang ada.
   Sign-in, registrasi, dan pengecekan faktor kedua dibatasi lima percobaan per menit.
 - **Faktor kedua**, begitu diaktifkan, menjadikan password hanya separuh sign-in: password menghasilkan
   challenge yang berlaku lima menit, dan hanya
-  [challenge dengan kode yang sah](https://github.com/WildanFrananda/kinetix-identity-service/blob/a0de9b694d990adbe2465db3c6b2ae7bfe7cec53/src/application/services/auth_usecase.service.ts#L54-L70)
+  [challenge dengan kode yang sah](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/application/services/auth_usecase.service.ts#L54-L70)
   yang menghasilkan token.
 - **Token** adalah JWT RS256, dan kunci publiknya diterbitkan di `/.well-known/jwks.json` agar setiap
   service lain bisa memverifikasinya. Access token berlaku lima belas menit; refresh token berlaku tiga
   puluh hari, disimpan, dan
-  [hanya bisa dipakai sekali](https://github.com/WildanFrananda/kinetix-identity-service/blob/a0de9b694d990adbe2465db3c6b2ae7bfe7cec53/src/application/services/token.service.ts#L167-L213)
+  [hanya bisa dipakai sekali](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/application/services/token.service.ts#L167-L213)
   — memakainya lagi mencabut setiap token di sesinya. Sign-out
-  [mencabut access token dan sesinya](https://github.com/WildanFrananda/kinetix-identity-service/blob/a0de9b694d990adbe2465db3c6b2ae7bfe7cec53/src/application/services/token.service.ts#L215-L222).
+  [mencabut access token dan sesinya](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/application/services/token.service.ts#L215-L222).
   Rancangan lengkapnya, beserta dua cacat yang ditemukan saat mendokumentasikannya, ada di
   [Token yang bisa ditarik kembali](/id/learn/tokens-that-can-be-taken-back/).
 - **Peran di dalam token** dibaca dari akunnya setiap kali token diterbitkan atau di-refresh, sehingga
@@ -75,22 +75,22 @@ ke principal lain setelah ada. Access token membawa principal sebagai subject-ny
 ## Peran, dan bagaimana sebuah akun mendapatkannya
 
 Registrasi selalu membuat pelanggan —
-[peran bukan bagian dari request](https://github.com/WildanFrananda/kinetix-identity-service/blob/a0de9b694d990adbe2465db3c6b2ae7bfe7cec53/src/application/services/auth_usecase.service.ts#L72-L85).
+[peran bukan bagian dari request](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/application/services/auth_usecase.service.ts#L72-L85).
 Peran lain diberikan:
 
 - **Seller** mengajukan permohonan dengan nama toko, nomor registrasi usaha, NPWP, dan alamat toko;
   permohonan itu tetap `pending` sampai
-  [admin menyetujuinya](https://github.com/WildanFrananda/kinetix-identity-service/blob/a0de9b694d990adbe2465db3c6b2ae7bfe7cec53/src/application/services/seller_onboarding_usecase.service.ts#L102-L158),
+  [admin menyetujuinya](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/application/services/seller_onboarding_usecase.service.ts#L104-L161),
   yang membuat merchant-nya, menempatkan alamat toko di peta, dan menjadikan akunnya seller. Sebuah
   merchant
-  [boleh berjualan hanya selama statusnya `verified` atau `active`](https://github.com/WildanFrananda/kinetix-identity-service/blob/a0de9b694d990adbe2465db3c6b2ae7bfe7cec53/src/domain/merchant_standing.ts#L1-L5),
+  [boleh berjualan hanya selama statusnya `verified` atau `active`](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/domain/merchant_standing.ts#L1-L5),
   dan setiap service yang membiarkan merchant berjualan — checkout, promo, produk, fulfilment — bertanya.
 - **Kurir** mendaftar beserta kendaraannya, yang didaftarkan identity di fleet milik matching; akunnya
   tetap pelanggan sampai
-  [admin menyetujuinya](https://github.com/WildanFrananda/kinetix-identity-service/blob/a0de9b694d990adbe2465db3c6b2ae7bfe7cec53/src/application/services/courier_onboarding_usecase.service.ts#L28-L70),
+  [admin menyetujuinya](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/application/services/courier_onboarding_usecase.service.ts#L28-L70),
   yang menjadikannya kurir dan mengaktifkan driver-nya.
 - **Satu akun memegang satu peran.** Persetujuan tidak pernah menimpa peran: kurir atau admin
-  [ditolak saat mengajukan diri sebagai seller](https://github.com/WildanFrananda/kinetix-identity-service/blob/a0de9b694d990adbe2465db3c6b2ae7bfe7cec53/src/application/services/seller_onboarding_usecase.service.ts#L160-L167),
+  [ditolak saat mengajukan diri sebagai seller](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/application/services/seller_onboarding_usecase.service.ts#L163-L171),
   dan hanya pelanggan yang bisa disetujui sebagai kurir. Orang yang memegang keduanya memakai dua akun.
 - **Admin** tidak dibuat lewat API. Admin pertama dibuat oleh skrip sekali jalan yang menolak berjalan
   begitu ada admin.
@@ -100,7 +100,7 @@ Peran lain diberikan:
 `GetMerchantInfo`, `GetUserProfile`, dan `ValidateToken` menjawab "merchant tidak ada", "orang tidak ada",
 atau "token tidak sah" hanya ketika itu benar. Ketika identity tidak bisa membaca database-nya sendiri,
 panggilan itu gagal dengan
-[`UNAVAILABLE`](https://github.com/WildanFrananda/kinetix-identity-service/blob/a0de9b694d990adbe2465db3c6b2ae7bfe7cec53/src/adapters/controllers/identity_grpc.controller.ts#L351-L360),
+[`UNAVAILABLE`](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/adapters/controllers/identity_grpc.controller.ts#L358-L368),
 dan setiap pemanggil memperlakukannya sebagai "identity tidak bisa menjawab": order menolak checkout dengan
 `503` alih-alih memberi tahu pembeli bahwa merchant-nya tidak boleh berjualan, dan notification me-retry
 pesan alih-alih membuangnya. Dulu lookup itu menjawab "tidak ada" untuk kegagalan apa pun, yang mengubah
@@ -127,37 +127,44 @@ PostgreSQL, lewat TypeORM, menyimpan akun dan profil, principal beserta aliasnya
 seller, refresh token setiap sesi dan access token yang dicabut sebelum kedaluwarsa, serta setiap alamat
 yang sudah ditempatkan di peta, sehingga lookup kedua untuk alamat yang sama tidak bertanya lagi ke
 geocoder. Skemanya hanya diubah oleh migrasi, yang
-[dijalankan oleh image yang sama sebagai `migrate.js`](https://github.com/WildanFrananda/kinetix-identity-service/blob/a0de9b694d990adbe2465db3c6b2ae7bfe7cec53/src/migrate.ts#L3-L23)
+[dijalankan oleh image yang sama sebagai `migrate.js`](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/migrate.ts#L3-L23)
 di container sekali jalan yang harus selesai sebelum service dimulai.
 
 ## Siapa boleh melakukan apa
 
 - **Tanpa token**: sign-in, registrasi sebagai pelanggan atau kurir, refresh, menyelesaikan faktor kedua,
   key set, health, dan metrics. Selain itu
-  [memerlukan access token](https://github.com/WildanFrananda/kinetix-identity-service/blob/a0de9b694d990adbe2465db3c6b2ae7bfe7cec53/src/app.module.ts#L115-L118)
+  [memerlukan access token](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/app.module.ts#L115-L118)
   — guard di setiap route, yang harus dikecualikan secara eksplisit, bukan dipasang satu per satu.
 - **Resource milik sebuah akun** — profilnya, permohonan seller-nya —
-  [bisa dijangkau oleh akun itu atau admin](https://github.com/WildanFrananda/kinetix-identity-service/blob/a0de9b694d990adbe2465db3c6b2ae7bfe7cec53/src/adapters/guards/self_or_staff.guard.ts#L34-L42),
+  [bisa dijangkau oleh akun itu atau admin](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/adapters/guards/self_or_staff.guard.ts#L41-L49),
   dan tidak oleh orang lain.
 - **Faktor kedua hanya milik pemiliknya.**
-  [Menyiapkan, mengaktifkan, dan menonaktifkannya](https://github.com/WildanFrananda/kinetix-identity-service/blob/a0de9b694d990adbe2465db3c6b2ae7bfe7cec53/src/adapters/controllers/auth.controller.ts#L71-L101)
+  [Menyiapkan, mengaktifkan, dan menonaktifkannya](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/adapters/controllers/auth.controller.ts#L71-L101)
   ditolak bahkan untuk admin: menyiapkannya mengembalikan secret-nya, dan faktor kedua yang dipegang orang
   lain bukan faktor kedua.
 - **Menyetujui seller atau kurir** memerlukan peran `admin`.
 - **Service lain** menjangkau port gRPC hanya dengan sertifikat dari CA Kinetix —
-  [handshake mewajibkannya](https://github.com/WildanFrananda/kinetix-identity-service/blob/a0de9b694d990adbe2465db3c6b2ae7bfe7cec53/src/infrastructure/mesh/service_identity.ts#L25-L31)
-  — dan hanya jika sertifikat itu menyebut
-  [service di daftar izin identity](https://github.com/WildanFrananda/kinetix-identity-service/blob/a0de9b694d990adbe2465db3c6b2ae7bfe7cec53/src/infrastructure/mesh/peer_authorization_interceptor.ts#L12-L32);
+  [handshake mewajibkannya](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/infrastructure/mesh/service_identity.ts#L25-L31)
+  — yang menyebut service di daftar izin identity, dan
+  [masing-masing hanya diizinkan panggilan yang memang ia lakukan](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/infrastructure/mesh/peer_allow_list.ts#L48-L63):
+  order me-resolve principal serta membaca merchant dan profil; warehouse, catalog, dan pricing membaca
+  merchant; notification membaca profil; search mengikuti change feed merchant. Service yang boleh
+  menanyakan apakah merchant boleh berjualan tidak bisa membaca alamat pelanggan, dan tidak ada service
+  yang berjalan yang boleh memvalidasi token, membaca principal, atau melakukan geocoding alamat lewat gRPC
+  — communication, di tabel di atas, belum di-deploy, dan tidak diberi izin apa pun sampai ia di-deploy.
+  Panggilan lain
+  [ditolak dengan `PERMISSION_DENIED` dan dicatat di log](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/infrastructure/mesh/peer_authorization_interceptor.ts#L27-L35);
   lihat [Siapa yang memanggil?](/id/learn/who-is-calling/).
 
 ## Mengoperasikannya
 
 - `/health` menjawab ketika prosesnya hidup; `/health/ready`
-  [menjalankan query sungguhan](https://github.com/WildanFrananda/kinetix-identity-service/blob/a0de9b694d990adbe2465db3c6b2ae7bfe7cec53/src/adapters/controllers/health.controller.ts#L27-L40),
+  [menjalankan query sungguhan](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/adapters/controllers/health.controller.ts#L27-L40),
   sehingga container dianggap sehat hanya ketika service bisa melayani.
 - `/metrics` menyajikan teks Prometheus dengan nama-nama yang diberikan kontrak platform untuk identity.
 - Pembacaan database di balik lookup gRPC
-  [punya deadline lima detik](https://github.com/WildanFrananda/kinetix-identity-service/blob/a0de9b694d990adbe2465db3c6b2ae7bfe7cec53/src/infrastructure/persistence/with_timeout.ts#L1-L9),
+  [punya deadline lima detik](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/infrastructure/persistence/with_timeout.ts#L1-L10),
   sehingga database yang lambat menjadi `UNAVAILABLE`, bukan panggilan yang tidak pernah kembali.
 - Saat `SIGTERM`, kedua server berhenti menerima pekerjaan dan menyelesaikan yang sedang dipegang, dalam
-  [batas waktu 25 detik](https://github.com/WildanFrananda/kinetix-identity-service/blob/a0de9b694d990adbe2465db3c6b2ae7bfe7cec53/src/infrastructure/observability/shutdown_drain.ts#L5).
+  [batas waktu 25 detik](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/infrastructure/observability/shutdown_drain.ts#L5).

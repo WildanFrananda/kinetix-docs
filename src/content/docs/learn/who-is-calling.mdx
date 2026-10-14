@@ -60,6 +60,29 @@ The allow list is what turns "one of ours" into "a caller pricing expects". It i
 authentication and authorisation, and it is why a compromised service can still reach only the services
 that already expected to hear from it.
 
+## Name the calls, not only the callers
+
+A list of services answers "may this service call me?". It does not answer "may it make *this* call?",
+and the second question is the one that protects data. identity answers whether a merchant may sell and
+what a customer's email, phone and street address are, on the same port. While its list named services,
+a certificate taken from search — which only follows the merchant change feed — could have read any
+customer's address.
+
+So the two servers that hold calls like that grant per call. An entry is `peer`,
+`peer@package.Service` or `peer@package.Service/Method`, and a call is let through only if the caller's
+grants name its method or its service:
+[order](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Security/PeerAllowList.cs#L57-L71)
+and
+[identity](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/infrastructure/mesh/peer_allow_list.ts#L48-L63)
+read their lists the same way. identity's list gives search the merchant feed and nothing else, gives
+notification a customer's profile, and gives nobody token validation, because no running service calls
+it. Write each grant from the calls the caller's code makes, not from what it might one day need.
+
+A finer grammar changes how a list is released. A server that predates it reads
+`search@identity.v1.IdentityService/MerchantsChangedSince` as one long service name that no caller
+carries, and so refuses every caller. The server learns the grammar first, while its list still names
+services; only then does the list change.
+
 ## Read the identity exactly
 
 The identity check is string handling, and string handling is where it goes wrong:
@@ -125,6 +148,7 @@ and neither replaces the other.
 
 - Being on the network is not a credential. Ask every caller to prove which service it is.
 - mTLS proves the caller is one of yours. An allow list decides whether it is one this service expects.
+- Grant calls, not only callers: a service that makes one call is allowed that call.
 - Trust one CA, read the identity from the URI SAN, and match it exactly.
 - Fail at start-up when the certificate or the allow list is missing, never at request time.
 - Refuse with little detail and log with a lot.
