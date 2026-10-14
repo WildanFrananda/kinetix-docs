@@ -1,0 +1,131 @@
+---
+title: review
+description: Product reviews and courier ratings — what buyers say about what they bought and about the courier who brought it. review asks order about every review it accepts and keeps no order of its own.
+---
+
+import ServiceCalls from "../../../components/ServiceCalls.astro";
+import ServiceFacts from "../../../components/ServiceFacts.astro";
+
+review holds what buyers say: a rating from one to five and a comment for a product they bought, and the
+same for the courier who delivered it. It owns no order, no product and no courier. Every review is checked
+against order, which says whose order it is, whether it arrived, what was in it, who sold it and who
+delivered it — and review files the review under exactly those.
+
+The tables on this page are generated from the same verified data as the
+[system map](/architecture/system-map/), at the commits linked from each row. The prose is checked
+against review [v1.0.0](https://github.com/WildanFrananda/kinetix-review-service/tree/4f4572c1a49749e19dd4598500a6e1f037abb229),
+the version in production.
+
+## At a glance
+
+<ServiceFacts service="review" />
+
+## What it serves
+
+review serves no gRPC: it is a caller only. Over HTTP, through the gateway,
+[two routes write and three read](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/routes/api.php#L16-L25):
+a buyer posts a product review or a courier rating with an access token, and anyone may read a product's
+reviews, a merchant's reviews, or a courier's ratings without one.
+
+## What it calls
+
+review calls out for one thing: to ask order about the order a review names.
+
+<ServiceCalls service="review" />
+
+## Writing a product review
+
+The buyer sends the order, the product, a rating from one to five and an optional comment of up to a
+thousand characters — and nothing else that matters. review asks order for the order and
+[accepts the review only if](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Services/ProductReviewService.php#L19-L45)
+the order belongs to the token's account, it has been delivered or completed, and the product is one of its
+lines. The review is filed under the merchant order names as the seller, whatever merchant the request may
+carry, so a merchant's reviews are only ever from people who bought from that merchant.
+
+Whether an order was delivered is
+[read from order's status value](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Clients/GrpcOrderClient.php#L136-L150),
+`DELIVERED` or `COMPLETED`, never from its name as text. One product of one order is reviewed once:
+[the database holds one row per order and product](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/database/migrations/2026_08_28_000001_create_product_reviews_table.php#L21),
+and a second attempt is
+[answered `409`](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Repositories/EloquentProductReviewRepository.php#L13-L19),
+not with an error that leaves the buyer guessing whether it was saved.
+
+## Rating a courier
+
+A courier rating names only the order. The courier it is about is
+[the one order recorded as having delivered it](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Services/DriverRatingService.php#L29-L43)
+— the courier matching reported to order when the parcel arrived — so a buyer cannot rate a courier who
+never carried their parcel. An order with no courier on record cannot be rated, and
+[each order's courier is rated once](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/database/migrations/2026_09_07_000001_key_reviews_on_principals.php#L35).
+order's side of this is on [order's page](/services/order/#what-it-serves-over-grpc).
+
+## When order cannot be asked
+
+A review that cannot be checked is not saved, and the buyer is not told it was refused. Only OK,
+`NOT_FOUND` and `INVALID_ARGUMENT`
+[count as order's answer about the order](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Clients/GrpcOrderClient.php#L152-L156);
+any other status, a timeout after five seconds, or a call that never reached order is
+[a `503` saying nothing was saved](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Clients/OrderServiceUnavailableException.php#L10-L24),
+not a `422` saying the order does not exist — see [Unknown is not no](/learn/unknown-is-not-no/).
+
+After
+[five failures in a row the circuit opens for thirty seconds](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Resilience/CircuitBreaker.php#L14-L18):
+review stops dialling order, answers `503` with a `Retry-After`, and then lets a single request through to
+find out whether order is back.
+
+## Reading reviews
+
+The three read routes need no token: a shopper reads reviews before deciding to buy. Each answers the
+average rating, the count, and the newest
+[fifteen reviews a page](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Repositories/EloquentProductReviewRepository.php#L21-L25).
+A review shows its rating, comment, product and time, and
+[never who wrote it or which order it was](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Models/ProductReview.php#L25-L28):
+a public page is no place to tell the world what one person bought.
+
+## How the code is laid out
+
+| Directory | Holds |
+| --- | --- |
+| `app/Http/` | the controllers, which validate a request and call a service, and the middleware that verifies identity's token |
+| `app/Services/` | the rules for accepting a review or a rating, and the summaries the read routes answer |
+| `app/Clients/` | the gRPC client for order and the order details it returns |
+| `app/Repositories/` | the Eloquent repositories behind the contracts in `app/Contracts/` |
+| `app/Resilience/` | the circuit breaker in front of order |
+| `generated/` | the PHP classes protoc generates from the pinned contract |
+
+Controllers stay thin and services receive their repository and their order client through the contracts,
+so a test can give a service a fake order client without touching the database layer.
+
+## Data
+
+PostgreSQL, through Eloquent, holds two tables: `product_reviews` and `driver_ratings`. Each row keeps the
+order, the buyer's identity principal, the rating and the comment; a product review also keeps the product
+and the merchant's principal, a courier rating the courier's principal. review stores principals, never an
+account number, and never a copy of the order.
+
+## Who may do what
+
+- **A buyer** writes reviews and ratings with an identity access token —
+  [only an access token](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Security/TokenVerifier.php#L35-L59),
+  from identity's issuer for this audience — and only for their own delivered orders; see
+  [Tokens that can be taken back](/learn/tokens-that-can-be-taken-back/).
+- **Anyone** reads reviews and ratings, without learning who gave them.
+- **Nobody** chooses whom a review is about: the merchant and the courier come from order.
+- **To call order**, review presents
+  [a certificate from Kinetix's CA](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Security/ServiceIdentity.php#L13-L21),
+  naming review, a service on order's allow list; see [Who is calling?](/learn/who-is-calling/).
+
+## Operating it
+
+- review runs Laravel Octane on FrankenPHP in worker mode: a worker serves request after request without
+  booting the framework again. The order client, its channel and its breaker are
+  [kept warm across requests](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/config/octane.php#L142-L148),
+  so each worker keeps one connection to order and one breaker.
+- `/api/health` answers when the process is up; `/api/health/ready`
+  [runs a real query](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Http/Controllers/HealthController.php#L19-L34),
+  so the container is healthy only when the service can serve.
+- `/api/metrics` serves Prometheus text with the names the platform contract gives review, including the
+  calls to order and the calls the breaker refused to make.
+- On `SIGTERM`, the process Octane started from
+  [waits up to twenty-five seconds for the server to exit](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Console/OctaneServerExitWait.php#L11-L36)
+  before it ends, so the container does not stop under a server that is still shutting down.

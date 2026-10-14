@@ -58,7 +58,7 @@
   "service.payment.owns": "Wallets, top-ups, escrow",
   "service.warehouse.owns": "Bin inventory, stock reservation, fulfilment tasks",
   "service.matching.owns": "Couriers, dispatch, proof of delivery",
-  "service.review.owns": "Product reviews",
+  "service.review.owns": "Product reviews, courier ratings",
   "service.notification.owns": "Customer notifications",
   "service.communication.owns": "Real-time chat",
   "service.search.owns": "Product search",

@@ -58,7 +58,7 @@
   "service.payment.owns": "Wallet, top-up, escrow",
   "service.warehouse.owns": "Inventori bin, reservasi stok, fulfilment task",
   "service.matching.owns": "Kurir, dispatch, bukti pengantaran",
-  "service.review.owns": "Ulasan produk",
+  "service.review.owns": "Ulasan produk, rating kurir",
   "service.notification.owns": "Notifikasi pelanggan",
   "service.communication.owns": "Chat real-time",
   "service.search.owns": "Pencarian produk",

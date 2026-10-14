@@ -1,0 +1,135 @@
+---
+title: review
+description: Ulasan produk dan rating kurir — apa kata pembeli tentang barang yang mereka beli dan tentang kurir yang mengantarnya. review bertanya ke order untuk setiap ulasan yang ia terima dan tidak menyimpan order sendiri.
+sourceHash: "14239b4a6b19"
+---
+
+import ServiceCalls from "../../../../components/ServiceCalls.astro";
+import ServiceFacts from "../../../../components/ServiceFacts.astro";
+
+review menyimpan apa kata pembeli: rating satu sampai lima dan komentar untuk produk yang mereka beli, dan
+hal yang sama untuk kurir yang mengantarnya. review tidak memiliki order, produk, maupun kurir. Setiap ulasan
+dicek ke order, yang menyebut order itu milik siapa, apakah sudah sampai, apa isinya, siapa penjualnya, dan
+siapa yang mengantarnya — dan review mencatat ulasan tepat atas nama mereka.
+
+Tabel di halaman ini dibangkitkan dari data terverifikasi yang sama dengan
+[peta sistem](/id/architecture/system-map/), pada commit yang ditautkan dari setiap baris. Teksnya
+dicek terhadap review
+[v1.0.0](https://github.com/WildanFrananda/kinetix-review-service/tree/4f4572c1a49749e19dd4598500a6e1f037abb229),
+versi yang berjalan di production.
+
+## Sekilas
+
+<ServiceFacts service="review" />
+
+## Yang dilayani
+
+review tidak melayani gRPC: ia hanya pemanggil. Lewat HTTP, melalui gateway,
+[dua route menulis dan tiga membaca](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/routes/api.php#L16-L25):
+pembeli mengirim ulasan produk atau rating kurir dengan access token, dan siapa pun boleh membaca ulasan
+sebuah produk, ulasan sebuah merchant, atau rating seorang kurir tanpa token.
+
+## Yang dipanggil
+
+review memanggil keluar untuk satu hal: bertanya ke order tentang order yang disebut sebuah ulasan.
+
+<ServiceCalls service="review" />
+
+## Menulis ulasan produk
+
+Pembeli mengirim order, produk, rating satu sampai lima, dan komentar opsional sampai seribu karakter — dan
+tidak ada hal lain yang berpengaruh. review meminta order itu ke order dan
+[menerima ulasan hanya jika](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Services/ProductReviewService.php#L19-L45)
+order itu milik akun pemilik token, sudah terkirim atau selesai, dan produknya ada di salah satu barisnya.
+Ulasan dicatat atas nama merchant yang disebut order sebagai penjual, merchant apa pun yang dibawa request,
+sehingga ulasan sebuah merchant selalu datang dari orang yang membeli dari merchant itu.
+
+Apakah sebuah order sudah terkirim
+[dibaca dari nilai status order](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Clients/GrpcOrderClient.php#L136-L150),
+`DELIVERED` atau `COMPLETED`, tidak pernah dari namanya sebagai teks. Satu produk dari satu order diulas
+sekali:
+[database menyimpan satu baris per order dan produk](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/database/migrations/2026_08_28_000001_create_product_reviews_table.php#L21),
+dan percobaan kedua
+[dijawab `409`](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Repositories/EloquentProductReviewRepository.php#L13-L19),
+bukan dengan error yang membuat pembeli menebak apakah ulasannya tersimpan.
+
+## Memberi rating kurir
+
+Rating kurir hanya menyebut order. Kurir yang dinilai adalah
+[kurir yang dicatat order sebagai pengantarnya](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Services/DriverRatingService.php#L29-L43)
+— kurir yang dilaporkan matching ke order saat paket sampai — sehingga pembeli tidak bisa menilai kurir
+yang tidak pernah membawa paketnya. Order tanpa kurir yang tercatat tidak bisa dinilai, dan
+[kurir sebuah order dinilai sekali](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/database/migrations/2026_09_07_000001_key_reviews_on_principals.php#L35).
+Sisi order dari hal ini ada di [halaman order](/id/services/order/#yang-dilayani-lewat-grpc).
+
+## Ketika order tidak bisa ditanya
+
+Ulasan yang tidak bisa dicek tidak disimpan, dan pembeli tidak diberi tahu bahwa ulasannya ditolak. Hanya
+OK, `NOT_FOUND`, dan `INVALID_ARGUMENT`
+[yang dihitung sebagai jawaban order tentang order itu](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Clients/GrpcOrderClient.php#L152-L156);
+status lain apa pun, timeout setelah lima detik, atau panggilan yang tidak pernah sampai ke order menjadi
+[`503` yang mengatakan tidak ada yang tersimpan](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Clients/OrderServiceUnavailableException.php#L10-L24),
+bukan `422` yang mengatakan order-nya tidak ada — lihat [Tidak tahu bukan berarti tidak](/id/learn/unknown-is-not-no/).
+
+Setelah
+[lima kegagalan berturut-turut, circuit terbuka selama tiga puluh detik](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Resilience/CircuitBreaker.php#L14-L18):
+review berhenti menghubungi order, menjawab `503` dengan `Retry-After`, lalu meloloskan satu request untuk
+mencari tahu apakah order sudah kembali.
+
+## Membaca ulasan
+
+Tiga route baca tidak butuh token: pembeli membaca ulasan sebelum memutuskan membeli. Masing-masing menjawab
+rata-rata rating, jumlahnya, dan
+[lima belas ulasan terbaru per halaman](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Repositories/EloquentProductReviewRepository.php#L21-L25).
+Sebuah ulasan menampilkan rating, komentar, produk, dan waktunya, dan
+[tidak pernah siapa penulisnya atau order mana](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Models/ProductReview.php#L25-L28):
+halaman publik bukan tempat untuk memberi tahu dunia apa yang dibeli seseorang.
+
+## Bagaimana kodenya disusun
+
+| Direktori | Isinya |
+| --- | --- |
+| `app/Http/` | controller, yang memvalidasi request dan memanggil service, dan middleware yang memverifikasi token identity |
+| `app/Services/` | aturan menerima ulasan atau rating, dan ringkasan yang dijawab route baca |
+| `app/Clients/` | client gRPC untuk order dan detail order yang ia kembalikan |
+| `app/Repositories/` | repository Eloquent di balik kontrak di `app/Contracts/` |
+| `app/Resilience/` | circuit breaker di depan order |
+| `generated/` | kelas PHP yang dibangkitkan protoc dari kontrak yang dipin |
+
+Controller tetap tipis dan service menerima repository serta client order-nya lewat kontrak, sehingga test
+bisa memberi service sebuah client order palsu tanpa menyentuh lapisan database.
+
+## Data
+
+PostgreSQL, lewat Eloquent, menyimpan dua tabel: `product_reviews` dan `driver_ratings`. Setiap baris
+menyimpan order, principal identity pembeli, rating, dan komentar; ulasan produk juga menyimpan produk dan
+principal merchant, rating kurir menyimpan principal kurir. review menyimpan principal, tidak pernah nomor
+akun, dan tidak pernah salinan order.
+
+## Siapa boleh melakukan apa
+
+- **Pembeli** menulis ulasan dan rating dengan access token identity —
+  [hanya access token](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Security/TokenVerifier.php#L35-L59),
+  dari issuer identity untuk audience ini — dan hanya untuk order miliknya yang sudah terkirim; lihat
+  [Token yang bisa ditarik kembali](/id/learn/tokens-that-can-be-taken-back/).
+- **Siapa pun** membaca ulasan dan rating, tanpa tahu siapa yang memberikannya.
+- **Tidak ada yang** memilih siapa yang diulas: merchant dan kurir datang dari order.
+- **Untuk memanggil order**, review menunjukkan
+  [sertifikat dari CA Kinetix](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Security/ServiceIdentity.php#L13-L21)
+  yang menyebut review, service yang ada di daftar izin order; lihat
+  [Siapa yang memanggil?](/id/learn/who-is-calling/).
+
+## Mengoperasikannya
+
+- review menjalankan Laravel Octane di atas FrankenPHP dalam worker mode: satu worker melayani request demi
+  request tanpa mem-boot framework lagi. Client order, channel-nya, dan breaker-nya
+  [tetap hangat antar-request](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/config/octane.php#L142-L148),
+  sehingga setiap worker memegang satu koneksi ke order dan satu breaker.
+- `/api/health` menjawab ketika prosesnya hidup; `/api/health/ready`
+  [menjalankan query sungguhan](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Http/Controllers/HealthController.php#L19-L34),
+  sehingga container dianggap sehat hanya ketika service bisa melayani.
+- `/api/metrics` menyajikan teks Prometheus dengan nama-nama yang diberikan kontrak platform untuk review,
+  termasuk panggilan ke order dan panggilan yang ditolak breaker.
+- Saat `SIGTERM`, proses yang menjalankan Octane
+  [menunggu sampai dua puluh lima detik agar server keluar](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Console/OctaneServerExitWait.php#L11-L36)
+  sebelum ia berakhir, sehingga container tidak berhenti di bawah server yang masih mematikan dirinya.
