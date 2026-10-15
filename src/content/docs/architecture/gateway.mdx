@@ -1,0 +1,115 @@
+---
+title: Gateway
+description: The one door into Kinetix from outside. Kong, configured declaratively from Pkl, listens on TLS only, sends each path to the service that owns it, checks tokens on some routes as a first lock, and limits, labels and counts every request.
+sidebar:
+  order: 4
+---
+
+import GatewayRoutes from "../../../components/GatewayRoutes.astro";
+
+Everything a browser, an integration or the courier app asks of Kinetix arrives at one place: Kong, running
+without a database, with its whole configuration written in
+[Pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/b797cd594e357129764e030aa6a70a2926c90a01/config/gateway.pkl)
+and rendered to Kong's declarative format. This page is checked against the gateway
+[v1.2.1](https://github.com/WildanFrananda/kinetix-api-gateway/tree/b797cd594e357129764e030aa6a70a2926c90a01),
+the version in production.
+
+## TLS, and nothing else
+
+The gateway has
+[one listener, and it speaks TLS](https://github.com/WildanFrananda/kinetix-api-gateway/blob/b797cd594e357129764e030aa6a70a2926c90a01/Dockerfile#L63-L65).
+There is no plaintext port beside it: a port that still answers in plaintext is a port clients keep
+using, and every token the gateway checks would cross the network in clear on its way to being checked.
+So a client always speaks `https://`, and a WebSocket from a client is always `wss://`.
+
+Behind the gateway, inside the private network, Kong reaches each service over plain HTTP. Calls between
+services are a different path altogether: gRPC over mutual TLS, described in
+[Who is calling?](/learn/who-is-calling/).
+
+## Where each path goes
+
+Generated from the same verified data as the [system map](/architecture/system-map/):
+
+<GatewayRoutes />
+
+A route is a path prefix. Most services receive the path exactly as the client sent it; a few have the
+prefix rewritten to their own — catalog's `/api/v1/products` arrives as
+[`/api/products`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/b797cd594e357129764e030aa6a70a2926c90a01/config/gateway.pkl#L82-L92),
+warehouse's `/api/v1/warehouse` as
+[`/api/v1`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/b797cd594e357129764e030aa6a70a2926c90a01/config/gateway.pkl#L121-L131).
+
+Three more paths are not on the map:
+
+- `/health`, which
+  [Kong answers itself](https://github.com/WildanFrananda/kinetix-api-gateway/blob/b797cd594e357129764e030aa6a70a2926c90a01/config/gateway.pkl#L15-L35)
+  without reaching any service.
+- The payment provider's notifications,
+  [`POST` only](https://github.com/WildanFrananda/kinetix-api-gateway/blob/b797cd594e357129764e030aa6a70a2926c90a01/config/gateway.pkl#L248-L264).
+  They carry no token, because the provider has none to send; payment verifies each notification's
+  signature instead, as the [payment page](/services/payment/) describes.
+- `/api/v1/proofs` and `/api/v1/proofs/registrations`, served by notary, which this site does not cover
+  yet.
+
+## WebSockets
+
+Two sockets, both served by matching:
+[`/ws/v1/matching/driver` and `/ws/v1/matching/merchant`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/b797cd594e357129764e030aa6a70a2926c90a01/config/gateway.pkl#L155-L179).
+A WebSocket starts as an ordinary HTTP request asking to upgrade, so Kong routes it like any other request
+and then passes the upgraded connection through. The access token travels with the connection request,
+and matching checks it before the socket opens —
+[a courier's token for the driver socket](https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse_web/channels/driver_socket.ex#L26-L36),
+[a seller's for the merchant socket](https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse_web/channels/merchant_socket.ex#L23-L45).
+A request with no token, or a bad one, is refused with `403` and no socket is opened.
+
+## A first lock on tokens
+
+On five groups of routes — identity's signed-in routes, matching's REST API, payment, notary and
+notification's handset registration — Kong
+[checks the access token before the request moves on](https://github.com/WildanFrananda/kinetix-api-gateway/blob/b797cd594e357129764e030aa6a70a2926c90a01/config/gateway.pkl#L59-L78).
+It knows
+[one signer: identity, by its issuer, with identity's public key and RS256](https://github.com/WildanFrananda/kinetix-api-gateway/blob/b797cd594e357129764e030aa6a70a2926c90a01/config/gateway.pkl#L346-L358),
+and it checks the signature and that the token has not expired. A token from anyone else, unsigned, or
+signed with another algorithm is refused at the door with `401`.
+
+That is a first lock, not the only one. Kong does not ask whether the token is an access token or a
+refresh token, or which audience it was issued for; the service behind it does, against identity's
+published keys, and decides what the caller may do. Routes without Kong's check — sign-in and
+registration, identity's signing keys, product search, the catalogue, cart and orders, reviews,
+warehouse and pricing — are either public by design or checked by the service alone; each
+[service page](/services/order/) says which.
+
+## Limits, labels and counts
+
+Every request, on every route:
+
+- is limited to
+  [100 requests a minute per client address](https://github.com/WildanFrananda/kinetix-api-gateway/blob/b797cd594e357129764e030aa6a70a2926c90a01/config/gateway.pkl#L392-L400),
+  counted on the gateway itself. The payment provider's notifications have
+  [a limit of their own, 600 a minute](https://github.com/WildanFrananda/kinetix-api-gateway/blob/b797cd594e357129764e030aa6a70a2926c90a01/config/gateway.pkl#L253-L263),
+  so a burst of payments is not throttled by the limit meant for people;
+- carries an [`X-Request-Id`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/b797cd594e357129764e030aa6a70a2926c90a01/config/gateway.pkl#L374-L381):
+  the client's if it sent one, a new UUID if not, echoed back in the response so a support request can
+  name the exact call;
+- is [counted for Prometheus](https://github.com/WildanFrananda/kinetix-api-gateway/blob/b797cd594e357129764e030aa6a70a2926c90a01/config/gateway.pkl#L382-L391)
+  by status, latency and upstream health.
+
+Browsers may read responses only from
+[the origins configured for the environment](https://github.com/WildanFrananda/kinetix-api-gateway/blob/b797cd594e357129764e030aa6a70a2926c90a01/config/gateway.pkl#L361-L373),
+never with credentials: tokens travel in the `Authorization` header, not in a cookie. With no origins
+configured there is no CORS policy at all, and a `*` beside a named origin
+[does not even evaluate](https://github.com/WildanFrananda/kinetix-api-gateway/blob/b797cd594e357129764e030aa6a70a2926c90a01/config/gateway.pkl#L8-L9).
+
+## One image for every environment
+
+The image carries the Pkl, not a rendered configuration. When the container starts it
+[renders the configuration](https://github.com/WildanFrananda/kinetix-api-gateway/blob/b797cd594e357129764e030aa6a70a2926c90a01/bin/entrypoint.sh#L17-L56)
+from the environment's own values — identity's public key, the issuer to trust and the browser origins —
+refuses to start if any is missing, and checks the result actually contains a key to verify tokens with:
+a gateway with no verification key would route everything and authenticate nothing. The digest CI scanned
+is therefore the digest that runs everywhere.
+
+Every change is evaluated before it merges:
+[CI renders the Pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/b797cd594e357129764e030aa6a70a2926c90a01/.github/workflows/ci.yml#L46-L100)
+with a throwaway key, proves an empty origin list leaves CORS out and that `*` beside a named origin is
+refused, and validates the result; the image build
+[renders it once more](https://github.com/WildanFrananda/kinetix-api-gateway/blob/b797cd594e357129764e030aa6a70a2926c90a01/Dockerfile#L20-L30).

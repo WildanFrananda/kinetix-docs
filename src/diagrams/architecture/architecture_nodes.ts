@@ -100,7 +100,7 @@ export const architectureNodes: readonly MapNode[] = [
       "fleet.v1.FleetRegistryService/ActivateDriver",
       "shipping.v1.ShippingService/EstimateShippingOptions"
     ],
-    routes: ["/api/v1/matching"],
+    routes: ["/api/v1/matching", "/ws/v1/matching/driver", "/ws/v1/matching/merchant"],
     stores: [postgres, "MinIO"],
     deployed: true
   },

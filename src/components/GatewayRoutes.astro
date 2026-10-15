@@ -1,0 +1,44 @@
+---
+import { catalogueFor } from "../diagrams/engine/catalogue_for";
+import { localeOf } from "../diagrams/engine/locale_of";
+import { gatewayRoutes } from "../site/gateway_routes";
+
+const locale = localeOf(Astro.locals.starlightRoute.entryMeta.lang);
+const catalogue = catalogueFor(locale);
+const prefix = locale === "en" ? "" : `/${locale}`;
+const routes = gatewayRoutes();
+---
+
+<table class="service-table">
+  <thead>
+    <tr>
+      <th>{catalogue["gateway.routes.path"]}</th>
+      <th>{catalogue["gateway.routes.service"]}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {
+      routes.map((route) => (
+        <tr>
+          <td>
+            <code>{route.path.split("/").map((part, index) => (<>{index > 0 && <>/<wbr /></>}{part}</>))}</code>
+          </td>
+          <td>
+            <a href={`${prefix}/services/${route.service}/`}>{route.service}</a>
+          </td>
+        </tr>
+      ))
+    }
+  </tbody>
+</table>
+
+<style>
+  .service-table {
+    display: table;
+    width: 100%;
+  }
+
+  .service-table td:last-child {
+    white-space: nowrap;
+  }
+</style>

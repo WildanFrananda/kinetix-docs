@@ -461,6 +461,8 @@
   "refresh.together.step4": "Request pertama meng-commit R2 dan menandai R1 terpakai. Baru setelah itu request kedua membaca R1, mendapatinya terpakai, lalu mencabut family-nya — termasuk R2 yang baru saja diterbitkan.",
   "refresh.together.step5": "Jadi request mana pun yang menang, token barunya sudah mati: tidak ada salinan yang mempertahankan session.",
   "refresh.together.outcome": "Pengecekan yang diikuti penulisan adalah race. Kunci barisnya, atau buat penulisannya bersyarat, supaya pemanggil kedua melihat apa yang sudah dilakukan pemanggil pertama.",
+  "gateway.routes.path": "Path",
+  "gateway.routes.service": "Service",
   "services.sheet.owns": "Memiliki",
   "services.sheet.stack": "Stack",
   "services.sheet.stores": "Data",

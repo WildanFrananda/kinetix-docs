@@ -461,6 +461,8 @@
   "refresh.together.step4": "The first commits R2 and marks R1 used. Only then does the second read R1, find it used, and revoke the family — including the R2 just issued.",
   "refresh.together.step5": "So whichever request won, its new token is already dead: neither copy keeps the session.",
   "refresh.together.outcome": "A check followed by a write is a race. Lock the row, or make the write conditional, so the second caller sees what the first did.",
+  "gateway.routes.path": "Path",
+  "gateway.routes.service": "Service",
   "services.sheet.owns": "Owns",
   "services.sheet.stack": "Stack",
   "services.sheet.stores": "Data",
