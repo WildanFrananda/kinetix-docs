@@ -1,7 +1,7 @@
 ---
 title: notification
 description: Push dan email untuk orang-orang yang berkepentingan dengan sebuah order. notification memiliki device token milik handset dan catatan setiap pesan yang ia terima; sebuah service hanya boleh memintanya mengirim template yang diberikan kepadanya, dan sebuah handset hanya mendaftarkan dirinya sendiri.
-sourceHash: "8d58363b30ea"
+sourceHash: "b0a494e91852"
 ---
 
 import ServiceCalls from "../../../../components/ServiceCalls.astro";
@@ -41,15 +41,14 @@ Setiap pemanggil diberi operasi satu per satu, dan production tidak memberikan s
 
 ## Apa yang dipanggilnya
 
-Di dalam estate, satu panggilan: `GetUserProfile` milik identity, untuk alamat email principal yang dituju
-sebuah pesan.
-
-<ServiceCalls service="notification" />
-
-Di luarnya, dua penyedia yang tidak digambar di peta: Firebase Cloud Messaging untuk push, melalui
+`GetUserProfile` milik identity, untuk alamat email principal yang dituju sebuah pesan, dan dua penyedia
+di luar estate: Firebase Cloud Messaging untuk push, melalui
 [API HTTP v1-nya](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L31-L52),
 dan Resend untuk email,
 [satu request JSON per pesan](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/http/HttpEmailSender.scala#L32-L50).
+
+<ServiceCalls service="notification" />
+
 Firebase menerima OAuth access token, bukan key: notification
 [menandatangani sebuah assertion dengan service account-nya lalu menukarnya](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/http/GoogleAccessTokens.scala#L37-L58),
 kemudian [menyimpan token itu](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/http/GoogleAccessTokens.scala#L20-L35)

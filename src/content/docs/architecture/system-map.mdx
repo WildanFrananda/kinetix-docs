@@ -16,8 +16,8 @@ box to trace it.
 ## Reading the map
 
 **Everything from outside enters through the gateway.** Browsers, integrations and the courier app
-talk only to Kong. Select the gateway to see which services it exposes and on which paths; notification
-and communication have no public route at all.
+talk only to Kong. Select the gateway to see which services it exposes and on which paths; notification's
+only public route is a handset registering itself, and communication has none at all.
 
 **order is the busiest caller.** Checkout is a saga that order coordinates: prices and vouchers from
 pricing, stock from warehouse, an escrow hold from payment, shipping options and a courier from
@@ -36,4 +36,6 @@ its last checkpoint, and writes the result into Typesense. The `ChangedSince` ca
 
 - Calls made only by one-off data migrations.
 - Traffic inside a single service, such as matching's in-process events.
-- notification serves its API, but no service calls it yet. communication is built but not deployed.
+- An arrow into notification. It serves its API, but no service is granted a template yet; its own
+  arrows, to identity, Firebase and Resend, are the calls it makes once one is. communication is built
+  but not deployed.

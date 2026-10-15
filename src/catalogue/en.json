@@ -130,6 +130,8 @@
   "map.node.clients.title": "Clients",
   "map.node.clients.summary": "Browsers, apps and integrations. Everything they send enters through the gateway.",
   "map.node.midtrans.summary": "Payment provider. Payment calls its API; its payment notifications reach payment through the gateway.",
+  "map.node.fcm.summary": "Firebase Cloud Messaging, Google's push service. notification signs an OAuth assertion for an access token, then sends each push through its HTTP v1 API.",
+  "map.node.resend.summary": "Email provider. notification sends each email as one JSON request.",
   "map.node.nominatim.summary": "OpenStreetMap's geocoder, used by identity to turn addresses into coordinates.",
   "map.node.courier.title": "courier app",
   "saga.actor.order": "order (checkout)",

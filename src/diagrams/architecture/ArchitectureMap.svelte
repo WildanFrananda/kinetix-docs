@@ -130,7 +130,13 @@
   <p class="hint">{labels.hint}</p>
 
   <div class="scroller">
-    <div class="canvas">
+    <div
+      class="canvas"
+      style:--map-width={width}
+      style:--map-height={height}
+      style:--node-width={halfWidth * 2}
+      style:--node-height={halfHeight * 2}
+    >
       <svg viewBox="0 0 {width} {height}" aria-hidden="true">
         <defs>
           <marker id="{uid}-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
@@ -302,8 +308,8 @@
 
   .canvas {
     position: relative;
-    min-width: 36rem;
-    aspect-ratio: 1000 / 690;
+    min-width: calc(var(--map-width) * 0.036rem);
+    aspect-ratio: var(--map-width) / var(--map-height);
     container-type: inline-size;
     background-image: radial-gradient(var(--kx-rule) 1px, transparent 1px);
     background-size: 2.5cqw 2.5cqw;
@@ -357,20 +363,22 @@
   }
 
   .node {
+    --unit: calc(100cqw / var(--map-width));
+
     position: absolute;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.6cqw;
-    width: 17cqw;
-    height: 5.2cqw;
-    padding: 0 0.6cqw;
+    gap: calc(6 * var(--unit));
+    width: calc(var(--node-width) * var(--unit));
+    height: calc(var(--node-height) * var(--unit));
+    padding: 0 calc(6 * var(--unit));
     border: 1px solid var(--sl-color-white);
     border-radius: 2px;
     background: var(--sl-color-black);
     color: var(--sl-color-white);
     font-family: var(--sl-font-mono);
-    font-size: 1.5cqw;
+    font-size: calc(15 * var(--unit));
     font-weight: 600;
     transform: translate(-50%, -50%);
     cursor: pointer;
@@ -382,9 +390,9 @@
 
   .node img {
     flex: none;
-    width: 2cqw;
-    height: 2cqw;
-    padding: 0.2cqw;
+    width: calc(20 * var(--unit));
+    height: calc(20 * var(--unit));
+    padding: calc(2 * var(--unit));
     border-radius: 1px;
     background: var(--kx-tile);
   }
@@ -423,7 +431,7 @@
   }
 
   .node.state-routed {
-    box-shadow: inset 0 -0.45cqw 0 var(--sl-color-accent);
+    box-shadow: inset 0 calc(-4.5 * var(--unit)) 0 var(--sl-color-accent);
   }
 
   .node.state-dim {

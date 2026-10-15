@@ -38,15 +38,14 @@ operations one by one, and production grants none.
 
 ## What it calls
 
-Inside the estate, one call: identity's `GetUserProfile`, for the email address of the principal a
-message is for.
-
-<ServiceCalls service="notification" />
-
-Outside it, two providers, which the map does not draw: Firebase Cloud Messaging for push, through
+identity's `GetUserProfile`, for the email address of the principal a message is for, and two providers
+outside the estate: Firebase Cloud Messaging for push, through
 [its HTTP v1 API](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L31-L52),
 and Resend for email,
 [one JSON request per message](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/http/HttpEmailSender.scala#L32-L50).
+
+<ServiceCalls service="notification" />
+
 Firebase takes an OAuth access token rather than a key: notification
 [signs an assertion with its service account and exchanges it](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/http/GoogleAccessTokens.scala#L37-L58),
 then [holds the token](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/http/GoogleAccessTokens.scala#L20-L35)

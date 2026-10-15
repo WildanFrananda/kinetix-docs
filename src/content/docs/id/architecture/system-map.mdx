@@ -1,7 +1,7 @@
 ---
 title: Peta sistem
 description: Setiap service, panggilan di antara mereka, dan apa yang masuk dari luar — digambar dari kodenya, dengan setiap panah menautkan baris yang melakukan panggilan itu.
-sourceHash: "66068eed4af1"
+sourceHash: "35994d01f8d7"
 sidebar:
   order: 1
 ---
@@ -18,7 +18,8 @@ peta ini digambar. Pilih sebuah kotak untuk menelusurinya.
 
 **Semua yang datang dari luar masuk lewat gateway.** Browser, integrasi, dan aplikasi kurir hanya
 berbicara dengan Kong. Pilih gateway untuk melihat service mana yang dibukanya dan di path apa;
-notification dan communication sama sekali tidak punya rute publik.
+satu-satunya rute publik notification adalah handset yang mendaftarkan dirinya, dan communication sama
+sekali tidak punya.
 
 **order adalah pemanggil tersibuk.** Checkout adalah saga yang dikoordinasikan order: harga dan voucher
 dari pricing, stok dari warehouse, escrow hold dari payment, opsi pengiriman dan kurir dari matching.
@@ -38,5 +39,6 @@ itulah feed-nya.
 
 - Panggilan yang hanya dilakukan oleh migrasi data sekali jalan.
 - Lalu lintas di dalam satu service, seperti event in-process milik matching.
-- notification melayani API-nya, tapi belum ada service yang memanggilnya. communication sudah dibangun
-  tapi belum di-deploy.
+- Panah yang masuk ke notification. Ia melayani API-nya, tapi belum ada service yang diberi template;
+  panahnya sendiri, ke identity, Firebase, dan Resend, adalah panggilan yang ia lakukan begitu ada.
+  communication sudah dibangun tapi belum di-deploy.

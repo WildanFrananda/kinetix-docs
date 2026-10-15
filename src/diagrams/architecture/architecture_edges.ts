@@ -27,6 +27,23 @@ export const architectureEdges: readonly MapEdge[] = [
     ]
   },
   {
+    from: "notification",
+    to: "fcm",
+    kind: "external",
+    calls: [
+      { operation: "POST /token", source: { label: "GoogleAccessTokens.scala:44", href: "https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/http/GoogleAccessTokens.scala#L44" } },
+      { operation: "POST /v1/projects/{project}/messages:send", source: { label: "HttpPushSender.scala:34", href: "https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L34" } }
+    ]
+  },
+  {
+    from: "notification",
+    to: "resend",
+    kind: "external",
+    calls: [
+      { operation: "POST /emails", source: { label: "HttpEmailSender.scala:33", href: "https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/http/HttpEmailSender.scala#L33" } }
+    ]
+  },
+  {
     from: "identity",
     to: "nominatim",
     kind: "external",

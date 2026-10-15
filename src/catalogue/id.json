@@ -130,6 +130,8 @@
   "map.node.clients.title": "Client",
   "map.node.clients.summary": "Browser, aplikasi, dan integrasi. Semua yang mereka kirim masuk lewat gateway.",
   "map.node.midtrans.summary": "Penyedia pembayaran. Payment memanggil API-nya; notifikasi pembayarannya sampai ke payment lewat gateway.",
+  "map.node.fcm.summary": "Firebase Cloud Messaging, layanan push milik Google. notification menandatangani OAuth assertion untuk mendapat access token, lalu mengirim setiap push lewat API HTTP v1-nya.",
+  "map.node.resend.summary": "Penyedia email. notification mengirim setiap email sebagai satu request JSON.",
   "map.node.nominatim.summary": "Geocoder milik OpenStreetMap, dipakai identity untuk mengubah alamat menjadi koordinat.",
   "map.node.courier.title": "aplikasi kurir",
   "saga.actor.order": "order (checkout)",
