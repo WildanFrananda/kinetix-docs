@@ -1,0 +1,151 @@
+---
+title: Fake yang setuju dengan bug-nya
+description: Dua suite hijau yang tidak membuktikan apa-apa — review yang tak bisa ditulis siapa pun dan notifikasi yang tak bisa disimpan. Setiap fake berdiri tepat di tempat salah pahamnya berada, sehingga tes memeriksa bug terhadap dirinya sendiri.
+sourceHash: "dc0ba0299593"
+sidebar:
+  order: 10
+---
+
+Sebuah fake menggantikan sesuatu yang lambat atau jauh — service lain, sebuah database — agar tes cepat dan
+selalu memberi jawaban yang sama. Ia ditulis oleh orang yang menulis kodenya, dari pemahaman yang sama
+tentang apa yang dikatakan pihak seberang. Bila pemahaman itu benar, fake-nya adalah test double yang baik.
+Bila salah, fake-nya salah dengan cara yang persis sama, dan suite-nya hanya membuktikan bahwa kode dan
+fake saling setuju.
+
+Kinetix mengalami ini dua kali. Di kedua kasus semua tes hijau, dan di kedua kasus sistem yang sebenarnya
+akan menolak setiap request. Keduanya sudah diperbaiki: review di v1.0.0, notification di v1.0.2, dan
+keduanya berjalan di production.
+
+## Review yang tak bisa ditulis siapa pun
+
+review membiarkan pembeli mengulas produk dan menilai kurir, tetapi hanya untuk order yang sudah sampai.
+Ia menanyakan order kepada service order lalu memeriksa statusnya.
+[Client-nya mengubah status menjadi string](https://github.com/WildanFrananda/kinetix-review-service/blob/70802b6957d655e27dc2b5d4e8b2c41204ed759f/app/Clients/GrpcOrderClient.php#L131-L140)
+dengan nama enum itu sendiri:
+
+```php
+"status" => OrderStatus::name($response->getStatus()),
+```
+
+dan [service-nya membandingkan string itu](https://github.com/WildanFrananda/kinetix-review-service/blob/70802b6957d655e27dc2b5d4e8b2c41204ed759f/app/Services/ProductReviewService.php#L31-L34)
+dengan kata yang biasa dipakai orang:
+
+```php
+$status = strtoupper((string) ($order["status"] ?? ""));
+if ($status !== "DELIVERED" && $status !== "COMPLETED") {
+    throw new InvalidArgumentException("Reviews are only allowed for DELIVERED or COMPLETED orders.");
+}
+```
+
+Nama nilai enum itu bukan `DELIVERED`. Di kontrak namanya
+[`ORDER_STATUS_DELIVERED`](https://github.com/WildanFrananda/kinetix-contracts/blob/5772ea48cbd6299e18916d768d8527c0f415760c/proto/common/v1/common.proto#L10-L24), dan itulah yang dikembalikan `name()`.
+Tidak ada order yang bisa lolos pemeriksaan itu, jadi tidak ada review yang bisa ditulis.
+
+Tes tidak menyadarinya, karena tes tidak pernah menjalankan client-nya. Tes menggantinya dengan
+[fake yang mengembalikan apa pun yang diberikan tes](https://github.com/WildanFrananda/kinetix-review-service/blob/70802b6957d655e27dc2b5d4e8b2c41204ed759f/tests/FakeOrderClient.php#L23-L33),
+dan tes memberinya
+[order dengan status `"DELIVERED"`](https://github.com/WildanFrananda/kinetix-review-service/blob/70802b6957d655e27dc2b5d4e8b2c41204ed759f/tests/Feature/DriverRatingTest.php#L16-L28) —
+kata yang sama dengan yang diharapkan service, diketik oleh orang yang sama. Fake itu tidak salah tentang
+order. Ia salah tentang client-nya, dan salah persis seperti service-nya.
+
+## Notifikasi yang tak bisa disimpan
+
+notification mencatat setiap pesan sebelum mengirim apa pun. Parameter catatan itu disimpan di kolom
+`jsonb`, dan
+[insert-nya mengikatnya sebagai string biasa](https://github.com/WildanFrananda/kinetix-notification-service/blob/cb82e677a25fe9eb8a72cfcd115dccfd392f39f2/src/main/scala/com/kinetix/notification/infrastructure/persistence/PostgresNotificationRepository.scala#L118-L128):
+
+```scala
+${Codecs.paramsTo(notification.params)},
+```
+
+Driver mengirim `String` Scala sebagai `character varying`, dan PostgreSQL tidak akan mengubahnya menjadi
+`jsonb` dengan sendirinya. Setiap insert akan gagal dengan
+
+```text
+ERROR: column "params" is of type jsonb but expression is of type character varying
+```
+
+dan setiap permintaan mengirim notifikasi akan dijawab `STORE_UNAVAILABLE` — kegagalan yang ditandai
+sementara, yang menyuruh pemanggil mencoba lagi, dan setiap percobaan akan gagal dengan cara yang sama.
+
+Use case-nya dites dengan teliti, terhadap
+[fake repository yang menyimpan notifikasi di sebuah map](https://github.com/WildanFrananda/kinetix-notification-service/blob/cb82e677a25fe9eb8a72cfcd115dccfd392f39f2/src/test/scala/com/kinetix/notification/fakes/Fakes.scala#L54-L93).
+Map tidak punya tipe kolom. Suite-nya hijau selama lebih dari tiga minggu, dan service-nya belum di-deploy
+selama itu, sehingga production tidak pernah memperlihatkannya. Bug-nya muncul pertama kali saat
+repository dijalankan terhadap PostgreSQL sungguhan.
+
+## Di mana kedua fake itu berdiri
+
+Di kedua kasus bug-nya ada di adapter — kode yang menerjemahkan antara service dan dunia luar — dan
+fake-nya menggantikan tepat adapter itu. Bug review ada di cara client membaca jawaban order; fake-nya
+menggantikan client. Bug notification ada di cara repository berbicara dengan PostgreSQL; fake-nya
+menggantikan repository.
+
+Ini bukan kebetulan. Fake menggantikan kode yang diwakilinya, jadi kode itulah yang tidak bisa diperiksa
+oleh tes mana pun yang memakai fake tersebut. Bila salah pahamnya ada di sana, suite tidak bisa
+menemukannya — dan orang yang menulis fake biasanya menulis salah paham yang sama ke dalamnya, karena
+ia memegangnya.
+
+## Pindahkan fake ke bawah terjemahannya
+
+Perbaikan review memindahkan keputusannya ke dalam adapter dan mengetes adapter itu dengan format
+sungguhan. Client-nya sekarang mengembalikan
+[`OrderDetails` yang bertipe](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Clients/OrderDetails.php#L7-L20), yang `delivered`-nya diputuskan
+dengan
+[membandingkan nilai enum, bukan namanya](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Clients/GrpcOrderClient.php#L31-L34):
+
+```php
+in_array($response->getStatus(), self::DELIVERED_STATUSES, true),
+```
+
+dan [unit test-nya](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/tests/Unit/GrpcOrderClientTest.php#L51-L86) membangun response protobuf sungguhan dengan
+class yang di-generate lalu menjalankannya lewat mapping milik client sendiri: delivered dan completed
+harus terbaca sebagai sudah sampai, sedangkan pending, paid, packing, in transit, cancelled, dan refunded
+tidak. Tes fitur masih memakai fake, tetapi fake-nya sekarang mengembalikan `OrderDetails`, dan
+terjemahan yang menyimpan bug-nya kini berjalan di bawah tes dengan tipe milik wire itu sendiri.
+
+Aturan yang lahir darinya: pasang fake di batas proses — stub, socket, koneksi — bukan di atas kode yang
+menafsirkan jawabannya. Dengan begitu kode penafsir itu berjalan di setiap tes.
+
+## Tes adapter terhadap yang sungguhan
+
+Sebagian adapter sama sekali tidak bisa diperiksa terhadap pengganti. Tipe kolom, constraint, dan cara
+driver mengikat parameter hanya ada di database. Perbaikan notification
+[meng-cast parameternya](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/persistence/NotificationQueries.scala#L34-L48)
+dan menambahkan
+[suite yang menjalankan setiap operasi repository terhadap PostgreSQL 16 sungguhan](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/test/scala/com/kinetix/notification/infrastructure/persistence/PostgresStoreSuite.scala#L92-L106):
+menyimpan, constraint idempotency, dua penyimpanan yang berebut satu key, membaca kembali sebuah baris,
+dan menolak baris yang tidak bisa dibacanya.
+
+[CI menyalakan database itu di setiap run](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/.github/workflows/ci.yml#L25-L46), dan di bawah CI suite-nya
+[gagal alih-alih melewati diri](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/test/scala/com/kinetix/notification/infrastructure/persistence/PostgresStoreSuite.scala#L49-L66)
+bila database-nya tidak ada. Suite yang diam-diam melewati dirinya sendiri adalah centang hijau yang tidak
+mengetes apa-apa — kegagalan yang sama, satu tingkat di atasnya. Mencabut cast-nya kembali membuat tiga
+tesnya merah, dan itulah bukti bahwa ia menjaga apa yang diklaimnya.
+
+Tes use case tetap memakai fake repository-nya. Tes itu memeriksa keputusan — template mana yang boleh
+dikirim pemanggil, apa arti key yang berulang — dan map adalah tempat yang baik untuk itu. Yang berubah:
+fake itu sekarang berdiri di atas pijakan yang sudah diperiksa database sungguhan.
+
+## Cara menemukannya di kode sendiri
+
+1. Daftar semua fake. Untuk masing-masing, sebut kode production yang digantikannya.
+2. Tanya apakah ada tes yang menjalankan kode itu dengan format sungguhan — tipe yang di-generate,
+   database sungguhan, jawaban rekaman dari service sungguhan. Bila tidak ada, kode itu belum dites,
+   sehijau apa pun suite-nya.
+3. Lihat dari mana data fake berasal. Nilai yang diketik orang agar cocok dengan harapan kode tidak
+   membuktikan apa pun tentang pihak seberang; nilai yang dibangun dengan tipe milik pihak seberang
+   membuktikannya.
+4. Rusak adapter-nya dengan sengaja — enum yang salah, cast yang hilang — lalu jalankan suite. Bila tetap
+   hijau, suite itu tidak mengetes adapter-nya.
+
+## Intisari
+
+- Fake memeriksa kode di sekitarnya, tidak pernah kode yang digantikannya.
+- Orang yang menulis fake berbagi asumsi dengan kodenya; fake yang dibangun dari asumsi itu setuju dengan
+  bug-nya.
+- Pasang fake di batas proses, di bawah kode yang menafsirkan jawabannya.
+- Bangun data tes dengan tipe milik pihak seberang, bukan dengan string yang kelihatannya benar.
+- Tes setiap adapter sekali terhadap yang sungguhan, dan buat tes itu gagal, bukan melewati diri, bila
+  yang sungguhan tidak ada.
+- Mutasi kode yang diklaim dijaga sebuah tes. Tes yang tidak bisa merah bukanlah tes.

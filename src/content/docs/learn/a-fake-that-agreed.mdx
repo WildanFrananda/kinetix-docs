@@ -1,0 +1,148 @@
+---
+title: A fake that agreed with the bug
+description: Two green suites that proved nothing — a review nobody could write and a notification nobody could store. Each fake stood exactly where the misunderstanding was, so the test checked the bug against itself.
+sidebar:
+  order: 10
+---
+
+A fake stands in for something slow or far away — another service, a database — so that a test is fast
+and gives the same answer every time. It is written by the same person who wrote the code, from the same
+understanding of what the far side says. When that understanding is right, the fake is a good test
+double. When it is wrong, the fake is wrong in exactly the same way, and the suite proves only that the
+code and the fake agree with each other.
+
+Kinetix shipped this twice. In both cases every test was green, and in both cases the real thing would
+have refused every single request. Both are fixed: review in its v1.0.0, notification in its v1.0.2, both
+running in production.
+
+## The review nobody could write
+
+review lets a buyer review a product and rate a courier, but only for an order that was delivered. It
+asks order for the order and checks its status.
+[The client turned the status into a string](https://github.com/WildanFrananda/kinetix-review-service/blob/70802b6957d655e27dc2b5d4e8b2c41204ed759f/app/Clients/GrpcOrderClient.php#L131-L140)
+with the enum's own name:
+
+```php
+"status" => OrderStatus::name($response->getStatus()),
+```
+
+and [the service compared that string](https://github.com/WildanFrananda/kinetix-review-service/blob/70802b6957d655e27dc2b5d4e8b2c41204ed759f/app/Services/ProductReviewService.php#L31-L34)
+with the word a person would use:
+
+```php
+$status = strtoupper((string) ($order["status"] ?? ""));
+if ($status !== "DELIVERED" && $status !== "COMPLETED") {
+    throw new InvalidArgumentException("Reviews are only allowed for DELIVERED or COMPLETED orders.");
+}
+```
+
+The name of that enum value is not `DELIVERED`. In the contract it is
+[`ORDER_STATUS_DELIVERED`](https://github.com/WildanFrananda/kinetix-contracts/blob/5772ea48cbd6299e18916d768d8527c0f415760c/proto/common/v1/common.proto#L10-L24), and that is what `name()` returns.
+No order could ever pass the check, so no review could ever be written.
+
+The tests did not notice, because they never ran the client. They replaced it with
+[a fake that returns whatever the test gives it](https://github.com/WildanFrananda/kinetix-review-service/blob/70802b6957d655e27dc2b5d4e8b2c41204ed759f/tests/FakeOrderClient.php#L23-L33),
+and the test gave it
+[an order whose status is `"DELIVERED"`](https://github.com/WildanFrananda/kinetix-review-service/blob/70802b6957d655e27dc2b5d4e8b2c41204ed759f/tests/Feature/DriverRatingTest.php#L16-L28) —
+the same word the service expected, typed by the same person. The fake was not wrong about order. It was
+wrong about the client, and it was wrong in exactly the way the service was.
+
+## The notification nobody could store
+
+notification writes a record of each message before it sends anything. The record's parameters live in
+a `jsonb` column, and
+[the insert bound them as a plain string](https://github.com/WildanFrananda/kinetix-notification-service/blob/cb82e677a25fe9eb8a72cfcd115dccfd392f39f2/src/main/scala/com/kinetix/notification/infrastructure/persistence/PostgresNotificationRepository.scala#L118-L128):
+
+```scala
+${Codecs.paramsTo(notification.params)},
+```
+
+The driver sends a Scala `String` as `character varying`, and PostgreSQL will not turn that into `jsonb` on
+its own. Every insert would have failed with
+
+```text
+ERROR: column "params" is of type jsonb but expression is of type character varying
+```
+
+and every request to send a notification would have been answered `STORE_UNAVAILABLE` — a failure marked
+transient, which tells a caller to try again, and every try would have failed the same way.
+
+The use cases were tested thoroughly, against
+[a fake repository that keeps notifications in a map](https://github.com/WildanFrananda/kinetix-notification-service/blob/cb82e677a25fe9eb8a72cfcd115dccfd392f39f2/src/test/scala/com/kinetix/notification/fakes/Fakes.scala#L54-L93).
+A map has no column types. The suite stayed green for more than three weeks, and the service was not
+deployed in that time, so nothing in production ever showed it. It surfaced the first time the repository
+ran against a real PostgreSQL.
+
+## Where both fakes stood
+
+In both cases the bug sat in an adapter — the code that translates between the service and the outside
+world — and the fake replaced exactly that adapter. review's bug was in how the client read order's
+answer; the fake replaced the client. notification's bug was in how the repository spoke to PostgreSQL;
+the fake replaced the repository.
+
+That is not bad luck. A fake replaces the code it stands in for, so that code is precisely what no test
+using the fake can check. If the misunderstanding lives there, the suite cannot find it — and the person
+writing the fake will usually write the same misunderstanding into it, because they hold it.
+
+## Move the fake below the translation
+
+review's fix moved the decision into the adapter and tested the adapter with the real format. The client
+now returns
+[a typed `OrderDetails`](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Clients/OrderDetails.php#L7-L20) whose `delivered` is decided
+by
+[comparing enum values, not names](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Clients/GrpcOrderClient.php#L31-L34):
+
+```php
+in_array($response->getStatus(), self::DELIVERED_STATUSES, true),
+```
+
+and [its unit test](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/tests/Unit/GrpcOrderClientTest.php#L51-L86) builds real protobuf
+responses with the generated classes and runs them through the client's own mapping: delivered and
+completed must read as delivered, and pending, paid, packing, in transit, cancelled and refunded must
+not. The feature tests still use a fake, but the fake now returns an `OrderDetails`, and the translation
+that held the bug runs under test against the wire's own types.
+
+The rule that comes out of it: fake at the process boundary — the stub, the socket, the connection — not
+above the code that interprets what comes back. Then the interpreting code runs in every test.
+
+## Test the adapter against the real thing
+
+Some adapters cannot be checked against a stand-in at all. Column types, constraints and how a driver
+binds a parameter exist only in the database. notification's fix
+[casts the parameter](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/persistence/NotificationQueries.scala#L34-L48)
+and adds
+[a suite that runs every repository operation against a real PostgreSQL 16](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/test/scala/com/kinetix/notification/infrastructure/persistence/PostgresStoreSuite.scala#L92-L106):
+saving, the idempotency constraint, two saves racing for one key, reading a row back, refusing a row it
+cannot read.
+
+[CI starts that database for every run](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/.github/workflows/ci.yml#L25-L46), and under CI
+the suite
+[fails instead of skipping](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/test/scala/com/kinetix/notification/infrastructure/persistence/PostgresStoreSuite.scala#L49-L66)
+when the database is missing. A suite that quietly skips itself is a green check that tested nothing —
+the same failure, one level up. Taking the cast back out turns three of its tests red, which is the proof
+that it guards what it claims to.
+
+The use-case tests keep their fake repository. They test decisions — which template a caller may send,
+what a repeated key means — and a map is a fine place to make those. What changed is that the fake now
+stands on ground a real database has already checked.
+
+## How to find it in your own code
+
+1. List the fakes. For each, name the production code it replaces.
+2. Ask whether any test runs that code against the real format — generated types, a real database, a
+   recorded answer from the real service. If none does, the code is untested, however green the suite.
+3. Look at where the fake's data comes from. Values a person typed to match what the code expects prove
+   nothing about the far side; values built with the far side's own types do.
+4. Break the adapter on purpose — a wrong enum, a missing cast — and run the suite. If it stays green,
+   it is not testing the adapter.
+
+## Takeaways
+
+- A fake checks the code around it, never the code it replaces.
+- The person who writes the fake shares the code's assumptions; a fake built from them agrees with the
+  bug.
+- Fake at the process boundary, below the code that interprets the answer.
+- Build test data with the far side's own types, not with strings that look right.
+- Test each adapter once against the real thing, and make that test fail, not skip, when the real thing
+  is missing.
+- Mutate the code a test claims to guard. A test that cannot turn red is not a test.
