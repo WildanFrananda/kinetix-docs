@@ -220,7 +220,7 @@ export const architectureNodes: readonly MapNode[] = [
       "notification.v1.NotificationService/RegisterDevice",
       "notification.v1.NotificationService/ForgetDevice"
     ],
-    routes: [],
+    routes: ["/api/v1/notifications/devices"],
     stores: [postgres],
     deployed: true
   },

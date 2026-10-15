@@ -179,7 +179,7 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "identity",
     kind: "grpc",
     calls: [
-      { operation: "identity.v1.IdentityService/GetUserProfile", source: { label: "GrpcIdentityRecipientDirectory.scala:17", href: "https://github.com/WildanFrananda/kinetix-notification-service/blob/cb82e677a25fe9eb8a72cfcd115dccfd392f39f2/src/main/scala/com/kinetix/notification/infrastructure/grpc/GrpcIdentityRecipientDirectory.scala#L17" } }
+      { operation: "identity.v1.IdentityService/GetUserProfile", source: { label: "GrpcIdentityRecipientDirectory.scala:17", href: "https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/grpc/GrpcIdentityRecipientDirectory.scala#L17" } }
     ]
   },
   {
