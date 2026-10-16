@@ -24,6 +24,9 @@ jobs:
       - run: bun run check
         env:
           DOCS_SITE_URL: ${{ vars.DOCS_SITE_URL }}
+      # The Verify page's WebAssembly verifier, a notary release asset pinned by SHA-256 in
+      # src/site/notary_verifier.ts; the tests load and run it.
+      - run: bun run fetch:verifier
       - run: bun test
       - run: bun run check:translations
       - run: bun run build

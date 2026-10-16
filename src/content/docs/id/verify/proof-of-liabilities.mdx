@@ -1,0 +1,135 @@
+---
+title: Memverifikasi proof of liabilities
+description: Periksa dari browser-mu sendiri, terhadap chain publik, bahwa saldomu ada di dalam total yang di-commit Kinetix. Tidak ada server Kinetix yang terlibat.
+sourceHash: "6cefd0592783"
+sidebar:
+  order: 1
+---
+
+import NotaryVerifier from "../../../../components/NotaryVerifier.astro";
+import { notaryVerifier } from "../../../../site/notary_verifier";
+
+Setiap jam notary meng-commit semua yang diutangi platform kepada pemilik akun, lalu meng-anchor commitment
+itu di Base Sepolia. Halaman ini memeriksa bahwa saldomu sendiri ada di dalam salah satu commitment
+tersebut. Verifier-nya berjalan di browser-mu dan membaca chain lewat endpoint RPC yang kamu pilih, jadi
+tidak ada server Kinetix yang ditanya apa pun.
+
+Apa yang dibuktikan sebuah proof, dan apa yang tidak bisa dibuktikannya, dijelaskan di
+[Apa yang dibuktikan proof of liabilities](/id/verify/what-the-proof-proves/).
+
+## Ambil proof-mu
+
+Minta proof akun-akunmu untuk sebuah epoch ke notary, dengan access token-mu:
+
+```http
+GET /api/v1/proofs/liabilities/{epoch}
+Authorization: Bearer <access token>
+```
+
+`{epoch}` adalah nomor epoch, atau `latest`. Jawabannya berisi satu proof untuk setiap akun yang kamu
+pegang ([handler-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/internal/httpapi/proofs.go#L15-L35)). Simpan seluruh jawaban itu sebagai
+`proof.json`. Verifier menerimanya apa adanya, atau satu proof mana pun dari daftar `proofs`-nya.
+
+Sebuah proof membawa commitment akunmu, amount-nya, serta hash dan sum sibling di sepanjang path dari
+leaf-mu ke root epoch. Proof itu juga membuka commitment-nya: holder, jenis akun, salt dan, di epoch yang
+dibangun sejak akun diberi secret, secret akun tersebut. Simpan file itu seperti rekening koran: siapa pun
+yang memegangnya bisa membaca saldo itu.
+
+## Verifikasi di sini
+
+<NotaryVerifier proveHref="#membuktikan-proof-yang-salah-on-chain" />
+
+Verifikasi pertama mengunduh verifier-nya: `notary-verify` itu sendiri, dikompilasi ke WebAssembly
+([entry point-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/cmd/notary-verify-wasm/main.go#L85-L111) menyerahkan dokumen ke
+[`RunDocument`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/internal/verifycli/run.go#L26-L42) milik CLI itu sendiri). Ukurannya 44 MB, sekitar 9 MB setelah dikompresi, dan setelah itu disimpan di cache browser. Halaman ini
+memeriksa SHA-256-nya terhadap rilis <code>{notaryVerifier.release}</code> sebelum menjalankannya.
+
+Endpoint ditanya soal epoch, serta soal commitment, amount dan path yang disebut proof, karena kontrak
+ledger menghitung proof itu untuk kedua kalinya secara mandiri. Holder, salt dan secret yang membuka
+commitment diperiksa di browser dan tidak pernah dikirim. Kalau endpoint juga tidak boleh tahu amount-mu,
+arahkan verifier ke node milikmu sendiri.
+
+## Membaca jawabannya
+
+Halaman ini mencetak verdict dan exit code yang sama dengan yang dicetak `notary-verify` untuk dokumen
+yang sama, karena programnya memang sama ([verifikasinya](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/internal/verifying/verifier.go#L25-L102),
+[kode-kodenya](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/internal/verifycli/exit.go#L3-L18)).
+
+| Verdict | Exit | Artinya |
+| --- | --- | --- |
+| `included` | 0 | epoch-nya final di chain, dan proof-nya berujung dari commitment dan amount-mu ke root dan total-nya |
+| `rejected` | 1 | epoch-nya ada di chain, tetapi proof-nya tidak berujung pada root dan total-nya |
+| `not_anchored` | 2 | tidak ada generation di directory yang menyimpan epoch itu |
+| `not_final` | 3 | epoch-nya sudah di-anchor, tetapi chain belum memfinalisasinya |
+| `unknown` | 4 | chain tidak bisa ditanya; belum ada yang diketahui, dan ini bukan penolakan |
+| `wrong_ledger` | 5 | proof menyebut ledger selain yang disimpan directory untuk epoch-nya |
+| `disagreement` | 6 | verifier dan kontrak ledger menghitung jawaban berbeda, jadi tidak ada yang diberikan |
+| `wrong_court` | 7 | statement menyebut court selain yang ada di samping ledger |
+| `wrong_directory` | 8 | alamat yang dikonfigurasi bukan ledger directory di chain ini |
+| `moved` | 9 | epoch itu milik generation di chain lain |
+| `malformed_proof` | 65 | teksnya bukan dokumen proof |
+
+Di samping verdict, `statement` menyatakan apakah proof membawa statement yang ditandatangani signer
+court untuk epoch itu (`attributable`), dan `faults` menghitung fault yang sudah dicatat court atas
+epoch tersebut. Hanya `included` yang berarti saldomu ada di dalam commitment.
+
+## Verifikasi tanpa halaman ini
+
+Verifier yang sama diterbitkan sebagai container image untuk amd64 dan arm64:
+
+```sh
+docker run --rm -i \
+  -e KINETIX_NOTARY_RPC_URL=https://sepolia.base.org \
+  -e KINETIX_NOTARY_CHAIN_ID=84532 \
+  -e KINETIX_NOTARY_DIRECTORY_ADDRESS=0x6C71162b46620Aa835681ADCDC4DB4ab9bB84ac8 \
+  -e KINETIX_NOTARY_RPC_TIMEOUT=20s \
+  ghcr.io/wildanfrananda/kinetix-notary-cli:v1.4.0 \
+  notary-verify /dev/stdin < proof.json
+```
+
+Image itu mencetak satu baris JSON untuk setiap proof dan keluar dengan kode dari tabel di atas.
+
+Untuk memeriksa bahwa halaman ini menjalankan apa yang dikatakan repository, build sendiri WebAssembly-nya
+dari tag rilis, di dalam toolchain image milik notary, lalu bandingkan hash-nya.
+[`bin/build-verifier-wasm`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/bin/build-verifier-wasm#L17-L27) adalah skrip yang
+[dijalankan rilis](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/.github/workflows/release.yml#L92-L131) untuk menerbitkan apa yang dimuat halaman ini:
+
+```sh
+git clone --branch v1.4.0 https://github.com/WildanFrananda/kinetix-notary-service
+cd kinetix-notary-service
+sh bin/dev sh -c 'cd contracts && forge soldeer install && cd .. && sh bin/generate && sh bin/build-verifier-wasm v1.4.0 dist/verifier'
+cat dist/verifier/SHA256SUMS
+```
+
+Build-nya reproducible, jadi `SHA256SUMS` harus mencantumkan hash yang dimuat halaman ini:
+`notary-verify.wasm` <code>{notaryVerifier.module.sha256}</code> dan `wasm_exec.js`
+<code>{notaryVerifier.runtime.sha256}</code>.
+
+## Membuktikan proof yang salah on chain
+
+Kalau verdict-nya `rejected` dan statement-nya `attributable`, signer milik notary sendiri telah
+menandatangani proof yang salah, dan statement court akan mencatatnya sebagai fault atas epoch itu.
+Halaman ini menyatakannya di samping verdict. Siapa pun boleh mengirimnya. Gas-nya dibayar paymaster
+notary, jadi kamu perlu key Ethereum milikmu sendiri dalam file keystore, tanpa ETH:
+
+```sh
+docker run --rm --user "$(id -u):$(id -g)" \
+  -v "$PWD/proof.json:/run/proof.json:ro" \
+  -v "$PWD/key.json:/run/key.json:ro" \
+  -v "$PWD/key.pw:/run/key.pw:ro" \
+  -e KINETIX_NOTARY_RPC_URL=https://sepolia.base.org \
+  -e KINETIX_NOTARY_CHAIN_ID=84532 \
+  -e KINETIX_NOTARY_DIRECTORY_ADDRESS=0x6C71162b46620Aa835681ADCDC4DB4ab9bB84ac8 \
+  -e KINETIX_NOTARY_RPC_TIMEOUT=20s \
+  -e KINETIX_NOTARY_PAYMASTER_ADDRESS=0xD38824A16EaB632dD09aa36D3Bcf245097480aeb \
+  -e KINETIX_NOTARY_BUNDLER_URL=https://public.pimlico.io/v2/84532/rpc \
+  -e KINETIX_NOTARY_HOLDER_KEYSTORE=/run/key.json \
+  -e KINETIX_NOTARY_HOLDER_PASSWORD_FILE=/run/key.pw \
+  ghcr.io/wildanfrananda/kinetix-notary-cli:v1.4.0 \
+  notary-sponsor prove /run/proof.json
+```
+
+`notary-sponsor` memverifikasi proof-nya lebih dulu dan tidak mengirim apa pun untuk proof yang benar
+([`prove`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/internal/sponsorcli/run.go#L139-L199)). Operasi pertama key-mu juga mendelegasikan
+alamatnya ke `Simple7702Account` milik EntryPoint yang sudah diaudit; dengan cara itulah paymaster bisa
+membayarnya.

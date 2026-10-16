@@ -1,0 +1,28 @@
+import type { ReportField } from "./report_field.type";
+import type { StatementCheck } from "./statement_check.type";
+import type { VerdictName } from "./verdict_name.type";
+
+export type VerifierLabels = {
+  readonly document: string;
+  readonly documentHint: string;
+  readonly file: string;
+  readonly endpoint: string;
+  readonly endpointHint: string;
+  readonly network: string;
+  readonly chainId: string;
+  readonly directory: string;
+  readonly verify: string;
+  readonly loading: string;
+  readonly verifying: string;
+  readonly loaded: string;
+  readonly loadFailed: string;
+  readonly empty: string;
+  readonly exit: string;
+  readonly refused: string;
+  readonly provable: string;
+  readonly unlisted: string;
+  readonly noscript: string;
+  readonly verdicts: Readonly<Record<VerdictName, string>>;
+  readonly statements: Readonly<Record<StatementCheck, string>>;
+  readonly fields: Readonly<Record<ReportField, string>>;
+};

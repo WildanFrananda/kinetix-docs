@@ -21,7 +21,8 @@ const binaryExtensions = new Set([
   ".avif",
   ".ico",
   ".woff",
-  ".woff2"
+  ".woff2",
+  ".wasm"
 ]);
 const rules = [...builtinLeakRules, ...denylistRules(denylist)];
 

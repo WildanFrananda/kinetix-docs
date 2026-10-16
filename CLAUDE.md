@@ -70,6 +70,7 @@ types, plus a learning track. Directory names under `src/content/docs/`:
 | `security/` | Identity, token design, mTLS, trust boundaries |
 | `performance/` | Requirements, benchmarks, load tests |
 | `learn/` | The learning track: one real problem per lesson, solved in the real code |
+| `verify/` | Checking what Kinetix commits to without trusting Kinetix: the proof-of-liabilities verifier (added 2026-10-16) |
 | `reference/` | Glossary, standards, templates, FAQ |
 
 Operations, incident handling, disaster recovery procedures, infrastructure detail and cost belong to
@@ -112,6 +113,37 @@ islands under `src/diagrams/`:
   search.
 - Motion respects `prefers-reduced-motion` everywhere: `svelte/motion`'s `prefersReducedMotion` for
   transitions and tweens, a media query for CSS animation.
+
+## The proof verifier
+
+The Verify section's how-to carries a working verifier, not a picture of one (notary PLAN.md, decisions
+31–35). It is the notary's own `notary-verify`, compiled to WebAssembly, so the page and the CLI cannot
+disagree; this repository writes no verification logic of its own.
+
+- `src/site/notary_verifier.ts` pins the notary release, the SHA-256 and size of `notary-verify.wasm` and
+  `wasm_exec.js`, the CLI image and the network defaults (chain id, directory, RPC endpoint).
+  `scripts/fetch_verifier.ts` (`bun run fetch:verifier`, and the first step of `dev` and `build`) downloads
+  both assets from that GitHub release into `public/notary/<release>/`, which is ignored by git, and refuses
+  any byte that does not match the pin. `KINETIX_NOTARY_VERIFIER_DIR` takes them from a local
+  `bin/build-verifier-wasm` output instead, still checked against the pin, for work ahead of a release.
+  A new notary release that changes the verifier is a new pin here.
+- The island is `src/verifier/NotaryVerifier.svelte`, mounted by `components/NotaryVerifier.astro`. Its
+  logic lives in plain modules beside it (`load_verifier`, `read_asset`, `parse_answer`), which the browser
+  and `bun test` both run: `tests/notary_verifier_module.test.ts` loads the pinned WebAssembly under Bun and
+  checks its answers. The browser checks the hash again before it instantiates anything.
+- The page's text lives in the catalogue under `verifier.*`, and the verdict list in `src/verifier/verdict_names.ts`
+  mirrors the CLI's exit codes.
+- `check:leaks` skips `.wasm`: it is a pinned release asset, never written here. `public/notary` is excluded
+  from `tsconfig.json`, because `astro check` would otherwise type-check Go's `wasm_exec.js`.
+- **`client:visible` waits for the island to be seen, and `astro-island` itself has no box** (`display:
+  contents`), so `scrollIntoView` on it scrolls nowhere and nothing hydrates; scroll to the form instead.
+  The Verify button stays disabled until the island has hydrated, because a click before that submits the
+  bare HTML form and reloads the page with the document gone.
+- Checked on 2026-10-16 in headless Chromium against Base Sepolia: a production proof answered `included`,
+  attributable, no faults, exit 0; the same proof with its amount changed answered `rejected`, exit 1.
+- The pin is v1.4.0 (notary `7d292fa`). Its `SHA256SUMS` was built three ways and agreed byte for byte: the
+  release job on amd64, the laptop on arm64, and a fresh clone of the tag running the page's own command. All
+  notary permalinks on the Verify pages point at that commit.
 
 ## Design system
 

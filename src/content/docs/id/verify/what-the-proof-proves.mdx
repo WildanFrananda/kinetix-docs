@@ -1,0 +1,83 @@
+---
+title: Apa yang dibuktikan proof of liabilities
+description: Apa yang ditunjukkan commitment on-chain milik notary kepada pemilik akun, apa yang tidak bisa ditunjukkannya, dan kontrak mana yang bertanggung jawab atas tiap bagiannya.
+sourceHash: "135cff5adfa6"
+sidebar:
+  order: 2
+---
+
+Kinetix memegang uang orang lain: dana pembeli di escrow sampai masa retur berakhir, saldo merchant dan
+driver, wallet customer. Semua angka itu ada di database payment service, yang tidak bisa dibaca siapa pun
+di luar Kinetix. Notary membuat sisi platform dari angka-angka itu bisa diperiksa dari luar, tanpa
+memercayai Kinetix untuk melaporkan dirinya sendiri.
+
+## Apa yang di-commit
+
+Setiap jam notary mengambil snapshot payment tentang apa yang diutangi platform, lalu membangun Merkle sum
+tree di atasnya. Setiap leaf adalah commitment dan amount sebuah akun; setiap node membawa hash dan sum
+dari dua node di bawahnya, sehingga root sekaligus mengunci setiap saldo dan total-nya. Notary meng-anchor
+root, total dan jumlah akun sebagai satu epoch di kontrak ledger di Base Sepolia.
+
+Ledger menerima setiap epoch satu kali. Epoch kedua dengan nomor yang sama ditolak, dan digest setiap epoch
+memuat digest epoch sebelumnya, jadi epoch yang sudah di-anchor tidak bisa diubah, dihapus, atau diurutkan
+ulang ([`anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/LiabilityLedger.sol#L50-L89)).
+
+Sebuah akun muncul di tree hanya sebagai commitment: hash dari jenis akun, salt dan holder, dan di epoch
+yang lebih baru juga dari secret yang hanya diberikan kepada pemilik akun itu. Tree menunjukkan amount dan
+total-nya, bukan milik siapa.
+
+Anchoring memerlukan dua key: milik notary, dan milik watch independen yang memeriksa snapshot terhadap
+catatan payment sendiri tentang snapshot itu sebelum menyetujuinya. Ledger hanya menerima epoch dari council
+yang memegang keduanya ([`AnchorCouncil.anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/council/AnchorCouncil.sol#L53-L59)).
+
+## Apa yang ditunjukkan sebuah proof
+
+Sebuah proof membuka commitment satu akun dan memberikan hash dan sum sibling di sepanjang path dari
+leaf-nya ke root. Ketika proof itu terverifikasi terhadap epoch yang sudah di-anchor dan final, proof itu
+menunjukkan bahwa:
+
+- Kinetix telah meng-commit, secara publik dan pada waktu yang tercatat, satu set saldo tertentu beserta
+  total pastinya;
+- saldo akun ini ada di dalam set itu, dengan amount itu;
+- commitment-nya tidak bisa diubah sesudahnya.
+
+Verifier menghitung path itu sendiri dan juga meminta kontrak ledger menghitungnya
+([`verifyInclusion`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/LiabilityLedger.sol#L102-L120)). Verdict hanya diberikan kalau
+keduanya sepakat.
+
+## Apa yang tidak ditunjukkannya
+
+- **Solvency.** Uang di balik liabilities ini dipegang payment provider dan bank, off chain. Tidak ada apa
+  pun di chain yang menyatakan semuanya bisa dibayarkan. Proof of reserves memerlukan pengesahan dari
+  custodian itu, dan mereka tidak memberikannya.
+- **Bahwa setiap akun disertakan.** Akun yang tidak pernah diperiksa siapa pun bisa saja ditinggalkan
+  tanpa ada yang sadar. Pertahanannya adalah bahwa siapa pun bisa memeriksa epoch mana pun kapan saja, dan
+  bahwa kebohongan atau sikap diam tentangnya bisa dibuktikan, seperti di bawah ini.
+- **Bahwa angka payment benar.** Tree meng-commit apa pun yang dikatakan snapshot. Kalau sebuah saldo salah
+  di payment, notary meng-anchor saldo yang salah itu dengan setia.
+- **Bahwa amount-mu tetap hanya antara kamu dan Kinetix.** Total epoch bersifat publik, dan memeriksa
+  sebuah proof lewat endpoint RPC memberi tahu endpoint itu commitment dan amount yang sedang diperiksa.
+
+## Ketika notary berbohong atau diam
+
+Sebuah proof juga membawa statement: commitment, amount dan path-nya, ditandatangani key yang didaftarkan
+statement court sebagai signer untuk epoch itu. Dengan begitu dua kegagalan menjadi bukti yang bisa dibawa
+siapa pun ke chain:
+
+- **Proof yang salah.** Kalau proof yang ditandatangani tidak terverifikasi, court memverifikasinya lagi
+  on chain dan mencatat fault atas epoch itu
+  ([`proveBadProof`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/court/StatementCourt.sol#L59-L78)). Dua statement berbeda yang
+  ditandatangani untuk satu epoch, yang menyebut commitment yang sama atau posisi yang sama di tree, saling
+  bertentangan dan dicatat dengan cara yang sama
+  ([`proveEquivocation`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/court/StatementCourt.sol#L80-L101)).
+- **Sikap diam.** Holder yang mendaftarkan sebuah alamat bisa meminta statement-nya untuk sebuah epoch ke
+  withholding court, dalam waktu seminggu sejak epoch itu di-anchor
+  ([`requestStatement`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/withholding/WithholdingCourt.sol#L49-L91)). Kalau notary belum
+  menjawab dalam 24 jam, siapa pun boleh mencatat sikap diam itu
+  ([`recordUnanswered`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/withholding/WithholdingCourt.sol#L121-L146)).
+
+Fault atau sikap diam yang sudah tercatat tidak pernah dihapus. Verifier melaporkan berapa fault yang
+dibawa sebuah epoch di samping setiap verdict. Membawa fault atau request ke chain memerlukan gas, yang
+dibayar paymaster notary, jadi holder perlu key tanpa perlu ETH.
+
+Untuk memeriksa proof milikmu sendiri, lihat [Memverifikasi proof of liabilities](/id/verify/proof-of-liabilities/).

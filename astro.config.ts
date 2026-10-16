@@ -96,6 +96,19 @@ export default defineConfig({
           ]
         },
         {
+          label: "Verify",
+          translations: {
+            id: "Verifikasi"
+          },
+          items: [
+            {
+              autogenerate: {
+                directory: "verify"
+              }
+            }
+          ]
+        },
+        {
           label: "Learn",
           translations: {
             id: "Belajar"

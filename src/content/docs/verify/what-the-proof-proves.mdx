@@ -1,0 +1,79 @@
+---
+title: What a proof of liabilities proves
+description: What the notary's on-chain commitment shows an account holder, what it cannot show, and which contract answers for each part.
+sidebar:
+  order: 2
+---
+
+Kinetix holds other people's money: buyers' funds in escrow until the return window closes, merchant
+and driver balances, customer wallets. Every one of those numbers lives in the payment service's
+database, which nobody outside Kinetix can read. The notary makes the platform's side of them
+checkable from the outside, without trusting Kinetix to report on itself.
+
+## What is committed
+
+Every hour the notary takes payment's snapshot of what the platform owes and builds a Merkle sum tree
+over it. Each leaf is an account's commitment and amount; each node carries the hash and the sum of the
+two below it, so the root fixes every balance and the total at once. The notary anchors the root, the
+total and the number of accounts as one epoch in the ledger contract on Base Sepolia.
+
+The ledger takes each epoch once. A second epoch with the same number is refused, and every epoch's
+digest includes the digest before it, so an anchored epoch cannot be changed, dropped or reordered
+([`anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/LiabilityLedger.sol#L50-L89)).
+
+An account appears in the tree only as a commitment: a hash of the account kind, a salt and the holder,
+and in later epochs of a secret that only the account's holder is given. The tree shows the amounts and
+the total, not whose they are.
+
+Anchoring takes two keys: the notary's, and an independent watch that checks the snapshot against
+payment's own record of it before it approves. The ledger accepts an epoch only from the council that
+holds both ([`AnchorCouncil.anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/council/AnchorCouncil.sol#L53-L59)).
+
+## What a proof shows
+
+A proof opens one account's commitment and gives the sibling hashes and sums on the path from its leaf
+to the root. When it verifies against an anchored, final epoch, it shows that:
+
+- Kinetix committed, publicly and at a recorded time, to one specific set of balances and their exact
+  total;
+- this account's balance is in that set, at that amount;
+- the commitment cannot be changed afterwards.
+
+The verifier computes the path itself and asks the ledger contract to compute it too
+([`verifyInclusion`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/LiabilityLedger.sol#L102-L120)). It gives a verdict only when
+both agree.
+
+## What it does not show
+
+- **Solvency.** The money behind these liabilities is held by a payment provider and a bank, off chain.
+  Nothing on chain says it can all be paid out. A proof of reserves would need those custodians to
+  attest to it, and they do not.
+- **That every account is included.** An account nobody checks could be left out without anyone
+  noticing. The defence is that anyone can check any epoch at any time, and that a lie or a silence
+  about it can be proved, as below.
+- **That payment's numbers are right.** The tree commits to whatever the snapshot says. If a balance is
+  wrong in payment, the notary anchors the wrong balance faithfully.
+- **That your amount stays between you and Kinetix.** The epoch total is public, and checking a proof
+  through an RPC endpoint tells that endpoint the commitment and amount being checked.
+
+## When the notary lies or stays silent
+
+A proof also carries a statement: its commitment, amount and path, signed by the key the statement
+court has registered as the signer for that epoch. That turns two failures into evidence that anyone can
+put on chain:
+
+- **A false proof.** If a signed proof does not verify, the court verifies it again on chain and records
+  a fault against the epoch ([`proveBadProof`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/court/StatementCourt.sol#L59-L78)).
+  Two different signed statements for one epoch that name the same commitment, or the same position in
+  the tree, contradict each other and are recorded the same way ([`proveEquivocation`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/court/StatementCourt.sol#L80-L101)).
+- **Silence.** A holder who registered an address can ask the withholding court for their statement for
+  an epoch, within a week of its anchoring
+  ([`requestStatement`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/withholding/WithholdingCourt.sol#L49-L91)). If the notary has
+  not answered within 24 hours, anyone may record the silence
+  ([`recordUnanswered`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/withholding/WithholdingCourt.sol#L121-L146)).
+
+A recorded fault or silence is never cleared. The verifier reports how many faults an epoch carries
+beside every verdict. Putting a fault or a request on chain costs gas, which the notary's paymaster
+pays, so a holder needs a key and no ETH.
+
+To check a proof of your own, see [Verify a proof of liabilities](/verify/proof-of-liabilities/).

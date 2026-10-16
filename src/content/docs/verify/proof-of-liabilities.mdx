@@ -1,0 +1,133 @@
+---
+title: Verify a proof of liabilities
+description: Check from your own browser, against the public chain, that your balance is inside the total Kinetix committed to. No Kinetix server takes part.
+sidebar:
+  order: 1
+---
+
+import NotaryVerifier from "../../../components/NotaryVerifier.astro";
+import { notaryVerifier } from "../../../site/notary_verifier";
+
+Every hour the notary commits to everything the platform owes its account holders and anchors that
+commitment on Base Sepolia. This page checks that your own balance is inside one of those commitments.
+The verifier runs in your browser and reads the chain through an RPC endpoint you choose, so no Kinetix
+server is asked anything.
+
+What a proof shows, and what it cannot show, is explained in
+[What a proof of liabilities proves](/verify/what-the-proof-proves/).
+
+## Get your proof
+
+Ask the notary for the proofs of your accounts in an epoch, with your access token:
+
+```http
+GET /api/v1/proofs/liabilities/{epoch}
+Authorization: Bearer <access token>
+```
+
+`{epoch}` is an epoch number, or `latest`. The answer holds one proof for each account you hold
+([the handler](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/internal/httpapi/proofs.go#L15-L35)). Save the whole answer as `proof.json`. The
+verifier takes it as it is, or any one proof from its `proofs` list.
+
+A proof carries your account's commitment, its amount, and the sibling hashes and sums on the path from
+your leaf to the epoch's root. It also opens the commitment: the holder, the account kind, the salt and,
+in epochs built since accounts were given secrets, the account's secret. Keep the file as you would a bank
+statement: whoever holds it can read that balance.
+
+## Verify it here
+
+<NotaryVerifier proveHref="#prove-a-false-proof-on-chain" />
+
+The first verification downloads the verifier: `notary-verify` itself, compiled to WebAssembly
+([its entry point](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/cmd/notary-verify-wasm/main.go#L85-L111) hands the document to the CLI's own
+[`RunDocument`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/internal/verifycli/run.go#L26-L42)). It is 44 MB, about 9 MB compressed, and is kept in the browser's cache after that. The page checks its
+SHA-256 against release <code>{notaryVerifier.release}</code> before it runs it.
+
+The endpoint is asked about the epoch, and about the commitment, amount and path the proof names,
+because the ledger contract computes the proof a second time on its own. The holder, the salt and the
+secret that open the commitment are checked in the browser and are never sent. If the endpoint should
+not learn your amount either, point the verifier at a node of your own.
+
+## Read the answer
+
+The page prints the verdict and the exit code that `notary-verify` prints for the same document,
+because it is the same program ([the verification](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/internal/verifying/verifier.go#L25-L102),
+[the codes](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/internal/verifycli/exit.go#L3-L18)).
+
+| Verdict | Exit | Means |
+| --- | --- | --- |
+| `included` | 0 | the epoch is final on chain, and the proof leads from your commitment and amount to its root and total |
+| `rejected` | 1 | the epoch is on chain, but the proof does not lead to its root and total |
+| `not_anchored` | 2 | no generation in the directory holds the epoch |
+| `not_final` | 3 | the epoch is anchored but the chain has not finalized it yet |
+| `unknown` | 4 | the chain could not be asked; nothing is known, and it is not a rejection |
+| `wrong_ledger` | 5 | the proof names a ledger other than the one the directory holds for its epoch |
+| `disagreement` | 6 | the verifier and the ledger contract computed different answers, so neither is given |
+| `wrong_court` | 7 | the statement names a court other than the one beside the ledger |
+| `wrong_directory` | 8 | the address configured is not the ledger directory on this chain |
+| `moved` | 9 | the epoch belongs to a generation on another chain |
+| `malformed_proof` | 65 | the text is not a proof document |
+
+Beside the verdict, `statement` says whether the proof carries a statement signed by the court's
+signer for that epoch (`attributable`), and `faults` counts the faults the court has already
+recorded against the epoch. Only `included` means your balance is in the commitment.
+
+## Verify it without this page
+
+The same verifier is published as a container image for amd64 and arm64:
+
+```sh
+docker run --rm -i \
+  -e KINETIX_NOTARY_RPC_URL=https://sepolia.base.org \
+  -e KINETIX_NOTARY_CHAIN_ID=84532 \
+  -e KINETIX_NOTARY_DIRECTORY_ADDRESS=0x6C71162b46620Aa835681ADCDC4DB4ab9bB84ac8 \
+  -e KINETIX_NOTARY_RPC_TIMEOUT=20s \
+  ghcr.io/wildanfrananda/kinetix-notary-cli:v1.4.0 \
+  notary-verify /dev/stdin < proof.json
+```
+
+It prints one JSON line for each proof and exits with the code from the table above.
+
+To check that this page runs what the repository says, build the WebAssembly yourself from the release
+tag, inside the notary's own toolchain image, and compare the hashes.
+[`bin/build-verifier-wasm`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/bin/build-verifier-wasm#L17-L27) is the script
+[the release ran](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/.github/workflows/release.yml#L92-L131) to publish what this page loads:
+
+```sh
+git clone --branch v1.4.0 https://github.com/WildanFrananda/kinetix-notary-service
+cd kinetix-notary-service
+sh bin/dev sh -c 'cd contracts && forge soldeer install && cd .. && sh bin/generate && sh bin/build-verifier-wasm v1.4.0 dist/verifier'
+cat dist/verifier/SHA256SUMS
+```
+
+The build is reproducible, so `SHA256SUMS` must list the hashes this page loads:
+`notary-verify.wasm` <code>{notaryVerifier.module.sha256}</code> and `wasm_exec.js`
+<code>{notaryVerifier.runtime.sha256}</code>.
+
+## Prove a false proof on chain
+
+If the verdict is `rejected` and the statement is `attributable`, the notary's own signer signed a
+proof that is false, and the statement court will record it as a fault against the epoch. The page says
+so beside the verdict. Anyone may send it. The gas is paid by the notary's paymaster, so you need an
+Ethereum key of your own, in a keystore file, and no ETH:
+
+```sh
+docker run --rm --user "$(id -u):$(id -g)" \
+  -v "$PWD/proof.json:/run/proof.json:ro" \
+  -v "$PWD/key.json:/run/key.json:ro" \
+  -v "$PWD/key.pw:/run/key.pw:ro" \
+  -e KINETIX_NOTARY_RPC_URL=https://sepolia.base.org \
+  -e KINETIX_NOTARY_CHAIN_ID=84532 \
+  -e KINETIX_NOTARY_DIRECTORY_ADDRESS=0x6C71162b46620Aa835681ADCDC4DB4ab9bB84ac8 \
+  -e KINETIX_NOTARY_RPC_TIMEOUT=20s \
+  -e KINETIX_NOTARY_PAYMASTER_ADDRESS=0xD38824A16EaB632dD09aa36D3Bcf245097480aeb \
+  -e KINETIX_NOTARY_BUNDLER_URL=https://public.pimlico.io/v2/84532/rpc \
+  -e KINETIX_NOTARY_HOLDER_KEYSTORE=/run/key.json \
+  -e KINETIX_NOTARY_HOLDER_PASSWORD_FILE=/run/key.pw \
+  ghcr.io/wildanfrananda/kinetix-notary-cli:v1.4.0 \
+  notary-sponsor prove /run/proof.json
+```
+
+`notary-sponsor` verifies the proof first and sends nothing for one that is sound
+([`prove`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/internal/sponsorcli/run.go#L139-L199)). Your key's first operation also delegates its
+address to the EntryPoint's audited `Simple7702Account`, which is how the paymaster can pay for it.
