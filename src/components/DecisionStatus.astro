@@ -1,0 +1,63 @@
+---
+import { catalogueFor } from "../diagrams/engine/catalogue_for";
+import { localeOf } from "../diagrams/engine/locale_of";
+import { adrNumber } from "../site/adr_number";
+
+const { entry, entryMeta } = Astro.locals.starlightRoute;
+const catalogue = catalogueFor(localeOf(entryMeta.lang));
+const adr = entry.data.adr;
+
+if (adr === undefined) {
+  throw new Error(`${entry.id} renders a decision status but its frontmatter has no adr block`);
+}
+
+const rows = [
+  { label: catalogue["decisions.number"], value: adrNumber(adr.number) },
+  { label: catalogue["decisions.status"], value: catalogue[`decisions.status.${adr.status}`] },
+  { label: catalogue["decisions.decided"], value: adr.decided }
+];
+---
+
+<dl class="decision-status not-content">
+  {
+    rows.map((row) => (
+      <div class="row">
+        <dt>{row.label}</dt>
+        <dd>{row.value}</dd>
+      </div>
+    ))
+  }
+</dl>
+
+<style>
+  .decision-status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 2rem;
+    margin: 0 0 1.5rem;
+    padding-block: 0.6rem;
+    border-block: 1px solid var(--kx-rule);
+  }
+
+  .row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+  }
+
+  dt {
+    color: var(--sl-color-gray-3);
+    font-family: var(--sl-font-mono);
+    font-size: var(--sl-text-2xs);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: 0;
+    color: var(--sl-color-white);
+    font-family: var(--sl-font-mono);
+    font-size: var(--sl-text-sm);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

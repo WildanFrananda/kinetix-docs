@@ -545,5 +545,11 @@
   "grpc.column.notes": "Catatan",
   "grpc.column.name": "Nama",
   "grpc.noFields": "Tidak ada field.",
-  "grpc.deprecated": "deprecated"
+  "grpc.deprecated": "deprecated",
+  "decisions.number": "ADR",
+  "decisions.status": "Status",
+  "decisions.status.accepted": "Diterima",
+  "decisions.status.superseded": "Digantikan",
+  "decisions.decided": "Diputuskan",
+  "decisions.column.decision": "Keputusan"
 }

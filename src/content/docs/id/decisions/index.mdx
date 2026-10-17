@@ -1,0 +1,20 @@
+---
+title: Keputusan
+description: Architecture decision record untuk keputusan yang sudah berlaku di Kinetix, masing-masing dengan konteks, konsekuensi, dan alternatif yang ditolak.
+sourceHash: "63f99e72f7d1"
+sidebar:
+  label: Ikhtisar
+  order: 0
+---
+
+import DecisionList from "../../../../components/DecisionList.astro";
+
+Architecture decision record (ADR) menyatakan satu keputusan, alasan keputusan itu diambil, biayanya, dan
+apa yang ditolak. Catatan di sini hanya mencakup keputusan yang sudah berlaku. Masing-masing menautkan ke
+kode yang menjalankannya, pada commit yang sedang berjalan, sehingga tautannya tetap menunjukkan kode
+yang menjadi dasar catatan itu. Usulan yang belum dibangun tidak punya catatan di sini.
+
+<DecisionList />
+
+Nomor catatan mengikuti urutan penulisannya, bukan urutan keputusannya diambil. Keputusan yang diganti
+ditandai digantikan dan menunjuk ke catatan penggantinya. Catatan itu tidak pernah dihapus.

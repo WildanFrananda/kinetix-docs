@@ -1,0 +1,49 @@
+---
+title: Search berjalan di atas Typesense
+description: Service search mengindeks produk, merchant, dan order di Typesense, yang dipilih daripada Meilisearch karena lisensi dan daripada Elasticsearch karena bobotnya.
+sourceHash: "8c6ab3435842"
+sidebar:
+  order: 3
+adr:
+  number: 3
+  status: accepted
+  decided: "2026-09-21"
+---
+
+import DecisionStatus from "../../../../components/DecisionStatus.astro";
+
+<DecisionStatus />
+
+## Konteks
+
+Kinetix butuh pencarian full-text atas produk, merchant, dan order, dalam bahasa Indonesia dan Inggris.
+Elasticsearch sempat disimpan di estate untuk keperluan itu, dan permintaannya adalah
+[engine yang lebih ringan dari itu](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L17). Di antara dua kandidat nyata, Meilisearch dan
+Typesense, [lisensinya yang menentukan](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L98-L109). Lisensi masing-masing dibaca dari `LICENSE`
+milik proyeknya sendiri pada hari itu.
+
+## Keputusan
+
+- Engine-nya **Typesense**, GPL-3.0 untuk seluruh engine. Ia berjalan sebagai proses terpisah yang
+  diakses lewat HTTP, jadi [tidak di-link ke kode Kinetix dan tidak didistribusikan ulang olehnya](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L102-L105).
+- Client-nya `typesense-go/v3`, karena [jalur v4 masih alpha](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L121-L124).
+- [Elasticsearch keluar dari estate dalam perubahan yang sama](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L27-L31).
+
+## Konsekuensi
+
+- Satu lisensi mencakup seluruh engine, jadi
+  [tidak ada upgrade yang membuka lagi pertanyaan apakah sebuah fitur termasuk enterprise](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L111-L113).
+- [Bahasa Indonesia dan Inggris berbagi satu collection](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L126-L129). Toleransi typo mengerjakan
+  sebagian besar tugas stemmer per bahasa, dan sinonim berupa daftar yang eksplisit.
+- Kebutuhan memori Typesense di sini
+  [dibiarkan untuk diukur dengan korpus sebenarnya](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L131-L134), bukan diambil dari angka yang
+  dipublikasikan.
+- Service-nya berjalan di produksi: lihat [search](/id/services/search/).
+
+## Alternatif yang ditolak
+
+- **Meilisearch.** Dulu murni MIT, sekarang [`MIT AND BUSL-1.1`](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L102-L109): apa pun di bawah
+  edisi enterprise-nya butuh perjanjian komersial untuk dipakai di produksi. Lihat
+  [ADR 0004](/id/decisions/0004-licence-changes-are-decided/).
+- **Elasticsearch.** Lebih berat, [981 MB menurut pengukuran di estate ini](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L131-L132), dan
+  akan butuh rantai analyzer yang dipilih per bahasa.

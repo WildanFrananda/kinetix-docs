@@ -1,0 +1,66 @@
+---
+import { getCollection } from "astro:content";
+import { catalogueFor } from "../diagrams/engine/catalogue_for";
+import { localeOf } from "../diagrams/engine/locale_of";
+import { adrNumber } from "../site/adr_number";
+import type { DecisionRow } from "../site/types/decision_row.type";
+
+const locale = localeOf(Astro.locals.starlightRoute.entryMeta.lang);
+const catalogue = catalogueFor(locale);
+const prefix = locale === "en" ? "decisions/" : `${locale}/decisions/`;
+const entries = await getCollection("docs", (entry) => entry.id.startsWith(prefix));
+
+const rows: readonly DecisionRow[] = entries
+  .flatMap((entry) =>
+    entry.data.adr === undefined
+      ? []
+      : [
+          {
+            number: adrNumber(entry.data.adr.number),
+            title: entry.data.title,
+            href: `/${entry.id}/`,
+            status: entry.data.adr.status,
+            decided: entry.data.adr.decided
+          }
+        ]
+  )
+  .toSorted((left, right) => left.number.localeCompare(right.number));
+---
+
+<table class="decision-list">
+  <thead>
+    <tr>
+      <th>{catalogue["decisions.number"]}</th>
+      <th>{catalogue["decisions.column.decision"]}</th>
+      <th>{catalogue["decisions.status"]}</th>
+      <th>{catalogue["decisions.decided"]}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {
+      rows.map((row) => (
+        <tr>
+          <td class="mono">{row.number}</td>
+          <td>
+            <a href={row.href}>{row.title}</a>
+          </td>
+          <td>{catalogue[`decisions.status.${row.status}`]}</td>
+          <td class="mono">{row.decided}</td>
+        </tr>
+      ))
+    }
+  </tbody>
+</table>
+
+<style>
+  .decision-list {
+    display: table;
+    width: 100%;
+  }
+
+  .mono {
+    font-family: var(--sl-font-mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+</style>

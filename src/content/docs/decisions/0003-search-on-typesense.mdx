@@ -1,0 +1,47 @@
+---
+title: Search runs on Typesense
+description: The search service indexes products, merchants and orders in Typesense, chosen over Meilisearch on licence and over Elasticsearch on weight.
+sidebar:
+  order: 3
+adr:
+  number: 3
+  status: accepted
+  decided: "2026-09-21"
+---
+
+import DecisionStatus from "../../../components/DecisionStatus.astro";
+
+<DecisionStatus />
+
+## Context
+
+Kinetix needed full-text search over products, merchants and orders, in Indonesian and English.
+Elasticsearch had been kept in the estate for that purpose, and the brief was
+[an engine lighter than it](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L17). Between the two real candidates, Meilisearch and Typesense,
+[the licence decided](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L98-L109). Each licence was read from the project's own `LICENSE` on
+the day.
+
+## Decision
+
+- The engine is **Typesense**, GPL-3.0 across the whole engine. It runs as a separate process reached over
+  HTTP, so it is [neither linked into Kinetix code nor redistributed by it](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L102-L105).
+- The client is `typesense-go/v3`, because [the v4 line is an alpha](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L121-L124).
+- [Elasticsearch left the estate in the same change](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L27-L31).
+
+## Consequences
+
+- One licence covers the whole engine, so
+  [no upgrade reopens the question of whether a feature is an enterprise one](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L111-L113).
+- [Indonesian and English share one collection](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L126-L129). Typo tolerance does most of what
+  a stemmer per language would, and synonyms are an explicit list.
+- The memory Typesense needs here was
+  [left to be measured with the real corpus](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L131-L134), not taken from published figures.
+- The service runs in production: see [search](/services/search/).
+
+## Alternatives rejected
+
+- **Meilisearch.** It was plain MIT once and is now [`MIT AND BUSL-1.1`](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L102-L109): anything
+  under its enterprise editions needs a commercial agreement for production use. See
+  [ADR 0004](/decisions/0004-licence-changes-are-decided/).
+- **Elasticsearch.** It is heavier, [981 MB as measured in this estate](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L131-L132), and it
+  would have needed an analyzer chain chosen per language.

@@ -545,5 +545,11 @@
   "grpc.column.notes": "Notes",
   "grpc.column.name": "Name",
   "grpc.noFields": "No fields.",
-  "grpc.deprecated": "deprecated"
+  "grpc.deprecated": "deprecated",
+  "decisions.number": "ADR",
+  "decisions.status": "Status",
+  "decisions.status.accepted": "Accepted",
+  "decisions.status.superseded": "Superseded",
+  "decisions.decided": "Decided",
+  "decisions.column.decision": "Decision"
 }

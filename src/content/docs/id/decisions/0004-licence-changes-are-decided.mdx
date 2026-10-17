@@ -1,0 +1,48 @@
+---
+title: Perubahan lisensi adalah keputusan, bukan upgrade
+description: Lisensi sebuah dependensi dibaca dari LICENSE miliknya sendiri sebelum diadopsi atau di-upgrade, dan perpindahan ke lisensi source-available diputuskan tersendiri, tidak ikut terbawa kenaikan versi.
+sourceHash: "ff84f2900d94"
+sidebar:
+  order: 4
+adr:
+  number: 4
+  status: accepted
+  decided: "2026-09-21"
+---
+
+import DecisionStatus from "../../../../components/DecisionStatus.astro";
+
+<DecisionStatus />
+
+## Konteks
+
+Beberapa proyek yang dipakai atau dipertimbangkan Kinetix sudah berpindah dari lisensi open-source ke
+lisensi source-available, seperti Business Source License (BUSL) atau Functional Source License (FSL).
+Perpindahan itu biasanya datang di dalam kenaikan versi biasa, yang akan diambil oleh dependency manager
+tanpa ada yang membaca lisensinya.
+
+## Keputusan
+
+- Lisensi sebuah dependensi dibaca dari `LICENSE` milik proyeknya sendiri sebelum dependensi itu diadopsi
+  atau versi mayornya naik, [tidak pernah dari ingatan](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L108-L109).
+- Perpindahan ke lisensi source-available diputuskan tersendiri dan tidak pernah menjadi bagian dari
+  upgrade: [pindah ke Liquibase 5 adalah keputusan lisensi, bukan upgrade](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/CLAUDE.md#L121-L124).
+
+## Yang sudah berlaku
+
+- **Search.** Meilisearch tidak diadopsi karena BUSL ([ADR 0003](/id/decisions/0003-search-on-typesense/)).
+- **Migrasi payment.** Liquibase tetap di [4.33.0](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/modules/api/build.gradle#L8), yang berlisensi
+  Apache-2.0, walaupun Spring Boot 4 mengelola Liquibase 5, yang berlisensi FSL-1.1-ALv2.
+  [4.33.0 berjalan di bawah Boot 4](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/CLAUDE.md#L121-L124).
+
+## Konsekuensi
+
+- Beberapa pin sengaja terlihat usang, seperti Liquibase 4.33.0 di bawah Spring Boot 4. Upgrade otomatis
+  tidak boleh menggesernya.
+- Lisensi source-available tidak dilarang. Setiap kasus diputuskan berdasarkan apa yang diizinkan oleh
+  ketentuannya di produksi.
+
+## Alternatif yang ditolak
+
+- **Mengambil apa pun yang di-resolve dependency manager.** Itu mengubah lisensi diam-diam, di dalam
+  kenaikan versi rutin.

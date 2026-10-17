@@ -1,0 +1,53 @@
+---
+title: Uang dikirim sebagai integer satuan terkecil
+description: Satu tipe Money, int64 dalam satuan terkecil beserta mata uangnya, dan aturan lint yang menolak floating point untuk apa pun yang namanya mirip uang.
+sourceHash: "2232ef25d97d"
+sidebar:
+  order: 2
+adr:
+  number: 2
+  status: accepted
+  decided: "2026-09-04"
+---
+
+import DecisionStatus from "../../../../components/DecisionStatus.astro";
+
+<DecisionStatus />
+
+## Konteks
+
+Harga, ongkos, diskon, dan pembayaran berpindah antar service yang ditulis dalam bahasa yang berbeda.
+Bilangan floating point biner tidak bisa merepresentasikan 0.1 secara tepat, jadi
+[total yang dihitung di satu bahasa bisa berbeda dengan total yang sama di bahasa lain](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/tools/moneylint/main.go#L74-L81).
+Kinetix menahan uang pembeli dalam escrow lalu membayarkannya, jadi selisih satu rupiah pun harus
+direkonsiliasi.
+
+## Keputusan
+
+- Uang hanya punya satu tipe, [`common.v1.Money`](/id/apis/grpc/common-v1/#money):
+  [`int64 amount_minor` dan `string currency`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/common/v1/common.proto#L5-L8).
+- Sebuah plugin buf yang ditulis untuk modul ini menegakkan dua aturan di setiap file. Plugin itu
+  [didaftarkan sebelum isi `.proto` apa pun ditulis](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/buf.yaml#L18-L29).
+  - `MONEY_NO_FLOATING_POINT`:
+    [field `double` atau `float` yang namanya terbaca sebagai uang gagal lint](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/tools/moneylint/main.go#L60-L83).
+    Nama yang diawasi, dan yang dikecualikan seperti rate, persentase, dan kuantitas, adalah
+    [daftar di dalam plugin](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/tools/moneylint/main.go#L17-L30).
+  - `MONEY_USE_COMMON_TYPE`:
+    [message yang mendeklarasikan pasangan amount dan currency sendiri gagal](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/tools/moneylint/main.go#L104-L120),
+    dan harus memakai `common.v1.Money`.
+
+## Konsekuensi
+
+- Aritmetika uang adalah aritmetika integer di semua bahasa, dan tidak ada pembulatan di wire.
+- Mata uang selalu ikut bersama setiap nominal.
+- Aturannya mencocokkan nama. Field uang dengan nama di luar daftar tidak tertangkap, jadi daftar itu
+  bagian dari kontrak dan ikut bertambah bersamanya.
+
+## Alternatif yang ditolak
+
+- **Field `double` atau `float`.** Aturan pertama menolaknya, dengan alasan di atas.
+- **Message uang per paket.** Aturan kedua menolaknya:
+  [definisi tipe uang yang kedua adalah satu hal lagi yang harus dijaga tetap sejalan](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/tools/moneylint/main.go#L104-L120).
+
+Pelajaran [Kontrak lebih dulu](/id/learn/contracts-first/) menunjukkan aturan ini menghentikan sebuah
+perubahan.

@@ -1,0 +1,57 @@
+---
+title: Contracts live in one repository
+description: Every gRPC message and service is defined once, in kinetix-contracts, and each service builds against a pinned release of it.
+sidebar:
+  order: 1
+adr:
+  number: 1
+  status: accepted
+  decided: "2026-09-04"
+---
+
+import DecisionStatus from "../../../components/DecisionStatus.astro";
+
+<DecisionStatus />
+
+## Context
+
+Kinetix services are written in different languages and call each other over gRPC, so both ends of every
+call depend on the same protobuf definitions. Until September 2026 each service repository kept its own
+copies. The module's own record counts
+[43 `.proto` files holding nine packages, three of which had already drifted](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/buf.yaml#L1-L12):
+`pricing.v1` existed in three mutually different versions, `shipping.v1` in three and `payment.v1` in
+two, each claiming the same package name. A drift like that compiles cleanly. It shows up later as an
+empty field at the far end of a call.
+
+## Decision
+
+- Every type that crosses a process boundary over gRPC is defined once, in
+  [`kinetix-contracts`](https://github.com/WildanFrananda/kinetix-contracts), as
+  [one buf module](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/buf.yaml#L13-L16). No service repository keeps a `.proto` file of its own.
+- A service builds against a released version, never a branch. Each release publishes packages to npm,
+  PyPI, RubyGems and Packagist, and identity, catalog and warehouse install theirs from there. Every other
+  service, review included, fetches the module
+  [at a pinned tag and commit](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/bin/sync-contracts#L18-L40) and generates its stubs during its own build.
+- buf's [`FILE` breaking rules](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/buf.yaml#L41-L43) check every release. A change that breaks a
+  consumer has to be [declared in `docs/BREAKING.md`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/docs/BREAKING.md#L1-L8), or the gate fails.
+
+## Consequences
+
+- A change to a message is made once and reaches every language in one release. Two services can still
+  speak different versions, but only through two different pins, and a pin can be read.
+- A contract change is a release of its own: publish the module, then move each service's pin. The order
+  of those releases matters, because a service cannot call an RPC that the serving side has not deployed.
+- Generating for every language surfaces problems that only one language has. A boolean `has_location`
+  beside a message field `location`
+  [compiled in every language except C++](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/docs/BREAKING.md#L18-L38), and it left the contract as a
+  declared breaking change.
+
+## Alternatives rejected
+
+- **A copy in each service repository.** That is the state that produced the drift above.
+- **A pin to a tag alone.** [A tag can be moved, and a moved tag silently changes what a service
+  speaks](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/bin/sync-contracts#L9-L10), so the commit is what gets verified.
+
+The longer story, with an interactive diagram of the gates a change passes, is the lesson
+[The contract comes first](/learn/contracts-first/). Every package is listed in the
+[gRPC reference](/apis/grpc/).

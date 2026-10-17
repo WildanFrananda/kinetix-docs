@@ -90,6 +90,34 @@ found that a voucher could cut the courier's fee, because the discounted fee was
 A new call between services is a new edge on the map, and the map may have to be re-laid out for it;
 `tests/architecture_map.test.ts` refuses a line that passes behind a box.
 
+## Decision records
+
+`decisions/` holds architecture decision records (since 2026-10-17). It follows a rule ruled on 2026-10-17:
+**only decisions already in effect**. A proposal that is not built gets no record here; it stays in the
+internal documents until it runs.
+
+- **Frontmatter.** A record carries `adr: { number, status, decided }`, which `src/content.config.ts`
+  validates. `status` is `accepted` or `superseded`.
+  - `decided` is a date read from the repositories: the commit or the plan that first records the decision.
+  - `number` is the order of writing, padded to four digits by `src/site/adr_number.ts`.
+  - `sidebar.order` equals `number`.
+- **Components.**
+  - `DecisionStatus` renders the number, status and date at the top of a record.
+  - `DecisionList` builds the overview table from the collection's frontmatter in the reader's language, so
+    the list cannot fall behind the records.
+- **Body.** Four sections, in this order: Context, Decision, Consequences, Alternatives rejected. "In effect"
+  is added where the decision is a rule with cases.
+  - Every claim links to a public repository by permalink, at the commit production runs (read the tag from
+    the deploy pins).
+  - The private infrastructure repository is never linked, so a fact only it holds is not a fact a record
+    can rest on.
+  - A record that a lesson already tells at length stays short and links to the lesson.
+- **Superseding.** A superseded record is never deleted or rewritten. It is marked `superseded` and points to
+  the record that replaced it.
+- **Status.** 0001–0004 were written on 2026-10-17: contracts in one repository, money as integer minor
+  units, search on Typesense, and licence changes as decisions. The docs map in the internal repository
+  lists what is still to be recorded.
+
 ## gRPC reference
 
 `apis/grpc/` is generated, never written by hand. `bun run generate:grpc` (`scripts/generate_grpc_reference.ts`)

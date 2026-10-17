@@ -83,6 +83,19 @@ export default defineConfig({
           ]
         },
         {
+          label: "Decisions",
+          translations: {
+            id: "Keputusan"
+          },
+          items: [
+            {
+              autogenerate: {
+                directory: "decisions"
+              }
+            }
+          ]
+        },
+        {
           label: "Services",
           translations: {
             id: "Layanan"

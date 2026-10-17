@@ -1,0 +1,51 @@
+---
+title: Money crosses the wire as integer minor units
+description: One Money type, an int64 of minor units with its currency, and a lint rule that refuses floating point for anything named like money.
+sidebar:
+  order: 2
+adr:
+  number: 2
+  status: accepted
+  decided: "2026-09-04"
+---
+
+import DecisionStatus from "../../../components/DecisionStatus.astro";
+
+<DecisionStatus />
+
+## Context
+
+Prices, fees, discounts and payouts pass between services written in different languages. A binary
+floating-point number cannot represent 0.1 exactly, so
+[a total computed in one language can disagree with the same total computed in another](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/tools/moneylint/main.go#L74-L81).
+Kinetix holds buyers' money in escrow and pays it out, so even a difference of one rupiah has to be
+reconciled.
+
+## Decision
+
+- Money has exactly one type, [`common.v1.Money`](/apis/grpc/common-v1/#money):
+  [an `int64 amount_minor` and a `string currency`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/common/v1/common.proto#L5-L8).
+- A buf plugin written for this module enforces two rules on every file. It was
+  [listed before any `.proto` content was authored](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/buf.yaml#L18-L29).
+  - `MONEY_NO_FLOATING_POINT`:
+    [a `double` or `float` field whose name reads as money fails the lint](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/tools/moneylint/main.go#L60-L83).
+    The names it watches, and the ones it exempts such as rates, percentages and quantities, are
+    [a list in the plugin](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/tools/moneylint/main.go#L17-L30).
+  - `MONEY_USE_COMMON_TYPE`:
+    [a message that declares its own amount and currency pair fails](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/tools/moneylint/main.go#L104-L120),
+    and has to use `common.v1.Money` instead.
+
+## Consequences
+
+- Arithmetic on money is integer arithmetic in every language, and nothing is rounded on the wire.
+- The currency travels with every amount.
+- The rule matches names. A money field named outside the list is not caught, so the list is part of the
+  contract and grows with it.
+
+## Alternatives rejected
+
+- **`double` or `float` fields.** The first rule refuses them, for the reason above.
+- **A money message per package.** The second rule refuses it:
+  [a second definition of a money type is a second thing to keep in step](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/tools/moneylint/main.go#L104-L120).
+
+The lesson [The contract comes first](/learn/contracts-first/) shows this rule stopping a change.

@@ -1,0 +1,46 @@
+---
+title: A licence change is a decision, not an upgrade
+description: A dependency's licence is read from its own LICENSE before it is adopted or upgraded, and a move to a source-available licence is decided on its own rather than taken with a version bump.
+sidebar:
+  order: 4
+adr:
+  number: 4
+  status: accepted
+  decided: "2026-09-21"
+---
+
+import DecisionStatus from "../../../components/DecisionStatus.astro";
+
+<DecisionStatus />
+
+## Context
+
+Some projects Kinetix uses or considered have moved from an open-source licence to a source-available one,
+such as the Business Source License (BUSL) or the Functional Source License (FSL). The move usually
+arrives inside an ordinary version bump, where a dependency manager would take it without anyone reading
+the licence.
+
+## Decision
+
+- A dependency's licence is read from the project's own `LICENSE` before the dependency is adopted or
+  its major version moves, [never from memory](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L108-L109).
+- A move to a source-available licence is decided on its own and is never part of an upgrade:
+  [moving to Liquibase 5 is a licence decision, not an upgrade](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/CLAUDE.md#L121-L124).
+
+## In effect
+
+- **Search.** Meilisearch was not adopted because of BUSL ([ADR 0003](/decisions/0003-search-on-typesense/)).
+- **Payment's migrations.** Liquibase stays on [4.33.0](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/modules/api/build.gradle#L8), which is
+  Apache-2.0, although Spring Boot 4 manages Liquibase 5, which is FSL-1.1-ALv2.
+  [4.33.0 runs under Boot 4](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/CLAUDE.md#L121-L124).
+
+## Consequences
+
+- Some pins look stale on purpose, such as Liquibase 4.33.0 under Spring Boot 4. An automated upgrade
+  must not move them.
+- A source-available licence is not banned. Each case is decided on what its terms allow in production.
+
+## Alternatives rejected
+
+- **Taking whatever the dependency manager resolves.** That changes the licence silently, inside a
+  routine bump.

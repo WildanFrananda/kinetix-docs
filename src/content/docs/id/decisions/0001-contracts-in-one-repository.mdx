@@ -1,0 +1,59 @@
+---
+title: Kontrak berada di satu repository
+description: Setiap message dan service gRPC didefinisikan sekali, di kinetix-contracts, dan setiap service di-build dari rilisnya yang di-pin.
+sourceHash: "1fd25d2f478c"
+sidebar:
+  order: 1
+adr:
+  number: 1
+  status: accepted
+  decided: "2026-09-04"
+---
+
+import DecisionStatus from "../../../../components/DecisionStatus.astro";
+
+<DecisionStatus />
+
+## Konteks
+
+Service Kinetix ditulis dalam bahasa yang berbeda-beda dan saling memanggil lewat gRPC, jadi kedua ujung
+setiap panggilan bergantung pada definisi protobuf yang sama. Sampai September 2026, setiap repository
+service menyimpan salinannya sendiri. Catatan di modulnya menghitung
+[43 file `.proto` berisi sembilan paket, tiga di antaranya sudah menyimpang](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/buf.yaml#L1-L12):
+`pricing.v1` ada dalam tiga versi yang saling berbeda, `shipping.v1` tiga, dan `payment.v1` dua, semuanya
+mengaku nama paket yang sama. Penyimpangan seperti itu tetap lolos kompilasi. Ia baru muncul belakangan
+sebagai field kosong di ujung lain sebuah panggilan.
+
+## Keputusan
+
+- Setiap tipe yang melintasi batas proses lewat gRPC didefinisikan sekali, di
+  [`kinetix-contracts`](https://github.com/WildanFrananda/kinetix-contracts), sebagai
+  [satu modul buf](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/buf.yaml#L13-L16). Tidak ada repository service yang menyimpan file `.proto` sendiri.
+- Sebuah service di-build dari versi yang sudah dirilis, tidak pernah dari branch. Setiap rilis menerbitkan
+  paket ke npm, PyPI, RubyGems, dan Packagist, dan identity, catalog, serta warehouse memasangnya dari sana.
+  Service lainnya, termasuk review, mengambil modulnya
+  [pada tag dan commit yang di-pin](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/bin/sync-contracts#L18-L40) dan membuat stub-nya saat build.
+- [Aturan breaking `FILE` dari buf](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/buf.yaml#L41-L43) memeriksa setiap rilis. Perubahan yang merusak
+  consumer harus [dideklarasikan di `docs/BREAKING.md`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/docs/BREAKING.md#L1-L8), atau gate-nya gagal.
+
+## Konsekuensi
+
+- Perubahan pada sebuah message dibuat sekali dan sampai ke semua bahasa dalam satu rilis. Dua service
+  masih bisa memakai versi yang berbeda, tetapi hanya lewat dua pin yang berbeda, dan pin bisa dibaca.
+- Perubahan kontrak adalah rilis tersendiri: terbitkan modulnya, lalu geser pin setiap service. Urutan
+  rilisnya penting, karena sebuah service tidak bisa memanggil RPC yang belum di-deploy di sisi yang
+  melayaninya.
+- Membuat kode untuk semua bahasa memunculkan masalah yang hanya ada di satu bahasa. Boolean
+  `has_location` di samping field message `location`
+  [lolos kompilasi di semua bahasa kecuali C++](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/docs/BREAKING.md#L18-L38), lalu dikeluarkan dari kontrak
+  sebagai breaking change yang dideklarasikan.
+
+## Alternatif yang ditolak
+
+- **Salinan di setiap repository service.** Itulah keadaan yang menghasilkan penyimpangan di atas.
+- **Pin ke tag saja.** [Tag bisa dipindah, dan tag yang dipindah diam-diam mengubah bahasa yang dipakai
+  sebuah service](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/bin/sync-contracts#L9-L10), jadi yang diverifikasi adalah commit-nya.
+
+Cerita lengkapnya, dengan diagram interaktif tentang gate yang dilewati sebuah perubahan, ada di pelajaran
+[Kontrak lebih dulu](/id/learn/contracts-first/). Semua paket terdaftar di
+[referensi gRPC](/id/apis/grpc/).

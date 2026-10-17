@@ -9,7 +9,14 @@ export const collections = {
     schema: docsSchema({
       extend: z.object({
         sourceHash: z.string().regex(/^[0-9a-f]{12}$/).optional(),
-        eyebrow: z.string().optional()
+        eyebrow: z.string().optional(),
+        adr: z
+          .object({
+            number: z.number().int().positive(),
+            status: z.enum(["accepted", "superseded"]),
+            decided: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+          })
+          .optional()
       })
     })
   })

@@ -1,0 +1,19 @@
+---
+title: Decisions
+description: Architecture decision records for the decisions already in effect in Kinetix, each with its context, its consequences and the alternatives it turned down.
+sidebar:
+  label: Overview
+  order: 0
+---
+
+import DecisionList from "../../../components/DecisionList.astro";
+
+An architecture decision record (ADR) states one decision, why it was taken, what it costs, and what was
+turned down. The records here cover only decisions already in effect. Each one links to the code that
+carries it, at the commit that runs, so a link keeps showing what the record was written against. A
+proposal that is not built yet has no record here.
+
+<DecisionList />
+
+Records are numbered in the order they were written, not the order the decisions were taken. A decision
+that is replaced is marked superseded and points to the record that replaced it. It is never edited away.
