@@ -10,7 +10,8 @@
     "check:translations": "bun scripts/check_translations.ts",
     "check:leaks": "bun scripts/check_leaks.ts",
     "fetch:verifier": "bun scripts/fetch_verifier.ts",
-    "test": "bun test"
+    "test": "bun test",
+    "generate:grpc": "bun scripts/generate_grpc_reference.ts"
   },
   "dependencies": {
     "@astrojs/starlight": "0.42.3",
@@ -24,8 +25,10 @@
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",
+    "@bufbuild/protobuf": "2.16.0",
     "@types/bun": "1.4.2",
     "devicon": "2.17.0",
+    "kinetix-contracts": "1.3.0",
     "starlight-links-validator": "0.26.0",
     "svelte-check": "4.7.6",
     "typescript": "6.0.3"

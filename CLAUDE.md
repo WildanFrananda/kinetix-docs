@@ -90,6 +90,36 @@ found that a voucher could cut the courier's fee, because the discounted fee was
 A new call between services is a new edge on the map, and the map may have to be re-laid out for it;
 `tests/architecture_map.test.ts` refuses a line that passes behind a box.
 
+## gRPC reference
+
+`apis/grpc/` is generated, never written by hand. `bun run generate:grpc` (`scripts/generate_grpc_reference.ts`)
+reads the file descriptors in the published npm package `kinetix-contracts`. The version it reads is pinned
+exactly in `package.json` and `src/site/contracts_release.ts`. It writes one page per proto package plus an
+overview, in English and Indonesian. Each Indonesian page is stamped with the hash of its English page, so
+`check:translations` sees it as current.
+
+- **Servers and callers** come from the architecture map: the nodes' `serves` and the gRPC edges. The map,
+  the service pages and the reference therefore cannot disagree. The generator refuses any operation on the
+  map that the contract does not define. A dash means the map records none. Today that includes payment's
+  liability RPCs and the notary's watch, because the notary is not on the map yet.
+- **Source links** point at `.proto` lines in the pinned commit. The line numbers come from the package's own
+  `.proto` files (`scripts/lib/declaration_lines.ts`). The parser expects `buf format` layout and refuses a
+  declaration it cannot find.
+- **Drift test.** `tests/grpc_reference.test.ts` fails when a committed page differs from the generator's
+  output. A hand edit, or a change to the map or catalogue without regenerating, turns CI red.
+- **Strings** come from the catalogue, under `grpc.*`.
+- **Wrapper.** The generated body is wrapped in `<div class="grpc-reference">`, which scopes one style rule:
+  identifiers in these tables never break mid-word, and a wide table scrolls inside its own box. The site-wide
+  rule for table cells, `overflow-wrap: anywhere`, stays as it is because the lessons' tables rely on it.
+- **Bumping the contracts:**
+  1. Run `bun add -d --exact kinetix-contracts@<version>`.
+  2. In `src/site/contracts_release.ts`, set `version` and `commit` to the release and its tag's commit.
+  3. Confirm the package's `.proto` files equal `git show <tag>:proto/…` byte for byte, because the overview
+     says so.
+  4. Run `bun run generate:grpc`.
+
+  1.3.0 was checked this way on 2026-10-17: all 21 files were identical to `edc6c26`.
+
 ## Interactive diagrams
 
 Interactive, animated diagrams are the reason this site is built on Starlight. They are Svelte 5

@@ -250,3 +250,8 @@ nav.sidebar summary .large {
 .social-icons a:hover {
   color: var(--sl-color-white);
 }
+
+.sl-markdown-content .grpc-reference td :is(code, a):not(:where(.not-content *)) {
+  overflow-wrap: normal;
+  white-space: nowrap;
+}

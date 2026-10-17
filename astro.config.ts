@@ -96,6 +96,24 @@ export default defineConfig({
           ]
         },
         {
+          label: "APIs",
+          translations: {
+            id: "API"
+          },
+          items: [
+            {
+              label: "gRPC",
+              items: [
+                {
+                  autogenerate: {
+                    directory: "apis/grpc"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
           label: "Verify",
           translations: {
             id: "Verifikasi"
