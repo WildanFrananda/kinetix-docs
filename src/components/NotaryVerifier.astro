@@ -3,15 +3,17 @@ import { catalogueFor } from "../diagrams/engine/catalogue_for";
 import { localeOf } from "../diagrams/engine/locale_of";
 import { notaryVerifier, verifierPath } from "../site/notary_verifier";
 import NotaryVerifier from "../verifier/NotaryVerifier.svelte";
+import type { DocumentKind } from "../verifier/types/document_kind.type";
 import type { VerifierConfig } from "../verifier/types/verifier_config.type";
 import { verifierLabels } from "../verifier/verifier_labels";
 
 type Props = {
-  proveHref: string;
+  page?: DocumentKind;
+  proveHref?: string;
 };
 
-const { proveHref } = Astro.props;
-const labels = verifierLabels(catalogueFor(localeOf(Astro.locals.starlightRoute.entryMeta.lang)));
+const { page = "liabilities", proveHref } = Astro.props;
+const labels = verifierLabels(catalogueFor(localeOf(Astro.locals.starlightRoute.entryMeta.lang)), page);
 const { module, runtime, network } = notaryVerifier;
 const config: VerifierConfig = {
   release: notaryVerifier.release,
@@ -22,7 +24,8 @@ const config: VerifierConfig = {
   defaults: {
     rpcUrl: network.rpcUrl,
     chainId: network.chainId,
-    directory: network.directory
+    directory: network.directory,
+    evidenceRegistry: network.evidenceRegistry
   },
   networkName: network.name,
   explorer: network.explorer

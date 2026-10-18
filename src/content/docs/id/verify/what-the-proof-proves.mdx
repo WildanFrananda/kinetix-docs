@@ -1,7 +1,7 @@
 ---
 title: Apa yang dibuktikan proof of liabilities
 description: Apa yang ditunjukkan commitment on-chain milik notary kepada pemilik akun, apa yang tidak bisa ditunjukkannya, dan kontrak mana yang bertanggung jawab atas tiap bagiannya.
-sourceHash: "135cff5adfa6"
+sourceHash: "c821794847a7"
 sidebar:
   order: 2
 ---
@@ -20,7 +20,7 @@ root, total dan jumlah akun sebagai satu epoch di kontrak ledger di Base Sepolia
 
 Ledger menerima setiap epoch satu kali. Epoch kedua dengan nomor yang sama ditolak, dan digest setiap epoch
 memuat digest epoch sebelumnya, jadi epoch yang sudah di-anchor tidak bisa diubah, dihapus, atau diurutkan
-ulang ([`anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/LiabilityLedger.sol#L50-L89)).
+ulang ([`anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/LiabilityLedger.sol#L50-L89)).
 
 Sebuah akun muncul di tree hanya sebagai commitment: hash dari jenis akun, salt dan holder, dan di epoch
 yang lebih baru juga dari secret yang hanya diberikan kepada pemilik akun itu. Tree menunjukkan amount dan
@@ -28,7 +28,7 @@ total-nya, bukan milik siapa.
 
 Anchoring memerlukan dua key: milik notary, dan milik watch independen yang memeriksa snapshot terhadap
 catatan payment sendiri tentang snapshot itu sebelum menyetujuinya. Ledger hanya menerima epoch dari council
-yang memegang keduanya ([`AnchorCouncil.anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/council/AnchorCouncil.sol#L53-L59)).
+yang memegang keduanya ([`AnchorCouncil.anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/council/AnchorCouncil.sol#L53-L59)).
 
 ## Apa yang ditunjukkan sebuah proof
 
@@ -42,7 +42,7 @@ menunjukkan bahwa:
 - commitment-nya tidak bisa diubah sesudahnya.
 
 Verifier menghitung path itu sendiri dan juga meminta kontrak ledger menghitungnya
-([`verifyInclusion`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/LiabilityLedger.sol#L102-L120)). Verdict hanya diberikan kalau
+([`verifyInclusion`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/LiabilityLedger.sol#L102-L120)). Verdict hanya diberikan kalau
 keduanya sepakat.
 
 ## Apa yang tidak ditunjukkannya
@@ -66,15 +66,15 @@ siapa pun ke chain:
 
 - **Proof yang salah.** Kalau proof yang ditandatangani tidak terverifikasi, court memverifikasinya lagi
   on chain dan mencatat fault atas epoch itu
-  ([`proveBadProof`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/court/StatementCourt.sol#L59-L78)). Dua statement berbeda yang
+  ([`proveBadProof`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/court/StatementCourt.sol#L59-L78)). Dua statement berbeda yang
   ditandatangani untuk satu epoch, yang menyebut commitment yang sama atau posisi yang sama di tree, saling
   bertentangan dan dicatat dengan cara yang sama
-  ([`proveEquivocation`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/court/StatementCourt.sol#L80-L101)).
+  ([`proveEquivocation`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/court/StatementCourt.sol#L80-L101)).
 - **Sikap diam.** Holder yang mendaftarkan sebuah alamat bisa meminta statement-nya untuk sebuah epoch ke
   withholding court, dalam waktu seminggu sejak epoch itu di-anchor
-  ([`requestStatement`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/withholding/WithholdingCourt.sol#L49-L91)). Kalau notary belum
+  ([`requestStatement`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/withholding/WithholdingCourt.sol#L49-L91)). Kalau notary belum
   menjawab dalam 24 jam, siapa pun boleh mencatat sikap diam itu
-  ([`recordUnanswered`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/withholding/WithholdingCourt.sol#L121-L146)).
+  ([`recordUnanswered`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/withholding/WithholdingCourt.sol#L121-L146)).
 
 Fault atau sikap diam yang sudah tercatat tidak pernah dihapus. Verifier melaporkan berapa fault yang
 dibawa sebuah epoch di samping setiap verdict. Membawa fault atau request ke chain memerlukan gas, yang

@@ -1,0 +1,102 @@
+---
+title: Apa yang dibuktikan evidence
+description: Apa yang ditunjukkan commitment harian notary atas log order, pengiriman dan review kepada orang-orang di dalamnya, apa yang tidak bisa ditunjukkannya, dan kode mana yang bertanggung jawab atas tiap bagiannya.
+sourceHash: "17f0410abfea"
+sidebar:
+  order: 4
+---
+
+Riwayat sebuah order, pengirimannya dan review-nya ada di database service pemiliknya: order, matching dan
+review. Ketika pembeli mempersoalkan sebuah pengiriman, atau merchant mengatakan sebuah review telah diubah,
+satu-satunya catatan ada di database itu, dan tidak ada orang di luar Kinetix yang bisa membacanya. Anchoring
+evidence membuat record itu bisa diperiksa belakangan, tanpa memercayai Kinetix untuk melaporkan dirinya
+sendiri.
+
+## Setiap pemilik menyimpan log append-only
+
+Setiap log ditulis oleh transaction yang sama dengan perubahan yang dicatatnya, dan Postgres yang
+menegakkannya:
+
+- **Order** menyimpan setiap status yang dicapai sebuah order dan setiap langkah returnya, beserta siapa yang
+  melakukannya, di `order_lifecycle_events`. Status tanpa event miliknya sendiri di transaction yang sama
+  tidak bisa di-commit, dan log menolak `UPDATE`, `DELETE` dan `TRUNCATE`
+  ([trigger-nya](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Migrations/20261016134224_OrdersKeepALifecycleLog.cs#L62-L127)).
+- **Matching** menyimpan setiap pengiriman beserta SHA-256 foto dan tanda tangannya, di `delivery_evidence`.
+  Sebuah job tidak bisa menjadi delivered tanpa row-nya di transaction yang sama
+  ([log-nya](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/priv/repo/migrations/20261016160000_deliveries_keep_an_evidence_log.exs#L9-L79)).
+  Hash-nya adalah hash dari byte yang tersimpan: URL upload kurir ditandatangani atas SHA-256 foto dan menolak
+  penulisan kedua ke nama yang sama
+  ([upload-nya](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/storage/minio.ex#L21-L29)),
+  dan matching mencocokkan SHA-256 objek yang tersimpan dengannya sebelum mencatat pengiriman
+  ([pemeriksaannya](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/dispatch.ex#L276-L295)).
+- **Review** menyimpan setiap review produk dan rating kurir seperti saat ditulis, komentarnya sebagai SHA-256
+  dari byte UTF-8-nya, di `review_evidence`. Sebuah trigger menulis row itu di statement yang meng-insert
+  review; row yang ditulis dengan cara lain, dan perubahan apa pun pada sebuah row, ditolak
+  ([log-nya](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/database/migrations/2026_10_16_000001_reviews_keep_an_evidence_log.php#L18-L116)).
+
+Aturan ini berlaku untuk setiap code path, tetapi tidak untuk pemilik database, yang bisa men-drop sebuah
+trigger. Yang berlaku terhadap pemilik database adalah anchor-nya.
+
+## Apa yang di-commit notary
+
+Notary membaca setiap log lewat feed pemiliknya, dari cursor berupa transaction id dan sequence. Sebuah feed
+hanya menyajikan row yang transaction-nya lebih tua dari setiap transaction yang masih berjalan, jadi record
+yang transaction-nya commit terlambat disajikan terlambat, tidak pernah dilewati
+([feed order](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Infrastructure/Persistence/OrderLifecycleFeed.cs#L10-L30)).
+
+Setiap record mendapat salt acak 32 byte miliknya sendiri
+([salt-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/entropy/salts.go#L17-L29)).
+Leaf-nya adalah hash Keccak-256 dari stream, salt dan digest field record itu
+([leaf-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/keccak/evidence.go#L30-L37),
+[record-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/keccak/evidence.go#L68-L120)).
+Sehari setelah batch terakhir sebuah stream ditutup, atau begitu 65.536 record menunggu, record yang terkumpul
+sejak itu dimasukkan ke Merkle tree
+([kapan batch ditutup](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/evidencing/closer.go#L120-L123)).
+Batch itu di-anchor di evidence registry di Base Sepolia: root-nya, jumlah leaf-nya, posisi feed yang
+dibacanya, waktu ditutupnya, dan digest batch sebelumnya
+([digest-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/keccak/evidence.go#L52-L66)).
+
+Registry menerima batch setiap stream secara berurutan dan menolak batch yang tidak menyambung
+([`anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/evidence/EvidenceRegistry.sol#L78-L125),
+[pemeriksaannya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/evidence/EvidenceRegistry.sol#L255-L284)):
+
+- hanya key anchorer yang boleh meng-anchor, dan hanya batch berikutnya dari stream itu, setelah head yang
+  disebutnya;
+- sebuah batch tidak pernah kosong, ditutup setelah batch sebelumnya dan tidak di masa depan, dan membaca
+  sampai posisi feed yang benar-benar setelah posisi sebelumnya;
+- batch yang sama dikirim dua kali ditolak sebagai sudah di-anchor, dan batch berbeda dengan nomor yang sama
+  ditolak sebagai konflik.
+
+Jadi batch-batch yang berurutan menunjukkan bahwa setiap log dibaca secara berurutan, tanpa celah, dan batch
+yang sudah di-anchor tidak bisa diubah, dihapus atau diurutkan ulang. Tidak ada yang on chain yang menyebut
+pembeli, order atau review: sebuah leaf adalah hash atas salt yang hanya dipegang notary dan pihak-pihak
+record itu, jadi tebakan atas sebuah record tidak bisa dicek terhadap chain.
+
+## Apa yang ditunjukkan sebuah proof
+
+Sebuah proof memberikan satu record, salt-nya dan hash sibling di sepanjang path dari leaf-nya ke root.
+Ketika proof itu terverifikasi terhadap batch yang sudah di-anchor dan final, proof itu menunjukkan bahwa:
+
+- record itu, persis seperti yang dinyatakan proof, ada di log pemiliknya ketika batch ditutup;
+- record itu tidak berubah sejak itu, karena digest batch-nya dirangkai ke setiap batch sesudahnya;
+- untuk sebuah pengiriman, foto dan tanda tangan yang SHA-256-nya dibawa proof itu sudah ada saat itu, byte
+  demi byte; untuk sebuah review, begitu juga komentarnya.
+
+Verifier menghitung path-nya sendiri dan meminta kontrak registry menghitungnya juga
+([`verifyInclusion`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/evidence/EvidenceRegistry.sol#L156-L175)).
+Verifier hanya memberi verdict ketika keduanya sepakat.
+
+## Apa yang tidak ditunjukkannya
+
+- **Bahwa record itu benar.** Log menyatakan apa yang ditulis pemiliknya. Kurir yang melaporkan pengiriman
+  yang tidak terjadi tercatat sudah mengirim. Evidence mengunci apa yang diklaim dan kapan, dan dari situlah
+  sebuah sengketa dimulai.
+- **Apa yang terjadi sebelum batch ditutup.** Sampai saat itu hanya Postgres yang menjaga sebuah record, dan
+  pemilik database bisa men-drop trigger. Record satu hari di-anchor di akhir hari itu.
+- **Bahwa setiap record ikut dimasukkan.** Registry tahu sampai mana setiap batch membaca, bukan apa isi
+  log-nya. Record yang ditinggalkan baru ketahuan ketika salah satu pihaknya meminta proof-nya dan tidak
+  pernah diberi.
+- **Bahwa proof tetap privat.** Proof membawa record-nya dalam bentuk terbuka, dan memeriksanya lewat RPC
+  endpoint memberikan salt dan digest record itu kepada endpoint tersebut.
+
+Untuk memeriksa proof milikmu sendiri, lihat [Memverifikasi evidence sebuah order atau review](/id/verify/evidence/).

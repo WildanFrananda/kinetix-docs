@@ -1,3 +1,4 @@
+import type { EvidenceVerdictName } from "./evidence_verdict_name.type";
 import type { ReportField } from "./report_field.type";
 import type { StatementCheck } from "./statement_check.type";
 import type { VerdictName } from "./verdict_name.type";
@@ -11,6 +12,7 @@ export type VerifierLabels = {
   readonly network: string;
   readonly chainId: string;
   readonly directory: string;
+  readonly evidenceRegistry: string;
   readonly verify: string;
   readonly loading: string;
   readonly verifying: string;
@@ -23,6 +25,7 @@ export type VerifierLabels = {
   readonly unlisted: string;
   readonly noscript: string;
   readonly verdicts: Readonly<Record<VerdictName, string>>;
+  readonly evidenceVerdicts: Readonly<Record<EvidenceVerdictName, string>>;
   readonly statements: Readonly<Record<StatementCheck, string>>;
   readonly fields: Readonly<Record<ReportField, string>>;
 };

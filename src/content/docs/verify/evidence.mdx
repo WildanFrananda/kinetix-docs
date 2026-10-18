@@ -1,0 +1,126 @@
+---
+title: Verify the evidence of an order or a review
+description: Check from your own browser, against the public chain, that an order's status change, its delivery or a review is recorded exactly as it happened. No Kinetix server takes part.
+sidebar:
+  order: 3
+---
+
+import NotaryVerifier from "../../../components/NotaryVerifier.astro";
+import { notaryVerifier } from "../../../site/notary_verifier";
+
+Order, matching and review each keep an append-only log of what happened: every status an order reaches,
+every delivery with the SHA-256 of its photo, every review as it was written. Once a day the notary commits
+to each log's new records and anchors the commitment on Base Sepolia. This page checks that a record of an
+order or a review you are part of is inside one of those commitments, unchanged. The verifier runs in your
+browser and reads the chain through an RPC endpoint you choose, so no Kinetix server is asked anything.
+
+What the evidence shows, and what it cannot show, is explained in
+[What the evidence proves](/verify/what-the-evidence-proves/).
+
+## Get your proofs
+
+Ask the notary for the proofs of an order or of a review, with your access token:
+
+```http
+GET /api/v1/proofs/evidence/orders/{order}
+GET /api/v1/proofs/evidence/reviews/{review}
+Authorization: Bearer <access token>
+```
+
+`{order}` is the order number and `{review}` the review's id
+([the routes](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/httpapi/evidence_proofs.go#L14-L19)).
+You get the records you are a party to
+([the rules](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/evidencing/prover.go#L19-L79)):
+
+| Record | Who gets its proof |
+| --- | --- |
+| a status change of an order, or a step of its return | the buyer, the merchant, and whoever made the change ([parties](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/notary/lifecycle_record.go#L26-L28)) |
+| the delivery of an order | the courier who delivered it, and the order's buyer and merchant |
+| a product review | its author and the merchant |
+| a rating of a courier | its author and the courier rated: review logs no merchant for a rating ([parties](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/notary/review_record.go#L26-L32), [review's log](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/database/migrations/2026_10_16_000001_reviews_keep_an_evidence_log.php#L101-L112)) |
+
+Anyone else gets `404` with `no_evidence`, the same answer as for an order the notary has no record of
+([the codes](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/httpapi/evidence_proofs.go#L106-L121)).
+
+The answer is `{"proofs": [...], "pending": n}`. Each entry of `proofs` is one record with its salt and its
+path to the root of an anchored, final batch. `pending` counts the records of yours that are not in a final
+batch yet ([the count](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/evidencing/prover.go#L81-L134)):
+a stream's batch closes a day after the one before it, and the chain takes about twenty minutes more to
+finalize it, so a record's proof can take up to a day to appear. Save the whole answer as `evidence.json`. The verifier takes it as
+it is, or any one document from its `proofs` list.
+
+A proof carries the record itself: the order number and the people in it, the statuses, the times, the
+photo's SHA-256, a review's rating and the SHA-256 of its comment. Keep the file to yourself as you would the
+order.
+
+## Verify it here
+
+<NotaryVerifier page="evidence" />
+
+This is the same verifier as on [Verify a proof of liabilities](/verify/proof-of-liabilities/):
+`notary-verify` compiled to WebAssembly, release <code>{notaryVerifier.release}</code>, checked against its
+SHA-256 before it runs. It tells the two kinds of document apart by their `format` and hands an evidence
+document to the evidence verifier
+([the entry point](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/cmd/notary-verify-wasm/main.go#L86-L128)).
+
+The record's fields are hashed in the browser and never sent. The endpoint is asked about the batch, and given
+the record's digest, its salt and its path, because the registry contract checks the proof a second time on
+its own ([`verifyInclusion`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/evidence/EvidenceRegistry.sol#L156-L175)).
+The salt is what keeps a guess at a record from being confirmed against the chain, so if the endpoint should
+not hold it, point the verifier at a node of your own.
+
+## Read the answer
+
+The page prints one verdict for each proof and the exit code `notary-verify` prints for the same document
+([the verification](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/verifying/evidence_verifier.go#L18-L123),
+[the codes](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/verifycli/exit.go#L3-L18)).
+With several proofs, the exit code is that of the first one that is not `included`
+([`RunEvidence`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/verifycli/evidence.go#L37-L59)).
+
+| Verdict | Exit | Means |
+| --- | --- | --- |
+| `included` | 0 | the batch is final on chain, and the record, with its salt, leads to the batch's root |
+| `rejected` | 1 | the batch is on chain, but the record does not lead to its root; `reason` says which check failed |
+| `not_anchored` | 2 | the registry holds no such batch for the record's stream |
+| `not_final` | 3 | the batch is anchored, but the chain has not finalized it yet ([how it is told](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/ethereum/evidence_registry.go#L158-L208)) |
+| `unknown` | 4 | the chain could not be asked; nothing is known, and it is not a rejection |
+| `wrong_ledger` | 5 | the proof was issued against another registry, or another chain, than the one given |
+| `disagreement` | 6 | the verifier and the registry contract computed different answers, so neither is given |
+| `malformed_proof` | 65 | the text is not an evidence document |
+
+Beside the verdict come the record's `stream` (`order_lifecycle`, `delivery` or `review`), its `batch`, when
+the batch closed and when it was anchored, and the record's place in its owner's log as a transaction and a
+sequence. Only `included` means the record is in the commitment.
+
+## Check a photo, a signature or a comment
+
+The proof holds hashes, not files. A delivery's `photoSha256` and `signatureSha256` are the SHA-256 of the
+images the courier uploaded, and a review's `commentSha256` is the SHA-256 of its comment's UTF-8 bytes. To
+show that a photo you hold is the one the delivery was recorded with, hash it and compare:
+
+```sh
+sha256sum photo.jpg
+printf '%s' 'the comment, exactly as written' | sha256sum
+```
+
+The output is the hash without its `0x`. When it matches and the proof is `included`, those exact bytes
+existed when the batch closed and have not changed since.
+
+## Verify it without this page
+
+The same verifier is published as a container image for amd64 and arm64
+([the command](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/cmd/notary-verify/main.go#L40-L42)):
+
+```sh
+docker run --rm -i \
+  -e KINETIX_NOTARY_RPC_URL=https://sepolia.base.org \
+  -e KINETIX_NOTARY_CHAIN_ID=84532 \
+  -e KINETIX_NOTARY_EVIDENCE_REGISTRY_ADDRESS=0xbF1F15F40cA8Dd63c070d223243febf6731EF480 \
+  -e KINETIX_NOTARY_RPC_TIMEOUT=20s \
+  ghcr.io/wildanfrananda/kinetix-notary-cli:v1.5.0 \
+  notary-verify /dev/stdin < evidence.json
+```
+
+It prints one JSON line for each proof and exits with the code from the table above. To check that this page
+runs what the repository says, build the WebAssembly yourself as
+[Verify a proof of liabilities](/verify/proof-of-liabilities/#verify-it-without-this-page) shows.

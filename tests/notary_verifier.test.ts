@@ -3,6 +3,8 @@ import { checkAsset } from "../scripts/lib/check_asset";
 import { sha256Hex } from "../scripts/lib/sha256_hex";
 import { catalogueFor } from "../src/diagrams/engine/catalogue_for";
 import { notaryVerifier, verifierDownload, verifierPath } from "../src/site/notary_verifier";
+import { documentKind } from "../src/verifier/document_kind";
+import { evidenceVerdictNames } from "../src/verifier/evidence_verdict_names";
 import { fillTemplate } from "../src/verifier/fill_template";
 import { parseAnswer } from "../src/verifier/parse_answer";
 import { readAsset } from "../src/verifier/read_asset";
@@ -28,6 +30,7 @@ describe("the pinned verifier", () => {
 
     expect(notaryVerifier.network.chainId).toBe("84532");
     expect(notaryVerifier.network.directory).toMatch(/^0x[0-9a-fA-F]{40}$/);
+    expect(notaryVerifier.network.evidenceRegistry).toMatch(/^0x[0-9a-fA-F]{40}$/);
     expect(notaryVerifier.network.rpcUrl).toStartWith("https://");
   });
 
@@ -104,15 +107,40 @@ describe("parseAnswer", () => {
 });
 
 describe("the verifier's settings", () => {
-  test("are the four variables notary-verify reads, trimmed", () => {
+  test("are the five variables notary-verify reads, trimmed", () => {
     expect(
-      verifierEnvironment({ rpcUrl: " https://sepolia.base.org ", chainId: "84532", directory: "0xabc " })
+      verifierEnvironment({
+        rpcUrl: " https://sepolia.base.org ",
+        chainId: "84532",
+        directory: "0xabc ",
+        evidenceRegistry: " 0xdef"
+      })
     ).toEqual({
       KINETIX_NOTARY_RPC_URL: "https://sepolia.base.org",
       KINETIX_NOTARY_CHAIN_ID: "84532",
       KINETIX_NOTARY_DIRECTORY_ADDRESS: "0xabc",
+      KINETIX_NOTARY_EVIDENCE_REGISTRY_ADDRESS: "0xdef",
       KINETIX_NOTARY_RPC_TIMEOUT: "30s"
     });
+  });
+});
+
+describe("documentKind", () => {
+  const evidence = { format: "kinetix.notary.evidence.v1" };
+
+  test("reads evidence from a document's format, or from the first proof of the notary's answer", () => {
+    expect(documentKind(JSON.stringify(evidence))).toBe("evidence");
+    expect(documentKind(JSON.stringify({ proofs: [evidence], pending: 0 }))).toBe("evidence");
+  });
+
+  test("reads everything else as liabilities, which is what notary-verify does with it", () => {
+    expect(documentKind(JSON.stringify({ format: "kinetix.notary.inclusion.v1" }))).toBe("liabilities");
+    expect(documentKind(JSON.stringify({ proofs: [] }))).toBe("liabilities");
+    expect(documentKind(JSON.stringify({ proofs: [{ format: "kinetix.notary.inclusion.v1" }, evidence] }))).toBe(
+      "liabilities"
+    );
+    expect(documentKind("[]")).toBe("liabilities");
+    expect(documentKind('{"format":')).toBe("liabilities");
   });
 });
 
@@ -131,11 +159,26 @@ describe("the verifier's labels", () => {
         expect(labels.verdicts[name].length).toBeGreaterThan(0);
       }
 
+      for (const name of evidenceVerdictNames) {
+        expect(labels.evidenceVerdicts[name].length).toBeGreaterThan(0);
+      }
+
       for (const field of reportFields) {
         expect(labels.fields[field].length).toBeGreaterThan(0);
       }
 
       expect(Object.values(labels.statements).every((text) => text.length > 0)).toBe(true);
+    });
+
+    test(`give the evidence page its own hints in ${locale}, and the liabilities page its own`, () => {
+      const catalogue = catalogueFor(locale);
+      const liabilities = verifierLabels(catalogue);
+      const evidence = verifierLabels(catalogue, "evidence");
+
+      expect(liabilities.documentHint).toBe(catalogue["verifier.documentHint"]);
+      expect(evidence.documentHint).toBe(catalogue["verifier.evidence.documentHint"]);
+      expect(evidence.endpointHint).toBe(catalogue["verifier.evidence.endpointHint"]);
+      expect(evidence.endpointHint).not.toBe(liabilities.endpointHint);
     });
   }
 });

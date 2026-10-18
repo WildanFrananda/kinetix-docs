@@ -19,7 +19,7 @@ total and the number of accounts as one epoch in the ledger contract on Base Sep
 
 The ledger takes each epoch once. A second epoch with the same number is refused, and every epoch's
 digest includes the digest before it, so an anchored epoch cannot be changed, dropped or reordered
-([`anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/LiabilityLedger.sol#L50-L89)).
+([`anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/LiabilityLedger.sol#L50-L89)).
 
 An account appears in the tree only as a commitment: a hash of the account kind, a salt and the holder,
 and in later epochs of a secret that only the account's holder is given. The tree shows the amounts and
@@ -27,7 +27,7 @@ the total, not whose they are.
 
 Anchoring takes two keys: the notary's, and an independent watch that checks the snapshot against
 payment's own record of it before it approves. The ledger accepts an epoch only from the council that
-holds both ([`AnchorCouncil.anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/council/AnchorCouncil.sol#L53-L59)).
+holds both ([`AnchorCouncil.anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/council/AnchorCouncil.sol#L53-L59)).
 
 ## What a proof shows
 
@@ -40,7 +40,7 @@ to the root. When it verifies against an anchored, final epoch, it shows that:
 - the commitment cannot be changed afterwards.
 
 The verifier computes the path itself and asks the ledger contract to compute it too
-([`verifyInclusion`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/LiabilityLedger.sol#L102-L120)). It gives a verdict only when
+([`verifyInclusion`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/LiabilityLedger.sol#L102-L120)). It gives a verdict only when
 both agree.
 
 ## What it does not show
@@ -63,14 +63,14 @@ court has registered as the signer for that epoch. That turns two failures into 
 put on chain:
 
 - **A false proof.** If a signed proof does not verify, the court verifies it again on chain and records
-  a fault against the epoch ([`proveBadProof`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/court/StatementCourt.sol#L59-L78)).
+  a fault against the epoch ([`proveBadProof`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/court/StatementCourt.sol#L59-L78)).
   Two different signed statements for one epoch that name the same commitment, or the same position in
-  the tree, contradict each other and are recorded the same way ([`proveEquivocation`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/court/StatementCourt.sol#L80-L101)).
+  the tree, contradict each other and are recorded the same way ([`proveEquivocation`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/court/StatementCourt.sol#L80-L101)).
 - **Silence.** A holder who registered an address can ask the withholding court for their statement for
   an epoch, within a week of its anchoring
-  ([`requestStatement`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/withholding/WithholdingCourt.sol#L49-L91)). If the notary has
+  ([`requestStatement`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/withholding/WithholdingCourt.sol#L49-L91)). If the notary has
   not answered within 24 hours, anyone may record the silence
-  ([`recordUnanswered`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/withholding/WithholdingCourt.sol#L121-L146)).
+  ([`recordUnanswered`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/withholding/WithholdingCourt.sol#L121-L146)).
 
 A recorded fault or silence is never cleared. The verifier reports how many faults an epoch carries
 beside every verdict. Putting a fault or a request on chain costs gas, which the notary's paymaster

@@ -2,10 +2,16 @@ export type VerifierReport = {
   readonly verdict: string;
   readonly chainId?: string;
   readonly ledger?: string;
+  readonly registry?: string;
   readonly epoch?: string;
+  readonly stream?: string;
+  readonly batch?: string;
   readonly total?: string;
   readonly asOf?: string;
+  readonly closedAt?: string;
   readonly anchoredAt?: string;
+  readonly transaction?: string;
+  readonly sequence?: string;
   readonly holder?: string;
   readonly kind?: string;
   readonly amount?: string;

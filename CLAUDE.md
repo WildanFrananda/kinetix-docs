@@ -70,7 +70,7 @@ types, plus a learning track. Directory names under `src/content/docs/`:
 | `security/` | Identity, token design, mTLS, trust boundaries |
 | `performance/` | Requirements, benchmarks, load tests |
 | `learn/` | The learning track: one real problem per lesson, solved in the real code |
-| `verify/` | Checking what Kinetix commits to without trusting Kinetix: the proof-of-liabilities verifier (added 2026-10-16) |
+| `verify/` | Checking what Kinetix commits to without trusting Kinetix: the proof-of-liabilities verifier (added 2026-10-16) and the evidence of orders, deliveries and reviews (added 2026-10-18) |
 | `reference/` | Glossary, standards, templates, FAQ |
 
 Operations, incident handling, disaster recovery procedures, infrastructure detail and cost belong to
@@ -191,6 +191,14 @@ disagree; this repository writes no verification logic of its own.
   checks its answers. The browser checks the hash again before it instantiates anything.
 - The page's text lives in the catalogue under `verifier.*`, and the verdict list in `src/verifier/verdict_names.ts`
   mirrors the CLI's exit codes.
+- **One island for both kinds of document.** Since v1.5.0 the WebAssembly verifies evidence documents too, telling
+  them apart by `format`. `src/verifier/document_kind.ts` makes the same call, the way `prooffile.IsEvidence`
+  does: a document of format `kinetix.notary.evidence.v1`, or an answer whose first proof is one. The island uses
+  it to pick the verdict explanations, `verifier.verdict.*` or `verifier.evidence.verdict.*`; the list of the
+  latter is in `src/verifier/evidence_verdict_names.ts`. The wrapper's `page` prop (`liabilities` by default,
+  `evidence` on `verify/evidence`) picks only the document and endpoint hints. Both addresses, the ledger
+  directory and the evidence registry, are passed on every call, because the WebAssembly reads only the one its
+  document needs.
 - `check:leaks` skips `.wasm`: it is a pinned release asset, never written here. `public/notary` is excluded
   from `tsconfig.json`, because `astro check` would otherwise type-check Go's `wasm_exec.js`.
 - **`client:visible` waits for the island to be seen, and `astro-island` itself has no box** (`display:
@@ -199,9 +207,12 @@ disagree; this repository writes no verification logic of its own.
   bare HTML form and reloads the page with the document gone.
 - Checked on 2026-10-16 in headless Chromium against Base Sepolia: a production proof answered `included`,
   attributable, no faults, exit 0; the same proof with its amount changed answered `rejected`, exit 1.
-- The pin is v1.4.0 (notary `7d292fa`). Its `SHA256SUMS` was built three ways and agreed byte for byte: the
-  release job on amd64, the laptop on arm64, and a fresh clone of the tag running the page's own command. All
-  notary permalinks on the Verify pages point at that commit.
+- The pin is v1.5.0 (notary `b5d5e11`). On 2026-10-18 a fresh clone of the tag, running the page's own command on
+  arm64, rebuilt `SHA256SUMS` byte for byte as the release job wrote it on amd64. All notary permalinks on the
+  Verify pages point at that commit. Moving
+  the liabilities pages from v1.4.0 (`7d292fa`) changed one range: every other linked file is byte-identical
+  between the two tags, and the WebAssembly entry point's `run` moved to L86–L106. The owners' logs are linked at
+  the tags production runs: order v1.1.0 (`ebcaa31`), matching v1.1.0 (`cfea287`) and review v1.1.1 (`d259ba5`).
 
 ## Design system
 

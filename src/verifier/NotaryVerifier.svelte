@@ -1,9 +1,12 @@
 <script lang="ts">
   import { untrack } from "svelte";
+  import { documentKind } from "./document_kind";
+  import { isEvidenceVerdictName } from "./evidence_verdict_names";
   import { fillTemplate } from "./fill_template";
   import { loadVerifier } from "./load_verifier";
   import { parseAnswer } from "./parse_answer";
   import { reportFields } from "./report_fields";
+  import type { DocumentKind } from "./types/document_kind.type";
   import type { VerifierAnswer } from "./types/verifier_answer.type";
   import type { VerifierConfig } from "./types/verifier_config.type";
   import type { VerifierLabels } from "./types/verifier_labels.type";
@@ -15,7 +18,7 @@
   type Props = {
     labels: VerifierLabels;
     config: VerifierConfig;
-    proveHref: string;
+    proveHref?: string;
   };
 
   type Phase = "idle" | "loading" | "verifying" | "done" | "failed";
@@ -26,9 +29,11 @@
   let rpcUrl = $state(untrack(() => config.defaults.rpcUrl));
   let chainId = $state(untrack(() => config.defaults.chainId));
   let directory = $state(untrack(() => config.defaults.directory));
+  let evidenceRegistry = $state(untrack(() => config.defaults.evidenceRegistry));
   let phase = $state<Phase>("idle");
   let received = $state(0);
   let answer = $state<VerifierAnswer | null>(null);
+  let answered = $state<DocumentKind>("liabilities");
   let failure = $state("");
   let verify = $state<VerifyFunction | null>(null);
   let hydrated = $state(false);
@@ -44,6 +49,10 @@
   }
 
   function explanation(report: VerifierReport): string {
+    if (answered === "evidence") {
+      return isEvidenceVerdictName(report.verdict) ? labels.evidenceVerdicts[report.verdict] : labels.unlisted;
+    }
+
     return isVerdictName(report.verdict) ? labels.verdicts[report.verdict] : labels.unlisted;
   }
 
@@ -109,7 +118,12 @@
     phase = "verifying";
 
     try {
-      answer = parseAnswer(await verify(documentText, verifierEnvironment({ rpcUrl, chainId, directory })));
+      const kind = documentKind(documentText);
+      const raw = await verify(documentText, verifierEnvironment({ rpcUrl, chainId, directory, evidenceRegistry }));
+      const parsed = parseAnswer(raw);
+
+      answered = kind;
+      answer = parsed;
       phase = "done";
     } catch (error) {
       phase = "failed";
@@ -146,6 +160,13 @@
       <span class="label">{labels.directory}</span>
       <input type="text" bind:value={directory} spellcheck="false" autocomplete="off" disabled={busy} />
       <a class="hint" href={`${config.explorer}/address/${config.defaults.directory}`}>{config.defaults.directory}</a>
+    </label>
+    <label class="field">
+      <span class="label">{labels.evidenceRegistry}</span>
+      <input type="text" bind:value={evidenceRegistry} spellcheck="false" autocomplete="off" disabled={busy} />
+      <a class="hint" href={`${config.explorer}/address/${config.defaults.evidenceRegistry}`}
+        >{config.defaults.evidenceRegistry}</a
+      >
     </label>
   </details>
 
@@ -190,7 +211,7 @@
             {/each}
           </dl>
 
-          {#if report.provable === "bad_proof"}
+          {#if report.provable === "bad_proof" && proveHref !== undefined}
             <p class="provable"><a href={proveHref}>{labels.provable}</a></p>
           {/if}
         </section>

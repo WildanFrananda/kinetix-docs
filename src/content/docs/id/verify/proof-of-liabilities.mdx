@@ -1,7 +1,7 @@
 ---
 title: Memverifikasi proof of liabilities
 description: Periksa dari browser-mu sendiri, terhadap chain publik, bahwa saldomu ada di dalam total yang di-commit Kinetix. Tidak ada server Kinetix yang terlibat.
-sourceHash: "6cefd0592783"
+sourceHash: "bf32780a4a02"
 sidebar:
   order: 1
 ---
@@ -27,7 +27,7 @@ Authorization: Bearer <access token>
 ```
 
 `{epoch}` adalah nomor epoch, atau `latest`. Jawabannya berisi satu proof untuk setiap akun yang kamu
-pegang ([handler-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/internal/httpapi/proofs.go#L15-L35)). Simpan seluruh jawaban itu sebagai
+pegang ([handler-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/httpapi/proofs.go#L15-L35)). Simpan seluruh jawaban itu sebagai
 `proof.json`. Verifier menerimanya apa adanya, atau satu proof mana pun dari daftar `proofs`-nya.
 
 Sebuah proof membawa commitment akunmu, amount-nya, serta hash dan sum sibling di sepanjang path dari
@@ -40,8 +40,8 @@ yang memegangnya bisa membaca saldo itu.
 <NotaryVerifier proveHref="#membuktikan-proof-yang-salah-on-chain" />
 
 Verifikasi pertama mengunduh verifier-nya: `notary-verify` itu sendiri, dikompilasi ke WebAssembly
-([entry point-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/cmd/notary-verify-wasm/main.go#L85-L111) menyerahkan dokumen ke
-[`RunDocument`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/internal/verifycli/run.go#L26-L42) milik CLI itu sendiri). Ukurannya 44 MB, sekitar 9 MB setelah dikompresi, dan setelah itu disimpan di cache browser. Halaman ini
+([entry point-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/cmd/notary-verify-wasm/main.go#L86-L106) menyerahkan dokumen ke
+[`RunDocument`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/verifycli/run.go#L26-L42) milik CLI itu sendiri). Ukurannya 45 MB, sekitar 9 MB setelah dikompresi, dan setelah itu disimpan di cache browser. Halaman ini
 memeriksa SHA-256-nya terhadap rilis <code>{notaryVerifier.release}</code> sebelum menjalankannya.
 
 Endpoint ditanya soal epoch, serta soal commitment, amount dan path yang disebut proof, karena kontrak
@@ -52,8 +52,8 @@ arahkan verifier ke node milikmu sendiri.
 ## Membaca jawabannya
 
 Halaman ini mencetak verdict dan exit code yang sama dengan yang dicetak `notary-verify` untuk dokumen
-yang sama, karena programnya memang sama ([verifikasinya](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/internal/verifying/verifier.go#L25-L102),
-[kode-kodenya](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/internal/verifycli/exit.go#L3-L18)).
+yang sama, karena programnya memang sama ([verifikasinya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/verifying/verifier.go#L25-L102),
+[kode-kodenya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/verifycli/exit.go#L3-L18)).
 
 | Verdict | Exit | Artinya |
 | --- | --- | --- |
@@ -83,7 +83,7 @@ docker run --rm -i \
   -e KINETIX_NOTARY_CHAIN_ID=84532 \
   -e KINETIX_NOTARY_DIRECTORY_ADDRESS=0x6C71162b46620Aa835681ADCDC4DB4ab9bB84ac8 \
   -e KINETIX_NOTARY_RPC_TIMEOUT=20s \
-  ghcr.io/wildanfrananda/kinetix-notary-cli:v1.4.0 \
+  ghcr.io/wildanfrananda/kinetix-notary-cli:v1.5.0 \
   notary-verify /dev/stdin < proof.json
 ```
 
@@ -91,13 +91,13 @@ Image itu mencetak satu baris JSON untuk setiap proof dan keluar dengan kode dar
 
 Untuk memeriksa bahwa halaman ini menjalankan apa yang dikatakan repository, build sendiri WebAssembly-nya
 dari tag rilis, di dalam toolchain image milik notary, lalu bandingkan hash-nya.
-[`bin/build-verifier-wasm`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/bin/build-verifier-wasm#L17-L27) adalah skrip yang
-[dijalankan rilis](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/.github/workflows/release.yml#L92-L131) untuk menerbitkan apa yang dimuat halaman ini:
+[`bin/build-verifier-wasm`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/bin/build-verifier-wasm#L17-L27) adalah skrip yang
+[dijalankan rilis](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/.github/workflows/release.yml#L92-L131) untuk menerbitkan apa yang dimuat halaman ini:
 
 ```sh
-git clone --branch v1.4.0 https://github.com/WildanFrananda/kinetix-notary-service
+git clone --branch v1.5.0 https://github.com/WildanFrananda/kinetix-notary-service
 cd kinetix-notary-service
-sh bin/dev sh -c 'cd contracts && forge soldeer install && cd .. && sh bin/generate && sh bin/build-verifier-wasm v1.4.0 dist/verifier'
+sh bin/dev sh -c 'cd contracts && forge soldeer install && cd .. && sh bin/generate && sh bin/build-verifier-wasm v1.5.0 dist/verifier'
 cat dist/verifier/SHA256SUMS
 ```
 
@@ -125,11 +125,11 @@ docker run --rm --user "$(id -u):$(id -g)" \
   -e KINETIX_NOTARY_BUNDLER_URL=https://public.pimlico.io/v2/84532/rpc \
   -e KINETIX_NOTARY_HOLDER_KEYSTORE=/run/key.json \
   -e KINETIX_NOTARY_HOLDER_PASSWORD_FILE=/run/key.pw \
-  ghcr.io/wildanfrananda/kinetix-notary-cli:v1.4.0 \
+  ghcr.io/wildanfrananda/kinetix-notary-cli:v1.5.0 \
   notary-sponsor prove /run/proof.json
 ```
 
 `notary-sponsor` memverifikasi proof-nya lebih dulu dan tidak mengirim apa pun untuk proof yang benar
-([`prove`](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/internal/sponsorcli/run.go#L139-L199)). Operasi pertama key-mu juga mendelegasikan
+([`prove`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/sponsorcli/run.go#L139-L199)). Operasi pertama key-mu juga mendelegasikan
 alamatnya ke `Simple7702Account` milik EntryPoint yang sudah diaudit; dengan cara itulah paymaster bisa
 membayarnya.
