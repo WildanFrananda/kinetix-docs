@@ -1,0 +1,310 @@
+---
+title: Glossary
+description: The terms Kinetix's code uses for accounts, buying, orders, money, delivery and proofs, each defined from the code that runs in production.
+sidebar:
+  order: 1
+---
+
+Each term is defined from the code that runs in production, and each definition links to the lines it rests
+on. Where two services name the same thing differently, both names are given.
+
+## Accounts and roles
+
+### principal
+
+Identity's UUID for a person or account, with a kind: customer, merchant, driver, staff or service.
+Identity puts it in the token's `sub`, and every other service stores `*_principal_id` instead of
+identity's own user id. See [Who is calling?](/learn/who-is-calling/).
+
+Owner: identity. Defined in [the principals table](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/infrastructure/persistence/entities/principal_typeorm.entity.ts#L3-L9)
+and [the contract's kinds](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/identity/v1/identity.proto#L17-L24).
+
+### customer, buyer
+
+The role a new account starts with, principal kind customer. Columns and wallets say customer; order's
+lifecycle log and change feed say buyer. Both name the same principal.
+
+Owner: identity. Defined in [the user entity](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/infrastructure/persistence/entities/user_typeorm.entity.ts#L14-L15).
+
+### merchant
+
+An account with the role `seller` and a row in identity's merchants. A merchant may sell only while its
+status is `verified` or `active`, and order, catalog and warehouse each ask identity whether it may.
+
+Owner: identity. Defined in [the merchant entity](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/domain/entities/merchant.entity.ts#L9) and
+[the selling rule](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/domain/merchant_standing.ts#L1-L5).
+
+### merchant approval
+
+A would-be merchant files a verification request, which starts `pending`. An admin approves it: the
+merchant is recorded as `verified`, and the account gets the `seller` role.
+
+Owner: identity. Defined in [the admin-only route](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/adapters/controllers/seller_onboarding.controller.ts#L25-L31)
+and [the approval](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/application/services/seller_onboarding_usecase.service.ts#L128-L156).
+
+### courier, driver
+
+Identity calls the role courier; matching and payment say driver. Registering creates an account and a
+vehicle in matching that is not active yet. An admin's approval gives the account the courier role and
+activates the driver. A working driver is `online`, `busy` or `offline`.
+
+Owner: identity for the role, matching for the driver. Defined in
+[the admin-only approval](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/adapters/controllers/courier_onboarding.controller.ts#L27-L31) and
+[the driver record](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/tracking/driver.ex#L26-L34).
+
+### admin
+
+The identity role `admin`, principal kind staff. The first admin can be created only by a bootstrap
+script, and only while no admin exists.
+
+Owner: identity. Defined in [the bootstrap script](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/bootstrap-admin.ts#L22-L23).
+
+## Buying
+
+### cart
+
+The buyer's cart, which order keeps in Redis under a key per principal. It expires 14 days after its last
+change, and a successful checkout clears it.
+
+Owner: order. Defined in [the cart service](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Application/Services/CartService.cs#L12-L14).
+
+### checkout
+
+Turning a cart into an order. Every line must belong to one merchant who may sell. Order resolves prices,
+stock and shipping from the services that own them, writes the order as `PENDING_PAYMENT`, and runs the
+checkout saga, which ends it `PAID` or `CANCELLED`. The buyer pays from their wallet balance in payment.
+
+Owner: order. Defined in [the one-merchant rule](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Application/Services/OrderService.cs#L215-L216) and
+[the saga's outcome](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Application/Services/OrderService.cs#L179-L188).
+
+### checkout saga
+
+The five steps order runs at checkout, each one recorded: redeem the voucher, allocate flash-sale stock,
+reserve stock, hold the money in escrow, create the fulfilment task. When a step fails, order compensates
+by undoing the finished steps in reverse. A compensation that cannot finish is retried with backoff and, by
+default after six rounds, abandoned for a person to settle. See [The checkout saga](/learn/checkout-saga/).
+
+Owner: order. Defined in [the steps](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Domain/Enums/SagaStepName.cs#L3-L9), [the saga's states](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Domain/Enums/SagaState.cs#L3-L10)
+and [the compensation policy](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Application/Checkout/CompensationPolicy.cs#L7-L10).
+
+### idempotency key
+
+A key that makes a repeated request return the first result instead of acting twice. Checkout takes an
+`Idempotency-Key` header, unique per buyer. Payment's escrow calls carry a `common.v1.IdempotencyKey`,
+which order fills with `order:` and the order number. See [The same request, twice](/learn/idempotency/).
+
+Owner: each service that takes one. Defined in [order's unique index](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Infrastructure/Persistence/OrderDbContext.cs#L79)
+and [payment's default key](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L883-L886).
+
+### voucher
+
+A percentage or fixed discount on the goods subtotal, never on shipping, within its quota, its minimum
+spend and, if it has one, its merchant. Redeeming it is the saga's first step, counted once per order.
+
+Owner: pricing. Defined in [the evaluator](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/traits/voucher_evaluator.rs#L17-L42) and
+[the price, where shipping is left as quoted](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/services/pricing_service.rs#L226-L236).
+
+### flash sale
+
+A time-limited lower price on a product. Pricing applies it while the sale is on and cheaper than the
+base price. At checkout the saga claims the quantity against the sale's stock limit, and compensation
+gives it back.
+
+Owner: pricing. Defined in [the price lookup](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/services/pricing_service.rs#L156-L166) and
+[the allocation](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/repositories/quota_repository.rs#L254-L261).
+
+### shipping tier
+
+A delivery service level that matching offers: instant, same-day, regular or cargo, each with its own
+distance and weight limits. The buyer picks a tier, pricing sets its fee from a rate card, and order
+refuses a final fee that is negative or above the base fee.
+
+Owner: matching for the tiers, pricing for the fee. Defined in [the tiers](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/shipping.ex#L21-L26),
+[the rate card](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/models/shipping_rate.rs#L47-L50) and
+[order's cross-check](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Application/Services/OrderService.cs#L91-L93).
+
+## Orders
+
+### order status
+
+An order is created `PENDING_PAYMENT`. It becomes `PAID` when the checkout saga succeeds or `CANCELLED`
+when it fails, `PROCESSING_FULFILLMENT` once the merchant has packed it, `DELIVERED` when the courier
+reports delivery, and `COMPLETED` after the return window. `SHIPPED` and `REFUNDED` exist in the enum,
+and nothing sets them. On the wire, order maps its names onto the contract's wider
+[`common.v1.OrderStatus`](/apis/grpc/common-v1/#orderstatus).
+
+Owner: order. Defined in [the enum](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Domain/Enums/OrderStatus.cs#L3-L12) and
+[the wire mapping](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Infrastructure/Grpc/OrderWireStatus.cs#L9-L17).
+
+### return window
+
+The days after delivery during which a return can be opened. Each deployment sets it with
+`KINETIX_RETURN_WINDOW_DAYS`; there is no default, and the service does not start without it.
+
+Owner: order. Defined in [the window](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Application/Completion/ReturnWindow.cs#L6-L22).
+
+### order completion
+
+A sweeper completes a delivered order once its return window has passed and no return is open. An admin
+can complete it earlier, but not while a return is unresolved. Completion is what releases escrow to the
+merchant.
+
+Owner: order. Defined in [the sweeper](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Infrastructure/Background/OrderCompletionSweeper.cs#L83-L90) and
+[the release it records](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Application/Completion/OrderCompletion.cs#L49-L74).
+
+### return
+
+Opened by the merchant against a delivered order, one per order. It goes `OPEN`, then `GOODS_RECEIVED`
+and `RESOLVED`, or `REJECTED` by an admin before the goods arrive. When the goods come back, the buyer
+is refunded the returned share of the goods into their wallet, never the shipping.
+
+Owner: order. Defined in [the statuses](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Domain/Enums/ReturnStatus.cs#L3-L8) and
+[the refund's arithmetic](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Application/Returns/ReturnsHandler.cs#L202-L219).
+
+## Money
+
+### Money
+
+An integer number of minor units with its currency, the only money type on the wire. See
+[ADR 0002](/decisions/0002-money-in-minor-units/).
+
+### escrow
+
+Payment's hold on one order's money, `HELD` until it is released or refunded. Holding debits the buyer's
+wallet and puts the merchant's share and the shipping fee into pending escrow; the two must add up to the
+total.
+
+Owner: payment. Defined in [the statuses](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/modules/domain/src/main/java/com/kinetix/payment/domain/entity/EscrowHold.java#L42-L47)
+and [the balance check](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/modules/domain/src/main/java/com/kinetix/payment/domain/entity/EscrowHold.java#L58-L59).
+
+### escrow release
+
+Moving the merchant's outstanding share, less any goods refunded, to their available balance. It happens
+when the order completes.
+
+Owner: payment. Defined in [the release](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L581-L583).
+
+### refund
+
+Returning what is still held to the buyer's wallet. It is refused once the escrow has been released or the
+shipping fee paid. A goods refund returns part of the merchant's share while the hold is still `HELD`.
+
+Owner: payment. Defined in [the refund](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L675-L703).
+
+### shipping fee settlement
+
+When matching reports a delivery, order asks payment to pay the whole shipping fee to that courier's
+available balance. This happens at delivery, independently of the merchant's payout, and repeating it for
+the same courier changes nothing.
+
+Owner: payment moves the money; order decides when. Defined in
+[order's call](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Application/Delivery/OrderDeliveredHandler.cs#L80-L82) and
+[payment's credit](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L223-L227).
+
+## Warehouse and delivery
+
+### SKU
+
+The product key, unique in catalog. Order and warehouse identify stock by it.
+
+Owner: catalog. Defined in [the product model](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/models/product_model.py#L9).
+
+### bin
+
+A physical shelf location in the warehouse. A bin inventory row holds the quantity and the reserved
+quantity of one SKU in one bin, owned by one merchant.
+
+Owner: warehouse. Defined in [the schema](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/db/schema.rb#L17-L24) and
+[available quantity](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/models/bin_inventory.rb#L14-L17).
+
+### stock reservation
+
+The saga step that sets stock aside. In one transaction, warehouse locks the SKU's bin rows with
+`FOR UPDATE`, picks the first of the merchant's bins that can cover the whole quantity, and raises its
+reserved quantity. See [Two buyers, one item](/learn/two-buyers-one-item/).
+
+Owner: warehouse. Defined in [the reservation](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/services/inventory/reserve_stock_service.rb#L86-L120).
+
+### fulfilment task
+
+Warehouse's packing job for one order: `received`, `packing`, `packed`, or `cancelled` by compensation.
+Packing it tells order, which moves the order to `PROCESSING_FULFILLMENT` and starts dispatch.
+
+Owner: warehouse. Defined in [the statuses](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/models/fulfillment_task.rb#L6) and
+[the transitions](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/services/fulfillment/task_transitions.rb#L7-L12).
+
+### dispatch
+
+Order asks matching for a courier once an order is packed. Matching assigns the nearest online driver
+within 3 km of the pickup with enough capacity. When nobody is free, order retries with backoff.
+
+Owner: matching assigns; order asks. Defined in [the assignment](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/dispatch.ex#L187) and
+[the driver's claim](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/tracking/driver_state.ex#L205-L207).
+
+### AWB
+
+The air waybill number matching issues when it books a delivery: `KNX-`, the date and a random suffix.
+Order passes it to warehouse, which prints it on the shipping label.
+
+Owner: matching issues it; warehouse records it. Defined in [its format](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/dispatch/order.ex#L99-L106)
+and [the label](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/rpc/fulfillment_task_service_handler.rb#L93-L96).
+
+### proof of delivery
+
+A delivery is accepted only with a photo stored under a name that carries its SHA-256, which matching
+checks against the stored object. An optional signature is hashed too. Matching keeps the hashes, the
+courier and the time in a delivery record that is never changed.
+
+Owner: matching. Defined in [the photo's name](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/dispatch/proof.ex#L11-L12) and
+[the delivery record](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/dispatch/delivery_evidence.ex#L32-L38).
+
+## Feeds and proofs
+
+### change feed
+
+An RPC a service serves so that another can follow its changes page by page from a cursor. Search follows
+catalog's `ChangedSince`, identity's `MerchantsChangedSince` and order's `OrdersChangedSince`.
+
+Owner: each source service. Defined in [order's feed](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Application/Services/OrderService.cs#L542-L550)
+and [search's sync](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/indexing/syncer.go#L60-L78).
+
+### liability snapshot
+
+Payment's export of every balance it owes. It is streamed as a header, batches of accounts, and a trailer
+with the count, the total and a digest, all read in one repeatable-read transaction.
+
+Owner: payment. Defined in [the contract](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability.proto#L8-L20) and
+[the transaction](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/persistence/PostgresLiabilitySnapshot.java#L59-L60).
+
+### epoch
+
+One numbered commitment to a liability snapshot, chained to the one before it by its digest.
+
+Owner: notary. Defined in [the header](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/EpochHeader.sol#L4-L11) and
+[the chain's rules](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/LiabilityLedger.sol#L65-L69).
+
+### anchoring
+
+Writing an epoch's header (its root, total, leaf count and time) to the `LiabilityLedger` contract on
+Base Sepolia, through an anchor council that needs a threshold of its members' signatures. No balance and
+no principal goes on chain.
+
+Owner: notary. Defined in [the ledger](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/LiabilityLedger.sol#L50) and
+[the council](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/council/AnchorCouncil.sol#L53-L58).
+
+### proof of liabilities
+
+A proof that one holder's balance, under a commitment only they can open, is included in the total the
+platform anchored. The epoch's root is a Merkle sum tree over every account. It is not a proof of
+solvency; see [What a proof of liabilities proves](/verify/what-the-proof-proves/).
+
+Owner: notary. Defined in [the inclusion check](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/LiabilityLedger.sol#L116-L119).
+
+### statement
+
+A signed claim by the notary that one account is included in an epoch, which anyone can prove false at
+the statement court. A holder can also request one on chain, and a request left unanswered is recorded
+against the notary.
+
+Owner: notary. Defined in [the statement](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/court/EpochStatement.sol#L4-L11) and
+[the request](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/withholding/WithholdingCourt.sol#L69-L84).

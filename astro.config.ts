@@ -151,6 +151,19 @@ export default defineConfig({
               }
             }
           ]
+        },
+        {
+          label: "Reference",
+          translations: {
+            id: "Referensi"
+          },
+          items: [
+            {
+              autogenerate: {
+                directory: "reference"
+              }
+            }
+          ]
         }
       ],
       plugins: [starlightLinksValidator()]

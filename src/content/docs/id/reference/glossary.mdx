@@ -1,0 +1,320 @@
+---
+title: Glosarium
+description: Istilah yang dipakai kode Kinetix untuk akun, pembelian, order, uang, pengantaran, dan bukti, masing-masing didefinisikan dari kode yang berjalan di produksi.
+sourceHash: "5673309fc480"
+sidebar:
+  order: 1
+---
+
+Setiap istilah didefinisikan dari kode yang berjalan di produksi, dan setiap definisi menautkan ke baris
+yang menjadi dasarnya. Kalau dua service menamai hal yang sama dengan berbeda, kedua namanya disebut.
+
+## Akun dan role
+
+### principal
+
+UUID milik identity untuk seseorang atau sebuah akun, dengan sebuah jenis: customer, merchant, driver,
+staff, atau service. Identity menaruhnya di `sub` token, dan setiap service lain menyimpan
+`*_principal_id` alih-alih user id milik identity. Lihat [Siapa yang memanggil?](/id/learn/who-is-calling/).
+
+Pemilik: identity. Didefinisikan di [tabel principals](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/infrastructure/persistence/entities/principal_typeorm.entity.ts#L3-L9)
+dan [jenis-jenisnya di kontrak](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/identity/v1/identity.proto#L17-L24).
+
+### customer, buyer
+
+Role awal setiap akun baru, dengan jenis principal customer. Kolom dan wallet menyebutnya customer; log
+lifecycle dan change feed milik order menyebutnya buyer. Keduanya merujuk ke principal yang sama.
+
+Pemilik: identity. Didefinisikan di [entitas user](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/infrastructure/persistence/entities/user_typeorm.entity.ts#L14-L15).
+
+### merchant
+
+Akun dengan role `seller` dan sebuah baris di tabel merchants milik identity. Merchant hanya boleh
+berjualan selama statusnya `verified` atau `active`, dan order, catalog, serta warehouse masing-masing
+menanyakan hal itu ke identity.
+
+Pemilik: identity. Didefinisikan di [entitas merchant](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/domain/entities/merchant.entity.ts#L9) dan
+[aturan boleh berjualan](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/domain/merchant_standing.ts#L1-L5).
+
+### merchant approval
+
+Calon merchant mengajukan permintaan verifikasi, yang dimulai sebagai `pending`. Admin menyetujuinya:
+merchant dicatat `verified`, dan akunnya mendapat role `seller`.
+
+Pemilik: identity. Didefinisikan di [route khusus admin](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/adapters/controllers/seller_onboarding.controller.ts#L25-L31)
+dan [persetujuannya](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/application/services/seller_onboarding_usecase.service.ts#L128-L156).
+
+### courier, driver
+
+Identity menyebut role-nya courier; matching dan payment menyebutnya driver. Registrasi membuat akun dan
+sebuah kendaraan di matching yang belum aktif. Persetujuan admin memberi akun itu role courier dan
+mengaktifkan driver-nya. Driver yang sedang bekerja berstatus `online`, `busy`, atau `offline`.
+
+Pemilik: identity untuk role-nya, matching untuk driver-nya. Didefinisikan di
+[persetujuan khusus admin](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/adapters/controllers/courier_onboarding.controller.ts#L27-L31) dan
+[data driver](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/tracking/driver.ex#L26-L34).
+
+### admin
+
+Role identity `admin`, dengan jenis principal staff. Admin pertama hanya bisa dibuat oleh skrip bootstrap,
+dan hanya selama belum ada admin.
+
+Pemilik: identity. Didefinisikan di [skrip bootstrap](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/bootstrap-admin.ts#L22-L23).
+
+## Pembelian
+
+### cart
+
+Keranjang pembeli, yang disimpan order di Redis dengan satu key per principal. Keranjang kedaluwarsa 14
+hari setelah perubahan terakhirnya, dan checkout yang berhasil mengosongkannya.
+
+Pemilik: order. Didefinisikan di [service keranjang](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Application/Services/CartService.cs#L12-L14).
+
+### checkout
+
+Mengubah keranjang menjadi order. Setiap baris harus milik satu merchant yang boleh berjualan. Order
+mengambil harga, stok, dan ongkos kirim dari service pemiliknya, menulis order sebagai `PENDING_PAYMENT`,
+lalu menjalankan checkout saga, yang mengakhirinya sebagai `PAID` atau `CANCELLED`. Pembeli membayar dari
+saldo wallet-nya di payment.
+
+Pemilik: order. Didefinisikan di [aturan satu merchant](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Application/Services/OrderService.cs#L215-L216) dan
+[hasil saga](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Application/Services/OrderService.cs#L179-L188).
+
+### checkout saga
+
+Lima langkah yang dijalankan order saat checkout, masing-masing dicatat: menukar voucher, mengalokasikan
+stok flash sale, mereservasi stok, menahan uang dalam escrow, dan membuat fulfilment task. Kalau satu
+langkah gagal, order melakukan kompensasi dengan membatalkan langkah yang sudah selesai secara terbalik.
+Kompensasi yang tidak bisa selesai dicoba ulang dengan backoff, dan secara default setelah enam putaran
+ditinggalkan untuk diselesaikan oleh orang. Lihat [Saga checkout](/id/learn/checkout-saga/).
+
+Pemilik: order. Didefinisikan di [langkah-langkahnya](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Domain/Enums/SagaStepName.cs#L3-L9),
+[status saga](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Domain/Enums/SagaState.cs#L3-L10), dan
+[kebijakan kompensasi](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Application/Checkout/CompensationPolicy.cs#L7-L10).
+
+### idempotency key
+
+Key yang membuat request yang diulang mengembalikan hasil pertama alih-alih bertindak dua kali. Checkout
+menerima header `Idempotency-Key`, unik per pembeli. Panggilan escrow ke payment membawa
+`common.v1.IdempotencyKey`, yang diisi order dengan `order:` dan nomor order. Lihat
+[Request yang sama, dua kali](/id/learn/idempotency/).
+
+Pemilik: setiap service yang menerimanya. Didefinisikan di [unique index milik order](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Infrastructure/Persistence/OrderDbContext.cs#L79)
+dan [key default milik payment](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L883-L886).
+
+### voucher
+
+Diskon persentase atau nominal tetap atas subtotal barang, tidak pernah atas ongkos kirim, dalam batas
+kuota, minimum belanja, dan merchant-nya kalau ada. Menukarnya adalah langkah pertama saga, dihitung sekali
+per order.
+
+Pemilik: pricing. Didefinisikan di [evaluatornya](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/traits/voucher_evaluator.rs#L17-L42) dan
+[perhitungan harga, tempat ongkos kirim dibiarkan sesuai kutipan](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/services/pricing_service.rs#L226-L236).
+
+### flash sale
+
+Harga lebih rendah untuk sebuah produk dalam waktu terbatas. Pricing menerapkannya selama sale berjalan
+dan lebih murah dari harga dasar. Saat checkout, saga mengklaim jumlahnya terhadap batas stok sale itu, dan
+kompensasi mengembalikannya.
+
+Pemilik: pricing. Didefinisikan di [pencarian harga](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/services/pricing_service.rs#L156-L166) dan
+[alokasinya](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/repositories/quota_repository.rs#L254-L261).
+
+### shipping tier
+
+Tingkat layanan pengiriman yang ditawarkan matching: instant, same-day, regular, atau cargo, masing-masing
+dengan batas jarak dan beratnya sendiri. Pembeli memilih tier, pricing menetapkan ongkosnya dari rate card,
+dan order menolak ongkos akhir yang negatif atau melebihi ongkos dasarnya.
+
+Pemilik: matching untuk tier-nya, pricing untuk ongkosnya. Didefinisikan di [tier-tiernya](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/shipping.ex#L21-L26),
+[rate card](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/models/shipping_rate.rs#L47-L50), dan
+[pengecekan silang milik order](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Application/Services/OrderService.cs#L91-L93).
+
+## Order
+
+### order status
+
+Order dibuat sebagai `PENDING_PAYMENT`. Statusnya menjadi `PAID` saat checkout saga berhasil atau
+`CANCELLED` saat gagal, `PROCESSING_FULFILLMENT` setelah merchant mengemasnya, `DELIVERED` saat kurir
+melaporkan pengantaran, dan `COMPLETED` setelah return window lewat. `SHIPPED` dan `REFUNDED` ada di enum,
+tetapi tidak ada yang menyetelnya. Di wire, order memetakan namanya ke
+[`common.v1.OrderStatus`](/id/apis/grpc/common-v1/#orderstatus) milik kontrak, yang kosakatanya lebih luas.
+
+Pemilik: order. Didefinisikan di [enum-nya](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Domain/Enums/OrderStatus.cs#L3-L12) dan
+[pemetaan wire](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Infrastructure/Grpc/OrderWireStatus.cs#L9-L17).
+
+### return window
+
+Jumlah hari setelah pengantaran saat retur masih bisa dibuka. Setiap deployment menyetelnya lewat
+`KINETIX_RETURN_WINDOW_DAYS`; tidak ada nilai default, dan service tidak mau jalan tanpanya.
+
+Pemilik: order. Didefinisikan di [window-nya](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Application/Completion/ReturnWindow.cs#L6-L22).
+
+### order completion
+
+Sebuah sweeper menyelesaikan order yang sudah diantar setelah return window-nya lewat dan tidak ada retur
+yang terbuka. Admin bisa menyelesaikannya lebih awal, tetapi tidak selama ada retur yang belum tuntas.
+Penyelesaian inilah yang melepas escrow ke merchant.
+
+Pemilik: order. Didefinisikan di [sweeper-nya](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Infrastructure/Background/OrderCompletionSweeper.cs#L83-L90) dan
+[pelepasan yang dicatatnya](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Application/Completion/OrderCompletion.cs#L49-L74).
+
+### return
+
+Dibuka oleh merchant terhadap order yang sudah diantar, satu per order. Statusnya `OPEN`, lalu
+`GOODS_RECEIVED` dan `RESOLVED`, atau `REJECTED` oleh admin sebelum barangnya tiba. Saat barang kembali,
+pembeli mendapat refund atas bagian barang yang diretur ke wallet-nya, tidak pernah atas ongkos kirim.
+
+Pemilik: order. Didefinisikan di [status-statusnya](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Domain/Enums/ReturnStatus.cs#L3-L8) dan
+[perhitungan refund-nya](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Application/Returns/ReturnsHandler.cs#L202-L219).
+
+## Uang
+
+### Money
+
+Bilangan bulat dalam satuan terkecil beserta mata uangnya, satu-satunya tipe uang di wire. Lihat
+[ADR 0002](/id/decisions/0002-money-in-minor-units/).
+
+### escrow
+
+Penahanan uang satu order oleh payment, berstatus `HELD` sampai dilepas atau di-refund. Penahanan mendebit
+wallet pembeli serta memasukkan bagian merchant dan ongkos kirim ke escrow tertunda; keduanya harus
+berjumlah sama dengan totalnya.
+
+Pemilik: payment. Didefinisikan di [status-statusnya](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/modules/domain/src/main/java/com/kinetix/payment/domain/entity/EscrowHold.java#L42-L47)
+dan [pengecekan jumlahnya](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/modules/domain/src/main/java/com/kinetix/payment/domain/entity/EscrowHold.java#L58-L59).
+
+### escrow release
+
+Memindahkan bagian merchant yang tersisa, dikurangi barang yang sudah di-refund, ke saldo tersedianya.
+Ini terjadi saat order selesai.
+
+Pemilik: payment. Didefinisikan di [pelepasannya](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L581-L583).
+
+### refund
+
+Mengembalikan uang yang masih ditahan ke wallet pembeli. Refund ditolak setelah escrow dilepas atau ongkos
+kirim dibayarkan. Refund barang mengembalikan sebagian bagian merchant selama penahanannya masih `HELD`.
+
+Pemilik: payment. Didefinisikan di [refund-nya](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L675-L703).
+
+### shipping fee settlement
+
+Saat matching melaporkan pengantaran, order meminta payment membayar seluruh ongkos kirim ke saldo tersedia
+kurir itu. Ini terjadi saat pengantaran, terlepas dari pembayaran ke merchant, dan mengulanginya untuk
+kurir yang sama tidak mengubah apa pun.
+
+Pemilik: payment yang memindahkan uangnya; order yang menentukan kapan. Didefinisikan di
+[panggilan dari order](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Application/Delivery/OrderDeliveredHandler.cs#L80-L82) dan
+[kredit oleh payment](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L223-L227).
+
+## Gudang dan pengantaran
+
+### SKU
+
+Kunci produk, unik di catalog. Order dan warehouse mengenali stok lewat SKU.
+
+Pemilik: catalog. Didefinisikan di [model produk](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/models/product_model.py#L9).
+
+### bin
+
+Lokasi rak fisik di gudang. Satu baris bin inventory menyimpan jumlah dan jumlah yang direservasi untuk
+satu SKU di satu bin, milik satu merchant.
+
+Pemilik: warehouse. Didefinisikan di [skemanya](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/db/schema.rb#L17-L24) dan
+[jumlah yang tersedia](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/models/bin_inventory.rb#L14-L17).
+
+### stock reservation
+
+Langkah saga yang menyisihkan stok. Dalam satu transaksi, warehouse mengunci baris bin untuk SKU itu dengan
+`FOR UPDATE`, memilih bin pertama milik merchant yang bisa menutup seluruh jumlahnya, lalu menaikkan jumlah
+yang direservasi. Lihat [Dua pembeli, satu barang](/id/learn/two-buyers-one-item/).
+
+Pemilik: warehouse. Didefinisikan di [reservasinya](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/services/inventory/reserve_stock_service.rb#L86-L120).
+
+### fulfilment task
+
+Pekerjaan pengemasan di gudang untuk satu order: `received`, `packing`, `packed`, atau `cancelled` oleh
+kompensasi. Setelah dikemas, warehouse memberi tahu order, yang memindahkan order ke
+`PROCESSING_FULFILLMENT` dan memulai dispatch.
+
+Pemilik: warehouse. Didefinisikan di [status-statusnya](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/models/fulfillment_task.rb#L6) dan
+[transisinya](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/services/fulfillment/task_transitions.rb#L7-L12).
+
+### dispatch
+
+Order meminta kurir ke matching setelah sebuah order dikemas. Matching menugaskan driver online terdekat
+dalam radius 3 km dari titik jemput yang kapasitasnya cukup. Kalau tidak ada yang kosong, order mencoba
+ulang dengan backoff.
+
+Pemilik: matching yang menugaskan; order yang meminta. Didefinisikan di [penugasannya](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/dispatch.ex#L187) dan
+[klaim oleh driver](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/tracking/driver_state.ex#L205-L207).
+
+### AWB
+
+Nomor air waybill yang dikeluarkan matching saat memesan pengantaran: `KNX-`, tanggal, dan akhiran acak.
+Order meneruskannya ke warehouse, yang mencetaknya di label pengiriman.
+
+Pemilik: matching yang mengeluarkannya; warehouse yang mencatatnya. Didefinisikan di [formatnya](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/dispatch/order.ex#L99-L106)
+dan [label-nya](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/app/rpc/fulfillment_task_service_handler.rb#L93-L96).
+
+### proof of delivery
+
+Pengantaran hanya diterima dengan foto yang disimpan dengan nama yang memuat SHA-256-nya, yang dicocokkan
+matching dengan objek yang tersimpan. Tanda tangan opsional juga di-hash. Matching menyimpan hash, kurir,
+dan waktunya dalam catatan pengantaran yang tidak pernah diubah.
+
+Pemilik: matching. Didefinisikan di [nama fotonya](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/dispatch/proof.ex#L11-L12) dan
+[catatan pengantarannya](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/dispatch/delivery_evidence.ex#L32-L38).
+
+## Feed dan bukti
+
+### change feed
+
+RPC yang disediakan sebuah service supaya service lain bisa mengikuti perubahannya halaman demi halaman dari
+sebuah cursor. Search mengikuti `ChangedSince` milik catalog, `MerchantsChangedSince` milik identity, dan
+`OrdersChangedSince` milik order.
+
+Pemilik: setiap service sumber. Didefinisikan di [feed milik order](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Application/Services/OrderService.cs#L542-L550)
+dan [sinkronisasi milik search](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/indexing/syncer.go#L60-L78).
+
+### liability snapshot
+
+Ekspor semua saldo yang menjadi utang payment. Ekspor ini di-stream sebagai header, batch akun, dan trailer
+berisi jumlah akun, total, dan digest, semuanya dibaca dalam satu transaksi repeatable-read.
+
+Pemilik: payment. Didefinisikan di [kontraknya](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability.proto#L8-L20) dan
+[transaksinya](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/persistence/PostgresLiabilitySnapshot.java#L59-L60).
+
+### epoch
+
+Satu komitmen bernomor atas sebuah liability snapshot, yang dirantai ke epoch sebelumnya lewat digest-nya.
+
+Pemilik: notary. Didefinisikan di [header-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/EpochHeader.sol#L4-L11) dan
+[aturan rantainya](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/LiabilityLedger.sol#L65-L69).
+
+### anchoring
+
+Menulis header sebuah epoch (root, total, jumlah leaf, dan waktunya) ke kontrak `LiabilityLedger` di Base
+Sepolia, lewat anchor council yang membutuhkan sejumlah tanda tangan anggotanya. Tidak ada saldo maupun
+principal yang masuk ke chain.
+
+Pemilik: notary. Didefinisikan di [ledger-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/LiabilityLedger.sol#L50) dan
+[council-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/council/AnchorCouncil.sol#L53-L58).
+
+### proof of liabilities
+
+Bukti bahwa saldo seorang pemegang, di balik komitmen yang hanya bisa dibuka olehnya, termasuk dalam total
+yang di-anchor platform. Root sebuah epoch adalah Merkle sum tree atas semua akun. Ini bukan bukti
+solvabilitas; lihat [Apa yang dibuktikan proof of liabilities](/id/verify/what-the-proof-proves/).
+
+Pemilik: notary. Didefinisikan di [pengecekan inklusinya](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/LiabilityLedger.sol#L116-L119).
+
+### statement
+
+Klaim bertanda tangan dari notary bahwa satu akun termasuk dalam sebuah epoch, yang bisa dibuktikan salah
+oleh siapa pun di statement court. Pemegang juga bisa memintanya di chain, dan permintaan yang tidak dijawab
+dicatat sebagai kesalahan notary.
+
+Pemilik: notary. Didefinisikan di [statement-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/court/EpochStatement.sol#L4-L11) dan
+[permintaannya](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/withholding/WithholdingCourt.sol#L69-L84).
