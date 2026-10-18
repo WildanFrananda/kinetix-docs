@@ -93,8 +93,8 @@ not look stale — only a sync that has stopped working does.
 from where it last stopped — a cursor of the last change's time and id, kept in PostgreSQL — two hundred
 records at a time. It writes what changed into the live index, removes what the owner reports gone — a
 product catalog has taken off sale, for one — and only then saves the cursor. A page that fails leaves the
-cursor where it was, so the next pass reads the same page again: the index can fall behind, but it does
-not skip.
+cursor where it was, so the next pass reads the same page again: a failed page makes the index fall
+behind, and is not skipped.
 [The failure is logged](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/cmd/syncd/main.go#L108-L128)
 with what it means: the cursor has not moved and the index is getting older.
 

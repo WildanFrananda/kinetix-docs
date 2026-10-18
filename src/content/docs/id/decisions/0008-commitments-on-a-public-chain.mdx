@@ -1,0 +1,95 @@
+---
+title: Komitmen notary di-anchor di chain publik
+description: Apa yang diutangkan Kinetix dan apa yang terjadi pada setiap order, pengiriman, dan ulasan dikomitmenkan di chain publik, sehingga siapa pun bisa mengeceknya tanpa memercayai Kinetix. Chain itu adalah catatan, tidak pernah jalur pembayaran, dan berupa testnet selama uangnya masih uang sandbox.
+sourceHash: "8ce03e0bdb15"
+sidebar:
+  order: 8
+adr:
+  number: 8
+  status: accepted
+  decided: "2026-10-11"
+---
+
+import DecisionStatus from "../../../../components/DecisionStatus.astro";
+
+<DecisionStatus />
+
+## Konteks
+
+Kinetix memegang uang orang lain — dana pembeli di escrow, saldo merchant dan kurir, wallet pelanggan — dan
+[setiap angka itu hanya terlihat di dalam payment](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L10-L16).
+Seorang pemegang hanya bisa memercayai kata Kinetix bahwa saldonya dihitung. Catatan tentang apa yang
+terjadi pada sebuah order, pengiriman, atau ulasan ada di database pemiliknya, di mana pemiliknya bisa
+mengubahnya.
+
+## Keputusan
+
+Keputusan-keputusan notary diambil pada
+[2026-10-11](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L30),
+dan yang menyusul diberi tanggal di tabel yang sama.
+
+- **Berkomitmen di chain publik.** Siapa pun bisa mengecek proof terhadap chain tanpa memercayai Kinetix,
+  dan tidak ada seorang pun, termasuk Kinetix, yang bisa menulis ulang komitmen yang sudah di-anchor
+  ([tujuannya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L10-L16)).
+  Apa pun yang harus bisa dicek atau ditegakkan orang asing
+  [ada di sebuah kontrak](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L44).
+- **Catatan, tidak pernah jalur pembayaran.** Hukum Indonesia tidak mengizinkan kripto sebagai alat
+  pembayaran, jadi notary
+  [tidak pernah memindahkan uang di chain](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L25-L28).
+- **Testnet, secara permanen: Base Sepolia**, dengan kode setara production, sehingga
+  [pindah ke jaringan lain hanyalah soal endpoint RPC, chain id, key, dan sebuah alamat](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L36).
+  Uangnya adalah uang sandbox, sebagaimana penyedia pembayaran payment
+  [juga memakai sandbox di production](/id/services/payment/#mengoperasikannya).
+- **Kontrak immutable**, diganti dengan
+  [deploy ulang beserta riwayat ber-hash-chain yang dilanjutkan penerusnya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L37),
+  dan [sebuah directory yang menyebut generasi mana yang berlaku](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L56-L57).
+- **Tidak ada satu key yang bisa meng-anchor sendirian.** Council berisi dua anggota, notary dan watch-nya,
+  adalah satu-satunya anchorer ledger,
+  [tanpa key Kinetix cadangan](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L52):
+  key ketiga akan membuat Kinetix bisa meng-anchor tanpa watch. Kontraknya
+  [menolak ambang batas di bawah dua](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/council/AnchorCouncil.sol#L21).
+- **Kebohongan dan diam sama-sama bisa dibuktikan di chain.** Pengadilan memungkinkan siapa pun membuktikan
+  bahwa statement yang ditandatangani itu salah, dan memungkinkan pemegang membuktikan bahwa ia meminta dan
+  tidak mendapat jawaban, sehingga
+  [pemegang yang terlewat bisa menunjukkannya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L96-L98).
+- **Pemegang tidak butuh ether.** Sebuah paymaster membayari
+  [panggilan pengadilan milik pemegang itu sendiri, dan hanya itu](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L61).
+- **Komitmen, bukan isi.** Setiap record dikomitmenkan dengan salt-nya sendiri, sehingga
+  [tidak ada apa pun di chain yang menyebut pembeli, order, atau teks ulasan](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L1318-L1323),
+  gangguan pada satu log hanya menghentikan rantai batch miliknya sendiri, dan setiap log
+  [di-anchor setiap hari, dan hanya ketika ada record baru](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L76).
+
+## Yang sudah berlaku
+
+Kontrak dan alamatnya ada di halaman [notary](/id/services/notary/#di-chain). Council memegang
+[ambang batas dua dan menjadi satu-satunya anchorer ledger](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/deploy/base-sepolia.env#L28-L38).
+Cara mengecek sebuah proof ada di halaman Verifikasi:
+[Apa yang dibuktikan proof of liabilities](/id/verify/what-the-proof-proves/) dan
+[Apa yang dibuktikan evidence](/id/verify/what-the-evidence-proves/).
+
+## Konsekuensi
+
+- **Proof menunggu finalitas**, yang mengikuti lapisan di bawahnya:
+  [kira-kira lima belas sampai dua puluh menit](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L203-L204),
+  dan selama itu verifier mengatakan epoch-nya belum final.
+- **Testnet dipensiunkan.** Ledger bisa disegel dan dilanjutkan di jaringan lain, dan
+  [notary menyimpan sendiri setiap header dan receipt yang sudah di-anchor](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L182-L186),
+  sehingga riwayatnya bertahan meski jaringannya tidak.
+- **Perbaikan adalah generasi baru**, tidak pernah upgrade di tempat.
+- **Totalnya publik** di skema komitmen pertama, yang hanya bisa diterima karena uangnya uang sandbox.
+- **Evidence bisa dibuktikan keesokan harinya.** Satu batch ditutup sekali sehari per log.
+- **Kedua anggota council dijalankan Kinetix saat ini.** Council mencegah satu key yang dicuri meng-anchor
+  sendirian; ia belum mencegah Kinetix sendiri, dan
+  [watch-nya dimaksudkan pindah ke operator lain](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L891-L896).
+
+## Alternatif yang ditolak
+
+- **Jalur pembayaran di chain**: tidak diizinkan sebagai alat pembayaran.
+- **Kontrak yang bisa di-upgrade**: ditolak demi kontrak immutable yang diberi versi dengan deploy ulang.
+- **Satu key anchoring, atau key Kinetix ketiga di council**: keduanya akan membuat Kinetix bisa meng-anchor
+  sendirian.
+- **Meng-anchor evidence setiap jam**: harian yang dipilih, demi proof keesokan harinya dengan gas hanya
+  seperdua puluh empat.
+- **Verifier kedua untuk browser**: halamannya menjalankan
+  [verifier Go yang sama yang dikompilasi ke WebAssembly](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L65),
+  sehingga halaman dan command line tidak bisa berbeda pendapat.

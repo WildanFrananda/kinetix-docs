@@ -1,0 +1,88 @@
+---
+title: Setiap service memiliki database-nya sendiri
+description: Sebuah service hanya membaca dan menulis database-nya sendiri. Data service lain ditanyakan — lewat gRPC, change feed, atau log evidence — tidak pernah dibaca dari tabelnya, dan orang disimpan sebagai principal identity.
+sourceHash: "3c6b987f59f8"
+sidebar:
+  order: 7
+adr:
+  number: 7
+  status: accepted
+  decided: "2026-09-19"
+---
+
+import DecisionStatus from "../../../../components/DecisionStatus.astro";
+
+<DecisionStatus />
+
+## Konteks
+
+Service-service mulai menyimpan salinan data satu sama lain. Catalog menyimpan
+[tabel `orders` berisi nama dan alamat pembeli, serta tabel login](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/README.md#L19-L21).
+Warehouse menyimpan
+[kredensial kedua untuk dashboard-nya sendiri](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/db/migrate/20260920000001_drop_staff_users.rb#L1-L3).
+Matching menyimpan
+[nama dan nomor telepon kurir, yang sejak awal dipegang identity](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/priv/repo/migrations/20260919000001_drop_driver_name_and_phone.exs#L2-L4).
+Sebuah salinan adalah kebenaran kedua yang menyimpang dari yang pertama, dan satu tempat lagi di mana data
+pribadi atau password bisa bocor.
+
+## Keputusan
+
+- Setiap service memiliki database-nya sendiri. Tidak ada service lain yang membaca atau menulisnya.
+- Orang disimpan sebagai principal identity, tidak pernah sebagai salinan baris milik identity; lihat
+  [satu principal per orang](/id/services/identity/#satu-principal-per-orang).
+- Data service lain ditanyakan ke pemiliknya, dengan salah satu dari tiga cara:
+  - **panggilan gRPC**, untuk pertanyaan yang diajukan saat dibutuhkan —
+    [snapshot liability milik payment adalah seluruh antarmuka yang dimiliki notary](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/CLAUDE.md#L45-L47);
+  - **change feed**, untuk read model yang dibangun dari beberapa pemilik —
+    [search menarik feed setiap pemilik dengan sebuah cursor](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L16);
+  - **log evidence append-only**, untuk record yang dikomitmenkan pihak lain —
+    [notary membaca snapshot dari pemiliknya dan berkomitmen padanya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L21-L23).
+- Di production, setiap database berada di satu cluster PostgreSQL. Setiap service punya login sendiri,
+  yang hanya bisa membuka database milik service itu, dan penyiapan cluster gagal kalau login sebuah service
+  bisa membuka database service lain.
+
+## Yang sudah berlaku
+
+- **search** adalah
+  [read model, tidak pernah sumber kebenaran](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/CLAUDE.md#L16-L21):
+  kalau search dan pemiliknya tidak sepakat, pemiliknya yang benar.
+- **order** menyimpan
+  [merchant tempat ia menjual](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Domain/Entities/Order.cs#L24-L27),
+  [yang diisi saat checkout](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Application/Services/OrderService.cs#L127-L131),
+  jadi tidak ada yang butuh catalog untuk tahu siapa penjual sebuah order.
+- **review** bertanya ke order untuk setiap ulasan alih-alih menyimpan order; lihat
+  [review](/id/services/review/#menulis-ulasan-produk).
+- **warehouse** mengenal merchant sebagai
+  [sebuah principal dan jam cutoff, tidak lebih](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/db/schema.rb#L53-L59).
+  Tabel order-nya menjadi
+  [fulfilment task tanpa nama, telepon, atau alamat pembeli](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/db/migrate/20260919000001_fulfillment_tasks_not_orders.rb#L6-L35).
+- **matching** tidak lagi menyimpan
+  [alamat, yang menjadi milik identity](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/priv/repo/migrations/20260920190000_drop_geocoded_addresses.exs#L12-L16).
+
+## Konsekuensi
+
+- **Read model tertinggal dari pemiliknya.** search melakukan sync
+  [setiap tiga puluh detik secara default dan menyebut index-nya basi setelah sepuluh menit](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/config/config.go#L49-L50),
+  dan setiap jawaban menyebut [seberapa tua ia](/id/services/search/#seberapa-segar-sebuah-jawaban).
+- **Setiap pemilik menumbuhkan antarmuka untuk setiap pembaca.** search saja membutuhkan
+  [satu RPC baru dari masing-masing tiga pemilik, dan server gRPC pertama milik catalog](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L76-L83).
+- **Log yang dikomitmenkan pihak lain tidak boleh melewatkan satu baris pun.** Log evidence milik order,
+  matching, dan review
+  [hanya menyajikan baris yang lebih tua dari setiap transaction yang masih terbuka](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Infrastructure/Persistence/OrderLifecycleFeed.cs#L16-L23),
+  jadi baris yang commit terlambat disajikan terlambat, tidak pernah terlewat.
+- **Tidak ada join antar-service.** Pertanyaan yang melintasi beberapa service menjadi beberapa panggilan,
+  dan perubahan yang melintasinya menjadi saga yang membatalkan langkah-langkahnya ketika satu gagal; lihat
+  [saga checkout](/id/learn/checkout-saga/).
+- **Yang dicatat sebuah service adalah miliknya sendiri.** order
+  [menyimpan judul dan harga saat ia menjual](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/CLAUDE.md#L8-L12)
+  sebagai catatan penjualan. Itu fakta tentang penjualan, bukan cermin catalog yang terus diselaraskan.
+
+## Alternatif yang ditolak
+
+- **Salinan yang dipegang konsumen**, diselaraskan oleh konsumen itu. Itulah yang digambarkan di konteks,
+  dan semuanya dihapus antara 2026-09-19 dan 2026-09-21.
+- **Event bus untuk search**, saat search dibangun:
+  [search menarik feed setiap pemilik sebagai gantinya](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L16).
+- **Tabel bersama, query lintas database, `dblink`, atau `postgres_fdw`.** Tidak ada yang dipakai: masing-masing
+  akan membuat satu service bergantung pada skema service lain, yang lalu tidak pernah bisa diubah sendiri
+  oleh pemiliknya.

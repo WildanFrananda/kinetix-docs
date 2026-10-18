@@ -1,0 +1,88 @@
+---
+title: Identity satu-satunya penerbit kredensial
+description: Hanya identity yang menyimpan password dan menandatangani token. Setiap service lain memverifikasi access token RS256 dari identity sendiri, terhadap key yang dipublikasikan identity, dan mengenal orang hanya sebagai principal identity.
+sourceHash: "a81b71959f92"
+sidebar:
+  order: 6
+adr:
+  number: 6
+  status: accepted
+  decided: "2026-09-03"
+---
+
+import DecisionStatus from "../../../../components/DecisionStatus.astro";
+
+<DecisionStatus />
+
+## Konteks
+
+Kredensial sudah tersebar. Warehouse menyimpan
+[email, digest password bcrypt, dan role untuk dashboard-nya sendiri](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/db/migrate/20260920000001_drop_staff_users.rb#L1-L4),
+matching menyimpan
+[penyimpanan password kedua untuk operatornya](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/priv/repo/migrations/20260905142611_drop_admins.exs#L5-L8),
+dan merchant serta partner memanggil dengan API key. Setiap tempat itu adalah satu tempat lagi di mana
+password bisa bocor, dan satu jawaban lagi atas pertanyaan siapa seseorang. Keputusannya pertama kali
+ditulis pada 2026-09-03:
+[pemanggil first-party pindah ke token RS256 yang diterbitkan identity](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/0f555a3a10b40305cd9bf96a0a6f3e316c2aea50/spec/clients/identity_grpc_client_spec.rb#L124-L126).
+
+## Keputusan
+
+- **Hanya identity yang menyimpan password dan menandatangani token.** identity menandatangani token RS256
+  yang subject-nya adalah
+  [principal orang itu, dan `token_use`-nya menyebut untuk apa token itu](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/application/services/token.service.ts#L69-L80),
+  dan [memublikasikan public key-nya](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/adapters/controllers/jwks.controller.ts#L10-L17).
+- **Setiap service lain memverifikasi token sendiri**, terhadap key itu: tanda tangan, issuer, audience,
+  masa berlaku, dan bahwa token itu access token, bukan refresh token. Service itu tidak memanggil identity
+  untuk bertanya.
+- **Refresh token dipakai sekali.** Pemakaian kedua
+  [mencabut seluruh session tempat token itu berada](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/application/services/token.service.ts#L185-L192).
+- **Orang adalah principal identity** di mana pun; lihat
+  [satu principal per orang](/id/services/identity/#satu-principal-per-orang).
+- **Token untuk orang.** Service yang saling memanggil diterima lewat sertifikatnya, bukan lewat token; lihat
+  [Siapa yang memanggil?](/id/learn/who-is-calling/).
+- **Tidak ada jenis kredensial lain.** Kinetix
+  [tidak punya integrasi pihak ketiga, jadi tidak punya API key](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/priv/repo/migrations/20260905141203_drop_api_keys.exs#L5-L7).
+
+## Yang sudah berlaku
+
+Sembilan service memverifikasi token identity, masing-masing dalam bahasanya sendiri:
+
+| Service | Bahasa | Verifikasi |
+| --- | --- | --- |
+| order | C# | [`AccessTokenValidation.cs`](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Security/AccessTokenValidation.cs#L10-L30) |
+| payment | Java | [`SecurityConfig.java`](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/modules/api/src/main/java/com/kinetix/payment/api/security/SecurityConfig.java#L47-L70) |
+| review | PHP | [`TokenVerifier.php`](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Security/TokenVerifier.php#L35-L52) |
+| warehouse | Ruby | [`token_verifier.rb`](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/lib/kinetix/token_verifier.rb#L30-L62) |
+| catalog | Python | [`token_verifier.py`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/security/token_verifier.py#L34-L44) |
+| matching | Elixir | [`token_verifier.ex`](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/security/token_verifier.ex#L29-L40) |
+| pricing | Rust | [`jwt.rs`](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/security/jwt.rs#L157-L185) |
+| notary | Go | [`authenticator.go`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/tokens/authenticator.go#L65-L93) |
+| notification | Scala | [`NimbusAccessTokenVerifier.scala`](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/http/NimbusAccessTokenVerifier.scala#L36-L47) |
+
+Kredensial service lain sudah dihapus: login staff milik warehouse, password operator dan API key milik
+matching, dan tabel login milik catalog.
+
+## Konsekuensi
+
+- **identity tidak berada di jalur sebuah request.** Tidak ada yang memanggil identity untuk mengecek
+  token;
+  [bahkan tidak ada service yang diberi RPC untuk itu](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/CLAUDE.md#L52-L55).
+  Sebuah service tetap menjawab ketika identity mati, selama ia masih memegang key identity.
+- **Key yang tidak bisa diambil bukan token yang buruk.** Service yang tidak bisa menjangkau key identity
+  menjawab
+  [`503`, bukan `401`](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/CLAUDE.md#L175-L177),
+  jadi orang yang sudah login tidak disuruh login lagi; lihat
+  [Tidak tahu bukan berarti tidak](/id/learn/unknown-is-not-no/).
+- **Satu aturan, sembilan implementasi.** Pengecekan yang sama ditulis dalam sembilan bahasa, jadi sebagian
+  darinya bisa hilang di salah satunya; lihat
+  [Token yang bisa ditarik kembali](/id/learn/tokens-that-can-be-taken-back/).
+
+## Alternatif yang ditolak
+
+- **Mengecek token hanya di gateway.** Gateway mengecek tanda tangan, issuer, dan masa berlaku di sebagian
+  route, dan
+  [setiap service mengecek lagi](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/CLAUDE.md#L171-L174):
+  pengecekan gateway adalah kunci kedua, bukan satu-satunya, dan ia tidak mengecek audience maupun untuk apa
+  token itu.
+- **Menanyakan setiap token ke identity.** RPC-nya ada dan tidak ada yang memanggilnya.
+- **API key untuk partner.** Tidak ada partner.

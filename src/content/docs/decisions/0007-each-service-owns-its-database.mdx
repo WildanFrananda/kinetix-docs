@@ -1,0 +1,84 @@
+---
+title: Each service owns its database
+description: A service reads and writes only its own database. Another service's data is asked for — over gRPC, through a change feed or through an evidence log — never read from its tables, and people are kept as identity's principals.
+sidebar:
+  order: 7
+adr:
+  number: 7
+  status: accepted
+  decided: "2026-09-19"
+---
+
+import DecisionStatus from "../../../components/DecisionStatus.astro";
+
+<DecisionStatus />
+
+## Context
+
+Services had begun keeping copies of one another's data. Catalog held
+[an `orders` table with buyers' names and addresses, and a login table](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/README.md#L19-L21).
+Warehouse held
+[a second set of credentials for its own dashboard](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/db/migrate/20260920000001_drop_staff_users.rb#L1-L3).
+Matching held
+[couriers' names and telephone numbers, which identity held all along](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/priv/repo/migrations/20260919000001_drop_driver_name_and_phone.exs#L2-L4).
+A copy is a second truth that drifts from the first, and another place where personal data or a password
+can leak.
+
+## Decision
+
+- Each service owns its database. No other service reads it or writes it.
+- People are kept as identity's principals, never as copies of identity's rows; see
+  [one principal per person](/services/identity/#one-principal-per-person).
+- Another service's data is asked of its owner, in one of three ways:
+  - **a gRPC call**, for a question asked when it is needed —
+    [payment's liability snapshot is the whole interface the notary has](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/CLAUDE.md#L45-L47);
+  - **a change feed**, for a read model built from several owners —
+    [search pulls each owner's feed with a cursor](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L16);
+  - **an append-only evidence log**, for a record someone else commits to —
+    [the notary reads a snapshot from the owner and commits to it](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L21-L23).
+- In production every database lives in one PostgreSQL cluster. Each service has its own login, which
+  can open only that service's databases, and setting the cluster up fails if any service's login can open
+  another's.
+
+## In effect
+
+- **search** is
+  [a read model, never a source of truth](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/CLAUDE.md#L16-L21):
+  if it and an owner disagree, the owner is right.
+- **order** keeps
+  [the merchant it sold for](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Domain/Entities/Order.cs#L24-L27),
+  [set at checkout](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Application/Services/OrderService.cs#L127-L131),
+  so nobody needs catalog to know who sold an order.
+- **review** asks order about every review instead of holding orders; see
+  [review](/services/review/#writing-a-product-review).
+- **warehouse** knows a merchant as
+  [a principal and a cutoff hour, nothing else](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/db/schema.rb#L53-L59).
+  Its order table became
+  [fulfilment tasks without the buyer's name, phone or address](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/db/migrate/20260919000001_fulfillment_tasks_not_orders.rb#L6-L35).
+- **matching** no longer keeps
+  [addresses, which belong to identity](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/priv/repo/migrations/20260920190000_drop_geocoded_addresses.exs#L12-L16).
+
+## Consequences
+
+- **A read model is behind its owners.** search syncs
+  [every thirty seconds by default and calls its index stale after ten minutes](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/config/config.go#L49-L50),
+  and every answer says [how old it is](/services/search/#how-fresh-an-answer-is).
+- **Each owner grows an interface for each reader.** search alone needed
+  [one new RPC from each of three owners, and catalog's first gRPC server](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L76-L83).
+- **A log someone commits to must not skip a row.** order's, matching's and review's evidence logs
+  [serve only rows older than every transaction still open](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Infrastructure/Persistence/OrderLifecycleFeed.cs#L16-L23),
+  so a row that commits late is served late, never missed.
+- **There is no join across services.** A question that spans them becomes calls, and a change that spans
+  them becomes a saga that undoes its steps when one fails; see [the checkout saga](/learn/checkout-saga/).
+- **What a service records is its own.** order
+  [keeps the titles and prices it sold at](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/CLAUDE.md#L8-L12)
+  as the record of the sale. That is a fact about the sale, not a mirror of catalog kept in step.
+
+## Alternatives rejected
+
+- **Copies held by the consumer**, kept in step by the consumer. These are what the context describes, and
+  they were removed between 2026-09-19 and 2026-09-21.
+- **An event bus for search**, at the time search was built:
+  [it polls each owner's feed instead](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L16).
+- **Shared tables, queries across databases, `dblink` or `postgres_fdw`.** None is used: each would let one
+  service depend on another's schema, which its owner could then never change alone.

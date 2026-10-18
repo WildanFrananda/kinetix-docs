@@ -1,7 +1,7 @@
 ---
 title: search
 description: Pencarian produk di atas salinan data milik service lain. search tidak memiliki produk, merchant, atau order; ia mengikuti change feed setiap pemiliknya, membangun ulang salinannya kapan pun diminta, dan menjawab pembeli tanpa token.
-sourceHash: "519f0c07b2c2"
+sourceHash: "2152e2fadf6b"
 ---
 
 import ServiceCalls from "../../../../components/ServiceCalls.astro";
@@ -101,7 +101,7 @@ dari titik terakhir ia berhenti — sebuah cursor berupa waktu dan id perubahan 
 PostgreSQL — dua ratus record sekali baca. Ia menulis yang berubah ke index yang live, menghapus yang
 dilaporkan pemiliknya sudah tidak ada — misalnya produk yang ditarik catalog dari penjualan — dan baru
 setelah itu menyimpan cursor-nya. Halaman yang gagal membiarkan cursor di tempatnya, sehingga pass
-berikutnya membaca halaman yang sama lagi: index bisa tertinggal, tetapi tidak melompat.
+berikutnya membaca halaman yang sama lagi: halaman yang gagal membuat index tertinggal, dan tidak dilompati.
 [Kegagalannya dicatat di log](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/cmd/syncd/main.go#L108-L128)
 beserta artinya: cursor belum bergerak dan index makin tua.
 

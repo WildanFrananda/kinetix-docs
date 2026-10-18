@@ -1,0 +1,66 @@
+---
+title: Every service is written in a language of its own
+description: Each service has its own language, so one domain is built in eleven idioms and the contracts have to hold between all of them. The notary's Go and review's RoadRunner build are the two exceptions, each for a reason in its domain.
+sidebar:
+  order: 5
+adr:
+  number: 5
+  status: accepted
+  decided: "2026-09-21"
+---
+
+import DecisionStatus from "../../../components/DecisionStatus.astro";
+
+<DecisionStatus />
+
+## Context
+
+Kinetix is one domain — buying, fulfilling and delivering — split into services that each own their data
+and meet only over gRPC ([ADR 0007](/decisions/0007-each-service-owns-its-database/)). Which language a
+service is written in could have been one choice made once for all of them. It is made per service
+instead, on purpose: one domain, eleven idioms, and contracts that have to hold between all of them.
+
+## Decision
+
+- Each service is written in a language no other service uses. The list is on the
+  [tech stack](/architecture/tech-stack/) page. The rule is written into the services themselves:
+  [one language per service, gRPC-only between services](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/CLAUDE.md#L3-L5).
+- A new service takes a language no other service uses, unless its domain truly needs another language's
+  ecosystem. That exception is decided case by case, never assumed.
+- Services meet only through the contracts, which are
+  [generated for every language from one tag](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/buf.gen.yaml#L25-L33);
+  see [ADR 0001](/decisions/0001-contracts-in-one-repository/).
+
+## In effect
+
+- **notary shares Go with search.** It is
+  [Solidity on chain and Go off chain](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/CLAUDE.md#L3-L5),
+  [decided as its second decision](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L35).
+  Its work is reading and writing a chain, and it does that through
+  [go-ethereum](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/go.mod#L7),
+  the chain's own client library.
+- **review carries Go in `rr/`**, its own RoadRunner build,
+  [granted as an exception on 2026-10-17](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/CLAUDE.md#L109-L112):
+  PHP cannot serve gRPC, and RoadRunner hands its PHP workers no client certificate, so the check of who is
+  calling cannot live in PHP. review's own logic stays PHP.
+
+## Consequences
+
+- **A contract has to compile in every language, and one language can break alone.** A field that every
+  other language accepted
+  [could not be compiled in C++ at all](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/docs/BREAKING.md#L16-L38),
+  and the contract changed for it.
+- **One rule is written many times.** The same token check exists in nine languages
+  ([ADR 0006](/decisions/0006-identity-is-the-only-issuer/)), the same money arithmetic in all of them
+  ([ADR 0002](/decisions/0002-money-in-minor-units/)). A rule implemented once per language has to be
+  checked once per language too.
+- **Some toolchains are expensive.** review's PHP runtime is a separate image because
+  [compiling the gRPC extension from source costs 29 to 52 minutes](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/docker/php-runtime.Dockerfile#L1-L7).
+- **Every repository carries its own pipeline**, its own linters and its own test framework, in its own
+  language.
+
+## Alternatives rejected
+
+- **The check of who is calling, written in PHP.** It could not see the caller's certificate, which is why
+  review's exception exists.
+- No other alternative is recorded: one language for every service was not weighed against this rule.

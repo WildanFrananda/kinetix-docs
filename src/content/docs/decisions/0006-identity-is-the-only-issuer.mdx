@@ -1,0 +1,81 @@
+---
+title: Identity is the only issuer of credentials
+description: Only identity holds passwords and signs tokens. Every other service verifies identity's RS256 access tokens itself, against identity's published keys, and knows people only as identity's principals.
+sidebar:
+  order: 6
+adr:
+  number: 6
+  status: accepted
+  decided: "2026-09-03"
+---
+
+import DecisionStatus from "../../../components/DecisionStatus.astro";
+
+<DecisionStatus />
+
+## Context
+
+Credentials had spread. Warehouse kept
+[an email, a bcrypt password digest and a role for its own dashboard](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/db/migrate/20260920000001_drop_staff_users.rb#L1-L4),
+matching kept
+[a second password store for its operators](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/priv/repo/migrations/20260905142611_drop_admins.exs#L5-L8),
+and merchants and partners called with API keys. Each was another place a password could leak, and
+another answer to the question of who somebody is. The decision was first written down on 2026-09-03:
+[first-party callers move to identity-issued RS256 tokens](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/0f555a3a10b40305cd9bf96a0a6f3e316c2aea50/spec/clients/identity_grpc_client_spec.rb#L124-L126).
+
+## Decision
+
+- **Only identity holds a password and signs a token.** It signs RS256 tokens whose subject is
+  [the person's principal and whose `token_use` says what the token is for](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/application/services/token.service.ts#L69-L80),
+  and [publishes its public key](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/adapters/controllers/jwks.controller.ts#L10-L17).
+- **Every other service verifies the token itself**, against that key: the signature, the issuer, the
+  audience, the expiry, and that it is an access token rather than a refresh token. It does not call
+  identity to ask.
+- **A refresh token is used once.** A second use
+  [revokes the whole session it belongs to](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/application/services/token.service.ts#L185-L192).
+- **People are identity's principals** everywhere else; see
+  [one principal per person](/services/identity/#one-principal-per-person).
+- **Tokens are for people.** Services calling each other are admitted by their certificates, not by
+  tokens; see [Who is calling?](/learn/who-is-calling/).
+- **No other kind of credential.** Kinetix
+  [has no third-party integrations, so it has no API keys](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/priv/repo/migrations/20260905141203_drop_api_keys.exs#L5-L7).
+
+## In effect
+
+Nine services verify identity's tokens, each in its own language:
+
+| Service | Language | Verification |
+| --- | --- | --- |
+| order | C# | [`AccessTokenValidation.cs`](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Security/AccessTokenValidation.cs#L10-L30) |
+| payment | Java | [`SecurityConfig.java`](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/modules/api/src/main/java/com/kinetix/payment/api/security/SecurityConfig.java#L47-L70) |
+| review | PHP | [`TokenVerifier.php`](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Security/TokenVerifier.php#L35-L52) |
+| warehouse | Ruby | [`token_verifier.rb`](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/8f25e2643f631385ffb133b8c09b8e7a2dd14501/lib/kinetix/token_verifier.rb#L30-L62) |
+| catalog | Python | [`token_verifier.py`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/security/token_verifier.py#L34-L44) |
+| matching | Elixir | [`token_verifier.ex`](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/security/token_verifier.ex#L29-L40) |
+| pricing | Rust | [`jwt.rs`](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/security/jwt.rs#L157-L185) |
+| notary | Go | [`authenticator.go`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/tokens/authenticator.go#L65-L93) |
+| notification | Scala | [`NimbusAccessTokenVerifier.scala`](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/http/NimbusAccessTokenVerifier.scala#L36-L47) |
+
+The other services' credentials are gone: warehouse's staff logins, matching's operator passwords and
+API keys, and catalog's login table.
+
+## Consequences
+
+- **Identity is not on the path of a request.** Nobody calls identity to check a token;
+  [no service is even granted the RPC that would](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/CLAUDE.md#L52-L55).
+  A service keeps answering while identity is down, for as long as it holds identity's key.
+- **Keys that cannot be fetched are not a bad token.** A service that cannot reach identity's keys answers
+  [`503`, not `401`](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/CLAUDE.md#L175-L177),
+  so a person who is signed in is not sent to sign in again; see [Unknown is not no](/learn/unknown-is-not-no/).
+- **One rule, nine implementations.** The same check is written in nine languages, so a part of it can be
+  missing from one of them; see [Tokens that can be taken back](/learn/tokens-that-can-be-taken-back/).
+
+## Alternatives rejected
+
+- **Checking tokens at the gateway alone.** The gateway checks the signature, the issuer and the expiry on
+  some routes, and
+  [each service checks again](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/CLAUDE.md#L171-L174):
+  the gateway's check is a second lock, not the only one, and it does not check the audience or what the
+  token is for.
+- **Asking identity about every token.** The RPC exists and nothing calls it.
+- **API keys for partners.** There are no partners.
