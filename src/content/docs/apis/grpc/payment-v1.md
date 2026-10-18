@@ -16,7 +16,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`GetLiabilitySnapshotRecord`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability_record.proto#L9) | [`GetLiabilitySnapshotRecordRequest`](#getliabilitysnapshotrecordrequest) → [`GetLiabilitySnapshotRecordResponse`](#getliabilitysnapshotrecordresponse) | — | — |
+| [`GetLiabilitySnapshotRecord`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability_record.proto#L9) | [`GetLiabilitySnapshotRecordRequest`](#getliabilitysnapshotrecordrequest) → [`GetLiabilitySnapshotRecordResponse`](#getliabilitysnapshotrecordresponse) | [payment](/services/payment/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/payment/records.go#L56) |
 
 ### LiabilityService
 
@@ -24,7 +24,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`StreamLiabilitySnapshot`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability.proto#L9) | [`StreamLiabilitySnapshotRequest`](#streamliabilitysnapshotrequest) → `stream` [`StreamLiabilitySnapshotResponse`](#streamliabilitysnapshotresponse) | — | — |
+| [`StreamLiabilitySnapshot`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability.proto#L9) | [`StreamLiabilitySnapshotRequest`](#streamliabilitysnapshotrequest) → `stream` [`StreamLiabilitySnapshotResponse`](#streamliabilitysnapshotresponse) | [payment](/services/payment/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/payment/source.go#L61) |
 
 ### PaymentService
 

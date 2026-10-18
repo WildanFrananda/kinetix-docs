@@ -1,7 +1,7 @@
 ---
 title: payment
 description: Wallet, top-up, dan escrow — service yang menahan uang checkout sampai order menyebut ke mana uang itu pergi, dan mengkreditkan top-up hanya setelah Midtrans memastikan pembayarannya.
-sourceHash: "883373da9a6b"
+sourceHash: "9220281124fc"
 ---
 
 import ServiceCalls from "../../../../components/ServiceCalls.astro";
@@ -28,6 +28,12 @@ versi yang berjalan di production.
 
 Escrow hanya dijangkau lewat gRPC, dan hanya order yang memanggilnya: untuk menahan uang saat checkout,
 lalu untuk membayar ongkir, me-refund, atau melepasnya sesuai perjalanan order.
+
+Sejak v1.0.0, versi yang berjalan di production, payment juga menyajikan dua tampilan baca-saja atas apa
+yang ia utangkan, keduanya untuk [notary](/id/services/notary/):
+[snapshot liability yang dikomitmenkan notary](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/grpc/LiabilityGrpcServerService.java#L41-L73), dan
+[catatan payment sendiri atas setiap snapshot](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/grpc/LiabilityRecordGrpcServerService.java#L34-L60), yang dipakai proses kedua notary untuk mengeceknya.
+Bagian lain halaman ini belum dicek ulang terhadap v1.0.0.
 
 <ServiceServes service="payment" />
 

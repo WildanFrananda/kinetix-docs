@@ -26,6 +26,11 @@ the version in production.
 order asks matching for the shipping options of a cart and, once warehouse has packed an order, for a
 courier. identity files a new courier's vehicle and activates the driver when an admin approves the account.
 
+Since v1.1.0, which production runs, matching also serves
+[its delivery evidence](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/servers/delivery_evidence_server.ex#L18-L28), one record per delivered parcel with the hashes of its photo and signature,
+page by page, to the [notary](/services/notary/), which anchors it on chain. The rest of this page has not
+yet been re-checked against v1.1.0.
+
 <ServiceServes service="matching" />
 
 ## What it calls

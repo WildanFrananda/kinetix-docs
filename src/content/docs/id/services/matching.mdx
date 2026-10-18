@@ -1,7 +1,7 @@
 ---
 title: matching
 description: Armada — kendaraan kurir, posisi live mereka, job pengantaran yang mereka bawa, dan bukti bahwa paket sampai. matching menghitung perjalanan, memilih kurir, dan memberi tahu order ketika paket terkirim.
-sourceHash: "c36c00002413"
+sourceHash: "e7149821a94d"
 ---
 
 import ServiceCalls from "../../../../components/ServiceCalls.astro";
@@ -29,6 +29,11 @@ versi yang berjalan di production.
 order meminta opsi pengiriman sebuah keranjang ke matching dan, setelah warehouse mengemas sebuah order,
 meminta kurir. identity mendaftarkan kendaraan kurir baru dan mengaktifkan driver-nya ketika admin
 menyetujui akunnya.
+
+Sejak v1.1.0, versi yang berjalan di production, matching juga menyajikan
+[delivery evidence-nya](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/servers/delivery_evidence_server.ex#L18-L28), satu record per paket yang terkirim beserta hash foto dan tanda tangannya,
+halaman demi halaman, ke [notary](/id/services/notary/), yang meng-anchor-nya di chain. Bagian lain halaman
+ini belum dicek ulang terhadap v1.1.0.
 
 <ServiceServes service="matching" />
 

@@ -1,0 +1,200 @@
+---
+title: notary
+description: The commitments anyone can check without trusting Kinetix — what the platform owes each account holder, and what happened to every order, delivery and review — anchored on a public chain. notary owns no balance, order or review, and never moves money.
+---
+
+import ServiceCalls from "../../../components/ServiceCalls.astro";
+import ServiceFacts from "../../../components/ServiceFacts.astro";
+
+notary makes two kinds of commitment on a public chain. The first is what the platform owes: hourly by
+default, it takes payment's snapshot of each holder's balance, commits to the whole set and its total, and anchors the
+commitment so that each holder can prove their own balance is inside it. The second is what happened: it
+reads the append-only logs of order, matching and review, commits to every record with a salt of its own,
+and anchors a batch per log. It
+[owns no balance, no order and no review, and never moves money](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/CLAUDE.md#L12-L20):
+it reads what the owner wrote and commits to it.
+
+What the commitments prove, and how to check one in this browser, is in the Verify section:
+[What a proof of liabilities proves](/verify/what-the-proof-proves/),
+[What the evidence proves](/verify/what-the-evidence-proves/), and the two verifiers. This page is the
+service behind them.
+
+The tables on this page are generated from the same verified data as the
+[system map](/architecture/system-map/), at the commits linked from each row. The prose is checked
+against notary [v1.5.0](https://github.com/WildanFrananda/kinetix-notary-service/tree/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c),
+the version in production.
+
+## At a glance
+
+<ServiceFacts service="notary" />
+
+notary is the one service that shares a language: Go, like search, because its domain needs go-ethereum.
+Its contracts are Solidity, built and tested with Foundry.
+
+## What it serves
+
+Over HTTP, through the gateway,
+[four routes](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/httpapi/router.go#L20-L25),
+all behind an identity access token:
+
+| Route | Answers |
+| --- | --- |
+| `GET /api/v1/proofs/liabilities/{epoch}` | the caller's own proofs of liabilities for an epoch, or the latest |
+| `POST /api/v1/proofs/registrations` | registers the address from which a holder will ask the chain for a statement |
+| `GET /api/v1/proofs/evidence/orders/{order}` | the proofs of an order's lifecycle and delivery the caller is party to |
+| `GET /api/v1/proofs/evidence/reviews/{review}` | the proof of a review the caller is party to |
+
+Over gRPC, notary serves one operation, and only to itself: `ApproveEpoch`, between its two running
+processes, described [below](#two-processes-and-two-tools). Traffic inside one service is not drawn on the
+system map, so it is not in the tables on this page.
+
+## What it calls
+
+notary reads from four services and writes to one chain. It reads payment's liability snapshot and payment's
+own record of it, and the three evidence logs. On the chain it sends its anchors, reads the statement
+requests holders make, and calls the contracts' views.
+
+<ServiceCalls service="notary" />
+
+## Two processes and two tools
+
+One image carries
+[five programs](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/Dockerfile#L28-L52).
+Production runs three of them:
+
+- **notaryd**, the service. It
+  [anchors liabilities and evidence, answers statement requests, and serves the proof API](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/cmd/notaryd/main.go#L36-L61).
+- **notary-watch**, the council's second member. It
+  [approves an epoch only after checking it itself](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/cmd/notary-watch/main.go#L82-L122),
+  keeps no database, and signs off chain: it never sends a transaction.
+- **notary-migrate**, which applies the schema once and exits.
+
+The other two are tools for people outside Kinetix:
+- **notary-verify**, the auditor's command line, checks a proof against the chain. Its browser build is
+  what runs on this site's Verify pages.
+- **notary-sponsor**, the holder's command line, takes a holder's case to the chain's courts, paid for by
+  notary's paymaster.
+
+## Anchoring what is owed
+
+Every hour by default
+([`defaultEpochInterval`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/config/daemon.go#L43)),
+notaryd builds an epoch:
+
+1. It [asks payment for a snapshot](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/anchoring/anchorer.go#L150-L164)
+   of what is owed to each holder. If payment cannot answer, no epoch is built, and the next tick tries again.
+2. It commits to every balance with a salt of its own, builds a sum tree whose root carries the total, and
+   stores the epoch.
+3. It asks notary-watch to approve it. The watch does not take notaryd's word. It
+   [asks payment for payment's own record of that snapshot](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/approving/approver.go#L152-L246)
+   and compares the count and the total, checks the ledger's next epoch and head, and rebuilds the tree
+   itself before it signs.
+4. With both signatures, sorted by signer, notaryd sends the anchor to the `AnchorCouncil`, the ledger's only
+   anchorer, which
+   [refuses fewer approvals than its threshold, a signer that is not a member, or approvals out of order](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/council/AnchorCouncil.sol#L141-L168).
+
+A refusal from the watch
+[abandons the epoch](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/anchoring/anchorer.go#L244-L251).
+Any other failure is retried. So a commitment reaches the chain only when two parties have checked it
+against payment independently, and the chain itself enforces that.
+
+## Anchoring what happened
+
+notaryd reads three append-only logs, each owned by the service that wrote it: order's lifecycle log,
+matching's delivery evidence, and review's evidence log. Each record gets a salt of its own and becomes a
+leaf. A batch per log closes every 24 hours by default
+([`defaultEvidenceBatch`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/config/daemon.go#L46)),
+and
+[only one batch is in flight across the three](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/evidencing/closer.go#L42-L60).
+Batches go to the `EvidenceRegistry`, under
+[a key that must not be the liabilities anchorer's](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/evidencing/registry_check.go#L46-L70).
+
+What notary keeps of a delivery or a review is the record's fields and the hashes the owner logged: the
+photo's and the signature's SHA-256, the comment's SHA-256. It never sees the photo or the comment.
+
+## On chain
+
+Everything is on Base Sepolia, chain id 84532. The addresses below are the
+[ones production uses](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/deploy/base-sepolia.env#L1-L55).
+
+| Contract | What it does | Address |
+| --- | --- | --- |
+| [`LiabilityLedger`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/LiabilityLedger.sol#L50-L120) | the hash chain of anchored epochs, and the inclusion check a proof is verified against | `0x4E869A55031DE3B0d030AEBECc66E523686761a2` |
+| [`AnchorCouncil`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/council/AnchorCouncil.sol#L19-L59) | the ledger's only anchorer; anchors only with a threshold of its members' approvals | `0xf6c33dE8F884fCcfE523DdC43d454AD7023D791b` |
+| [`StatementCourt`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/court/StatementCourt.sol#L59-L101) | lets anyone prove that a signed statement is false, or that two contradict each other | `0xE1Ffcb004Dd734F83ED0B194fdaFF5B0c7c5927B` |
+| [`WithholdingCourt`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/withholding/WithholdingCourt.sol#L49-L146) | a holder asks for their statement on chain; once the deadline passes unanswered, anyone can record the silence | `0xe980Cd4199d491D635a2d8fd563FC7730716a601` |
+| [`LedgerDirectory`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/directory/LedgerDirectory.sol#L39-L58) | the generations of ledger and courts; a successor only continues where its predecessor was sealed | `0x6C71162b46620Aa835681ADCDC4DB4ab9bB84ac8` |
+| [`NotaryPaymaster`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/paymaster/NotaryPaymaster.sol#L113-L134) | pays for a holder's court calls, and only for calls a court would accept | `0xD38824A16EaB632dD09aa36D3Bcf245097480aeb` |
+| [`EvidenceRegistry`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/evidence/EvidenceRegistry.sol#L78-L125) | one hash chain of batches per log: order lifecycle, delivery, review | `0xbF1F15F40cA8Dd63c070d223243febf6731EF480` |
+
+notaryd also watches the `WithholdingCourt` for statement requests and answers each one on chain. A holder
+who asks gets either an answer, or a deadline after which anyone can record on chain that none came. A
+missing answer is never just absent.
+
+## Who may ask for what
+
+- **A proof** needs an identity access token:
+  [RS256, from identity's issuer for this audience, unexpired, and an access token, not a refresh token](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/tokens/authenticator.go#L67-L105).
+  The token's subject is the caller.
+- **Liabilities**: a holder gets
+  [their own accounts only, and only from an epoch that is final](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/proving/prover.go#L121-L183)
+  on chain.
+- **An order**:
+  [the buyer, the merchant and whoever made a change get its lifecycle records; the courier and the order's parties get its delivery record](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/evidencing/prover.go#L19-L56).
+- **A review**:
+  [its author and the merchant, and the courier when it is a courier rating](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/notary/review_record.go#L26-L32).
+- A record not yet anchored, or anchored and not yet final, comes back
+  [counted as pending, not as absent](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/evidencing/prover.go#L81-L134).
+- **`ApproveEpoch`**: notary-watch demands a client certificate and
+  [answers the notary's identity and no other](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/wiring/watch_servers.go#L19).
+- **The three evidence logs** are each opened to the notary alone by the service that owns them; see
+  [review's evidence log](/services/review/#the-evidence-log).
+
+## When something is down
+
+- A feed that cannot be reached is
+  [told apart from one that refused](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/feeds/connection.go#L40-L47).
+  One failing log does not stop the other two, and a log's cursor moves only after its page is stored.
+- The proof API answers a chain it cannot reach with
+  [`503 chain_unavailable`, a store it cannot reach with `503 unavailable`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/httpapi/proofs.go#L122-L145),
+  and an epoch that is not anchored with `404`. An outage is never an epoch that does not exist.
+- The verifier has
+  [an exit status for each verdict](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/verifycli/exit.go#L3-L18):
+  a proof that is rejected, one that cannot be decided because the chain did not answer, and one whose
+  ledger has moved to a successor are three different answers.
+
+This is the rule [Unknown is not no](/learn/unknown-is-not-no/) describes, applied to commitments.
+
+## How the code is laid out
+
+Ports and adapters, with the names of what each package provides
+([the layout rule](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/CLAUDE.md#L174-L193)):
+
+| Directory | Holds |
+| --- | --- |
+| `internal/notary` | the domain and its ports, importing nothing but the standard library |
+| `internal/anchoring`, `internal/evidencing`, `internal/approving`, `internal/proving`, `internal/answering` | the use cases |
+| `internal/ethereum` | the only package that touches a chain |
+| `internal/payment`, `internal/feeds`, `internal/epochwatch` | the only packages that speak gRPC |
+| `internal/postgres` | the only package that touches the database |
+| `internal/wiring`, `cmd/` | the composition roots, the only code that uses dig |
+| `contracts/` | the Solidity contracts and their Foundry tests |
+
+## Data
+
+PostgreSQL, through pgx and code that sqlc generates. Epochs and their accounts, every anchor attempt,
+holders' registrations, the three logs' cursors, evidence batches with their leaves, and copies of the
+committed fields of each lifecycle, delivery and review record. A
+[single-row lease](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/migrations/00001_notary.sql#L2-L7)
+lets one writer anchor at a time. notary-watch keeps no database.
+
+## Operating it
+
+- Both running processes serve `/health/live`, `/health/ready` and `/metrics`.
+- notaryd refuses to start against a chain or a contract it was not configured for. Before it serves
+  anything it
+  [checks the ledger, the council, the courts, the directory, the paymaster and the registry](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/cmd/notaryd/main.go#L110-L142),
+  starting with
+  [the chain id and the ledger's code](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/ethereum/ledger.go#L48-L80).
+- The chain is public, so anyone can watch notary work: every anchor is a transaction to the addresses
+  above.

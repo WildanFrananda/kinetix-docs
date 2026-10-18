@@ -88,7 +88,11 @@ before it is written — writing the order page found an authorisation defect, w
 deployed before the page went out. Follow the money as well as the permissions: writing the pricing page
 found that a voucher could cut the courier's fee, because the discounted fee was what payment paid out.
 A new call between services is a new edge on the map, and the map may have to be re-laid out for it;
-`tests/architecture_map.test.ts` refuses a line that passes behind a box.
+`tests/architecture_map.test.ts` refuses a line that passes behind a box. Traffic between two processes of one
+service is not an edge and its operation is not in that service's `serves`: notary's `ApproveEpoch`, from
+notaryd to notary-watch, is described in the page's prose instead, because a served row with no caller
+would read as "nothing calls it". Adding notary (session 26) moved order to (335, 430); the layout was
+found by searching positions with the test's own geometry, not by eye.
 
 ## Decision records
 

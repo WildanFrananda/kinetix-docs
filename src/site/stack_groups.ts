@@ -100,9 +100,12 @@ const serviceEntries: readonly StackEntry[] = [
   ]),
   service("review", [
     { role: "stack.role.language", techs: [tech("PHP", "8.5", "php")] },
-    { role: "stack.role.framework", techs: [tech("Laravel", "13.29.0", "laravel"), tech("Octane", "2.19.1")] },
-    { role: "stack.role.runtime", techs: [tech("FrankenPHP")] },
-    { role: "stack.role.grpc", techs: [tech("grpc/grpc", "1.82.0")] },
+    { role: "stack.role.framework", techs: [tech("Laravel", "13.34.0", "laravel"), tech("Octane", "2.19.1")] },
+    { role: "stack.role.runtime", techs: [tech("FrankenPHP"), tech("RoadRunner", "2025.1.15")] },
+    {
+      role: "stack.role.grpc",
+      techs: [tech("grpc/grpc", "1.82.0"), tech("spiral/roadrunner-grpc", "3.6.0"), tech("Go", "1.26", "go")]
+    },
     { role: "stack.role.data", techs: [postgres, tech("Eloquent")] },
     { role: "stack.role.tests", techs: [tech("Pest", "4.7.8")] }
   ]),
@@ -136,6 +139,22 @@ const serviceEntries: readonly StackEntry[] = [
       techs: [tech("Typesense", "30.2"), tech("typesense-go", "3.2.0"), postgres, tech("pgx", "5.11.0"), tech("sqlc")]
     },
     { role: "stack.role.tests", techs: [tech("testify", "1.12.1")] }
+  ]),
+  service("notary", [
+    {
+      role: "stack.role.language",
+      techs: [tech("Go", "1.26.4", "go"), tech("Solidity", "0.8.37", "solidity")]
+    },
+    { role: "stack.role.framework", techs: [tech("go-ethereum", "1.17.8"), tech("dig", "1.19.0")] },
+    { role: "stack.role.grpc", techs: [tech("grpc-go", "1.84.0")] },
+    {
+      role: "stack.role.data",
+      techs: [postgres, tech("pgx", "5.11.0"), tech("sqlc", "1.31.1"), tech("goose", "3.28.0")]
+    },
+    {
+      role: "stack.role.tooling",
+      techs: [tech("Foundry", "1.8.3"), tech("OpenZeppelin", "5.7.0"), tech("account-abstraction", "0.8.0")]
+    }
   ])
 ];
 

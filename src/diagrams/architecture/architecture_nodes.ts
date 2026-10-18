@@ -98,7 +98,8 @@ export const architectureNodes: readonly MapNode[] = [
       "fleet.v1.CourierTelemetryService/DispatchCourier",
       "fleet.v1.FleetRegistryService/RegisterDriver",
       "fleet.v1.FleetRegistryService/ActivateDriver",
-      "shipping.v1.ShippingService/EstimateShippingOptions"
+      "shipping.v1.ShippingService/EstimateShippingOptions",
+      "fulfillment.v1.DeliveryEvidenceService/DeliveriesSince"
     ],
     routes: ["/api/v1/matching", "/ws/v1/matching/driver", "/ws/v1/matching/merchant"],
     stores: [postgres, "MinIO"],
@@ -134,7 +135,7 @@ export const architectureNodes: readonly MapNode[] = [
     y: 420,
     logo: "php",
     repository: `${github}/kinetix-review-service`,
-    serves: [],
+    serves: ["review.v1.ReviewEvidenceService/ReviewsSince"],
     routes: ["/api/v1/reviews"],
     stores: [postgres],
     deployed: true
@@ -154,7 +155,9 @@ export const architectureNodes: readonly MapNode[] = [
       "payment.v1.PaymentService/RefundEscrow",
       "payment.v1.PaymentService/SettleShippingFee",
       "payment.v1.PaymentService/GetEscrowStatus",
-      "payment.v1.PaymentService/RefundGoods"
+      "payment.v1.PaymentService/RefundGoods",
+      "payment.v1.LiabilityService/StreamLiabilitySnapshot",
+      "payment.v1.LiabilityRecordService/GetLiabilitySnapshotRecord"
     ],
     routes: ["/api/v1/payment"],
     stores: [postgres],
@@ -165,8 +168,8 @@ export const architectureNodes: readonly MapNode[] = [
     kind: "service",
     name: "order",
     summary: "service.order.owns",
-    x: 375,
-    y: 450,
+    x: 335,
+    y: 430,
     logo: "csharp",
     repository: `${github}/kinetix-order-service`,
     serves: [
@@ -176,7 +179,8 @@ export const architectureNodes: readonly MapNode[] = [
       "order.v1.OrderService/OrderDelivered",
       "order.v1.OrderService/OpenReturn",
       "order.v1.OrderService/ReturnGoodsReceived",
-      "order.v1.OrderService/OrdersChangedSince"
+      "order.v1.OrderService/OrdersChangedSince",
+      "order.v1.OrderLifecycleService/LifecycleEventsSince"
     ],
     routes: ["/api/v1/cart", "/api/v1/orders"],
     stores: [postgres, "Redis"],
@@ -250,6 +254,32 @@ export const architectureNodes: readonly MapNode[] = [
     serves: ["search.v1.SearchService/SearchProducts", "search.v1.SearchService/SuggestProducts"],
     routes: ["/api/v1/products/search", "/api/v1/products/suggest"],
     stores: ["Typesense", postgres],
+    deployed: true
+  },
+  {
+    id: "notary",
+    kind: "service",
+    name: "notary",
+    summary: "service.notary.owns",
+    x: 310,
+    y: 530,
+    logo: "go",
+    repository: `${github}/kinetix-notary-service`,
+    serves: [],
+    routes: ["/api/v1/proofs"],
+    stores: [postgres],
+    deployed: true
+  },
+  {
+    id: "chain",
+    kind: "external",
+    name: "Base Sepolia",
+    summary: "map.node.chain.summary",
+    x: 310,
+    y: 690,
+    serves: [],
+    routes: [],
+    stores: [],
     deployed: true
   },
   {

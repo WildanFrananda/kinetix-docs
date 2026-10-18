@@ -1,11 +1,12 @@
 ---
 title: review
-description: Ulasan produk dan rating kurir — apa kata pembeli tentang barang yang mereka beli dan tentang kurir yang mengantarnya. review bertanya ke order untuk setiap ulasan yang ia terima dan tidak menyimpan order sendiri.
-sourceHash: "5e1707699be8"
+description: Ulasan produk dan rating kurir — apa kata pembeli tentang barang yang mereka beli dan tentang kurir yang mengantarnya. review bertanya ke order untuk setiap ulasan yang ia terima, tidak menyimpan order sendiri, dan menyimpan log append-only dari setiap ulasan untuk di-anchor oleh notary.
+sourceHash: "c1171fc3a51e"
 ---
 
 import ServiceCalls from "../../../../components/ServiceCalls.astro";
 import ServiceFacts from "../../../../components/ServiceFacts.astro";
+import ServiceServes from "../../../../components/ServiceServes.astro";
 
 review menyimpan apa kata pembeli: rating satu sampai lima dan komentar untuk produk yang mereka beli, dan
 hal yang sama untuk kurir yang mengantarnya. review tidak memiliki order, produk, maupun kurir. Setiap ulasan
@@ -15,7 +16,7 @@ siapa yang mengantarnya — dan review mencatat ulasan tepat atas nama mereka.
 Tabel di halaman ini dibangkitkan dari data terverifikasi yang sama dengan
 [peta sistem](/id/architecture/system-map/), pada commit yang ditautkan dari setiap baris. Teksnya
 dicek terhadap review
-[v1.0.0](https://github.com/WildanFrananda/kinetix-review-service/tree/4f4572c1a49749e19dd4598500a6e1f037abb229),
+[v1.1.1](https://github.com/WildanFrananda/kinetix-review-service/tree/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2),
 versi yang berjalan di production.
 
 ## Sekilas
@@ -24,10 +25,16 @@ versi yang berjalan di production.
 
 ## Yang dilayani
 
-review tidak melayani gRPC: ia hanya pemanggil. Lewat HTTP, melalui gateway,
-[dua route menulis dan tiga membaca](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/routes/api.php#L16-L25):
+Lewat HTTP, melalui gateway,
+[dua route menulis dan tiga membaca](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/routes/api.php#L16-L25):
 pembeli mengirim ulasan produk atau rating kurir dengan access token, dan siapa pun boleh membaca ulasan
 sebuah produk, ulasan sebuah merchant, atau rating seorang kurir tanpa token.
+
+Lewat gRPC, review melayani satu operasi: log dari setiap ulasan yang ditulis, dibaca halaman demi halaman
+oleh notary, yang meng-anchor-nya di chain. Operasi ini dilayani proses kedua dari image yang sama, yang
+dijelaskan di [log evidence](#log-evidence).
+
+<ServiceServes service="review" />
 
 ## Yang dipanggil
 
@@ -39,40 +46,40 @@ review memanggil keluar untuk satu hal: bertanya ke order tentang order yang dis
 
 Pembeli mengirim order, produk, rating satu sampai lima, dan komentar opsional sampai seribu karakter — dan
 tidak ada hal lain yang berpengaruh. review meminta order itu ke order dan
-[menerima ulasan hanya jika](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Services/ProductReviewService.php#L19-L45)
+[menerima ulasan hanya jika](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Services/ProductReviewService.php#L19-L45)
 order itu milik akun pemilik token, sudah terkirim atau selesai, dan produknya ada di salah satu barisnya.
 Ulasan dicatat atas nama merchant yang disebut order sebagai penjual, merchant apa pun yang dibawa request,
 sehingga ulasan sebuah merchant selalu datang dari orang yang membeli dari merchant itu.
 
 Apakah sebuah order sudah terkirim
-[dibaca dari nilai status order](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Clients/GrpcOrderClient.php#L136-L150),
+[dibaca dari nilai status order](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Clients/GrpcOrderClient.php#L148-L162),
 `DELIVERED` atau `COMPLETED`, tidak pernah dari namanya sebagai teks. Satu produk dari satu order diulas
 sekali:
-[database menyimpan satu baris per order dan produk](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/database/migrations/2026_08_28_000001_create_product_reviews_table.php#L21),
+[database menyimpan satu baris per order dan produk](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/database/migrations/2026_08_28_000001_create_product_reviews_table.php#L21),
 dan percobaan kedua
-[dijawab `409`](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Repositories/EloquentProductReviewRepository.php#L13-L19),
+[dijawab `409`](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Repositories/EloquentProductReviewRepository.php#L14-L20),
 bukan dengan error yang membuat pembeli menebak apakah ulasannya tersimpan.
 
 ## Memberi rating kurir
 
 Rating kurir hanya menyebut order. Kurir yang dinilai adalah
-[kurir yang dicatat order sebagai pengantarnya](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Services/DriverRatingService.php#L29-L43)
+[kurir yang dicatat order sebagai pengantarnya](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Services/DriverRatingService.php#L29-L43)
 — kurir yang dilaporkan matching ke order saat paket sampai — sehingga pembeli tidak bisa menilai kurir
 yang tidak pernah membawa paketnya. Order tanpa kurir yang tercatat tidak bisa dinilai, dan
-[kurir sebuah order dinilai sekali](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/database/migrations/2026_09_07_000001_key_reviews_on_principals.php#L35).
+[kurir sebuah order dinilai sekali](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/database/migrations/2026_09_07_000001_key_reviews_on_principals.php#L35).
 Sisi order dari hal ini ada di [halaman order](/id/services/order/#yang-dilayani-lewat-grpc).
 
 ## Ketika order tidak bisa ditanya
 
 Ulasan yang tidak bisa dicek tidak disimpan, dan pembeli tidak diberi tahu bahwa ulasannya ditolak. Hanya
 OK, `NOT_FOUND`, dan `INVALID_ARGUMENT`
-[yang dihitung sebagai jawaban order tentang order itu](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Clients/GrpcOrderClient.php#L152-L156);
+[yang dihitung sebagai jawaban order tentang order itu](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Clients/GrpcOrderClient.php#L164-L168);
 status lain apa pun, timeout setelah lima detik, atau panggilan yang tidak pernah sampai ke order menjadi
-[`503` yang mengatakan tidak ada yang tersimpan](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Clients/OrderServiceUnavailableException.php#L10-L24),
+[`503` yang mengatakan tidak ada yang tersimpan](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Clients/OrderServiceUnavailableException.php#L10-L24),
 bukan `422` yang mengatakan order-nya tidak ada — lihat [Tidak tahu bukan berarti tidak](/id/learn/unknown-is-not-no/).
 
 Setelah
-[lima kegagalan berturut-turut, circuit terbuka selama tiga puluh detik](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Resilience/CircuitBreaker.php#L14-L18):
+[lima kegagalan berturut-turut, circuit terbuka selama tiga puluh detik](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Resilience/CircuitBreaker.php#L14-L18):
 review berhenti menghubungi order, menjawab `503` dengan `Retry-After`, lalu meloloskan satu request untuk
 mencari tahu apakah order sudah kembali.
 
@@ -80,10 +87,33 @@ mencari tahu apakah order sudah kembali.
 
 Tiga route baca tidak butuh token: pembeli membaca ulasan sebelum memutuskan membeli. Masing-masing menjawab
 rata-rata rating, jumlahnya, dan
-[lima belas ulasan terbaru per halaman](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Repositories/EloquentProductReviewRepository.php#L21-L25).
+[lima belas ulasan terbaru per halaman](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Repositories/EloquentProductReviewRepository.php#L22-L26).
 Sebuah ulasan menampilkan rating, komentar, produk, dan waktunya, dan
-[tidak pernah siapa penulisnya atau order mana](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Models/ProductReview.php#L25-L28):
+[tidak pernah siapa penulisnya atau order mana](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Models/ProductReview.php#L25-L28):
 halaman publik bukan tempat untuk memberi tahu dunia apa yang dibeli seseorang.
+
+## Log evidence
+
+Setiap ulasan dan rating juga masuk ke tabel ketiga, `review_evidence`: satu baris per ulasan, berisi
+[order, produk atau kurir, principal penulis, principal penjual, rating, dan SHA-256 dari
+komentarnya](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/database/migrations/2026_10_16_000001_reviews_keep_an_evidence_log.php#L18-L37),
+tidak pernah komentarnya sendiri. Aplikasi tidak menulisnya. Postgres yang menulis,
+[dari trigger di setiap tabel ulasan](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/database/migrations/2026_10_16_000001_reviews_keep_an_evidence_log.php#L83-L116),
+dalam statement dan transaction yang sama dengan ulasannya, jadi ulasan yang tersimpan pasti tercatat dan
+duplikat yang ditolak tidak. Tabelnya append-only, dan database yang menegakkannya:
+[update, delete, atau truncate ditolak](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/database/migrations/2026_10_16_000001_reviews_keep_an_evidence_log.php#L56-L68),
+begitu juga
+[insert yang tidak berasal dari sebuah ulasan](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/database/migrations/2026_10_16_000001_reviews_keep_an_evidence_log.php#L70-L81).
+
+Notary membacanya dengan `ReviewsSince`, seratus baris per halaman secara default dan paling banyak lima
+ratus. Cursor-nya adalah transaction id dan posisi baris, dan
+[hanya baris yang lebih tua dari setiap transaction yang masih terbuka yang disajikan](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Repositories/EloquentReviewEvidenceRepository.php#L29-L36):
+ulasan yang transaction-nya commit terlambat disajikan terlambat, tidak pernah terlewat. Kalau log-nya tidak
+bisa dibaca, jawabannya
+[`UNAVAILABLE`, tidak pernah halaman kosong](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Grpc/ReviewEvidenceService.php#L30-L45),
+yang akan dibaca notary sebagai "tidak ada yang baru". Apa yang dibuktikan log yang sudah di-anchor, dan
+bagaimana siapa pun bisa mengeceknya, ada di [Apa yang dibuktikan evidence](/id/verify/what-the-evidence-proves/)
+dan [Verifikasi evidence](/id/verify/evidence/).
 
 ## Bagaimana kodenya disusun
 
@@ -94,6 +124,9 @@ halaman publik bukan tempat untuk memberi tahu dunia apa yang dibeli seseorang.
 | `app/Clients/` | client gRPC untuk order dan detail order yang ia kembalikan |
 | `app/Repositories/` | repository Eloquent di balik kontrak di `app/Contracts/` |
 | `app/Resilience/` | circuit breaker di depan order |
+| `app/Grpc/`, `app/Evidence/` | handler feed evidence dan cursor-nya |
+| `grpc-worker.php`, `.rr.yaml` | proses gRPC: worker PHP dan konfigurasi RoadRunner |
+| `rr/` | build RoadRunner milik review sendiri, dalam Go: allow list peer dan metrics proses gRPC |
 | `generated/` | kelas PHP yang dibangkitkan protoc dari kontrak yang dipin |
 
 Controller tetap tipis dan service menerima repository serta client order-nya lewat kontrak, sehingga test
@@ -101,36 +134,48 @@ bisa memberi service sebuah client order palsu tanpa menyentuh lapisan database.
 
 ## Data
 
-PostgreSQL, lewat Eloquent, menyimpan dua tabel: `product_reviews` dan `driver_ratings`. Setiap baris
-menyimpan order, principal identity pembeli, rating, dan komentar; ulasan produk juga menyimpan produk dan
-principal merchant, rating kurir menyimpan principal kurir. review menyimpan principal, tidak pernah nomor
-akun, dan tidak pernah salinan order.
+PostgreSQL menyimpan tiga tabel. `product_reviews` dan `driver_ratings`, lewat Eloquent, menyimpan order,
+principal identity pembeli, rating, dan komentar; ulasan produk juga menyimpan produk dan principal
+merchant, rating kurir menyimpan principal kurir. `review_evidence` adalah log append-only di atas, ditulis
+oleh trigger. review menyimpan principal, tidak pernah nomor akun, dan tidak pernah salinan order.
 
 ## Siapa boleh melakukan apa
 
 - **Pembeli** menulis ulasan dan rating dengan access token identity —
-  [hanya access token](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Security/TokenVerifier.php#L35-L59),
+  [hanya access token](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Security/TokenVerifier.php#L35-L59),
   dari issuer identity untuk audience ini — dan hanya untuk order miliknya yang sudah terkirim; lihat
   [Token yang bisa ditarik kembali](/id/learn/tokens-that-can-be-taken-back/).
 - **Siapa pun** membaca ulasan dan rating, tanpa tahu siapa yang memberikannya.
 - **Tidak ada yang** memilih siapa yang diulas: merchant dan kurir datang dari order.
+- **Notary, dan tidak ada yang lain,** membaca log evidence. Proses gRPC meminta sertifikat client, dan
+  plugin RoadRunner milik review
+  [menolak pemanggil tanpa identitas service, dan setiap panggilan yang tidak diberikan allow list-nya](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/rr/peers/plugin.go#L68-L96);
+  production hanya memberi notary `ReviewsSince`.
 - **Untuk memanggil order**, review menunjukkan
-  [sertifikat dari CA Kinetix](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Security/ServiceIdentity.php#L13-L21)
+  [sertifikat dari CA Kinetix](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Security/ServiceIdentity.php#L13-L21)
   yang menyebut review, dan order
-  [hanya mengizinkan review membaca order, tanpa panggilan lain](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Security/PeerAllowList.cs#L57-L71);
+  [hanya mengizinkan review membaca order, tanpa panggilan lain](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Security/PeerAllowList.cs#L57-L71);
   lihat [Siapa yang memanggil?](/id/learn/who-is-calling/).
 
 ## Mengoperasikannya
 
-- review menjalankan Laravel Octane di atas FrankenPHP dalam worker mode: satu worker melayani request demi
+review berjalan sebagai dua proses dari satu image: server HTTP, dan server gRPC yang menyajikan log
+evidence.
+
+- Proses HTTP adalah Laravel Octane di atas FrankenPHP dalam worker mode: satu worker melayani request demi
   request tanpa mem-boot framework lagi. Client order, channel-nya, dan breaker-nya
-  [tetap hangat antar-request](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/config/octane.php#L142-L148),
+  [tetap hangat antar-request](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/config/octane.php#L142-L148),
   sehingga setiap worker memegang satu koneksi ke order dan satu breaker.
 - `/api/health` menjawab ketika prosesnya hidup; `/api/health/ready`
-  [menjalankan query sungguhan](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Http/Controllers/HealthController.php#L19-L34),
+  [menjalankan query sungguhan](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Http/Controllers/HealthController.php#L19-L34),
   sehingga container dianggap sehat hanya ketika service bisa melayani.
 - `/api/metrics` menyajikan teks Prometheus dengan nama-nama yang diberikan kontrak platform untuk review,
   termasuk panggilan ke order dan panggilan yang ditolak breaker.
 - Saat `SIGTERM`, proses yang menjalankan Octane
-  [menunggu sampai dua puluh lima detik agar server keluar](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Console/OctaneServerExitWait.php#L11-L36)
+  [menunggu sampai dua puluh lima detik agar server keluar](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Console/OctaneServerExitWait.php#L11-L36)
   sebelum ia berakhir, sehingga container tidak berhenti di bawah server yang masih mematikan dirinya.
+- Proses gRPC adalah
+  [RoadRunner, yang menjalankan worker PHP lewat pipe](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/.rr.yaml#L1-L20),
+  dengan TLS yang mewajibkan dan memverifikasi sertifikat pemanggil. PHP tidak bisa melayani gRPC sendirian,
+  dan RoadRunner tidak memberikan sertifikat client ke worker PHP-nya, jadi allow list dan metrics proses ini
+  adalah plugin Go yang dikompilasi ke build RoadRunner milik review. Logika review tetap PHP.

@@ -17,6 +17,7 @@ import laravelLogo from "devicon/icons/laravel/laravel-original.svg?url";
 import scalaLogo from "devicon/icons/scala/scala-original.svg?url";
 import cplusplusLogo from "devicon/icons/cplusplus/cplusplus-original.svg?url";
 import goLogo from "devicon/icons/go/go-original.svg?url";
+import solidityLogo from "devicon/icons/solidity/solidity-original.svg?url";
 import flutterLogo from "devicon/icons/flutter/flutter-original.svg?url";
 import dartLogo from "devicon/icons/dart/dart-original.svg?url";
 import postgresqlLogo from "devicon/icons/postgresql/postgresql-original.svg?url";
@@ -58,6 +59,7 @@ export const logos = {
   scala: scalaLogo,
   cplusplus: cplusplusLogo,
   go: goLogo,
+  solidity: solidityLogo,
   flutter: flutterLogo,
   dart: dartLogo,
   postgresql: postgresqlLogo,

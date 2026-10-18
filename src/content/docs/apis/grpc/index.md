@@ -16,7 +16,7 @@ Every gRPC service and message in Kinetix is defined once, in [kinetix-contracts
 | [`catalog.v1`](/apis/grpc/catalog-v1/) | [catalog](/services/catalog/) | 1 | 3 | 8 | 0 |
 | [`common.v1`](/apis/grpc/common-v1/) | — | 0 | 0 | 7 | 3 |
 | [`fleet.v1`](/apis/grpc/fleet-v1/) | [matching](/services/matching/) | 2 | 4 | 8 | 0 |
-| [`fulfillment.v1`](/apis/grpc/fulfillment-v1/) | [warehouse](/services/warehouse/) | 4 | 11 | 24 | 0 |
+| [`fulfillment.v1`](/apis/grpc/fulfillment-v1/) | [matching](/services/matching/), [warehouse](/services/warehouse/) | 4 | 11 | 24 | 0 |
 | [`geo.v1`](/apis/grpc/geo-v1/) | [identity](/services/identity/) | 1 | 2 | 4 | 2 |
 | [`identity.v1`](/apis/grpc/identity-v1/) | [identity](/services/identity/) | 1 | 6 | 15 | 2 |
 | [`notary.v1`](/apis/grpc/notary-v1/) | — | 1 | 1 | 5 | 0 |
@@ -25,7 +25,7 @@ Every gRPC service and message in Kinetix is defined once, in [kinetix-contracts
 | [`payment.v1`](/apis/grpc/payment-v1/) | [payment](/services/payment/) | 3 | 8 | 15 | 2 |
 | [`pricing.v1`](/apis/grpc/pricing-v1/) | [pricing](/services/pricing/) | 1 | 6 | 16 | 2 |
 | [`returns.v1`](/apis/grpc/returns-v1/) | — | 1 | 2 | 4 | 0 |
-| [`review.v1`](/apis/grpc/review-v1/) | — | 1 | 1 | 3 | 1 |
+| [`review.v1`](/apis/grpc/review-v1/) | [review](/services/review/) | 1 | 1 | 3 | 1 |
 | [`search.v1`](/apis/grpc/search-v1/) | [search](/services/search/) | 1 | 2 | 9 | 1 |
 | [`shipping.v1`](/apis/grpc/shipping-v1/) | [matching](/services/matching/) | 1 | 1 | 3 | 0 |
 

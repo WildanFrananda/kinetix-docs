@@ -16,7 +16,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`ReviewsSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/review/v1/review.proto#L9) | [`ReviewsSinceRequest`](#reviewssincerequest) → [`ReviewsSinceResponse`](#reviewssinceresponse) | — | — |
+| [`ReviewsSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/review/v1/review.proto#L9) | [`ReviewsSinceRequest`](#reviewssincerequest) → [`ReviewsSinceResponse`](#reviewssinceresponse) | [review](/services/review/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/feeds/review_feed.go#L50) |
 
 ## Messages
 

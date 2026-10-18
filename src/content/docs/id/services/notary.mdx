@@ -1,0 +1,204 @@
+---
+title: notary
+description: Komitmen yang bisa dicek siapa pun tanpa memercayai Kinetix — apa yang platform utangkan ke setiap pemegang akun, dan apa yang terjadi pada setiap order, pengiriman, dan ulasan — di-anchor di chain publik. notary tidak memiliki saldo, order, maupun ulasan, dan tidak pernah memindahkan uang.
+sourceHash: "8f4903b8df60"
+---
+
+import ServiceCalls from "../../../../components/ServiceCalls.astro";
+import ServiceFacts from "../../../../components/ServiceFacts.astro";
+
+notary membuat dua jenis komitmen di chain publik. Yang pertama adalah apa yang platform utangkan: setiap jam
+secara default, ia mengambil snapshot payment atas saldo setiap pemegang, berkomitmen pada seluruh himpunan
+beserta totalnya, dan meng-anchor komitmen itu sehingga setiap pemegang bisa membuktikan saldonya sendiri ada
+di dalamnya. Yang kedua adalah apa yang terjadi: ia membaca log append-only milik order, matching, dan review,
+berkomitmen pada setiap record dengan salt miliknya sendiri, dan meng-anchor satu batch per log. notary
+[tidak memiliki saldo, order, maupun ulasan, dan tidak pernah memindahkan uang](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/CLAUDE.md#L12-L20):
+ia membaca apa yang ditulis pemiliknya dan berkomitmen padanya.
+
+Apa yang dibuktikan komitmen itu, dan cara mengeceknya langsung di browser ini, ada di bagian Verifikasi:
+[Apa yang dibuktikan proof of liabilities](/id/verify/what-the-proof-proves/),
+[Apa yang dibuktikan evidence](/id/verify/what-the-evidence-proves/), dan dua verifier-nya. Halaman ini
+adalah service di belakangnya.
+
+Tabel di halaman ini dibangkitkan dari data terverifikasi yang sama dengan
+[peta sistem](/id/architecture/system-map/), pada commit yang ditautkan dari setiap baris. Teksnya dicek
+terhadap notary
+[v1.5.0](https://github.com/WildanFrananda/kinetix-notary-service/tree/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c),
+versi yang berjalan di production.
+
+## Sekilas
+
+<ServiceFacts service="notary" />
+
+notary adalah satu-satunya service yang berbagi bahasa: Go, sama seperti search, karena domainnya
+membutuhkan go-ethereum. Kontraknya ditulis dalam Solidity, di-build dan dites dengan Foundry.
+
+## Yang dilayani
+
+Lewat HTTP, melalui gateway,
+[empat route](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/httpapi/router.go#L20-L25),
+semuanya di balik access token identity:
+
+| Route | Menjawab |
+| --- | --- |
+| `GET /api/v1/proofs/liabilities/{epoch}` | proof of liabilities milik pemanggil sendiri untuk sebuah epoch, atau yang terbaru |
+| `POST /api/v1/proofs/registrations` | mendaftarkan alamat yang akan dipakai pemegang untuk meminta statement ke chain |
+| `GET /api/v1/proofs/evidence/orders/{order}` | proof lifecycle dan pengiriman sebuah order yang melibatkan pemanggil |
+| `GET /api/v1/proofs/evidence/reviews/{review}` | proof sebuah ulasan yang melibatkan pemanggil |
+
+Lewat gRPC, notary melayani satu operasi, dan hanya untuk dirinya sendiri: `ApproveEpoch`, di antara dua
+proses yang berjalan, yang dijelaskan [di bawah](#dua-proses-dan-dua-alat). Lalu lintas di dalam satu
+service tidak digambar di peta sistem, jadi operasi ini tidak muncul di tabel halaman ini.
+
+## Yang dipanggil
+
+notary membaca dari empat service dan menulis ke satu chain. Ia membaca snapshot liability milik payment dan
+catatan payment sendiri atas snapshot itu, serta tiga log evidence. Di chain ia mengirim anchor-nya, membaca
+permintaan statement dari para pemegang, dan memanggil view kontrak.
+
+<ServiceCalls service="notary" />
+
+## Dua proses dan dua alat
+
+Satu image membawa
+[lima program](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/Dockerfile#L28-L52).
+Production menjalankan tiga di antaranya:
+
+- **notaryd**, service-nya. Ia
+  [meng-anchor liabilities dan evidence, menjawab permintaan statement, dan menyajikan API proof](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/cmd/notaryd/main.go#L36-L61).
+- **notary-watch**, anggota kedua council. Ia
+  [menyetujui sebuah epoch hanya setelah mengeceknya sendiri](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/cmd/notary-watch/main.go#L82-L122),
+  tidak menyimpan database, dan menandatangani di luar chain: ia tidak pernah mengirim transaksi.
+- **notary-migrate**, yang menerapkan skema sekali lalu keluar.
+
+Dua sisanya adalah alat untuk orang di luar Kinetix:
+- **notary-verify**, command line milik auditor, mengecek sebuah proof terhadap chain. Build browser-nya
+  yang berjalan di halaman Verifikasi situs ini.
+- **notary-sponsor**, command line milik pemegang, membawa perkara seorang pemegang ke pengadilan di chain,
+  dibayari oleh paymaster milik notary.
+
+## Meng-anchor apa yang diutangkan
+
+Setiap jam secara default
+([`defaultEpochInterval`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/config/daemon.go#L43)),
+notaryd membangun sebuah epoch:
+
+1. Ia [meminta snapshot ke payment](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/anchoring/anchorer.go#L150-L164)
+   atas apa yang diutangkan ke setiap pemegang. Kalau payment tidak bisa menjawab, tidak ada epoch yang
+   dibangun, dan tick berikutnya mencoba lagi.
+2. Ia berkomitmen pada setiap saldo dengan salt miliknya sendiri, membangun sum tree yang root-nya membawa
+   total, dan menyimpan epoch-nya.
+3. Ia meminta notary-watch untuk menyetujuinya. Watch tidak memercayai kata notaryd. Ia
+   [meminta catatan payment sendiri atas snapshot itu](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/approving/approver.go#L152-L246)
+   dan membandingkan jumlah serta totalnya, mengecek epoch berikutnya dan head ledger, dan membangun ulang
+   tree-nya sendiri sebelum menandatangani.
+4. Dengan dua tanda tangan, diurutkan menurut penandatangan, notaryd mengirim anchor ke `AnchorCouncil`,
+   satu-satunya anchorer ledger, yang
+   [menolak persetujuan di bawah ambang batasnya, penandatangan yang bukan anggota, atau persetujuan yang tidak berurutan](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/council/AnchorCouncil.sol#L141-L168).
+
+Penolakan dari watch
+[menelantarkan epoch itu](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/anchoring/anchorer.go#L244-L251).
+Kegagalan lain dicoba ulang. Jadi sebuah komitmen hanya sampai ke chain setelah dua pihak mengeceknya ke
+payment secara terpisah, dan chain sendiri yang menegakkannya.
+
+## Meng-anchor apa yang terjadi
+
+notaryd membaca tiga log append-only, masing-masing milik service yang menulisnya: lifecycle log order,
+delivery evidence matching, dan log evidence review. Setiap record mendapat salt miliknya sendiri dan menjadi
+sebuah leaf. Satu batch per log ditutup setiap 24 jam secara default
+([`defaultEvidenceBatch`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/config/daemon.go#L46)),
+dan
+[hanya satu batch yang sedang diproses di antara ketiganya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/evidencing/closer.go#L42-L60).
+Batch dikirim ke `EvidenceRegistry`, dengan
+[key yang tidak boleh sama dengan key anchorer liabilities](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/evidencing/registry_check.go#L46-L70).
+
+Yang disimpan notary dari sebuah pengiriman atau ulasan adalah field record-nya dan hash yang dicatat
+pemiliknya: SHA-256 foto dan tanda tangan, SHA-256 komentar. notary tidak pernah melihat foto atau
+komentarnya.
+
+## Di chain
+
+Semuanya ada di Base Sepolia, chain id 84532. Alamat di bawah adalah
+[yang dipakai production](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/deploy/base-sepolia.env#L1-L55).
+
+| Kontrak | Fungsinya | Alamat |
+| --- | --- | --- |
+| [`LiabilityLedger`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/LiabilityLedger.sol#L50-L120) | hash chain dari epoch yang sudah di-anchor, dan pengecekan inclusion tempat sebuah proof diverifikasi | `0x4E869A55031DE3B0d030AEBECc66E523686761a2` |
+| [`AnchorCouncil`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/council/AnchorCouncil.sol#L19-L59) | satu-satunya anchorer ledger; meng-anchor hanya dengan persetujuan anggota yang mencapai ambang batas | `0xf6c33dE8F884fCcfE523DdC43d454AD7023D791b` |
+| [`StatementCourt`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/court/StatementCourt.sol#L59-L101) | memungkinkan siapa pun membuktikan bahwa statement yang ditandatangani itu salah, atau bahwa dua statement saling bertentangan | `0xE1Ffcb004Dd734F83ED0B194fdaFF5B0c7c5927B` |
+| [`WithholdingCourt`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/withholding/WithholdingCourt.sol#L49-L146) | pemegang meminta statement-nya di chain; setelah tenggat lewat tanpa jawaban, siapa pun bisa mencatat diamnya | `0xe980Cd4199d491D635a2d8fd563FC7730716a601` |
+| [`LedgerDirectory`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/directory/LedgerDirectory.sol#L39-L58) | generasi ledger dan pengadilan; penerus hanya melanjutkan dari titik pendahulunya disegel | `0x6C71162b46620Aa835681ADCDC4DB4ab9bB84ac8` |
+| [`NotaryPaymaster`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/paymaster/NotaryPaymaster.sol#L113-L134) | membayari panggilan pengadilan milik pemegang, dan hanya panggilan yang akan diterima pengadilan | `0xD38824A16EaB632dD09aa36D3Bcf245097480aeb` |
+| [`EvidenceRegistry`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/evidence/EvidenceRegistry.sol#L78-L125) | satu hash chain batch per log: lifecycle order, pengiriman, ulasan | `0xbF1F15F40cA8Dd63c070d223243febf6731EF480` |
+
+notaryd juga mengamati `WithholdingCourt` untuk permintaan statement dan menjawab setiap permintaan di chain.
+Pemegang yang meminta mendapat jawaban, atau tenggat yang setelahnya siapa pun bisa mencatat di chain bahwa
+tidak ada jawaban. Jawaban yang tidak datang tidak pernah sekadar hilang.
+
+## Siapa boleh meminta apa
+
+- **Proof** membutuhkan access token identity:
+  [RS256, dari issuer identity untuk audience ini, belum kedaluwarsa, dan access token, bukan refresh token](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/tokens/authenticator.go#L67-L105).
+  Subject token-nya adalah pemanggil.
+- **Liabilities**: pemegang mendapat
+  [akunnya sendiri saja, dan hanya dari epoch yang sudah final](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/proving/prover.go#L121-L183)
+  di chain.
+- **Order**:
+  [pembeli, merchant, dan siapa pun yang membuat perubahan mendapat record lifecycle-nya; kurir dan pihak-pihak order mendapat record pengirimannya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/evidencing/prover.go#L19-L56).
+- **Ulasan**:
+  [penulisnya dan merchant, ditambah kurir kalau ulasannya adalah rating kurir](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/notary/review_record.go#L26-L32).
+- Record yang belum di-anchor, atau sudah di-anchor tapi belum final, dikembalikan
+  [sebagai hitungan pending, bukan sebagai tidak ada](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/evidencing/prover.go#L81-L134).
+- **`ApproveEpoch`**: notary-watch meminta sertifikat client dan
+  [hanya menjawab identitas notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/wiring/watch_servers.go#L19).
+- **Tiga log evidence** masing-masing dibuka hanya untuk notary oleh service pemiliknya; lihat
+  [log evidence review](/id/services/review/#log-evidence).
+
+## Ketika ada yang mati
+
+- Feed yang tidak bisa dijangkau
+  [dibedakan dari feed yang menolak](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/feeds/connection.go#L40-L47).
+  Satu log yang gagal tidak menghentikan dua lainnya, dan cursor sebuah log baru maju setelah halamannya
+  tersimpan.
+- API proof menjawab chain yang tidak bisa dijangkau dengan
+  [`503 chain_unavailable`, store yang tidak bisa dijangkau dengan `503 unavailable`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/httpapi/proofs.go#L122-L145),
+  dan epoch yang belum di-anchor dengan `404`. Gangguan tidak pernah dilaporkan sebagai epoch yang tidak ada.
+- Verifier punya
+  [exit status untuk setiap putusan](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/verifycli/exit.go#L3-L18):
+  proof yang ditolak, proof yang tidak bisa diputuskan karena chain tidak menjawab, dan proof yang ledger-nya
+  sudah pindah ke penerus adalah tiga jawaban yang berbeda.
+
+Inilah aturan [Tidak tahu bukan berarti tidak](/id/learn/unknown-is-not-no/), diterapkan pada komitmen.
+
+## Bagaimana kodenya disusun
+
+Ports and adapters, dengan nama sesuai apa yang disediakan setiap package
+([aturan layout-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/CLAUDE.md#L174-L193)):
+
+| Direktori | Isinya |
+| --- | --- |
+| `internal/notary` | domain dan port-nya, tanpa import apa pun selain standard library |
+| `internal/anchoring`, `internal/evidencing`, `internal/approving`, `internal/proving`, `internal/answering` | use case |
+| `internal/ethereum` | satu-satunya package yang menyentuh chain |
+| `internal/payment`, `internal/feeds`, `internal/epochwatch` | satu-satunya package yang berbicara gRPC |
+| `internal/postgres` | satu-satunya package yang menyentuh database |
+| `internal/wiring`, `cmd/` | composition root, satu-satunya kode yang memakai dig |
+| `contracts/` | kontrak Solidity dan test Foundry-nya |
+
+## Data
+
+PostgreSQL, lewat pgx dan kode yang dibangkitkan sqlc. Epoch dan akunnya, setiap percobaan anchor,
+registrasi pemegang, cursor ketiga log, batch evidence beserta leaf-nya, dan salinan field yang dikomitmenkan
+dari setiap record lifecycle, pengiriman, dan ulasan. Sebuah
+[lease satu baris](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/migrations/00001_notary.sql#L2-L7)
+membuat hanya satu writer yang meng-anchor pada satu waktu. notary-watch tidak menyimpan database.
+
+## Mengoperasikannya
+
+- Kedua proses yang berjalan menyajikan `/health/live`, `/health/ready`, dan `/metrics`.
+- notaryd menolak start terhadap chain atau kontrak yang bukan konfigurasinya. Sebelum melayani apa pun, ia
+  [mengecek ledger, council, pengadilan, directory, paymaster, dan registry](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/cmd/notaryd/main.go#L110-L142),
+  dimulai dari
+  [chain id dan kode ledger](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/ethereum/ledger.go#L48-L80).
+- Chain-nya publik, jadi siapa pun bisa melihat notary bekerja: setiap anchor adalah transaksi ke alamat-alamat
+  di atas.

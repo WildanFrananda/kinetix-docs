@@ -188,7 +188,7 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "order",
     kind: "grpc",
     calls: [
-      { operation: "order.v1.OrderService/GetOrderDetails", source: { label: "GrpcOrderClient.php:71", href: "https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Clients/GrpcOrderClient.php#L71" } }
+      { operation: "order.v1.OrderService/GetOrderDetails", source: { label: "GrpcOrderClient.php:83", href: "https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Clients/GrpcOrderClient.php#L83" } }
     ]
   },
   {
@@ -231,6 +231,49 @@ export const architectureEdges: readonly MapEdge[] = [
     kind: "grpc",
     calls: [
       { operation: "order.v1.OrderService/OrdersChangedSince", source: { label: "client.go:62", href: "https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/orderclient/client.go#L62" } }
+    ]
+  },
+  {
+    from: "notary",
+    to: "payment",
+    kind: "grpc",
+    calls: [
+      { operation: "payment.v1.LiabilityService/StreamLiabilitySnapshot", source: { label: "source.go:61", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/payment/source.go#L61" } },
+      { operation: "payment.v1.LiabilityRecordService/GetLiabilitySnapshotRecord", source: { label: "records.go:56", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/payment/records.go#L56" } }
+    ]
+  },
+  {
+    from: "notary",
+    to: "order",
+    kind: "grpc",
+    calls: [
+      { operation: "order.v1.OrderLifecycleService/LifecycleEventsSince", source: { label: "lifecycle_feed.go:50", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/feeds/lifecycle_feed.go#L50" } }
+    ]
+  },
+  {
+    from: "notary",
+    to: "matching",
+    kind: "grpc",
+    calls: [
+      { operation: "fulfillment.v1.DeliveryEvidenceService/DeliveriesSince", source: { label: "delivery_feed.go:50", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/feeds/delivery_feed.go#L50" } }
+    ]
+  },
+  {
+    from: "notary",
+    to: "review",
+    kind: "grpc",
+    calls: [
+      { operation: "review.v1.ReviewEvidenceService/ReviewsSince", source: { label: "review_feed.go:50", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/feeds/review_feed.go#L50" } }
+    ]
+  },
+  {
+    from: "notary",
+    to: "chain",
+    kind: "external",
+    calls: [
+      { operation: "eth_sendRawTransaction", source: { label: "transactor.go:189", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/ethereum/transactor.go#L189" } },
+      { operation: "eth_getLogs", source: { label: "withholding_court.go:184", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/ethereum/withholding_court.go#L184" } },
+      { operation: "eth_call", source: { label: "ledger.go:268", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/ethereum/ledger.go#L268" } }
     ]
   }
 ];

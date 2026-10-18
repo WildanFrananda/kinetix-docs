@@ -1,7 +1,7 @@
 ---
 title: order
 description: Keranjang, checkout, order, dan retur — service yang mengubah keranjang menjadi order yang sudah dibayar dengan bertanya ke catalog, pricing, matching, warehouse, dan payment, tanpa memiliki satu pun fakta mereka.
-sourceHash: "f001843ee7ed"
+sourceHash: "667cfe010aa6"
 ---
 
 import ServiceCalls from "../../../../components/ServiceCalls.astro";
@@ -30,6 +30,11 @@ membaca order kembali,
 [lengkap dengan merchant yang menjualnya dan kurir yang mengantarnya](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/OrderGrpcServerService.cs#L81-L88)
 — dari situlah review tahu siapa yang diulas. Setiap baris menyebut siapa yang memanggilnya, ditautkan ke baris kode yang
 memanggil.
+
+Sejak v1.1.0, versi yang berjalan di production, order juga menyajikan
+[lifecycle log-nya](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Infrastructure/Grpc/OrderLifecycleGrpcService.cs#L19-L49), setiap perubahan pada setiap order, halaman demi halaman, ke
+[notary](/id/services/notary/), yang meng-anchor-nya di chain. Bagian lain halaman ini belum dicek ulang
+terhadap v1.1.0.
 
 <ServiceServes service="order" />
 

@@ -28,6 +28,11 @@ Other services tell order what happened to an order — packed, delivered, retur
 — which is how review knows whom a review is about. Each row names who calls it, linked to the line that
 does.
 
+Since v1.1.0, which production runs, order also serves
+[its lifecycle log](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Infrastructure/Grpc/OrderLifecycleGrpcService.cs#L19-L49), every change of every order, page by page, to the
+[notary](/services/notary/), which anchors it on chain. The rest of this page has not yet been re-checked
+against v1.1.0.
+
 <ServiceServes service="order" />
 
 ## What it calls

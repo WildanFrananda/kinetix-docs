@@ -2,7 +2,7 @@
 title: "review.v1"
 description: "Paket gRPC review.v1 di kinetix-contracts 1.3.0: service, message, dan enum-nya."
 editUrl: false
-sourceHash: "af4ae31daa18"
+sourceHash: "4757fc7bcaa9"
 ---
 
 <div class="grpc-reference">
@@ -17,7 +17,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`ReviewsSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/review/v1/review.proto#L9) | [`ReviewsSinceRequest`](#reviewssincerequest) → [`ReviewsSinceResponse`](#reviewssinceresponse) | — | — |
+| [`ReviewsSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/review/v1/review.proto#L9) | [`ReviewsSinceRequest`](#reviewssincerequest) → [`ReviewsSinceResponse`](#reviewssinceresponse) | [review](/id/services/review/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/feeds/review_feed.go#L50) |
 
 ## Message
 

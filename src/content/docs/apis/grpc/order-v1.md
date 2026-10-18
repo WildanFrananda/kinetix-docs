@@ -16,7 +16,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`LifecycleEventsSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/order/v1/lifecycle.proto#L10) | [`LifecycleEventsSinceRequest`](#lifecycleeventssincerequest) → [`LifecycleEventsSinceResponse`](#lifecycleeventssinceresponse) | — | — |
+| [`LifecycleEventsSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/order/v1/lifecycle.proto#L10) | [`LifecycleEventsSinceRequest`](#lifecycleeventssincerequest) → [`LifecycleEventsSinceResponse`](#lifecycleeventssinceresponse) | [order](/services/order/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/feeds/lifecycle_feed.go#L50) |
 
 ### OrderService
 
@@ -24,7 +24,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`GetOrderDetails`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/order/v1/order.proto#L9) | [`GetOrderDetailsRequest`](#getorderdetailsrequest) → [`GetOrderDetailsResponse`](#getorderdetailsresponse) | [order](/services/order/) | [review](https://github.com/WildanFrananda/kinetix-review-service/blob/4f4572c1a49749e19dd4598500a6e1f037abb229/app/Clients/GrpcOrderClient.php#L71) |
+| [`GetOrderDetails`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/order/v1/order.proto#L9) | [`GetOrderDetailsRequest`](#getorderdetailsrequest) → [`GetOrderDetailsResponse`](#getorderdetailsresponse) | [order](/services/order/) | [review](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Clients/GrpcOrderClient.php#L83) |
 | [`ListOrdersForPrincipal`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/order/v1/order.proto#L10) | [`ListOrdersForPrincipalRequest`](#listordersforprincipalrequest) → [`ListOrdersForPrincipalResponse`](#listordersforprincipalresponse) | [order](/services/order/) | — |
 | [`FulfillmentPacked`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/order/v1/order.proto#L11) | [`FulfillmentPackedRequest`](#fulfillmentpackedrequest) → [`FulfillmentPackedResponse`](#fulfillmentpackedresponse) | [order](/services/order/) | [warehouse](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/app/clients/order/grpc_client.rb#L51) |
 | [`OrderDelivered`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/order/v1/order.proto#L12) | [`OrderDeliveredRequest`](#orderdeliveredrequest) → [`OrderDeliveredResponse`](#orderdeliveredresponse) | [order](/services/order/) | [matching](https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse/clients/order_grpc.ex#L66) |

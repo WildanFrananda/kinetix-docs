@@ -27,6 +27,12 @@ the version in production.
 Escrow is reached only over gRPC, and only order calls it: to hold the money at checkout, and later to
 settle, refund or release it as the order's life plays out.
 
+Since v1.0.0, which production runs, payment also serves two read-only views of what it owes, both for the
+[notary](/services/notary/): the
+[liability snapshot the notary commits to](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/grpc/LiabilityGrpcServerService.java#L41-L73), and
+[payment's own record of each snapshot](https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/grpc/LiabilityRecordGrpcServerService.java#L34-L60), which the notary's second process checks it against. The
+rest of this page has not yet been re-checked against v1.0.0.
+
 <ServiceServes service="payment" />
 
 ## What it calls

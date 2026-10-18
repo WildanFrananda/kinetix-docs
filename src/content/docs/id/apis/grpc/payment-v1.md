@@ -2,7 +2,7 @@
 title: "payment.v1"
 description: "Paket gRPC payment.v1 di kinetix-contracts 1.3.0: service, message, dan enum-nya."
 editUrl: false
-sourceHash: "076512a50012"
+sourceHash: "38d97e745260"
 ---
 
 <div class="grpc-reference">
@@ -17,7 +17,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`GetLiabilitySnapshotRecord`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability_record.proto#L9) | [`GetLiabilitySnapshotRecordRequest`](#getliabilitysnapshotrecordrequest) → [`GetLiabilitySnapshotRecordResponse`](#getliabilitysnapshotrecordresponse) | — | — |
+| [`GetLiabilitySnapshotRecord`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability_record.proto#L9) | [`GetLiabilitySnapshotRecordRequest`](#getliabilitysnapshotrecordrequest) → [`GetLiabilitySnapshotRecordResponse`](#getliabilitysnapshotrecordresponse) | [payment](/id/services/payment/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/payment/records.go#L56) |
 
 ### LiabilityService
 
@@ -25,7 +25,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`StreamLiabilitySnapshot`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability.proto#L9) | [`StreamLiabilitySnapshotRequest`](#streamliabilitysnapshotrequest) → `stream` [`StreamLiabilitySnapshotResponse`](#streamliabilitysnapshotresponse) | — | — |
+| [`StreamLiabilitySnapshot`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability.proto#L9) | [`StreamLiabilitySnapshotRequest`](#streamliabilitysnapshotrequest) → `stream` [`StreamLiabilitySnapshotResponse`](#streamliabilitysnapshotresponse) | [payment](/id/services/payment/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/payment/source.go#L61) |
 
 ### PaymentService
 

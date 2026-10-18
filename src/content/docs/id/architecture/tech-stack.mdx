@@ -1,7 +1,7 @@
 ---
 title: Tech stack
 description: Setiap bahasa, framework, library, dan komponen platform yang dipakai Kinetix, dengan versi yang dipin di tiap repositori.
-sourceHash: "f90d14193c0c"
+sourceHash: "8a34c196d343"
 sidebar:
   order: 3
 ---
@@ -9,7 +9,8 @@ sidebar:
 import TechStack from "../../../../components/TechStack.astro";
 
 Kinetix sengaja memberi setiap service bahasanya sendiri: satu domain, sebelas idiom, dan kontrak yang
-harus tetap berlaku di antara semuanya. Versi di bawah adalah yang dipin di manifest atau lockfile tiap
+harus tetap berlaku di antara semuanya. Satu-satunya pengecualian adalah notary, yang berbagi Go dengan
+search karena domainnya membutuhkan go-ethereum, dan yang kontraknya di chain ditulis dalam Solidity. Versi di bawah adalah yang dipin di manifest atau lockfile tiap
 repositori, bukan yang disebut README-nya; versi yang tidak punya bukti di repositori dibiarkan kosong,
 bukan ditebak.
 

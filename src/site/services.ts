@@ -57,7 +57,7 @@ export const services: readonly Service[] = [
     repository: `${github}/kinetix-review-service`,
     owns: "service.review.owns",
     language: { name: "PHP", logo: "php" },
-    framework: { name: "Laravel", logo: "laravel", version: "13.29.0" }
+    framework: { name: "Laravel", logo: "laravel", version: "13.34.0" }
   },
   {
     name: "notification",
@@ -79,5 +79,12 @@ export const services: readonly Service[] = [
     owns: "service.search.owns",
     language: { name: "Go", logo: "go" },
     framework: { name: "chi", version: "5.3.2" }
+  },
+  {
+    name: "notary",
+    repository: `${github}/kinetix-notary-service`,
+    owns: "service.notary.owns",
+    language: { name: "Go", logo: "go" },
+    framework: { name: "go-ethereum", version: "1.17.8" }
   }
 ];
