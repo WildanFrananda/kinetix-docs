@@ -1,31 +1,31 @@
 ---
 title: "notification.v1"
-description: "The notification.v1 gRPC package in kinetix-contracts 1.3.0: its services, messages and enums."
+description: "The notification.v1 gRPC package in kinetix-contracts 1.5.0: its services, messages and enums."
 editUrl: false
 ---
 
 <div class="grpc-reference">
 
-Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v/1.3.0) of kinetix-contracts: [`notification/v1/notification.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notification/v1/notification.proto). Servers and callers are those on the [system map](/architecture/system-map/); a dash means the map records none.
+Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v/1.5.0) of kinetix-contracts: [`notification/v1/notification.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto). Servers and callers are those on the [system map](/architecture/system-map/); a dash means the map records none.
 
 ## Services
 
 ### NotificationService
 
-[`notification/v1/notification.proto:7`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notification/v1/notification.proto#L7)
+[`notification/v1/notification.proto:7`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L7)
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`Notify`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notification/v1/notification.proto#L8) | [`NotifyRequest`](#notifyrequest) → [`NotifyResponse`](#notifyresponse) | [notification](/services/notification/) | — |
-| [`GetDelivery`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notification/v1/notification.proto#L9) | [`GetDeliveryRequest`](#getdeliveryrequest) → [`GetDeliveryResponse`](#getdeliveryresponse) | [notification](/services/notification/) | — |
-| [`RegisterDevice`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notification/v1/notification.proto#L10) | [`RegisterDeviceRequest`](#registerdevicerequest) → [`RegisterDeviceResponse`](#registerdeviceresponse) | [notification](/services/notification/) | — |
-| [`ForgetDevice`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notification/v1/notification.proto#L11) | [`ForgetDeviceRequest`](#forgetdevicerequest) → [`ForgetDeviceResponse`](#forgetdeviceresponse) | [notification](/services/notification/) | — |
+| [`Notify`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L8) | [`NotifyRequest`](#notifyrequest) → [`NotifyResponse`](#notifyresponse) | [notification](/services/notification/) | — |
+| [`GetDelivery`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L9) | [`GetDeliveryRequest`](#getdeliveryrequest) → [`GetDeliveryResponse`](#getdeliveryresponse) | [notification](/services/notification/) | — |
+| [`RegisterDevice`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L10) | [`RegisterDeviceRequest`](#registerdevicerequest) → [`RegisterDeviceResponse`](#registerdeviceresponse) | [notification](/services/notification/) | — |
+| [`ForgetDevice`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L11) | [`ForgetDeviceRequest`](#forgetdevicerequest) → [`ForgetDeviceResponse`](#forgetdeviceresponse) | [notification](/services/notification/) | — |
 
 ## Messages
 
 ### RegisterDeviceRequest
 
-[`notification/v1/notification.proto:20`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notification/v1/notification.proto#L20)
+[`notification/v1/notification.proto:20`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L20)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -35,7 +35,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### RegisterDeviceResponse
 
-[`notification/v1/notification.proto:26`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notification/v1/notification.proto#L26)
+[`notification/v1/notification.proto:26`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L26)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -45,7 +45,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### ForgetDeviceRequest
 
-[`notification/v1/notification.proto:32`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notification/v1/notification.proto#L32)
+[`notification/v1/notification.proto:32`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L32)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -53,7 +53,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### ForgetDeviceResponse
 
-[`notification/v1/notification.proto:36`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notification/v1/notification.proto#L36)
+[`notification/v1/notification.proto:36`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L36)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -62,7 +62,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### NotifyRequest
 
-[`notification/v1/notification.proto:65`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notification/v1/notification.proto#L65)
+[`notification/v1/notification.proto:65`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L65)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -74,7 +74,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### NotifyResponse
 
-[`notification/v1/notification.proto:73`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notification/v1/notification.proto#L73)
+[`notification/v1/notification.proto:73`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L73)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -85,7 +85,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### GetDeliveryRequest
 
-[`notification/v1/notification.proto:80`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notification/v1/notification.proto#L80)
+[`notification/v1/notification.proto:80`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L80)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -93,7 +93,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### DeliveryAttempt
 
-[`notification/v1/notification.proto:84`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notification/v1/notification.proto#L84)
+[`notification/v1/notification.proto:84`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L84)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -105,7 +105,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### GetDeliveryResponse
 
-[`notification/v1/notification.proto:92`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notification/v1/notification.proto#L92)
+[`notification/v1/notification.proto:92`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L92)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -119,7 +119,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### DevicePlatform
 
-[`notification/v1/notification.proto:14`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notification/v1/notification.proto#L14)
+[`notification/v1/notification.proto:14`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L14)
 
 | Name | Number |
 | --- | --- |
@@ -129,7 +129,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### Channel
 
-[`notification/v1/notification.proto:41`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notification/v1/notification.proto#L41)
+[`notification/v1/notification.proto:41`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L41)
 
 | Name | Number |
 | --- | --- |
@@ -139,7 +139,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### DeliveryStatus
 
-[`notification/v1/notification.proto:47`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notification/v1/notification.proto#L47)
+[`notification/v1/notification.proto:47`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L47)
 
 | Name | Number |
 | --- | --- |
@@ -151,7 +151,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### Template
 
-[`notification/v1/notification.proto:55`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notification/v1/notification.proto#L55)
+[`notification/v1/notification.proto:55`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L55)
 
 | Name | Number |
 | --- | --- |

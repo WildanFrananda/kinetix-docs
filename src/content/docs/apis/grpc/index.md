@@ -1,6 +1,6 @@
 ---
 title: "gRPC packages"
-description: "Every gRPC package in kinetix-contracts 1.3.0, with the services that serve it on the system map."
+description: "Every gRPC package in kinetix-contracts 1.5.0, with the services that serve it on the system map."
 editUrl: false
 sidebar:
   label: "Overview"
@@ -9,7 +9,7 @@ sidebar:
 
 <div class="grpc-reference">
 
-Every gRPC service and message in Kinetix is defined once, in [kinetix-contracts](https://github.com/WildanFrananda/kinetix-contracts); no service repository keeps a .proto file of its own. These pages are generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v/1.3.0) of its npm package, whose .proto files are those of commit [`edc6c26`](https://github.com/WildanFrananda/kinetix-contracts/tree/edc6c266cdd62d3635f96a14c796289f98447197), so nothing below is written by hand. Who serves an RPC and who calls it come from the [system map](/architecture/system-map/): each caller links to the line of code that makes the call, and a dash means the map records none.
+Every gRPC service and message in Kinetix is defined once, in [kinetix-contracts](https://github.com/WildanFrananda/kinetix-contracts); no service repository keeps a .proto file of its own. These pages are generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v/1.5.0) of its npm package, whose .proto files are those of commit [`2617561`](https://github.com/WildanFrananda/kinetix-contracts/tree/261756184a30a73cfaa9daf5b0206262fa4896ef), so nothing below is written by hand. Who serves an RPC and who calls it come from the [system map](/architecture/system-map/): each caller links to the line of code that makes the call, and a dash means the map records none.
 
 | Package | Served by | Services | RPCs | Messages | Enums |
 | --- | --- | --- | --- | --- | --- |

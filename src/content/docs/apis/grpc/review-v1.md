@@ -1,28 +1,28 @@
 ---
 title: "review.v1"
-description: "The review.v1 gRPC package in kinetix-contracts 1.3.0: its services, messages and enums."
+description: "The review.v1 gRPC package in kinetix-contracts 1.5.0: its services, messages and enums."
 editUrl: false
 ---
 
 <div class="grpc-reference">
 
-Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v/1.3.0) of kinetix-contracts: [`review/v1/review.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/review/v1/review.proto). Servers and callers are those on the [system map](/architecture/system-map/); a dash means the map records none.
+Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v/1.5.0) of kinetix-contracts: [`review/v1/review.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/review/v1/review.proto). Servers and callers are those on the [system map](/architecture/system-map/); a dash means the map records none.
 
 ## Services
 
 ### ReviewEvidenceService
 
-[`review/v1/review.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/review/v1/review.proto#L8)
+[`review/v1/review.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/review/v1/review.proto#L8)
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`ReviewsSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/review/v1/review.proto#L9) | [`ReviewsSinceRequest`](#reviewssincerequest) → [`ReviewsSinceResponse`](#reviewssinceresponse) | [review](/services/review/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/feeds/review_feed.go#L50) |
+| [`ReviewsSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/review/v1/review.proto#L9) | [`ReviewsSinceRequest`](#reviewssincerequest) → [`ReviewsSinceResponse`](#reviewssinceresponse) | [review](/services/review/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/feeds/review_feed.go#L50) |
 
 ## Messages
 
 ### ReviewEvidence
 
-[`review/v1/review.proto:18`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/review/v1/review.proto#L18)
+[`review/v1/review.proto:18`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/review/v1/review.proto#L18)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -39,7 +39,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### ReviewsSinceRequest
 
-[`review/v1/review.proto:31`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/review/v1/review.proto#L31)
+[`review/v1/review.proto:31`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/review/v1/review.proto#L31)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -48,7 +48,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### ReviewsSinceResponse
 
-[`review/v1/review.proto:36`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/review/v1/review.proto#L36)
+[`review/v1/review.proto:36`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/review/v1/review.proto#L36)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -60,7 +60,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### ReviewKind
 
-[`review/v1/review.proto:12`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/review/v1/review.proto#L12)
+[`review/v1/review.proto:12`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/review/v1/review.proto#L12)
 
 | Name | Number |
 | --- | --- |

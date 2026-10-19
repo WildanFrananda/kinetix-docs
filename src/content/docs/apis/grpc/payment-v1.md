@@ -1,49 +1,49 @@
 ---
 title: "payment.v1"
-description: "The payment.v1 gRPC package in kinetix-contracts 1.3.0: its services, messages and enums."
+description: "The payment.v1 gRPC package in kinetix-contracts 1.5.0: its services, messages and enums."
 editUrl: false
 ---
 
 <div class="grpc-reference">
 
-Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v/1.3.0) of kinetix-contracts: [`payment/v1/liability_record.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability_record.proto), [`payment/v1/liability.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability.proto), [`payment/v1/payment.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/payment.proto). Servers and callers are those on the [system map](/architecture/system-map/); a dash means the map records none.
+Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v/1.5.0) of kinetix-contracts: [`payment/v1/liability_record.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability_record.proto), [`payment/v1/liability.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability.proto), [`payment/v1/payment.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto). Servers and callers are those on the [system map](/architecture/system-map/); a dash means the map records none.
 
 ## Services
 
 ### LiabilityRecordService
 
-[`payment/v1/liability_record.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability_record.proto#L8)
+[`payment/v1/liability_record.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability_record.proto#L8)
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`GetLiabilitySnapshotRecord`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability_record.proto#L9) | [`GetLiabilitySnapshotRecordRequest`](#getliabilitysnapshotrecordrequest) → [`GetLiabilitySnapshotRecordResponse`](#getliabilitysnapshotrecordresponse) | [payment](/services/payment/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/payment/records.go#L56) |
+| [`GetLiabilitySnapshotRecord`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability_record.proto#L9) | [`GetLiabilitySnapshotRecordRequest`](#getliabilitysnapshotrecordrequest) → [`GetLiabilitySnapshotRecordResponse`](#getliabilitysnapshotrecordresponse) | [payment](/services/payment/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/payment/records.go#L56) |
 
 ### LiabilityService
 
-[`payment/v1/liability.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability.proto#L8)
+[`payment/v1/liability.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability.proto#L8)
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`StreamLiabilitySnapshot`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability.proto#L9) | [`StreamLiabilitySnapshotRequest`](#streamliabilitysnapshotrequest) → `stream` [`StreamLiabilitySnapshotResponse`](#streamliabilitysnapshotresponse) | [payment](/services/payment/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/payment/source.go#L61) |
+| [`StreamLiabilitySnapshot`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability.proto#L9) | [`StreamLiabilitySnapshotRequest`](#streamliabilitysnapshotrequest) → `stream` [`StreamLiabilitySnapshotResponse`](#streamliabilitysnapshotresponse) | [payment](/services/payment/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/payment/source.go#L61) |
 
 ### PaymentService
 
-[`payment/v1/payment.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/payment.proto#L8)
+[`payment/v1/payment.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L8)
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`CreateEscrowHold`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/payment.proto#L9) | [`CreateEscrowHoldRequest`](#createescrowholdrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/EscrowGrpcClient.cs#L49) |
-| [`ReleaseEscrow`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/payment.proto#L10) | [`ReleaseEscrowRequest`](#releaseescrowrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/EscrowGrpcClient.cs#L95) |
-| [`RefundEscrow`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/payment.proto#L11) | [`RefundEscrowRequest`](#refundescrowrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/EscrowGrpcClient.cs#L73) |
-| [`GetEscrowStatus`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/payment.proto#L12) | [`GetEscrowStatusRequest`](#getescrowstatusrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/EscrowGrpcClient.cs#L158) |
-| [`SettleShippingFee`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/payment.proto#L13) | [`SettleShippingFeeRequest`](#settleshippingfeerequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/EscrowGrpcClient.cs#L137) |
-| [`RefundGoods`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/payment.proto#L14) | [`RefundGoodsRequest`](#refundgoodsrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/EscrowGrpcClient.cs#L110) |
+| [`CreateEscrowHold`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L9) | [`CreateEscrowHoldRequest`](#createescrowholdrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L49) |
+| [`ReleaseEscrow`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L10) | [`ReleaseEscrowRequest`](#releaseescrowrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L95) |
+| [`RefundEscrow`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L11) | [`RefundEscrowRequest`](#refundescrowrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L73) |
+| [`GetEscrowStatus`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L12) | [`GetEscrowStatusRequest`](#getescrowstatusrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L158) |
+| [`SettleShippingFee`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L13) | [`SettleShippingFeeRequest`](#settleshippingfeerequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L137) |
+| [`RefundGoods`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L14) | [`RefundGoodsRequest`](#refundgoodsrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L110) |
 
 ## Messages
 
 ### GetLiabilitySnapshotRecordRequest
 
-[`payment/v1/liability_record.proto:12`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability_record.proto#L12)
+[`payment/v1/liability_record.proto:12`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability_record.proto#L12)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -51,7 +51,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### GetLiabilitySnapshotRecordResponse
 
-[`payment/v1/liability_record.proto:16`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability_record.proto#L16)
+[`payment/v1/liability_record.proto:16`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability_record.proto#L16)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -64,7 +64,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### StreamLiabilitySnapshotRequest
 
-[`payment/v1/liability.proto:23`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability.proto#L23)
+[`payment/v1/liability.proto:23`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability.proto#L23)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -72,7 +72,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### StreamLiabilitySnapshotResponse
 
-[`payment/v1/liability.proto:27`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability.proto#L27)
+[`payment/v1/liability.proto:27`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability.proto#L27)
 
 | Field | Number | Type | Notes |
 | --- | --- | --- | --- |
@@ -82,7 +82,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### LiabilitySnapshotHeader
 
-[`payment/v1/liability.proto:35`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability.proto#L35)
+[`payment/v1/liability.proto:35`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability.proto#L35)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -92,7 +92,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### LiabilityAccountBatch
 
-[`payment/v1/liability.proto:41`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability.proto#L41)
+[`payment/v1/liability.proto:41`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability.proto#L41)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -100,7 +100,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### LiabilityAccount
 
-[`payment/v1/liability.proto:45`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability.proto#L45)
+[`payment/v1/liability.proto:45`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability.proto#L45)
 
 | Field | Number | Type | Notes |
 | --- | --- | --- | --- |
@@ -111,7 +111,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### LiabilitySnapshotTrailer
 
-[`payment/v1/liability.proto:54`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability.proto#L54)
+[`payment/v1/liability.proto:54`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability.proto#L54)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -121,7 +121,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### CreateEscrowHoldRequest
 
-[`payment/v1/payment.proto:26`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/payment.proto#L26)
+[`payment/v1/payment.proto:26`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L26)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -136,7 +136,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### ReleaseEscrowRequest
 
-[`payment/v1/payment.proto:37`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/payment.proto#L37)
+[`payment/v1/payment.proto:37`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L37)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -145,7 +145,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### RefundEscrowRequest
 
-[`payment/v1/payment.proto:42`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/payment.proto#L42)
+[`payment/v1/payment.proto:42`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L42)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -155,7 +155,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### RefundGoodsRequest
 
-[`payment/v1/payment.proto:48`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/payment.proto#L48)
+[`payment/v1/payment.proto:48`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L48)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -166,7 +166,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### GetEscrowStatusRequest
 
-[`payment/v1/payment.proto:55`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/payment.proto#L55)
+[`payment/v1/payment.proto:55`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L55)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -174,7 +174,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### SettleShippingFeeRequest
 
-[`payment/v1/payment.proto:59`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/payment.proto#L59)
+[`payment/v1/payment.proto:59`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L59)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -184,7 +184,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### EscrowHoldResponse
 
-[`payment/v1/payment.proto:65`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/payment.proto#L65)
+[`payment/v1/payment.proto:65`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L65)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -210,7 +210,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### LiabilityKind
 
-[`payment/v1/liability.proto:12`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability.proto#L12)
+[`payment/v1/liability.proto:12`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability.proto#L12)
 
 | Name | Number |
 | --- | --- |
@@ -225,7 +225,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### EscrowStatus
 
-[`payment/v1/payment.proto:17`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/payment.proto#L17)
+[`payment/v1/payment.proto:17`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L17)
 
 | Name | Number |
 | --- | --- |

@@ -150,7 +150,8 @@ overview, in English and Indonesian. Each Indonesian page is stamped with the ha
      says so.
   4. Run `bun run generate:grpc`.
 
-  1.3.0 was checked this way on 2026-10-17: all 21 files were identical to `edc6c26`.
+  1.3.0 was checked this way on 2026-10-17: all 21 files were identical to `edc6c26`. 1.5.0 was checked on
+  2026-10-19: all 21 identical to `2617561`.
 
 ## Interactive diagrams
 

@@ -1,29 +1,29 @@
 ---
 title: "review.v1"
-description: "Paket gRPC review.v1 di kinetix-contracts 1.3.0: service, message, dan enum-nya."
+description: "Paket gRPC review.v1 di kinetix-contracts 1.5.0: service, message, dan enum-nya."
 editUrl: false
-sourceHash: "4757fc7bcaa9"
+sourceHash: "ae40d7d549bf"
 ---
 
 <div class="grpc-reference">
 
-Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v/1.3.0) kinetix-contracts: [`review/v1/review.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/review/v1/review.proto). Server dan pemanggil diambil dari [peta sistem](/id/architecture/system-map/); tanda pisah berarti peta tidak mencatat apa pun.
+Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v/1.5.0) kinetix-contracts: [`review/v1/review.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/review/v1/review.proto). Server dan pemanggil diambil dari [peta sistem](/id/architecture/system-map/); tanda pisah berarti peta tidak mencatat apa pun.
 
 ## Service
 
 ### ReviewEvidenceService
 
-[`review/v1/review.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/review/v1/review.proto#L8)
+[`review/v1/review.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/review/v1/review.proto#L8)
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`ReviewsSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/review/v1/review.proto#L9) | [`ReviewsSinceRequest`](#reviewssincerequest) → [`ReviewsSinceResponse`](#reviewssinceresponse) | [review](/id/services/review/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/feeds/review_feed.go#L50) |
+| [`ReviewsSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/review/v1/review.proto#L9) | [`ReviewsSinceRequest`](#reviewssincerequest) → [`ReviewsSinceResponse`](#reviewssinceresponse) | [review](/id/services/review/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/feeds/review_feed.go#L50) |
 
 ## Message
 
 ### ReviewEvidence
 
-[`review/v1/review.proto:18`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/review/v1/review.proto#L18)
+[`review/v1/review.proto:18`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/review/v1/review.proto#L18)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -40,7 +40,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ReviewsSinceRequest
 
-[`review/v1/review.proto:31`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/review/v1/review.proto#L31)
+[`review/v1/review.proto:31`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/review/v1/review.proto#L31)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -49,7 +49,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ReviewsSinceResponse
 
-[`review/v1/review.proto:36`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/review/v1/review.proto#L36)
+[`review/v1/review.proto:36`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/review/v1/review.proto#L36)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -61,7 +61,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ReviewKind
 
-[`review/v1/review.proto:12`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/review/v1/review.proto#L12)
+[`review/v1/review.proto:12`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/review/v1/review.proto#L12)
 
 | Nama | Nomor |
 | --- | --- |

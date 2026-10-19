@@ -1,38 +1,38 @@
 ---
 title: "fleet.v1"
-description: "The fleet.v1 gRPC package in kinetix-contracts 1.3.0: its services, messages and enums."
+description: "The fleet.v1 gRPC package in kinetix-contracts 1.5.0: its services, messages and enums."
 editUrl: false
 ---
 
 <div class="grpc-reference">
 
-Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v/1.3.0) of kinetix-contracts: [`fleet/v1/fleet.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fleet/v1/fleet.proto), [`fleet/v1/registry.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fleet/v1/registry.proto). Servers and callers are those on the [system map](/architecture/system-map/); a dash means the map records none.
+Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v/1.5.0) of kinetix-contracts: [`fleet/v1/fleet.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fleet/v1/fleet.proto), [`fleet/v1/registry.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fleet/v1/registry.proto). Servers and callers are those on the [system map](/architecture/system-map/); a dash means the map records none.
 
 ## Services
 
 ### CourierTelemetryService
 
-[`fleet/v1/fleet.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fleet/v1/fleet.proto#L8)
+[`fleet/v1/fleet.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fleet/v1/fleet.proto#L8)
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`DispatchCourier`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fleet/v1/fleet.proto#L9) | [`DispatchCourierRequest`](#dispatchcourierrequest) → [`DispatchCourierResponse`](#dispatchcourierresponse) | [matching](/services/matching/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Application/Fulfillment/CourierDispatcher.cs#L74) |
-| [`StreamDriverLocation`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fleet/v1/fleet.proto#L10) | `stream` [`DriverLocationPing`](#driverlocationping) → `stream` [`DriverLocationAck`](#driverlocationack) | — | — |
+| [`DispatchCourier`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fleet/v1/fleet.proto#L9) | [`DispatchCourierRequest`](#dispatchcourierrequest) → [`DispatchCourierResponse`](#dispatchcourierresponse) | [matching](/services/matching/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Fulfillment/CourierDispatcher.cs#L74) |
+| [`StreamDriverLocation`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fleet/v1/fleet.proto#L10) | `stream` [`DriverLocationPing`](#driverlocationping) → `stream` [`DriverLocationAck`](#driverlocationack) | — | — |
 
 ### FleetRegistryService
 
-[`fleet/v1/registry.proto:7`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fleet/v1/registry.proto#L7)
+[`fleet/v1/registry.proto:7`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fleet/v1/registry.proto#L7)
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`RegisterDriver`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fleet/v1/registry.proto#L8) | [`RegisterDriverRequest`](#registerdriverrequest) → [`RegisterDriverResponse`](#registerdriverresponse) | [matching](/services/matching/) | [identity](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L38) |
-| [`ActivateDriver`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fleet/v1/registry.proto#L9) | [`ActivateDriverRequest`](#activatedriverrequest) → [`ActivateDriverResponse`](#activatedriverresponse) | [matching](/services/matching/) | [identity](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L55) |
+| [`RegisterDriver`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fleet/v1/registry.proto#L8) | [`RegisterDriverRequest`](#registerdriverrequest) → [`RegisterDriverResponse`](#registerdriverresponse) | [matching](/services/matching/) | [identity](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L38) |
+| [`ActivateDriver`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fleet/v1/registry.proto#L9) | [`ActivateDriverRequest`](#activatedriverrequest) → [`ActivateDriverResponse`](#activatedriverresponse) | [matching](/services/matching/) | [identity](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L55) |
 
 ## Messages
 
 ### DispatchCourierRequest
 
-[`fleet/v1/fleet.proto:13`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fleet/v1/fleet.proto#L13)
+[`fleet/v1/fleet.proto:13`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fleet/v1/fleet.proto#L13)
 
 | Field | Number | Type | Notes |
 | --- | --- | --- | --- |
@@ -44,10 +44,11 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 | `idempotency_key` | 6 | [`common.v1.IdempotencyKey`](/apis/grpc/common-v1/#idempotencykey) |  |
 | `pickup_point` | 7 | [`common.v1.GeoPoint`](/apis/grpc/common-v1/#geopoint) |  |
 | `delivery_point` | 8 | [`common.v1.GeoPoint`](/apis/grpc/common-v1/#geopoint) |  |
+| `parcel_weight_grams` | 9 | `int64` |  |
 
 ### DispatchCourierResponse
 
-[`fleet/v1/fleet.proto:24`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fleet/v1/fleet.proto#L24)
+[`fleet/v1/fleet.proto:25`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fleet/v1/fleet.proto#L25)
 
 | Field | Number | Type | Notes |
 | --- | --- | --- | --- |
@@ -63,7 +64,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### DriverLocationPing
 
-[`fleet/v1/fleet.proto:36`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fleet/v1/fleet.proto#L36)
+[`fleet/v1/fleet.proto:37`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fleet/v1/fleet.proto#L37)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -76,7 +77,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### DriverLocationAck
 
-[`fleet/v1/fleet.proto:45`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fleet/v1/fleet.proto#L45)
+[`fleet/v1/fleet.proto:46`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fleet/v1/fleet.proto#L46)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -86,7 +87,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### RegisterDriverRequest
 
-[`fleet/v1/registry.proto:12`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fleet/v1/registry.proto#L12)
+[`fleet/v1/registry.proto:12`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fleet/v1/registry.proto#L12)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -96,7 +97,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### RegisterDriverResponse
 
-[`fleet/v1/registry.proto:18`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fleet/v1/registry.proto#L18)
+[`fleet/v1/registry.proto:18`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fleet/v1/registry.proto#L18)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -107,7 +108,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### ActivateDriverRequest
 
-[`fleet/v1/registry.proto:25`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fleet/v1/registry.proto#L25)
+[`fleet/v1/registry.proto:25`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fleet/v1/registry.proto#L25)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -115,7 +116,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### ActivateDriverResponse
 
-[`fleet/v1/registry.proto:29`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fleet/v1/registry.proto#L29)
+[`fleet/v1/registry.proto:29`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fleet/v1/registry.proto#L29)
 
 | Field | Number | Type |
 | --- | --- | --- |

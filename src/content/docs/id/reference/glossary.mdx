@@ -1,7 +1,7 @@
 ---
 title: Glosarium
 description: Istilah yang dipakai kode Kinetix untuk akun, pembelian, order, uang, pengantaran, dan bukti, masing-masing didefinisikan dari kode yang berjalan di produksi.
-sourceHash: "5673309fc480"
+sourceHash: "fa46468e0cfa"
 sidebar:
   order: 1
 ---
@@ -122,13 +122,14 @@ Pemilik: pricing. Didefinisikan di [pencarian harga](https://github.com/WildanFr
 
 ### shipping tier
 
-Tingkat layanan pengiriman yang ditawarkan matching: instant, same-day, regular, atau cargo, masing-masing
-dengan batas jarak dan beratnya sendiri. Pembeli memilih tier, pricing menetapkan ongkosnya dari rate card,
-dan order menolak ongkos akhir yang negatif atau melebihi ongkos dasarnya.
+Tingkat layanan pengiriman yang ditawarkan matching untuk rute dan berat sebuah paket: instant, same-day,
+regular, atau cargo, masing-masing dengan batas jarak dan beratnya sendiri. Pembeli memilih tier, pricing
+menetapkan ongkosnya dari rate card berdasarkan jarak dan berat, dan order menolak ongkos akhir yang negatif
+atau melebihi ongkos dasarnya.
 
-Pemilik: matching untuk tier-nya, pricing untuk ongkosnya. Didefinisikan di [tier-tiernya](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/shipping.ex#L21-L26),
-[rate card](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/models/shipping_rate.rs#L47-L50), dan
-[pengecekan silang milik order](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Application/Services/OrderService.cs#L91-L93).
+Pemilik: matching untuk tier-nya, pricing untuk ongkosnya. Didefinisikan di [tier-tiernya](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/shipping.ex#L21-L26),
+[rate card](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/models/shipping_rate.rs#L43-L53), dan
+[pengecekan silang milik order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Services/OrderService.cs#L103-L120).
 
 ## Order
 
@@ -243,12 +244,14 @@ Pemilik: warehouse. Didefinisikan di [status-statusnya](https://github.com/Wilda
 
 ### dispatch
 
-Order meminta kurir ke matching setelah sebuah order dikemas. Matching menugaskan driver online terdekat
-dalam radius 3 km dari titik jemput yang kapasitasnya cukup. Kalau tidak ada yang kosong, order mencoba
-ulang dengan backoff.
+Order meminta kurir ke matching setelah sebuah order dikemas, ke titik antar yang disimpan saat checkout
+dan untuk berat paketnya. Matching mencatat beratnya dalam kilogram bulat, dibulatkan ke atas, lalu
+menugaskan driver online terdekat dalam radius 3 km dari titik jemput yang kendaraannya sanggup membawanya.
+Kalau tidak ada yang kosong, order mencoba ulang dengan backoff.
 
-Pemilik: matching yang menugaskan; order yang meminta. Didefinisikan di [penugasannya](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/dispatch.ex#L187) dan
-[klaim oleh driver](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/tracking/driver_state.ex#L205-L207).
+Pemilik: matching yang menugaskan; order yang meminta. Didefinisikan di [pemesanannya](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch.ex#L53-L74),
+[penugasannya](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch.ex#L209), dan
+[klaim oleh driver](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/tracking/driver_state.ex#L205-L207).
 
 ### AWB
 

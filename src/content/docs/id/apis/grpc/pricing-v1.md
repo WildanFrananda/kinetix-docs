@@ -1,34 +1,34 @@
 ---
 title: "pricing.v1"
-description: "Paket gRPC pricing.v1 di kinetix-contracts 1.3.0: service, message, dan enum-nya."
+description: "Paket gRPC pricing.v1 di kinetix-contracts 1.5.0: service, message, dan enum-nya."
 editUrl: false
-sourceHash: "0ad33c85c4e0"
+sourceHash: "5508ba9cbe78"
 ---
 
 <div class="grpc-reference">
 
-Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v/1.3.0) kinetix-contracts: [`pricing/v1/pricing.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto). Server dan pemanggil diambil dari [peta sistem](/id/architecture/system-map/); tanda pisah berarti peta tidak mencatat apa pun.
+Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v/1.5.0) kinetix-contracts: [`pricing/v1/pricing.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto). Server dan pemanggil diambil dari [peta sistem](/id/architecture/system-map/); tanda pisah berarti peta tidak mencatat apa pun.
 
 ## Service
 
 ### PricingService
 
-[`pricing/v1/pricing.proto:7`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L7)
+[`pricing/v1/pricing.proto:7`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L7)
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`CalculatePrice`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L8) | [`CalculatePriceRequest`](#calculatepricerequest) → [`CalculatePriceResponse`](#calculatepriceresponse) | [pricing](/id/services/pricing/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/PricingGrpcClient.cs#L87) |
-| [`QuoteShipping`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L9) | [`QuoteShippingRequest`](#quoteshippingrequest) → [`QuoteShippingResponse`](#quoteshippingresponse) | [pricing](/id/services/pricing/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/PricingGrpcClient.cs#L33) |
-| [`RedeemVoucher`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L11) | [`RedeemVoucherRequest`](#redeemvoucherrequest) → [`RedeemVoucherResponse`](#redeemvoucherresponse) | [pricing](/id/services/pricing/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/VoucherQuotaGrpcClient.cs#L22) |
-| [`ReleaseVoucherRedemption`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L12) | [`ReleaseVoucherRedemptionRequest`](#releasevoucherredemptionrequest) → [`ReleaseVoucherRedemptionResponse`](#releasevoucherredemptionresponse) | [pricing](/id/services/pricing/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/VoucherQuotaGrpcClient.cs#L40) |
-| [`AllocateFlashSaleStock`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L14) | [`AllocateFlashSaleStockRequest`](#allocateflashsalestockrequest) → [`AllocateFlashSaleStockResponse`](#allocateflashsalestockresponse) | [pricing](/id/services/pricing/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/FlashSaleGrpcClient.cs#L17) |
-| [`ReleaseFlashSaleAllocation`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L15) | [`ReleaseFlashSaleAllocationRequest`](#releaseflashsaleallocationrequest) → [`ReleaseFlashSaleAllocationResponse`](#releaseflashsaleallocationresponse) | [pricing](/id/services/pricing/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/FlashSaleGrpcClient.cs#L35) |
+| [`CalculatePrice`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L8) | [`CalculatePriceRequest`](#calculatepricerequest) → [`CalculatePriceResponse`](#calculatepriceresponse) | [pricing](/id/services/pricing/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/PricingGrpcClient.cs#L87) |
+| [`QuoteShipping`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L9) | [`QuoteShippingRequest`](#quoteshippingrequest) → [`QuoteShippingResponse`](#quoteshippingresponse) | [pricing](/id/services/pricing/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/PricingGrpcClient.cs#L33) |
+| [`RedeemVoucher`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L11) | [`RedeemVoucherRequest`](#redeemvoucherrequest) → [`RedeemVoucherResponse`](#redeemvoucherresponse) | [pricing](/id/services/pricing/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/VoucherQuotaGrpcClient.cs#L22) |
+| [`ReleaseVoucherRedemption`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L12) | [`ReleaseVoucherRedemptionRequest`](#releasevoucherredemptionrequest) → [`ReleaseVoucherRedemptionResponse`](#releasevoucherredemptionresponse) | [pricing](/id/services/pricing/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/VoucherQuotaGrpcClient.cs#L40) |
+| [`AllocateFlashSaleStock`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L14) | [`AllocateFlashSaleStockRequest`](#allocateflashsalestockrequest) → [`AllocateFlashSaleStockResponse`](#allocateflashsalestockresponse) | [pricing](/id/services/pricing/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/FlashSaleGrpcClient.cs#L22) |
+| [`ReleaseFlashSaleAllocation`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L15) | [`ReleaseFlashSaleAllocationRequest`](#releaseflashsaleallocationrequest) → [`ReleaseFlashSaleAllocationResponse`](#releaseflashsaleallocationresponse) | [pricing](/id/services/pricing/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/FlashSaleGrpcClient.cs#L40) |
 
 ## Message
 
 ### PriceItemRequest
 
-[`pricing/v1/pricing.proto:30`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L30)
+[`pricing/v1/pricing.proto:30`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L30)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -39,7 +39,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ShippingQuoteRequest
 
-[`pricing/v1/pricing.proto:37`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L37)
+[`pricing/v1/pricing.proto:37`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L37)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -49,7 +49,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### QuoteShippingRequest
 
-[`pricing/v1/pricing.proto:43`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L43)
+[`pricing/v1/pricing.proto:43`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L43)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -57,7 +57,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### QuotedShipping
 
-[`pricing/v1/pricing.proto:47`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L47)
+[`pricing/v1/pricing.proto:47`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L47)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -67,7 +67,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### QuoteShippingResponse
 
-[`pricing/v1/pricing.proto:53`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L53)
+[`pricing/v1/pricing.proto:53`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L53)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -75,7 +75,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### CalculatePriceRequest
 
-[`pricing/v1/pricing.proto:57`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L57)
+[`pricing/v1/pricing.proto:57`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L57)
 
 | Field | Nomor | Tipe | Catatan |
 | --- | --- | --- | --- |
@@ -88,7 +88,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### PriceItemResponse
 
-[`pricing/v1/pricing.proto:66`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L66)
+[`pricing/v1/pricing.proto:66`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L66)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -102,7 +102,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### CalculatePriceResponse
 
-[`pricing/v1/pricing.proto:76`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L76)
+[`pricing/v1/pricing.proto:76`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L76)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -119,7 +119,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### RedeemVoucherRequest
 
-[`pricing/v1/pricing.proto:89`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L89)
+[`pricing/v1/pricing.proto:89`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L89)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -131,7 +131,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### RedeemVoucherResponse
 
-[`pricing/v1/pricing.proto:97`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L97)
+[`pricing/v1/pricing.proto:97`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L97)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -142,7 +142,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ReleaseVoucherRedemptionRequest
 
-[`pricing/v1/pricing.proto:104`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L104)
+[`pricing/v1/pricing.proto:104`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L104)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -152,7 +152,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ReleaseVoucherRedemptionResponse
 
-[`pricing/v1/pricing.proto:110`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L110)
+[`pricing/v1/pricing.proto:110`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L110)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -163,7 +163,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### AllocateFlashSaleStockRequest
 
-[`pricing/v1/pricing.proto:117`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L117)
+[`pricing/v1/pricing.proto:117`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L117)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -175,7 +175,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### AllocateFlashSaleStockResponse
 
-[`pricing/v1/pricing.proto:125`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L125)
+[`pricing/v1/pricing.proto:125`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L125)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -186,7 +186,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ReleaseFlashSaleAllocationRequest
 
-[`pricing/v1/pricing.proto:132`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L132)
+[`pricing/v1/pricing.proto:132`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L132)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -198,7 +198,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ReleaseFlashSaleAllocationResponse
 
-[`pricing/v1/pricing.proto:140`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L140)
+[`pricing/v1/pricing.proto:140`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L140)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -211,7 +211,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### DiscountType
 
-[`pricing/v1/pricing.proto:18`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L18)
+[`pricing/v1/pricing.proto:18`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L18)
 
 | Nama | Nomor |
 | --- | --- |
@@ -221,7 +221,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### DiscountScope
 
-[`pricing/v1/pricing.proto:24`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/pricing/v1/pricing.proto#L24)
+[`pricing/v1/pricing.proto:24`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/pricing/v1/pricing.proto#L24)
 
 | Nama | Nomor |
 | --- | --- |

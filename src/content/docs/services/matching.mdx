@@ -14,7 +14,7 @@ pricing prices the journey it quotes, and order decides what a delivery means fo
 
 The tables on this page are generated from the same verified data as the
 [system map](/architecture/system-map/), at the commits linked from each row. The prose is checked
-against matching [v1.0.0](https://github.com/WildanFrananda/kinetix-matching-service/tree/7697467eac748c9090659622fcb398cab7004c83),
+against matching [v1.3.0](https://github.com/WildanFrananda/kinetix-matching-service/tree/f2f99d91895f356cf85fbbdd53c8caa57e8f5798),
 the version in production.
 
 ## At a glance
@@ -26,10 +26,11 @@ the version in production.
 order asks matching for the shipping options of a cart and, once warehouse has packed an order, for a
 courier. identity files a new courier's vehicle and activates the driver when an admin approves the account.
 
-Since v1.1.0, which production runs, matching also serves
-[its delivery evidence](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/servers/delivery_evidence_server.ex#L18-L28), one record per delivered parcel with the hashes of its photo and signature,
-page by page, to the [notary](/services/notary/), which anchors it on chain. The rest of this page has not
-yet been re-checked against v1.1.0.
+matching also serves [its delivery evidence](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/servers/delivery_evidence_server.ex#L18-L28),
+one record per delivered parcel with the hashes of its photo and signature, page by page, to the
+[notary](/services/notary/), which anchors it on chain. The feed's cursor is a database transaction:
+[it serves only records written by transactions older than every transaction still running](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch/evidence_feed.ex#L23-L31),
+so a delivery whose transaction commits late is served late and never skipped.
 
 <ServiceServes service="matching" />
 
@@ -42,54 +43,65 @@ matching calls out for one thing: to tell order that a courier delivered a parce
 ## Quoting a journey
 
 `EstimateShippingOptions` measures the distance between the store and the buyer and
-[answers which service tiers can carry the parcel](https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse/shipping.ex#L16-L32)
+[answers which service tiers can carry the parcel](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/shipping.ex#L16-L32)
 and why the others cannot: instant up to 15 km and 10 kg, same day up to 30 km and 20 kg, regular up to
 500 km and 30 kg, and cargo for parcels of 10 kg or more. matching does not price a tier; the buyer picks
 one, and pricing turns it into the fee — see [pricing](/services/pricing/).
 
 ## Choosing a courier
 
-1. **One job per order.** order asks `DispatchCourier` with the order number and the two points, and matching
-   [books a job for that order number, or finds the one it already booked](https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse/dispatch.ex#L78-L83)
+1. **One job per order.** order asks `DispatchCourier` with the order number, the two points and the
+   parcel's weight, and matching
+   [books a job for that order number, or finds the one it already booked](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch.ex#L98-L103)
    — so a retried dispatch answers with the same job, courier and tracking number instead of booking a
-   second one.
+   second one. [The weight is booked in whole kilograms, rounded up](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch.ex#L69-L74):
+   a 1,200 g parcel is 2 kg, so the capacity check never sees a parcel lighter than it is. An order placed
+   before 2026-10-18 sends no weight and is booked at 0 kg, as every job was before.
 2. **The nearest courier who can carry it.** A pending job is
-   [offered to the online couriers within three kilometres of the store](https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse/dispatch.ex#L294-L302)
+   [offered to the online couriers within three kilometres of the store](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch.ex#L343-L351)
    whose vehicle can carry the parcel's weight, nearest first. Each courier is a process that holds their
    own state, and taking a job is an atomic claim on that process, so a courier is never handed more jobs
    at once than they may carry — one, unless their limit is raised.
 3. **No courier free is not a refusal for good.** The job stays pending, and when a courier comes online
-   [matching offers it the pending jobs again](https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse/dispatch/re_dispatcher.ex#L91-L95).
+   [matching offers it the pending jobs again](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch/re_dispatcher.ex#L91-L95).
    order keeps asking until a courier is assigned, which is how warehouse receives the tracking number —
    see [order's courier dispatch](/services/order/#sending-a-courier).
 
 ## Delivering a parcel
 
 A job moves
-[from assigned to picked up to delivered](https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse/dispatch.ex#L28-L32),
+[from assigned to picked up to delivered](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch.ex#L33-L37),
 and only
-[the courier it is assigned to](https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse/dispatch.ex#L362-L363)
+[the courier it is assigned to](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch.ex#L411-L412)
 moves it; an admin can cancel it.
 
-A delivery needs a photo. Once the parcel is picked up, the courier's app asks for
-[an upload address](https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse/dispatch.ex#L210-L218):
-a URL, valid for ten minutes, that lets the phone put one photo into a private bucket under that job's
-name. The app uploads the photo and sends its address with the delivery, and matching
-[accepts the delivery only if the photo is that job's and is really there](https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse/dispatch.ex#L263-L279).
+A delivery needs a photo. Once the parcel is picked up, the courier's app hashes the photo and asks for
+[an upload address for that hash](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch.ex#L238-L254): a URL, valid for ten minutes,
+that lets the phone put one photo into a private bucket under the job's name and the hash.
+[The URL is signed over the photo's SHA-256 and `if-none-match: *`](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/storage/s3.ex#L22-L30),
+so the store keeps only the bytes the courier hashed and refuses a second write to the same name. The app
+uploads the photo and sends its address with the delivery, and matching
+[accepts the delivery only if the photo is that job's, is really there, and its stored checksum is the hash in its name](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch.ex#L298-L317).
 If the bucket cannot be asked, the delivery is not refused and not accepted: the courier tries again. The
 bucket is never public; the backoffice sees a photo through an address that expires in fifteen minutes.
+
+A delivery is recorded together with its evidence:
+[one row with the photo's hash, the signature's hash and the courier's principal, inserted in the same transaction that marks the job delivered](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch.ex#L429-L458).
+A courier with no identity principal cannot deliver, because the record must name who did.
+[Postgres refuses any job marked delivered without that row, and any change to the log](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/priv/repo/migrations/20261016160000_deliveries_keep_an_evidence_log.exs#L31-L78),
+so a new code path that forgets the evidence fails at its first statement.
 
 ## Telling order
 
 order decides what a delivery means — the courier's fee, the start of the return window, when the merchant
 is paid — so matching's part is to make sure order hears of it. A delivery is recorded with the time the
 parcel arrived and
-[reported at once](https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse/dispatch/delivery_report.ex#L25-L38);
+[reported at once](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch/delivery_report.ex#L25-L38);
 if order cannot be reached, the report is
-[owed and retried every minute](https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse/dispatch/delivery_report.ex#L41-L51),
+[owed and retried every minute](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch/delivery_report.ex#L41-L51),
 backing off to an hour, always with the original delivery time. order records a delivery once and answers a
 repeat as already recorded, so retrying is safe. Only
-[order's own refusal stops the retrying](https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse/clients/order_grpc.ex#L100-L110);
+[order's own refusal stops the retrying](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/clients/order_grpc.ex#L100-L110);
 a call that could not be made is unknown, not a refusal — see [Unknown is not no](/learn/unknown-is-not-no/).
 
 ## How the code is laid out
@@ -108,39 +120,42 @@ Contexts own the rules; the web layer and the gRPC servers only translate reques
 ## Data
 
 PostgreSQL, through Ecto, holds couriers and their vehicles, delivery jobs with their proof of delivery and
-whether order has heard of them, and the trail of position pings. The position the fleet works from lives in
+whether order has heard of them, the append-only log of delivery evidence, and the trail of position pings. The position the fleet works from lives in
 memory, one process per online courier;
-[pings are written to PostgreSQL every thirty seconds](https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse/tracking/persistence_batcher.ex#L44)
-and [kept for thirty days](https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse/tracking/ping_retention.ex#L23-L24).
+[pings are written to PostgreSQL every thirty seconds](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/tracking/persistence_batcher.ex#L44)
+and [kept for thirty days](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/tracking/ping_retention.ex#L23-L24).
 Photos of delivered parcels are kept in object storage, in a bucket of their own that only matching may
 write.
 
 ## Who may do what
 
 - **A courier** connects to the fleet's websocket with an identity access token for
-  [an approved courier account with a vehicle in the fleet](https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse_web/channels/driver_socket.ex#L26-L34),
+  [an approved courier account with a vehicle in the fleet](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse_web/channels/driver_socket.ex#L26-L34),
   joins only
-  [their own driver channel](https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse_web/channels/driver_channel.ex#L152-L153),
+  [their own driver channel](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse_web/channels/driver_channel.ex#L155-L156),
   and moves only the jobs assigned to them.
 - **A seller** connects to the merchant channel for their own merchant only, and
-  [hears about their own jobs and nobody else's](https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse_web/channels/merchant_channel.ex#L41-L47).
+  [hears about their own jobs and nobody else's](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse_web/channels/merchant_channel.ex#L41-L47).
 - **The fleet's positions and the dispatch board** —
-  [every courier's live position, the jobs, assigning and cancelling them](https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse_web/router.ex#L24-L45)
+  [every courier's live position, the jobs, assigning and cancelling them](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse_web/router.ex#L24-L45)
   — are for the `admin` role. A courier's position is personal data; no other role reads it.
 - **Other services** reach the gRPC port only with a certificate from Kinetix's CA naming a service on
-  matching's allow list, and an entry can be narrowed to one gRPC service:
-  [identity may file and activate couriers and nothing else](https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse/security/peer_authorization_interceptor.ex#L43-L55),
-  so it cannot dispatch a courier or quote a journey; see [Who is calling?](/learn/who-is-calling/).
+  matching's allow list, and [an entry can name one gRPC service or one method](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/security/peer_authorization_interceptor.ex#L47-L59).
+  Identity may file and activate couriers and nothing else, so it cannot dispatch a courier or quote a
+  journey, and the notary may only read the delivery evidence; see [Who is calling?](/learn/who-is-calling/).
 
 ## Operating it
 
 - `/health` answers when the process is up; `/health/ready`
-  [runs a real query](https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse_web/controllers/health_controller.ex#L31-L54),
+  [runs a real query](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse_web/controllers/health_controller.ex#L31-L54),
   so the container is healthy only when the service can serve.
 - `/metrics` serves Prometheus text with the names the platform contract gives matching.
+- A token signed by a key matching does not hold makes it
+  [fetch identity's key set again at most every ten seconds](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/security/token_verifier.ex#L90-L95),
+  so tokens with made-up key ids cannot make identity answer once per request.
 - A courier whose app goes quiet keeps their process for a while, so a reconnect finds its last position;
-  [an offline courier silent for fifteen minutes is stopped](https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse/tracking/idle_reaper.ex#L32),
+  [an offline courier silent for fifteen minutes is stopped](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/tracking/idle_reaper.ex#L32),
   so a courier who never comes back does not keep a process forever.
 - On `SIGTERM` the gRPC listener stops taking calls and
-  [waits for the ones in flight](https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse/grpc_drain.ex#L1-L4)
+  [waits for the ones in flight](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/grpc_drain.ex#L1-L4)
   before the process ends.

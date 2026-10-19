@@ -1,30 +1,30 @@
 ---
 title: "search.v1"
-description: "Paket gRPC search.v1 di kinetix-contracts 1.3.0: service, message, dan enum-nya."
+description: "Paket gRPC search.v1 di kinetix-contracts 1.5.0: service, message, dan enum-nya."
 editUrl: false
-sourceHash: "0090d279de4c"
+sourceHash: "07363df204f4"
 ---
 
 <div class="grpc-reference">
 
-Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v/1.3.0) kinetix-contracts: [`search/v1/search.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/search/v1/search.proto). Server dan pemanggil diambil dari [peta sistem](/id/architecture/system-map/); tanda pisah berarti peta tidak mencatat apa pun.
+Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v/1.5.0) kinetix-contracts: [`search/v1/search.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto). Server dan pemanggil diambil dari [peta sistem](/id/architecture/system-map/); tanda pisah berarti peta tidak mencatat apa pun.
 
 ## Service
 
 ### SearchService
 
-[`search/v1/search.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/search/v1/search.proto#L8)
+[`search/v1/search.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L8)
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`SearchProducts`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/search/v1/search.proto#L9) | [`SearchProductsRequest`](#searchproductsrequest) → [`SearchProductsResponse`](#searchproductsresponse) | [search](/id/services/search/) | — |
-| [`SuggestProducts`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/search/v1/search.proto#L10) | [`SuggestProductsRequest`](#suggestproductsrequest) → [`SuggestProductsResponse`](#suggestproductsresponse) | [search](/id/services/search/) | — |
+| [`SearchProducts`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L9) | [`SearchProductsRequest`](#searchproductsrequest) → [`SearchProductsResponse`](#searchproductsresponse) | [search](/id/services/search/) | — |
+| [`SuggestProducts`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L10) | [`SuggestProductsRequest`](#suggestproductsrequest) → [`SuggestProductsResponse`](#suggestproductsresponse) | [search](/id/services/search/) | — |
 
 ## Message
 
 ### Page
 
-[`search/v1/search.proto:20`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/search/v1/search.proto#L20)
+[`search/v1/search.proto:20`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L20)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -33,7 +33,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### IndexFreshness
 
-[`search/v1/search.proto:25`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/search/v1/search.proto#L25)
+[`search/v1/search.proto:25`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L25)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -43,7 +43,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ProductHit
 
-[`search/v1/search.proto:31`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/search/v1/search.proto#L31)
+[`search/v1/search.proto:31`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L31)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -58,7 +58,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### FacetValue
 
-[`search/v1/search.proto:42`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/search/v1/search.proto#L42)
+[`search/v1/search.proto:42`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L42)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -67,7 +67,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### Facet
 
-[`search/v1/search.proto:47`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/search/v1/search.proto#L47)
+[`search/v1/search.proto:47`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L47)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -76,7 +76,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### SearchProductsRequest
 
-[`search/v1/search.proto:52`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/search/v1/search.proto#L52)
+[`search/v1/search.proto:52`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L52)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -88,7 +88,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### SearchProductsResponse
 
-[`search/v1/search.proto:60`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/search/v1/search.proto#L60)
+[`search/v1/search.proto:60`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L60)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -99,7 +99,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### SuggestProductsRequest
 
-[`search/v1/search.proto:67`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/search/v1/search.proto#L67)
+[`search/v1/search.proto:67`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L67)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -108,7 +108,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### SuggestProductsResponse
 
-[`search/v1/search.proto:72`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/search/v1/search.proto#L72)
+[`search/v1/search.proto:72`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L72)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -118,7 +118,7 @@ Dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### RankingProfile
 
-[`search/v1/search.proto:13`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/search/v1/search.proto#L13)
+[`search/v1/search.proto:13`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L13)
 
 | Nama | Nomor |
 | --- | --- |

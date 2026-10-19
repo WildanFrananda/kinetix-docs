@@ -14,7 +14,7 @@ facts are not its own.
 
 The tables on this page are generated from the same verified data as the
 [system map](/architecture/system-map/), at the commits linked from each row. The prose is checked
-against order [v1.0.1](https://github.com/WildanFrananda/kinetix-order-service/tree/bf6483a1e8c5c21de00425bbdaa3ce30dec29450),
+against order [v1.2.0](https://github.com/WildanFrananda/kinetix-order-service/tree/0c3698ed729ac161bef54c469f46cebf89acb6c6),
 the version in production.
 
 ## At a glance
@@ -24,14 +24,21 @@ the version in production.
 ## What it serves over gRPC
 
 Other services tell order what happened to an order — packed, delivered, returned — and read orders back,
-[with the merchant who sold it and the courier who delivered it](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/OrderGrpcServerService.cs#L81-L88)
+[with the merchant who sold it and the courier who delivered it](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/OrderGrpcServerService.cs#L81-L88)
 — which is how review knows whom a review is about. Each row names who calls it, linked to the line that
 does.
 
-Since v1.1.0, which production runs, order also serves
-[its lifecycle log](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Infrastructure/Grpc/OrderLifecycleGrpcService.cs#L19-L49), every change of every order, page by page, to the
-[notary](/services/notary/), which anchors it on chain. The rest of this page has not yet been re-checked
-against v1.1.0.
+Order also serves [its lifecycle log](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/OrderLifecycleGrpcService.cs#L19-L49),
+every change of every order, page by page, to the [notary](/services/notary/), which anchors it on chain. Every
+status an order or a return reaches is
+[written to the log in the same transaction as the change](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Lifecycle/LifecycleLog.cs#L13-L29),
+with who did it: the buyer, the merchant, the courier, an admin or order itself.
+
+Search follows orders through a change feed whose cursor is a database transaction, not a time. A cursor that
+carries one is
+[served in commit-safe order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Services/OrderService.cs#L598-L644): only orders written by
+transactions older than every transaction still running. An order whose transaction commits late is served
+late, and never skipped.
 
 <ServiceServes service="order" />
 
@@ -48,17 +55,25 @@ holds what was agreed:
    again, because a cart can be fourteen days old — see
    [Never trust a number the client can type](/learn/trust-boundaries/).
 2. **The merchant** catalog names for the cart must still be allowed to sell: order
-   [asks identity](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Application/Services/OrderService.cs#L69-L71)
+   [asks identity](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Services/OrderService.cs#L74-L76)
    at every checkout, and refuses with `409` when it may not and `503` when identity cannot say.
-3. **Shipping** is quoted by matching and priced by pricing, and **the total** comes from pricing. If
-   pricing cannot be asked, the checkout is refused with `503` rather than charged at a remembered price —
+3. **Shipping** is quoted for the parcel, on the route it travels.
+   [The parcel's weight](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Services/OrderService.cs#L211-L223) is catalog's weight for each
+   product times its quantity. [The route](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Services/OrderService.cs#L225-L240) runs from the
+   point identity holds for the merchant's store to the address the buyer typed, placed by identity's
+   geocoder. [Matching offers the courier options for that route and weight, and pricing prices them](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Services/OrderService.cs#L404-L512).
+   A product
+   with no weight, a store with no point on the map, or an address that cannot be placed precisely enough
+   [refuses the checkout with `422`](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Controllers/OrderController.cs#L125-L152), and a geocoder that cannot
+   answer refuses it with `503`. The order stores the drop-off point and the weight.
+4. **The total** comes from pricing. If pricing cannot be asked, the checkout is refused with `503` rather than charged at a remembered price —
    see [Unknown is not no](/learn/unknown-is-not-no/). The voucher the order records is
-   [the one pricing applied](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Application/Services/OrderService.cs#L88), not the code the buyer typed, so a voucher pricing refused is never
+   [the one pricing applied](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Services/OrderService.cs#L101), not the code the buyer typed, so a voucher pricing refused is never
    redeemed. Each item is recorded at
-   [the price pricing charged for that line](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Application/Services/OrderService.cs#L224-L261),
+   [the price pricing charged for that line](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Services/OrderService.cs#L273-L310),
    flash sale included, and the checkout is refused if pricing left a line out or its lines do not add up
    to its subtotal — a return is refunded from these amounts, so they have to be what was paid.
-4. **The saga** then reserves stock, redeems the voucher, allocates flash-sale stock and holds the money
+5. **The saga** then reserves stock, redeems the voucher, allocates flash-sale stock and holds the money
    in escrow, recording each step before it calls and compensating newest-first when one is refused — see
    [The checkout saga](/learn/checkout-saga/).
 
@@ -68,40 +83,42 @@ An `Idempotency-Key` header makes a retried checkout return the first order inst
 ## When the merchant is paid
 
 The buyer's money stays in payment's escrow until order says the order is complete. An order is
-[completed](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Application/Completion/OrderCompletion.cs#L93-L141)
+[completed](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Completion/OrderCompletion.cs#L93-L141)
 once it has been delivered, its return window has closed — seven days from the time the courier reported
 the delivery, set by `KINETIX_RETURN_WINDOW_DAYS` — and no return against it is still open or waiting for
 its refund. Only then does order ask payment to release the escrow to the merchant.
 
 Completing an order and opening a return both
-[lock the order's row](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Application/Completion/OrderCompletion.cs#L33)
+[lock the order's row](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Completion/OrderCompletion.cs#L34)
 before they read it, so a return cannot be opened against an order whose money is being paid out, and a
 completion that waited behind a new return sees it. The order becomes `COMPLETED` first and the release
 is then owed: if payment cannot be reached it is
-[retried with backoff](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Application/Completion/OrderCompletion.cs#L143-L165),
+[retried with backoff](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Completion/OrderCompletion.cs#L143-L165),
 and if payment refuses, it stops and waits for a person rather than retrying forever.
 
 ## Returns
 
 A return is opened by the merchant through warehouse, and only against a delivered order; a completed
 order's window has closed. When the goods come back, every line must
-[name an item of the order and no more than was bought](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Application/Returns/ReturnsHandler.cs#L215-L231).
+[name an item of the order and no more than was bought](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Returns/ReturnsHandler.cs#L222-L238).
 The buyer is refunded
-[the share of the merchant's money those goods were worth](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Application/Returns/ReturnsHandler.cs#L195-L213)
+[the share of the merchant's money those goods were worth](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Returns/ReturnsHandler.cs#L202-L220)
 — the order's total less its shipping fee, times the returned value over the value of everything bought,
 rounded down to the cent — so a voucher is shared out with it, a full return refunds the merchant's whole
 share, and the courier keeps the fee for a delivery that was made. The refund is paid from the escrow
 under the key
-[`return:{return number}`](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Application/Returns/ReturnRefunds.cs#L21),
+[`return:{return number}`](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Returns/ReturnRefunds.cs#L23),
 so a retry cannot pay it twice.
 
 ## Sending a courier
 
 When warehouse reports an order packed, order
-[records that the order is owed a courier](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Application/Fulfillment/FulfillmentPackedHandler.cs#L57-L76)
+[records that the order is owed a courier](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Fulfillment/FulfillmentPackedHandler.cs#L62-L81)
 before it asks anyone anything, and then
-[tries](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Application/Fulfillment/CourierDispatcher.cs#L28-L47): it asks identity where the store
-and the buyer are, asks matching for a courier, and gives warehouse the tracking number matching issued.
+[tries](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Fulfillment/CourierDispatcher.cs#L28-L47): it asks identity where the store is,
+[asks matching for a courier](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Fulfillment/CourierDispatcher.cs#L49-L87) to the drop-off point
+and for the weight stored at checkout, and gives warehouse the tracking number matching issued. An order
+placed before 2026-10-18 has no stored drop-off; its courier goes to the point on the buyer's profile.
 Whatever does not go through is retried, backing off to an hour — identity or the fleet out of reach, no
 courier free yet, warehouse not told. A retry is safe because matching books one job per order number and
 answers a repeat with the same courier and tracking number. The retry stops and waits for a person only when
@@ -113,7 +130,7 @@ matching says the job is already finished or warehouse refuses the number.
 | --- | --- |
 | `Controllers/` | the HTTP surface: cart, checkout, orders, saga administration, health |
 | `Application/` | the checkout saga, the order and cart services, delivery, completion and returns |
-| `Application/Ports/` | the interfaces the application needs — [one per collaborator](https://github.com/WildanFrananda/kinetix-order-service/tree/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Application/Ports), such as `IPricingClient` and `IStockClient` |
+| `Application/Ports/` | the interfaces the application needs — [one per collaborator](https://github.com/WildanFrananda/kinetix-order-service/tree/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Ports), such as `IPricingClient` and `IStockClient` |
 | `Infrastructure/` | what implements those ports: gRPC clients and the gRPC server, EF Core persistence, background workers, observability |
 | `Domain/` | entities and enums, with no framework code |
 | `Security/` | service identity on the mesh, caller allow lists, token validation |
@@ -126,10 +143,13 @@ collaborator is a remote service.
 
 PostgreSQL, through EF Core, holds
 [orders and their items, checkout sagas and their steps, compensation attempts, the shipping fees owed to
-couriers, the couriers owed to packed orders, the escrow releases owed to merchants, and returns](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Persistence/OrderDbContext.cs#L9-L18).
+couriers, the couriers owed to packed orders, the escrow releases owed to merchants, returns, and the
+lifecycle log](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Persistence/OrderDbContext.cs#L9-L19). The log
+[refuses `UPDATE`, `DELETE` and `TRUNCATE`](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Migrations/20261016134224_OrdersKeepALifecycleLog.cs#L62-L74),
+and [a status written without its event fails to commit](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Migrations/20261016134224_OrdersKeepALifecycleLog.cs#L76-L127).
 
 Redis holds carts, one per customer under
-[`cart:principal:{principal id}`](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Application/Services/CartService.cs#L12-L14),
+[`cart:principal:{principal id}`](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Services/CartService.cs#L12-L14),
 expiring fourteen days after the last change. A cart is the only thing order keeps outside its database,
 and nothing in it is believed at checkout.
 
@@ -139,42 +159,46 @@ and nothing in it is believed at checkout.
   token, never the refresh or two-factor token signed by the same key; see
   [Tokens that can be taken back](/learn/tokens-that-can-be-taken-back/).
 - **An order is read by its owner or by staff.**
-  [Anyone else gets the same `404`](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Controllers/OrderController.cs#L143-L153)
+  [Anyone else gets the same `404`](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Controllers/OrderController.cs#L206-L216)
   as for an order that does not exist, so the answer does not reveal that it does.
-- **Staff** — the `operator` and `admin` roles — also read the sagas and the returns that need attention.
+- **Staff** — the `admin` role — also read the sagas and the returns that need attention.
 - **An admin** may
-  [complete a delivered order early](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Controllers/OrderCompletionController.cs#L11-L16),
+  [complete a delivered order early](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Controllers/OrderCompletionController.cs#L17-L34),
   under the same rules except the window, and may
-  [reject a return whose goods never came back](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Application/Returns/ReturnRejection.cs#L17-L45),
-  with a reason. A return does not lapse on a timer: the merchant both opens it and records the goods
+  [reject a return whose goods never came back](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Returns/ReturnRejection.cs#L18-L62),
+  with a reason. Both are written to the lifecycle log under the admin's principal, and a token that names
+  none is refused. A return does not lapse on a timer: the merchant both opens it and records the goods
   coming back, so a timer would pay a merchant for never recording them. A return whose goods came back
   cannot be rejected — the buyer is owed.
 - **Warehouse's report that a parcel is packed** is accepted only for a paid order of the same
   merchant; an order that was cancelled or refunded is not revived and no courier is sent.
 - **Other services** reach the gRPC port only with a certificate from Kinetix's CA naming a service on
   order's allow list, and
-  [each is allowed only the calls it makes](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Security/PeerAllowList.cs#L57-L71):
-  review reads an order, matching reports a delivery, search follows the change feed, and warehouse reports
-  a packed parcel and a return — so no caller can report a delivery or a returned parcel unless that is its
-  job. Order checks the identity of every server it calls in return; see
+  [each is allowed only the calls it makes](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Security/PeerAllowList.cs#L57-L71):
+  review reads an order, matching reports a delivery, search follows the change feed, the notary reads the
+  lifecycle log, and warehouse reports a packed parcel and a return — so no caller can report a delivery or a
+  returned parcel unless that is its job. Order checks the identity of every server it calls in return; see
   [Who is calling?](/learn/who-is-calling/).
 
 ## Running in the background
 
 | Worker | Does |
 | --- | --- |
-| `StuckSagaSweeper` | [unwinds checkouts that stopped part-way](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Background/StuckSagaSweeper.cs#L45-L82) — it releases what was held and never pushes a checkout forward — in bounded rounds; see [The checkout saga](/learn/checkout-saga/) |
-| `OrderCompletionSweeper` | every minute, [retries the refunds owed for returns, completes the orders whose window has closed, and retries the escrow releases owed to merchants](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Background/OrderCompletionSweeper.cs#L48-L52), twenty at a time |
-| `CourierDispatchSweeper` | every minute, [retries the couriers owed to packed orders](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Background/CourierDispatchSweeper.cs#L45-L84), twenty at a time, backing off to an hour |
-| `ShippingSettlementSweeper` | every minute, [settles the shipping fees owed to couriers](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Background/ShippingSettlementSweeper.cs#L12-L16) that payment has not yet confirmed, twenty at a time, backing off to an hour |
+| `StuckSagaSweeper` | [unwinds checkouts that stopped part-way](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Background/StuckSagaSweeper.cs#L45-L82) — it releases what was held and never pushes a checkout forward — in bounded rounds; see [The checkout saga](/learn/checkout-saga/) |
+| `OrderCompletionSweeper` | every minute, [retries the refunds owed for returns, completes the orders whose window has closed, and retries the escrow releases owed to merchants](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Background/OrderCompletionSweeper.cs#L49-L53), twenty at a time |
+| `CourierDispatchSweeper` | every minute, [retries the couriers owed to packed orders](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Background/CourierDispatchSweeper.cs#L45-L84), twenty at a time, backing off to an hour |
+| `ShippingSettlementSweeper` | every minute, [settles the shipping fees owed to couriers](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Background/ShippingSettlementSweeper.cs#L12-L16) that payment has not yet confirmed, twenty at a time, backing off to an hour |
 
 ## Operating it
 
 - `/health` answers when the process is up; `/health/ready`
-  [runs a real query](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Controllers/HealthController.cs#L19-L30)
+  [runs a real query](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Controllers/HealthController.cs#L19-L30)
   and turns `503` while the instance drains after `SIGTERM`, so traffic stops before the process does.
 - `/metrics` serves Prometheus text with the names the platform contract gives order.
+- A token signed by a key order does not hold makes it
+  [fetch identity's key set again at most every ten seconds](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Security/JwksKeyProvider.cs#L77-L97), one
+  fetch at a time, so tokens with made-up key ids cannot make identity answer once per request.
 - Every outbound gRPC call
-  [has a deadline](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Program.cs#L110-L114),
+  [has a deadline](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Program.cs#L110-L114),
   five seconds unless `KINETIX_GRPC_DEADLINE_SECONDS` says otherwise, so a dependency that hangs becomes
   an answer instead of a stuck request.

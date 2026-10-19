@@ -1,29 +1,29 @@
 ---
 title: "returns.v1"
-description: "The returns.v1 gRPC package in kinetix-contracts 1.3.0: its services, messages and enums."
+description: "The returns.v1 gRPC package in kinetix-contracts 1.5.0: its services, messages and enums."
 editUrl: false
 ---
 
 <div class="grpc-reference">
 
-Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v/1.3.0) of kinetix-contracts: [`returns/v1/returns.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/returns/v1/returns.proto). Servers and callers are those on the [system map](/architecture/system-map/); a dash means the map records none.
+Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v/1.5.0) of kinetix-contracts: [`returns/v1/returns.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/returns/v1/returns.proto). Servers and callers are those on the [system map](/architecture/system-map/); a dash means the map records none.
 
 ## Services
 
 ### ReturnService
 
-[`returns/v1/returns.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/returns/v1/returns.proto#L8)
+[`returns/v1/returns.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/returns/v1/returns.proto#L8)
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`SubmitReturnClaim`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/returns/v1/returns.proto#L9) | [`SubmitReturnClaimRequest`](#submitreturnclaimrequest) → [`SubmitReturnClaimResponse`](#submitreturnclaimresponse) | — | — |
-| [`GetReturnStatus`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/returns/v1/returns.proto#L10) | [`GetReturnStatusRequest`](#getreturnstatusrequest) → [`GetReturnStatusResponse`](#getreturnstatusresponse) | — | — |
+| [`SubmitReturnClaim`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/returns/v1/returns.proto#L9) | [`SubmitReturnClaimRequest`](#submitreturnclaimrequest) → [`SubmitReturnClaimResponse`](#submitreturnclaimresponse) | — | — |
+| [`GetReturnStatus`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/returns/v1/returns.proto#L10) | [`GetReturnStatusRequest`](#getreturnstatusrequest) → [`GetReturnStatusResponse`](#getreturnstatusresponse) | — | — |
 
 ## Messages
 
 ### SubmitReturnClaimRequest
 
-[`returns/v1/returns.proto:13`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/returns/v1/returns.proto#L13)
+[`returns/v1/returns.proto:13`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/returns/v1/returns.proto#L13)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -36,7 +36,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### SubmitReturnClaimResponse
 
-[`returns/v1/returns.proto:22`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/returns/v1/returns.proto#L22)
+[`returns/v1/returns.proto:22`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/returns/v1/returns.proto#L22)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -48,7 +48,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### GetReturnStatusRequest
 
-[`returns/v1/returns.proto:30`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/returns/v1/returns.proto#L30)
+[`returns/v1/returns.proto:30`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/returns/v1/returns.proto#L30)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -57,7 +57,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### GetReturnStatusResponse
 
-[`returns/v1/returns.proto:35`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/returns/v1/returns.proto#L35)
+[`returns/v1/returns.proto:35`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/returns/v1/returns.proto#L35)
 
 | Field | Number | Type |
 | --- | --- | --- |

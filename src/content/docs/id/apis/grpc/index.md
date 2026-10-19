@@ -1,16 +1,16 @@
 ---
 title: "Paket gRPC"
-description: "Setiap paket gRPC di kinetix-contracts 1.3.0, beserta service yang melayaninya menurut peta sistem."
+description: "Setiap paket gRPC di kinetix-contracts 1.5.0, beserta service yang melayaninya menurut peta sistem."
 editUrl: false
 sidebar:
   label: "Ikhtisar"
   order: 0
-sourceHash: "8d7dab80b440"
+sourceHash: "f48b418dd31a"
 ---
 
 <div class="grpc-reference">
 
-Setiap service dan message gRPC di Kinetix didefinisikan sekali, di [kinetix-contracts](https://github.com/WildanFrananda/kinetix-contracts); tidak ada repository service yang menyimpan file .proto sendiri. Halaman-halaman ini dibuat otomatis dari rilis [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v/1.3.0) paket npm-nya, yang file .proto-nya adalah milik commit [`edc6c26`](https://github.com/WildanFrananda/kinetix-contracts/tree/edc6c266cdd62d3635f96a14c796289f98447197), jadi tidak ada isi di bawah yang ditulis tangan. Siapa yang melayani sebuah RPC dan siapa yang memanggilnya diambil dari [peta sistem](/id/architecture/system-map/): setiap pemanggil menautkan ke baris kode yang melakukan panggilan itu, dan tanda pisah berarti peta tidak mencatat apa pun.
+Setiap service dan message gRPC di Kinetix didefinisikan sekali, di [kinetix-contracts](https://github.com/WildanFrananda/kinetix-contracts); tidak ada repository service yang menyimpan file .proto sendiri. Halaman-halaman ini dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v/1.5.0) paket npm-nya, yang file .proto-nya adalah milik commit [`2617561`](https://github.com/WildanFrananda/kinetix-contracts/tree/261756184a30a73cfaa9daf5b0206262fa4896ef), jadi tidak ada isi di bawah yang ditulis tangan. Siapa yang melayani sebuah RPC dan siapa yang memanggilnya diambil dari [peta sistem](/id/architecture/system-map/): setiap pemanggil menautkan ke baris kode yang melakukan panggilan itu, dan tanda pisah berarti peta tidak mencatat apa pun.
 
 | Paket | Dilayani oleh | Service | RPC | Message | Enum |
 | --- | --- | --- | --- | --- | --- |

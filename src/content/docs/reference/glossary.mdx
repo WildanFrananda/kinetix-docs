@@ -115,13 +115,13 @@ Owner: pricing. Defined in [the price lookup](https://github.com/WildanFrananda/
 
 ### shipping tier
 
-A delivery service level that matching offers: instant, same-day, regular or cargo, each with its own
-distance and weight limits. The buyer picks a tier, pricing sets its fee from a rate card, and order
-refuses a final fee that is negative or above the base fee.
+A delivery service level that matching offers for a parcel's route and weight: instant, same-day, regular
+or cargo, each with its own distance and weight limits. The buyer picks a tier, pricing sets its fee from a
+rate card by distance and weight, and order refuses a final fee that is negative or above the base fee.
 
-Owner: matching for the tiers, pricing for the fee. Defined in [the tiers](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/shipping.ex#L21-L26),
-[the rate card](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/models/shipping_rate.rs#L47-L50) and
-[order's cross-check](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Application/Services/OrderService.cs#L91-L93).
+Owner: matching for the tiers, pricing for the fee. Defined in [the tiers](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/shipping.ex#L21-L26),
+[the rate card](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/models/shipping_rate.rs#L43-L53) and
+[order's cross-check](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Services/OrderService.cs#L103-L120).
 
 ## Orders
 
@@ -235,11 +235,14 @@ Owner: warehouse. Defined in [the statuses](https://github.com/WildanFrananda/ki
 
 ### dispatch
 
-Order asks matching for a courier once an order is packed. Matching assigns the nearest online driver
-within 3 km of the pickup with enough capacity. When nobody is free, order retries with backoff.
+Order asks matching for a courier once an order is packed, to the drop-off point stored at checkout and
+for the parcel's weight. Matching books the weight in whole kilograms, rounded up, and assigns the nearest
+online driver within 3 km of the pickup whose vehicle can carry it. When nobody is free, order retries with
+backoff.
 
-Owner: matching assigns; order asks. Defined in [the assignment](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/dispatch.ex#L187) and
-[the driver's claim](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/tracking/driver_state.ex#L205-L207).
+Owner: matching assigns; order asks. Defined in [the booking](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch.ex#L53-L74),
+[the assignment](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch.ex#L209) and
+[the driver's claim](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/tracking/driver_state.ex#L205-L207).
 
 ### AWB
 

@@ -98,12 +98,12 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "pricing",
     kind: "grpc",
     calls: [
-      { operation: "pricing.v1.PricingService/CalculatePrice", source: { label: "PricingGrpcClient.cs:87", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/PricingGrpcClient.cs#L87" } },
-      { operation: "pricing.v1.PricingService/QuoteShipping", source: { label: "PricingGrpcClient.cs:33", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/PricingGrpcClient.cs#L33" } },
-      { operation: "pricing.v1.PricingService/RedeemVoucher", source: { label: "VoucherQuotaGrpcClient.cs:22", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/VoucherQuotaGrpcClient.cs#L22" } },
-      { operation: "pricing.v1.PricingService/ReleaseVoucherRedemption", source: { label: "VoucherQuotaGrpcClient.cs:40", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/VoucherQuotaGrpcClient.cs#L40" } },
-      { operation: "pricing.v1.PricingService/AllocateFlashSaleStock", source: { label: "FlashSaleGrpcClient.cs:17", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/FlashSaleGrpcClient.cs#L17" } },
-      { operation: "pricing.v1.PricingService/ReleaseFlashSaleAllocation", source: { label: "FlashSaleGrpcClient.cs:35", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/FlashSaleGrpcClient.cs#L35" } }
+      { operation: "pricing.v1.PricingService/CalculatePrice", source: { label: "PricingGrpcClient.cs:87", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/PricingGrpcClient.cs#L87" } },
+      { operation: "pricing.v1.PricingService/QuoteShipping", source: { label: "PricingGrpcClient.cs:33", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/PricingGrpcClient.cs#L33" } },
+      { operation: "pricing.v1.PricingService/RedeemVoucher", source: { label: "VoucherQuotaGrpcClient.cs:22", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/VoucherQuotaGrpcClient.cs#L22" } },
+      { operation: "pricing.v1.PricingService/ReleaseVoucherRedemption", source: { label: "VoucherQuotaGrpcClient.cs:40", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/VoucherQuotaGrpcClient.cs#L40" } },
+      { operation: "pricing.v1.PricingService/AllocateFlashSaleStock", source: { label: "FlashSaleGrpcClient.cs:22", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/FlashSaleGrpcClient.cs#L22" } },
+      { operation: "pricing.v1.PricingService/ReleaseFlashSaleAllocation", source: { label: "FlashSaleGrpcClient.cs:40", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/FlashSaleGrpcClient.cs#L40" } }
     ]
   },
   {
@@ -111,8 +111,8 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "matching",
     kind: "grpc",
     calls: [
-      { operation: "shipping.v1.ShippingService/EstimateShippingOptions", source: { label: "ShippingGrpcClient.cs:34", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/ShippingGrpcClient.cs#L34" } },
-      { operation: "fleet.v1.CourierTelemetryService/DispatchCourier", source: { label: "CourierDispatcher.cs:74", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Application/Fulfillment/CourierDispatcher.cs#L74" } }
+      { operation: "shipping.v1.ShippingService/EstimateShippingOptions", source: { label: "ShippingGrpcClient.cs:34", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/ShippingGrpcClient.cs#L34" } },
+      { operation: "fleet.v1.CourierTelemetryService/DispatchCourier", source: { label: "CourierDispatcher.cs:74", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Fulfillment/CourierDispatcher.cs#L74" } }
     ]
   },
   {
@@ -120,7 +120,7 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "catalog",
     kind: "grpc",
     calls: [
-      { operation: "catalog.v1.CatalogService/GetProduct", source: { label: "CatalogProductDirectory.cs:22", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/CatalogProductDirectory.cs#L22" } }
+      { operation: "catalog.v1.CatalogService/GetProduct", source: { label: "CatalogProductDirectory.cs:22", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/CatalogProductDirectory.cs#L22" } }
     ]
   },
   {
@@ -128,11 +128,11 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "warehouse",
     kind: "grpc",
     calls: [
-      { operation: "fulfillment.v1.BinStockService/ReserveStock", source: { label: "StockGrpcClient.cs:17", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/StockGrpcClient.cs#L17" } },
-      { operation: "fulfillment.v1.BinStockService/ReleaseStock", source: { label: "StockGrpcClient.cs:34", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/StockGrpcClient.cs#L34" } },
-      { operation: "fulfillment.v1.FulfillmentTaskService/CreateFulfillmentTask", source: { label: "FulfillmentGrpcClient.cs:34", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/FulfillmentGrpcClient.cs#L34" } },
-      { operation: "fulfillment.v1.FulfillmentTaskService/CancelFulfillmentTask", source: { label: "FulfillmentGrpcClient.cs:62", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/FulfillmentGrpcClient.cs#L62" } },
-      { operation: "fulfillment.v1.FulfillmentTaskService/RecordCourierAwb", source: { label: "FulfillmentGrpcClient.cs:90", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/FulfillmentGrpcClient.cs#L90" } }
+      { operation: "fulfillment.v1.BinStockService/ReserveStock", source: { label: "StockGrpcClient.cs:22", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/StockGrpcClient.cs#L22" } },
+      { operation: "fulfillment.v1.BinStockService/ReleaseStock", source: { label: "StockGrpcClient.cs:44", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/StockGrpcClient.cs#L44" } },
+      { operation: "fulfillment.v1.FulfillmentTaskService/CreateFulfillmentTask", source: { label: "FulfillmentGrpcClient.cs:34", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/FulfillmentGrpcClient.cs#L34" } },
+      { operation: "fulfillment.v1.FulfillmentTaskService/CancelFulfillmentTask", source: { label: "FulfillmentGrpcClient.cs:62", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/FulfillmentGrpcClient.cs#L62" } },
+      { operation: "fulfillment.v1.FulfillmentTaskService/RecordCourierAwb", source: { label: "FulfillmentGrpcClient.cs:90", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/FulfillmentGrpcClient.cs#L90" } }
     ]
   },
   {
@@ -140,12 +140,12 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "payment",
     kind: "grpc",
     calls: [
-      { operation: "payment.v1.PaymentService/CreateEscrowHold", source: { label: "EscrowGrpcClient.cs:49", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/EscrowGrpcClient.cs#L49" } },
-      { operation: "payment.v1.PaymentService/RefundEscrow", source: { label: "EscrowGrpcClient.cs:73", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/EscrowGrpcClient.cs#L73" } },
-      { operation: "payment.v1.PaymentService/ReleaseEscrow", source: { label: "EscrowGrpcClient.cs:95", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/EscrowGrpcClient.cs#L95" } },
-      { operation: "payment.v1.PaymentService/RefundGoods", source: { label: "EscrowGrpcClient.cs:110", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/EscrowGrpcClient.cs#L110" } },
-      { operation: "payment.v1.PaymentService/SettleShippingFee", source: { label: "EscrowGrpcClient.cs:137", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/EscrowGrpcClient.cs#L137" } },
-      { operation: "payment.v1.PaymentService/GetEscrowStatus", source: { label: "EscrowGrpcClient.cs:158", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/EscrowGrpcClient.cs#L158" } }
+      { operation: "payment.v1.PaymentService/CreateEscrowHold", source: { label: "EscrowGrpcClient.cs:49", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L49" } },
+      { operation: "payment.v1.PaymentService/RefundEscrow", source: { label: "EscrowGrpcClient.cs:73", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L73" } },
+      { operation: "payment.v1.PaymentService/ReleaseEscrow", source: { label: "EscrowGrpcClient.cs:95", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L95" } },
+      { operation: "payment.v1.PaymentService/RefundGoods", source: { label: "EscrowGrpcClient.cs:110", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L110" } },
+      { operation: "payment.v1.PaymentService/SettleShippingFee", source: { label: "EscrowGrpcClient.cs:137", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L137" } },
+      { operation: "payment.v1.PaymentService/GetEscrowStatus", source: { label: "EscrowGrpcClient.cs:158", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L158" } }
     ]
   },
   {
@@ -153,8 +153,9 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "identity",
     kind: "grpc",
     calls: [
-      { operation: "identity.v1.IdentityService/GetMerchantInfo", source: { label: "IdentityAddressDirectory.cs:21", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/IdentityAddressDirectory.cs#L21" } },
-      { operation: "identity.v1.IdentityService/GetUserProfile", source: { label: "IdentityAddressDirectory.cs:56", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/IdentityAddressDirectory.cs#L56" } }
+      { operation: "identity.v1.IdentityService/GetMerchantInfo", source: { label: "IdentityAddressDirectory.cs:21", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/IdentityAddressDirectory.cs#L21" } },
+      { operation: "identity.v1.IdentityService/GetUserProfile", source: { label: "IdentityAddressDirectory.cs:56", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/IdentityAddressDirectory.cs#L56" } },
+      { operation: "geo.v1.GeocodingService/GeocodeAddress", source: { label: "IdentityAddressGeocoder.cs:23", href: "https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/IdentityAddressGeocoder.cs#L23" } }
     ]
   },
   {
@@ -180,7 +181,7 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "order",
     kind: "grpc",
     calls: [
-      { operation: "order.v1.OrderService/OrderDelivered", source: { label: "order_grpc.ex:66", href: "https://github.com/WildanFrananda/kinetix-matching-service/blob/7697467eac748c9090659622fcb398cab7004c83/lib/fleet_pulse/clients/order_grpc.ex#L66" } }
+      { operation: "order.v1.OrderService/OrderDelivered", source: { label: "order_grpc.ex:66", href: "https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/clients/order_grpc.ex#L66" } }
     ]
   },
   {

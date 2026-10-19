@@ -1,28 +1,28 @@
 ---
 title: "notary.v1"
-description: "The notary.v1 gRPC package in kinetix-contracts 1.3.0: its services, messages and enums."
+description: "The notary.v1 gRPC package in kinetix-contracts 1.5.0: its services, messages and enums."
 editUrl: false
 ---
 
 <div class="grpc-reference">
 
-Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v/1.3.0) of kinetix-contracts: [`notary/v1/watch.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notary/v1/watch.proto). Servers and callers are those on the [system map](/architecture/system-map/); a dash means the map records none.
+Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v/1.5.0) of kinetix-contracts: [`notary/v1/watch.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notary/v1/watch.proto). Servers and callers are those on the [system map](/architecture/system-map/); a dash means the map records none.
 
 ## Services
 
 ### EpochWatchService
 
-[`notary/v1/watch.proto:9`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notary/v1/watch.proto#L9)
+[`notary/v1/watch.proto:9`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notary/v1/watch.proto#L9)
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`ApproveEpoch`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notary/v1/watch.proto#L10) | `stream` [`ApproveEpochRequest`](#approveepochrequest) → [`ApproveEpochResponse`](#approveepochresponse) | — | — |
+| [`ApproveEpoch`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notary/v1/watch.proto#L10) | `stream` [`ApproveEpochRequest`](#approveepochrequest) → [`ApproveEpochResponse`](#approveepochresponse) | — | — |
 
 ## Messages
 
 ### ApproveEpochRequest
 
-[`notary/v1/watch.proto:13`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notary/v1/watch.proto#L13)
+[`notary/v1/watch.proto:13`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notary/v1/watch.proto#L13)
 
 | Field | Number | Type | Notes |
 | --- | --- | --- | --- |
@@ -31,7 +31,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### EpochProposal
 
-[`notary/v1/watch.proto:20`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notary/v1/watch.proto#L20)
+[`notary/v1/watch.proto:20`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notary/v1/watch.proto#L20)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -45,7 +45,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### ProposedAccountBatch
 
-[`notary/v1/watch.proto:30`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notary/v1/watch.proto#L30)
+[`notary/v1/watch.proto:30`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notary/v1/watch.proto#L30)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -53,7 +53,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### ProposedAccount
 
-[`notary/v1/watch.proto:34`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notary/v1/watch.proto#L34)
+[`notary/v1/watch.proto:34`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notary/v1/watch.proto#L34)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -65,7 +65,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### ApproveEpochResponse
 
-[`notary/v1/watch.proto:42`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/notary/v1/watch.proto#L42)
+[`notary/v1/watch.proto:42`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notary/v1/watch.proto#L42)
 
 | Field | Number | Type |
 | --- | --- | --- |

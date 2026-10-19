@@ -1,59 +1,59 @@
 ---
 title: "fulfillment.v1"
-description: "The fulfillment.v1 gRPC package in kinetix-contracts 1.3.0: its services, messages and enums."
+description: "The fulfillment.v1 gRPC package in kinetix-contracts 1.5.0: its services, messages and enums."
 editUrl: false
 ---
 
 <div class="grpc-reference">
 
-Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v/1.3.0) of kinetix-contracts: [`fulfillment/v1/delivery_evidence.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/delivery_evidence.proto), [`fulfillment/v1/fulfillment.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/fulfillment.proto), [`fulfillment/v1/task.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/task.proto). Servers and callers are those on the [system map](/architecture/system-map/); a dash means the map records none.
+Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v/1.5.0) of kinetix-contracts: [`fulfillment/v1/delivery_evidence.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/delivery_evidence.proto), [`fulfillment/v1/fulfillment.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto), [`fulfillment/v1/task.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/task.proto). Servers and callers are those on the [system map](/architecture/system-map/); a dash means the map records none.
 
 ## Services
 
 ### DeliveryEvidenceService
 
-[`fulfillment/v1/delivery_evidence.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/delivery_evidence.proto#L8)
+[`fulfillment/v1/delivery_evidence.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/delivery_evidence.proto#L8)
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`DeliveriesSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/delivery_evidence.proto#L9) | [`DeliveriesSinceRequest`](#deliveriessincerequest) → [`DeliveriesSinceResponse`](#deliveriessinceresponse) | [matching](/services/matching/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/feeds/delivery_feed.go#L50) |
+| [`DeliveriesSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/delivery_evidence.proto#L9) | [`DeliveriesSinceRequest`](#deliveriessincerequest) → [`DeliveriesSinceResponse`](#deliveriessinceresponse) | [matching](/services/matching/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/feeds/delivery_feed.go#L50) |
 
 ### BinStockService
 
-[`fulfillment/v1/fulfillment.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/fulfillment.proto#L8)
+[`fulfillment/v1/fulfillment.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L8)
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`CheckBinStock`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/fulfillment.proto#L9) | [`CheckBinStockRequest`](#checkbinstockrequest) → [`CheckBinStockResponse`](#checkbinstockresponse) | [warehouse](/services/warehouse/) | [catalog](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/infrastructure/grpc/bin_stock_client.py#L44) |
-| [`CheckBinStockBatch`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/fulfillment.proto#L10) | [`CheckBinStockBatchRequest`](#checkbinstockbatchrequest) → [`CheckBinStockBatchResponse`](#checkbinstockbatchresponse) | [warehouse](/services/warehouse/) | [catalog](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/infrastructure/grpc/bin_stock_client.py#L83) |
-| [`ReserveStock`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/fulfillment.proto#L11) | [`ReserveStockRequest`](#reservestockrequest) → [`ReserveStockResponse`](#reservestockresponse) | [warehouse](/services/warehouse/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/StockGrpcClient.cs#L17) |
-| [`ReleaseStock`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/fulfillment.proto#L12) | [`ReleaseStockRequest`](#releasestockrequest) → [`ReleaseStockResponse`](#releasestockresponse) | [warehouse](/services/warehouse/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/StockGrpcClient.cs#L34) |
+| [`CheckBinStock`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L9) | [`CheckBinStockRequest`](#checkbinstockrequest) → [`CheckBinStockResponse`](#checkbinstockresponse) | [warehouse](/services/warehouse/) | [catalog](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/infrastructure/grpc/bin_stock_client.py#L44) |
+| [`CheckBinStockBatch`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L10) | [`CheckBinStockBatchRequest`](#checkbinstockbatchrequest) → [`CheckBinStockBatchResponse`](#checkbinstockbatchresponse) | [warehouse](/services/warehouse/) | [catalog](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/infrastructure/grpc/bin_stock_client.py#L83) |
+| [`ReserveStock`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L11) | [`ReserveStockRequest`](#reservestockrequest) → [`ReserveStockResponse`](#reservestockresponse) | [warehouse](/services/warehouse/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/StockGrpcClient.cs#L22) |
+| [`ReleaseStock`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L12) | [`ReleaseStockRequest`](#releasestockrequest) → [`ReleaseStockResponse`](#releasestockresponse) | [warehouse](/services/warehouse/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/StockGrpcClient.cs#L44) |
 
 ### FulfillmentService
 
-[`fulfillment/v1/fulfillment.proto:70`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/fulfillment.proto#L70)
+[`fulfillment/v1/fulfillment.proto:70`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L70)
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`CreateOrder`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/fulfillment.proto#L71) | [`CreateOrderRequest`](#createorderrequest) → [`CreateOrderResponse`](#createorderresponse) | — | — |
-| [`GetOrderStatus`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/fulfillment.proto#L72) | [`GetOrderStatusRequest`](#getorderstatusrequest) → [`GetOrderStatusResponse`](#getorderstatusresponse) | — | — |
-| [`CancelOrder`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/fulfillment.proto#L73) | [`CancelOrderRequest`](#cancelorderrequest) → [`CancelOrderResponse`](#cancelorderresponse) | — | — |
+| [`CreateOrder`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L71) | [`CreateOrderRequest`](#createorderrequest) → [`CreateOrderResponse`](#createorderresponse) | — | — |
+| [`GetOrderStatus`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L72) | [`GetOrderStatusRequest`](#getorderstatusrequest) → [`GetOrderStatusResponse`](#getorderstatusresponse) | — | — |
+| [`CancelOrder`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L73) | [`CancelOrderRequest`](#cancelorderrequest) → [`CancelOrderResponse`](#cancelorderresponse) | — | — |
 
 ### FulfillmentTaskService
 
-[`fulfillment/v1/task.proto:7`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/task.proto#L7)
+[`fulfillment/v1/task.proto:7`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/task.proto#L7)
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`CreateFulfillmentTask`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/task.proto#L8) | [`CreateFulfillmentTaskRequest`](#createfulfillmenttaskrequest) → [`CreateFulfillmentTaskResponse`](#createfulfillmenttaskresponse) | [warehouse](/services/warehouse/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/FulfillmentGrpcClient.cs#L34) |
-| [`CancelFulfillmentTask`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/task.proto#L9) | [`CancelFulfillmentTaskRequest`](#cancelfulfillmenttaskrequest) → [`CancelFulfillmentTaskResponse`](#cancelfulfillmenttaskresponse) | [warehouse](/services/warehouse/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/FulfillmentGrpcClient.cs#L62) |
-| [`RecordCourierAwb`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/task.proto#L10) | [`RecordCourierAwbRequest`](#recordcourierawbrequest) → [`RecordCourierAwbResponse`](#recordcourierawbresponse) | [warehouse](/services/warehouse/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Infrastructure/Grpc/FulfillmentGrpcClient.cs#L90) |
+| [`CreateFulfillmentTask`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/task.proto#L8) | [`CreateFulfillmentTaskRequest`](#createfulfillmenttaskrequest) → [`CreateFulfillmentTaskResponse`](#createfulfillmenttaskresponse) | [warehouse](/services/warehouse/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/FulfillmentGrpcClient.cs#L34) |
+| [`CancelFulfillmentTask`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/task.proto#L9) | [`CancelFulfillmentTaskRequest`](#cancelfulfillmenttaskrequest) → [`CancelFulfillmentTaskResponse`](#cancelfulfillmenttaskresponse) | [warehouse](/services/warehouse/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/FulfillmentGrpcClient.cs#L62) |
+| [`RecordCourierAwb`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/task.proto#L10) | [`RecordCourierAwbRequest`](#recordcourierawbrequest) → [`RecordCourierAwbResponse`](#recordcourierawbresponse) | [warehouse](/services/warehouse/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/FulfillmentGrpcClient.cs#L90) |
 
 ## Messages
 
 ### DeliveryEvidence
 
-[`fulfillment/v1/delivery_evidence.proto:12`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/delivery_evidence.proto#L12)
+[`fulfillment/v1/delivery_evidence.proto:12`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/delivery_evidence.proto#L12)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -66,7 +66,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### DeliveriesSinceRequest
 
-[`fulfillment/v1/delivery_evidence.proto:21`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/delivery_evidence.proto#L21)
+[`fulfillment/v1/delivery_evidence.proto:21`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/delivery_evidence.proto#L21)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -75,7 +75,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### DeliveriesSinceResponse
 
-[`fulfillment/v1/delivery_evidence.proto:26`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/delivery_evidence.proto#L26)
+[`fulfillment/v1/delivery_evidence.proto:26`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/delivery_evidence.proto#L26)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -85,7 +85,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### CheckBinStockBatchRequest
 
-[`fulfillment/v1/fulfillment.proto:15`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/fulfillment.proto#L15)
+[`fulfillment/v1/fulfillment.proto:15`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L15)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -94,7 +94,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### CheckBinStockBatchResponse
 
-[`fulfillment/v1/fulfillment.proto:20`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/fulfillment.proto#L20)
+[`fulfillment/v1/fulfillment.proto:20`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L20)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -102,7 +102,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### CheckBinStockRequest
 
-[`fulfillment/v1/fulfillment.proto:24`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/fulfillment.proto#L24)
+[`fulfillment/v1/fulfillment.proto:24`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L24)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -111,7 +111,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### CheckBinStockResponse
 
-[`fulfillment/v1/fulfillment.proto:29`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/fulfillment.proto#L29)
+[`fulfillment/v1/fulfillment.proto:29`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L29)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -126,7 +126,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### ReserveStockRequest
 
-[`fulfillment/v1/fulfillment.proto:40`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/fulfillment.proto#L40)
+[`fulfillment/v1/fulfillment.proto:40`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L40)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -138,7 +138,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### ReserveStockResponse
 
-[`fulfillment/v1/fulfillment.proto:48`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/fulfillment.proto#L48)
+[`fulfillment/v1/fulfillment.proto:48`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L48)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -149,7 +149,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### ReleaseStockRequest
 
-[`fulfillment/v1/fulfillment.proto:55`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/fulfillment.proto#L55)
+[`fulfillment/v1/fulfillment.proto:55`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L55)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -161,7 +161,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### ReleaseStockResponse
 
-[`fulfillment/v1/fulfillment.proto:63`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/fulfillment.proto#L63)
+[`fulfillment/v1/fulfillment.proto:63`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L63)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -172,7 +172,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### CreateOrderRequest
 
-[`fulfillment/v1/fulfillment.proto:76`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/fulfillment.proto#L76)
+[`fulfillment/v1/fulfillment.proto:76`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L76)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -188,7 +188,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### CreateOrderResponse
 
-[`fulfillment/v1/fulfillment.proto:88`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/fulfillment.proto#L88)
+[`fulfillment/v1/fulfillment.proto:88`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L88)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -202,7 +202,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### GetOrderStatusRequest
 
-[`fulfillment/v1/fulfillment.proto:98`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/fulfillment.proto#L98)
+[`fulfillment/v1/fulfillment.proto:98`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L98)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -212,7 +212,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### GetOrderStatusResponse
 
-[`fulfillment/v1/fulfillment.proto:104`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/fulfillment.proto#L104)
+[`fulfillment/v1/fulfillment.proto:104`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L104)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -227,7 +227,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### CancelOrderRequest
 
-[`fulfillment/v1/fulfillment.proto:115`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/fulfillment.proto#L115)
+[`fulfillment/v1/fulfillment.proto:115`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L115)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -238,7 +238,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### CancelOrderResponse
 
-[`fulfillment/v1/fulfillment.proto:122`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/fulfillment.proto#L122)
+[`fulfillment/v1/fulfillment.proto:122`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L122)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -248,7 +248,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### RecordCourierAwbRequest
 
-[`fulfillment/v1/task.proto:13`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/task.proto#L13)
+[`fulfillment/v1/task.proto:13`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/task.proto#L13)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -260,7 +260,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### RecordCourierAwbResponse
 
-[`fulfillment/v1/task.proto:21`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/task.proto#L21)
+[`fulfillment/v1/task.proto:21`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/task.proto#L21)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -270,7 +270,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### FulfillmentTaskLine
 
-[`fulfillment/v1/task.proto:27`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/task.proto#L27)
+[`fulfillment/v1/task.proto:27`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/task.proto#L27)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -279,7 +279,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### CreateFulfillmentTaskRequest
 
-[`fulfillment/v1/task.proto:32`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/task.proto#L32)
+[`fulfillment/v1/task.proto:32`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/task.proto#L32)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -290,7 +290,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### CreateFulfillmentTaskResponse
 
-[`fulfillment/v1/task.proto:39`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/task.proto#L39)
+[`fulfillment/v1/task.proto:39`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/task.proto#L39)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -301,7 +301,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### CancelFulfillmentTaskRequest
 
-[`fulfillment/v1/task.proto:46`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/task.proto#L46)
+[`fulfillment/v1/task.proto:46`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/task.proto#L46)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -311,7 +311,7 @@ Generated from release [1.3.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### CancelFulfillmentTaskResponse
 
-[`fulfillment/v1/task.proto:52`](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/fulfillment/v1/task.proto#L52)
+[`fulfillment/v1/task.proto:52`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/task.proto#L52)
 
 | Field | Number | Type |
 | --- | --- | --- |
