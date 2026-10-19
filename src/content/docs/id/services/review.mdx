@@ -1,7 +1,7 @@
 ---
 title: review
 description: Ulasan produk dan rating kurir — apa kata pembeli tentang barang yang mereka beli dan tentang kurir yang mengantarnya. review bertanya ke order untuk setiap ulasan yang ia terima, tidak menyimpan order sendiri, dan menyimpan log append-only dari setiap ulasan untuk di-anchor oleh notary.
-sourceHash: "c1171fc3a51e"
+sourceHash: "a609d457d1e7"
 ---
 
 import ServiceCalls from "../../../../components/ServiceCalls.astro";
@@ -154,7 +154,7 @@ oleh trigger. review menyimpan principal, tidak pernah nomor akun, dan tidak per
 - **Untuk memanggil order**, review menunjukkan
   [sertifikat dari CA Kinetix](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Security/ServiceIdentity.php#L13-L21)
   yang menyebut review, dan order
-  [hanya mengizinkan review membaca order, tanpa panggilan lain](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Security/PeerAllowList.cs#L57-L71);
+  [hanya mengizinkan review membaca order, tanpa panggilan lain](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Security/PeerAllowList.cs#L57-L71);
   lihat [Siapa yang memanggil?](/id/learn/who-is-calling/).
 
 ## Mengoperasikannya

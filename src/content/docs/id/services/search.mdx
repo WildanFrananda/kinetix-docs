@@ -1,7 +1,7 @@
 ---
 title: search
 description: Pencarian produk di atas salinan data milik service lain. search tidak memiliki produk, merchant, atau order; ia mengikuti change feed setiap pemiliknya, membangun ulang salinannya kapan pun diminta, dan menjawab pembeli tanpa token.
-sourceHash: "2152e2fadf6b"
+sourceHash: "9ebc4c3b76fc"
 ---
 
 import ServiceCalls from "../../../../components/ServiceCalls.astro";
@@ -18,7 +18,7 @@ kapan saja.
 Tabel-tabel di halaman ini dihasilkan dari data terverifikasi yang sama dengan
 [peta sistem](/id/architecture/system-map/), pada commit yang ditautkan dari setiap baris. Prosanya
 diperiksa terhadap search
-[v1.0.0](https://github.com/WildanFrananda/kinetix-search-service/tree/1316183858b32d1123bc5aa5c7502b74d3e5ceee),
+[v1.1.0](https://github.com/WildanFrananda/kinetix-search-service/tree/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2),
 versi yang berjalan di production.
 
 ## Sekilas
@@ -28,7 +28,7 @@ versi yang berjalan di production.
 ## Apa yang dilayaninya
 
 Lewat HTTP, melalui gateway,
-[dua route](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/httpapi/router.go#L20-L32),
+[dua route](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/httpapi/router.go#L20-L32),
 dan keduanya tidak memerlukan token: `/api/v1/products/search` mencari produk dan
 `/api/v1/products/suggest` melengkapi apa yang sedang diketik pembeli. Yang dikembalikan keduanya memang
 sudah tampil di etalase toko — judul, deskripsi, kategori, harga daftar sebuah produk, dan principal
@@ -36,9 +36,9 @@ merchant yang menjualnya.
 
 search menyajikan dua operasi yang sama lewat gRPC, tetapi tidak ada yang boleh memanggilnya. Daftar
 pemanggilnya
-[kosong kecuali ada yang disebut](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/config/config.go#L42),
+[kosong kecuali ada yang disebut](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/config/config.go#L42),
 production tidak menyebut satu pun, dan
-[daftar yang kosong tidak meloloskan siapa pun](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/grpcapi/authorization.go#L53-L59).
+[daftar yang kosong tidak meloloskan siapa pun](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/grpcapi/authorization.go#L53-L59).
 
 <ServiceServes service="search" />
 
@@ -53,21 +53,21 @@ ketika sebuah rebuild memeriksa hasil kerjanya.
 
 Sebuah pencarian menerima `q`, `category` sebanyak apa pun, `sort` berupa `relevance`, `newest`, atau
 `price_asc`, serta `offset` dan `limit`.
-[Query diperiksa sebelum Typesense melihatnya](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/search/query.go#L70-L84):
+[Query diperiksa sebelum Typesense melihatnya](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/search/query.go#L71-L85):
 teks yang lebih panjang dari 256 byte, atau yang memuat karakter kontrol, dijawab `400 malformed_query`.
 Satu halaman berisi 24 produk kecuali request meminta lain, dan
-[tidak pernah lebih dari 100](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/search/query.go#L59-L68).
+[tidak pernah lebih dari 100](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/search/query.go#L60-L69).
 
 Typesense mencocokkan kata-katanya dengan
-[judul, kategori, dan deskripsi, berbobot empat, dua, dan satu](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/typesense/schema.go#L26-L37),
+[judul, kategori, dan deskripsi, berbobot empat, dua, dan satu](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/typesense/schema.go#L26-L37),
 menaruh kecocokan persis di urutan pertama, dan menghitung hasilnya
-[per kategori, merchant, dan mata uang](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/typesense/schema.go#L39-L50),
+[per kategori, merchant, dan mata uang](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/typesense/schema.go#L39-L50),
 sehingga toko bisa menampilkan filter dengan angka di samping masing-masing. Produk yang berada di salah
 satu kategori yang diminta dianggap cocok. Setiap nilai yang dimasukkan ke filter
-[dikutip, setelah backtick-nya dibuang lebih dulu](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/typesense/query.go#L10-L39),
+[dikutip, setelah backtick-nya dibuang lebih dulu](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/typesense/query.go#L10-L39),
 sehingga sebuah kategori tidak bisa menutup kutipannya lalu menambahkan klausa miliknya sendiri. Typesense
 membagi hasil per nomor halaman, bukan per offset, sehingga
-[offset dibulatkan ke bawah ke awal halamannya](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/typesense/query.go#L57-L63).
+[offset dibulatkan ke bawah ke awal halamannya](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/typesense/query.go#L57-L63).
 
 Harga di sebuah hasil adalah harga daftar catalog pada sync terakhir. search tidak menggerakkan uang: apa
 yang dibayar pembeli dihitung ulang saat checkout, oleh [pricing](/id/services/pricing/), dari apa yang
@@ -76,18 +76,18 @@ dipegang catalog pada saat itu.
 ## Saran
 
 `suggest` menerima apa yang sudah diketik dan menjawab
-[hingga sepuluh judul produk yang berbeda](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/typesense/searcher.go#L108-L149),
+[hingga sepuluh judul produk yang berbeda](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/typesense/searcher.go#L108-L149),
 atau sebanyak yang diminta `limit`, paling banyak seratus. Bila belum ada yang diketik,
-[jawabannya adalah tanpa saran](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/httpapi/router.go#L57-L62),
+[jawabannya adalah tanpa saran](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/httpapi/router.go#L57-L62),
 tanpa bertanya ke Typesense.
 
 ## Seberapa segar sebuah jawaban
 
 Setiap jawaban pencarian membawa `index`: waktu perubahan terakhir yang termuat di dalamnya, umur
 index-nya, dan apakah index itu basi.
-[Umurnya adalah waktu sejak sync pass terakhir yang selesai](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/querying/finder.go#L49-L60),
+[Umurnya adalah waktu sejak sync pass terakhir yang selesai](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/querying/finder.go#L49-L60),
 dan sebuah index dianggap basi
-[setelah sepuluh menit](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/config/config.go#L45-L51).
+[setelah sepuluh menit](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/config/config.go#L45-L51).
 Index yang basi tetap menjawab, dengan `200`: jawaban yang lebih lama lebih berguna bagi pembeli daripada
 tanpa jawaban, dan client yang memutuskan apa yang ditampilkan. Sebuah sync pass menyimpan posisinya
 bahkan ketika tidak ada yang berubah, sehingga toko yang sepi tidak terlihat basi — hanya sync yang
@@ -96,20 +96,26 @@ berhenti bekerja yang terlihat begitu.
 ## Mengikuti para pemilik
 
 `syncd` berjalan setiap tiga puluh detik dan, untuk setiap collection,
-[membaca change feed pemiliknya](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/indexing/syncer.go#L40-L102)
-dari titik terakhir ia berhenti — sebuah cursor berupa waktu dan id perubahan terakhir, disimpan di
-PostgreSQL — dua ratus record sekali baca. Ia menulis yang berubah ke index yang live, menghapus yang
+[membaca change feed pemiliknya](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/indexing/syncer.go#L40-L104)
+dari titik terakhir ia berhenti — sebuah cursor berupa transaksi database yang membuat perubahan terakhir dan
+id record-nya, disimpan di PostgreSQL — dua ratus record sekali baca. Setiap pemilik hanya menjawab dengan
+record yang ditulis oleh transaksi yang lebih tua dari setiap transaksi yang masih berjalan, sehingga record
+yang transaksinya commit terlambat sampai ke search terlambat dan tidak pernah terlewat; feed catalog,
+misalnya, [dilayani dengan cara itu](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/repositories/django_product_repository.py#L77-L134).
+Pemilik yang menjawab tanpa transaksi
+[ditolak sebagai tidak tersedia](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/catalogclient/client.go#L75-L82), karena membacanya per waktu
+bisa melewatkan record lagi tanpa ada yang sadar. Ia menulis yang berubah ke index yang live, menghapus yang
 dilaporkan pemiliknya sudah tidak ada — misalnya produk yang ditarik catalog dari penjualan — dan baru
 setelah itu menyimpan cursor-nya. Halaman yang gagal membiarkan cursor di tempatnya, sehingga pass
-berikutnya membaca halaman yang sama lagi: halaman yang gagal membuat index tertinggal, dan tidak dilompati.
-[Kegagalannya dicatat di log](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/cmd/syncd/main.go#L108-L128)
+berikutnya membaca halaman yang sama lagi: index tertinggal, dan tidak ada yang terlewat.
+[Kegagalannya dicatat di log](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/cmd/syncd/main.go#L108-L128)
 beserta artinya: cursor belum bergerak dan index makin tua.
 
 Record yang tidak bisa diubah search menjadi dokumen — produk tanpa SKU yang bisa dipakai, order tanpa
 pembeli —
-[ditolak sendirian](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/catalogclient/convert.go#L31-L52):
+[ditolak sendirian](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/catalogclient/convert.go#L39-L60):
 ia
-[dicatat di log pada level `ERROR` beserta id-nya](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/indexing/refusals.go#L10-L30),
+[dicatat di log pada level `ERROR` beserta id-nya](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/indexing/refusals.go#L10-L30),
 sisa halamannya tetap ditulis, dan cursor-nya bergerak maju. Menggagalkan seluruh halaman justru akan
 menggagalkannya lagi di setiap pass, pada record yang sama, dan collection itu tidak akan pernah bergerak
 lagi.
@@ -118,13 +124,13 @@ lagi.
 
 Setiap collection di Typesense adalah alias yang menunjuk ke sebuah generasi: collection sungguhan yang
 dinamai menurut detik ia dibangun, misalnya `products_v1760000000`. Sebuah rebuild
-[membangun generasi baru dari awal feed pemiliknya](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/indexing/reindexer.go#L44-L144)
+[membangun generasi baru dari awal feed pemiliknya](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/indexing/reindexer.go#L44-L144)
 selagi pencarian tetap membaca generasi lama, lalu memeriksa hasil kerjanya. Generasi produk yang baru
 harus memuat dokumen paling sedikit sebanyak
-[hitungan catalog](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/catalogclient/client.go#L78-L87),
+[hitungan catalog](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/catalogclient/client.go#L87-L96),
 dikurangi yang ditolak; merchant dan order, yang tidak dihitung pemilik mana pun, sebanyak yang dikirim
 rebuild itu. Baru setelah itu ia
-[mengarahkan alias ke generasi yang baru](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/typesense/index.go#L114-L125).
+[mengarahkan alias ke generasi yang baru](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/typesense/index.go#L114-L126).
 Pencarian tidak pernah membaca index yang setengah jadi, dan rebuild yang hasilnya kurang tidak dipakai.
 
 Rebuild dijalankan sesuai kebutuhan, untuk satu collection atau ketiganya. Instalasi baru belum punya apa
@@ -137,10 +143,10 @@ keduanya, sebuah sync pass yang dimulai sebelum rebuild dipromosikan bisa menuli
 alias berpindah — penghapusan produk yang ditarik dari penjualan, misalnya — lalu menyimpan cursor yang
 melewati cursor rebuild, sehingga generasi baru tidak akan pernah mendengarnya. Karena itu setiap
 collection punya
-[advisory lock PostgreSQL](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/postgres/lock.go#L24-L56),
-[yang diambil di dalam transaksi](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/postgres/queries.sql#L21-L22).
+[advisory lock PostgreSQL](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/postgres/lock.go#L24-L56),
+[yang diambil di dalam transaksi](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/postgres/queries.sql#L22-L23).
 Sebuah sync pass memegangnya selama satu pass penuh; rebuild memegangnya
-[hanya selama ia mempromosikan generasi dan menyimpan cursor-nya](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/indexing/reindexer.go#L114-L126),
+[hanya selama ia mempromosikan generasi dan menyimpan cursor-nya](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/indexing/reindexer.go#L114-L126),
 sehingga rebuild yang lama tidak menghentikan sync. Lock itu milik sebuah transaksi, sehingga proses yang
 mati selagi memegangnya ikut melepaskannya bersama session-nya.
 
@@ -148,16 +154,16 @@ mati selagi memegangnya ikut melepaskannya bersama session-nya.
 
 search juga meng-index merchant dan order, tetapi baik gateway maupun permukaan gRPC tidak menyajikannya.
 Kodenya tetap menjaga order tetap privat:
-[pencarian order harus dilakukan atas nama sebuah principal](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/querying/finder.go#L34-L42),
+[pencarian order harus dilakukan atas nama sebuah principal](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/querying/finder.go#L34-L42),
 ia
-[hanya cocok dengan order yang dibeli atau dijual principal itu](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/typesense/query.go#L17-L24),
+[hanya cocok dengan order yang dibeli atau dijual principal itu](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/typesense/query.go#L17-L24),
 dan
-[order tidak pernah disarankan](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/querying/finder.go#L63-L71).
+[order tidak pernah disarankan](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/querying/finder.go#L63-L71).
 
 ## Ketika sesuatu mati
 
 Setiap kegagalan membawa sebuah jenis, dan jenis itulah yang menentukan jawabannya:
-[`400` untuk query yang tidak valid, `503` ketika Typesense atau PostgreSQL tidak bisa menjawab, `500` untuk selebihnya](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/httpapi/status.go#L9-L24).
+[`400` untuk query yang tidak valid, `503` ketika Typesense atau PostgreSQL tidak bisa menjawab, `500` untuk selebihnya](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/httpapi/status.go#L9-L24).
 Body-nya menyebut jenis itu dan tidak lebih. Typesense diberi lima detik dan feed setiap pemilik sepuluh
 detik.
 
@@ -165,14 +171,14 @@ detik.
 
 | Direktori | Berisi |
 | --- | --- |
-| `internal/search` | domain: dokumen, cursor, query, jenis error, dan port yang dibutuhkan use case — hanya standard library, yang diperiksa [`bin/check-core-purity`](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/bin/check-core-purity) di CI |
+| `internal/search` | domain: dokumen, cursor, query, jenis error, dan port yang dibutuhkan use case — hanya standard library, yang diperiksa [`bin/check-core-purity`](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/bin/check-core-purity) di CI |
 | `internal/querying` | pencarian dan saran, serta seberapa segar sebuah jawaban |
 | `internal/indexing` | sync pass dan rebuild |
 | `internal/typesense` | mesin pencarinya: schema, generasi dan alias, query |
 | `internal/postgres` | cursor dan lock collection, lewat sqlc |
 | `internal/catalogclient`, `identityclient`, `orderclient` | change feed, masing-masing mengubah record pemiliknya menjadi dokumen |
 | `internal/httpapi`, `internal/grpcapi` | dua pintu depannya |
-| `internal/wiring` | graf dependensi, dibangun dengan dig; [`bin/check-boundaries`](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/bin/check-boundaries) menjaga dig tetap di sana dan di `cmd/` |
+| `internal/wiring` | graf dependensi, dibangun dengan dig; [`bin/check-boundaries`](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/bin/check-boundaries) menjaga dig tetap di sana dan di `cmd/` |
 | `cmd/` | empat program: `searchd` melayani, `syncd` mengikuti, `reindex` membangun ulang, `migrate` mengubah schema |
 
 Keempat program dikirim dalam satu image, sehingga program yang menjawab pencarian dan program yang
@@ -182,8 +188,11 @@ menulis index tidak pernah berbeda versi.
 
 Typesense memegang tiga collection — products, merchants, dan orders — masing-masing alias di atas
 generasi live-nya. PostgreSQL memegang
-[satu cursor per collection](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/migrations/00001_search_state.sql#L2-L10)
-dan kapan cursor itu terakhir disimpan. Tidak ada yang disimpan search yang merupakan sumber kebenaran:
+[satu cursor per collection](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/migrations/00001_search_state.sql#L2-L10),
+[beserta transaksi tempat ia berhenti](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/migrations/00002_checkpoint_transaction.sql#L1-L4), dan kapan
+cursor itu terakhir disimpan. Waktu perubahan terbaru yang sudah di-index
+[tidak pernah mundur](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/postgres/queries.sql#L4-L11), sehingga rebuild yang berjalan dari awal tidak
+membuat index terlihat lebih tua dari kenyataannya. Tidak ada yang disimpan search yang merupakan sumber kebenaran:
 semuanya bisa dibangun ulang dari para pemiliknya.
 
 ## Siapa boleh melakukan apa
@@ -192,24 +201,24 @@ semuanya bisa dibangun ulang dari para pemiliknya.
   toko.
 - **Tidak ada siapa pun** yang boleh memanggil permukaan gRPC. Hanya health dan reflection yang menjawab di
   sana, dan hanya kepada sertifikat dari CA Kinetix:
-  [handshake mewajibkannya, lewat TLS 1.3](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/grpcapi/credentials.go#L63-L68).
+  [handshake mewajibkannya, lewat TLS 1.3](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/grpcapi/credentials.go#L63-L68).
 - **Untuk membaca sumbernya**, search menunjukkan sertifikat yang menyebut search. identity
-  [mengizinkannya mengikuti feed merchant dan tidak melakukan panggilan lain](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/infrastructure/mesh/peer_allow_list.ts#L48-L63),
+  [mengizinkannya mengikuti feed merchant dan tidak melakukan panggilan lain](https://github.com/WildanFrananda/kinetix-identity-service/blob/40b7e4f76a3f151100f1d48dd9253126ee16ddcb/src/infrastructure/mesh/peer_allow_list.ts#L48-L63),
   dan order
-  [mengizinkannya mengikuti feed order dan tidak melakukan panggilan lain](https://github.com/WildanFrananda/kinetix-order-service/blob/bf6483a1e8c5c21de00425bbdaa3ce30dec29450/Security/PeerAllowList.cs#L57-L71);
+  [mengizinkannya mengikuti feed order dan tidak melakukan panggilan lain](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Security/PeerAllowList.cs#L57-L71);
   lihat [Siapa yang memanggil?](/id/learn/who-is-calling/).
 
 ## Mengoperasikannya
 
 - `searchd` melayani kedua port. `/health/live` menjawab ketika prosesnya hidup;
-  [`/health/ready`](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/wiring/http.go#L25-L46)
+  [`/health/ready`](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/wiring/http.go#L25-L46)
   melakukan ping ke PostgreSQL dan menanyakan ke Typesense generasi mana yang live, sehingga container
   dianggap siap hanya ketika ada sesuatu untuk dicari.
 - `syncd` tidak melayani port apa pun, dan log-nya adalah cara mengawasinya:
-  [setiap halaman yang ia terapkan](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/indexing/syncer.go#L83-L96)
-  dicatat beserta berapa record yang ditulis, dihapus, dan ditolak, dan setiap pass yang gagal menyebut
-  bahwa cursor-nya tidak bergerak. Keduanya menulis log JSON ke standard output.
+  [setiap halaman yang ia terapkan](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/indexing/syncer.go#L83-L98)
+  dicatat beserta berapa record yang ditulis, dihapus, dan ditolak serta transaksi yang dicapainya, dan setiap
+  pass yang gagal menyebut bahwa cursor-nya tidak bergerak. Keduanya menulis log JSON ke standard output.
 - Saat `SIGTERM`, searchd
-  [menghentikan gRPC dengan anggun dan memberi HTTP lima belas detik](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/cmd/searchd/main.go#L96-L101)
+  [menghentikan gRPC dengan anggun dan memberi HTTP lima belas detik](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/cmd/searchd/main.go#L96-L101)
   untuk selesai. syncd langsung berhenti; halaman yang belum selesai ia kerjakan dibaca lagi lain kali,
   karena cursor-nya tidak pernah disimpan.

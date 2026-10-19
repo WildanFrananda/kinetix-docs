@@ -1,7 +1,7 @@
 ---
 title: Apa yang dibuktikan evidence
 description: Apa yang ditunjukkan commitment harian notary atas log order, pengiriman dan review kepada orang-orang di dalamnya, apa yang tidak bisa ditunjukkannya, dan kode mana yang bertanggung jawab atas tiap bagiannya.
-sourceHash: "17f0410abfea"
+sourceHash: "1d578350c833"
 sidebar:
   order: 4
 ---
@@ -20,15 +20,15 @@ menegakkannya:
 - **Order** menyimpan setiap status yang dicapai sebuah order dan setiap langkah returnya, beserta siapa yang
   melakukannya, di `order_lifecycle_events`. Status tanpa event miliknya sendiri di transaction yang sama
   tidak bisa di-commit, dan log menolak `UPDATE`, `DELETE` dan `TRUNCATE`
-  ([trigger-nya](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Migrations/20261016134224_OrdersKeepALifecycleLog.cs#L62-L127)).
+  ([trigger-nya](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Migrations/20261016134224_OrdersKeepALifecycleLog.cs#L62-L127)).
 - **Matching** menyimpan setiap pengiriman beserta SHA-256 foto dan tanda tangannya, di `delivery_evidence`.
   Sebuah job tidak bisa menjadi delivered tanpa row-nya di transaction yang sama
-  ([log-nya](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/priv/repo/migrations/20261016160000_deliveries_keep_an_evidence_log.exs#L9-L79)).
+  ([log-nya](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/priv/repo/migrations/20261016160000_deliveries_keep_an_evidence_log.exs#L9-L79)).
   Hash-nya adalah hash dari byte yang tersimpan: URL upload kurir ditandatangani atas SHA-256 foto dan menolak
   penulisan kedua ke nama yang sama
-  ([upload-nya](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/storage/minio.ex#L21-L29)),
+  ([upload-nya](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/storage/s3.ex#L22-L30)),
   dan matching mencocokkan SHA-256 objek yang tersimpan dengannya sebelum mencatat pengiriman
-  ([pemeriksaannya](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/dispatch.ex#L276-L295)).
+  ([pemeriksaannya](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch.ex#L298-L317)).
 - **Review** menyimpan setiap review produk dan rating kurir seperti saat ditulis, komentarnya sebagai SHA-256
   dari byte UTF-8-nya, di `review_evidence`. Sebuah trigger menulis row itu di statement yang meng-insert
   review; row yang ditulis dengan cara lain, dan perubahan apa pun pada sebuah row, ditolak
@@ -42,7 +42,7 @@ trigger. Yang berlaku terhadap pemilik database adalah anchor-nya.
 Notary membaca setiap log lewat feed pemiliknya, dari cursor berupa transaction id dan sequence. Sebuah feed
 hanya menyajikan row yang transaction-nya lebih tua dari setiap transaction yang masih berjalan, jadi record
 yang transaction-nya commit terlambat disajikan terlambat, tidak pernah dilewati
-([feed order](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Infrastructure/Persistence/OrderLifecycleFeed.cs#L10-L30)).
+([feed order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Persistence/OrderLifecycleFeed.cs#L10-L30)).
 
 Setiap record mendapat salt acak 32 byte miliknya sendiri
 ([salt-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/entropy/salts.go#L17-L29)).

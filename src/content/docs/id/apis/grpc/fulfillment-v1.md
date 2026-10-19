@@ -2,7 +2,7 @@
 title: "fulfillment.v1"
 description: "Paket gRPC fulfillment.v1 di kinetix-contracts 1.5.0: service, message, dan enum-nya."
 editUrl: false
-sourceHash: "e6e6e57bf60f"
+sourceHash: "2bcd4287511d"
 ---
 
 <div class="grpc-reference">
@@ -25,8 +25,8 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`CheckBinStock`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L9) | [`CheckBinStockRequest`](#checkbinstockrequest) → [`CheckBinStockResponse`](#checkbinstockresponse) | [warehouse](/id/services/warehouse/) | [catalog](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/infrastructure/grpc/bin_stock_client.py#L44) |
-| [`CheckBinStockBatch`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L10) | [`CheckBinStockBatchRequest`](#checkbinstockbatchrequest) → [`CheckBinStockBatchResponse`](#checkbinstockbatchresponse) | [warehouse](/id/services/warehouse/) | [catalog](https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/infrastructure/grpc/bin_stock_client.py#L83) |
+| [`CheckBinStock`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L9) | [`CheckBinStockRequest`](#checkbinstockrequest) → [`CheckBinStockResponse`](#checkbinstockresponse) | [warehouse](/id/services/warehouse/) | [catalog](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/grpc/bin_stock_client.py#L44) |
+| [`CheckBinStockBatch`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L10) | [`CheckBinStockBatchRequest`](#checkbinstockbatchrequest) → [`CheckBinStockBatchResponse`](#checkbinstockbatchresponse) | [warehouse](/id/services/warehouse/) | [catalog](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/grpc/bin_stock_client.py#L83) |
 | [`ReserveStock`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L11) | [`ReserveStockRequest`](#reservestockrequest) → [`ReserveStockResponse`](#reservestockresponse) | [warehouse](/id/services/warehouse/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/StockGrpcClient.cs#L22) |
 | [`ReleaseStock`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/fulfillment.proto#L12) | [`ReleaseStockRequest`](#releasestockrequest) → [`ReleaseStockResponse`](#releasestockresponse) | [warehouse](/id/services/warehouse/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/StockGrpcClient.cs#L44) |
 

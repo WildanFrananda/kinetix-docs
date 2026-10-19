@@ -1,7 +1,7 @@
 ---
 title: pricing
 description: Diskon, voucher, flash sale, dan tarif ongkir — service yang mengubah harga dari catalog dan rute dari matching menjadi total yang dibayar pembeli, dan menyimpan ledger yang mencegah sebuah promo terpakai dua kali.
-sourceHash: "d40c0e7accc9"
+sourceHash: "086e05123bde"
 ---
 
 import ServiceCalls from "../../../../components/ServiceCalls.astro";
@@ -16,7 +16,7 @@ yang membuat kuota voucher dan stok flash sale tidak mungkin terpakai dua kali.
 Tabel di halaman ini dibangkitkan dari data terverifikasi yang sama dengan
 [peta sistem](/id/architecture/system-map/), pada commit yang ditautkan dari setiap baris. Teksnya dicek
 terhadap pricing
-[v0.1.10](https://github.com/WildanFrananda/kinetix-pricing-service/tree/76e134d02c6bffba658eede7db7553d5b108bc80),
+[v1.0.1](https://github.com/WildanFrananda/kinetix-pricing-service/tree/0b990129286ce38750cf418d54c3bd52edf31d9e),
 versi yang berjalan di production.
 
 ## Sekilas
@@ -45,17 +45,17 @@ produk yang disebut promo tersebut.
    pernah harga yang tersimpan di keranjang — lihat
    [Jangan percaya angka yang bisa diketik client](/id/learn/trust-boundaries/).
 2. **Flash sale atau diskon menurunkan harga satuan.**
-   [Flash sale yang sedang berjalan dan lebih murah menang](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/services/pricing_service.rs#L156-L189);
+   [Flash sale yang sedang berjalan dan lebih murah menang](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/services/pricing_service.rs#L156-L189);
    kalau tidak ada, diskon yang paling banyak menghemat, di antara diskon yang menyebut produk itu,
    kategorinya, atau tidak menyebut apa pun.
 3. **Voucher dicek terhadap subtotal** —
-   [aktif, belum kedaluwarsa, kuotanya masih ada, dan minimum belanja terpenuhi](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/traits/voucher_evaluator.rs#L15-L43)
+   [aktif, belum kedaluwarsa, kuotanya masih ada, dan minimum belanja terpenuhi](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/traits/voucher_evaluator.rs#L15-L43)
    — lalu memotong persentase, dibatasi maksimumnya, atau nominal tetap, tidak pernah lebih dari subtotal.
    Promo dengan jenis selain `PERCENTAGE` atau `FIXED` tidak memotong apa pun.
 4. **Ongkir berasal dari tarif ongkir** untuk tier yang dikutip matching:
-   [biaya dasar, ditambah biaya per kilometer, per kilogram, dan per kilogram per seratus kilometer](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/models/shipping_rate.rs#L43-L59),
+   [biaya dasar, ditambah biaya per kilometer, per kilogram, dan per kilogram per seratus kilometer](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/models/shipping_rate.rs#L43-L59),
    dibulatkan ke sen. Tier yang tidak punya tarif
-   [ditolak](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/services/pricing_service.rs#L107-L129),
+   [ditolak](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/services/pricing_service.rs#L107-L129),
    bukan dihargai nol.
 5. **Total** adalah subtotal, dikurangi voucher, ditambah ongkir. Voucher hanya memotong harga barang: ongkir
    adalah bayaran kurir, dan tidak ada promo yang menguranginya.
@@ -67,7 +67,7 @@ gagal, dan order menolak checkout alih-alih menagih total yang melewatkan vouche
 ## Promo dan pemiliknya
 
 Setiap promo punya pemilik, dan
-[pemiliknya menentukan keranjang mana yang dijangkau](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/traits/promotion_scope.rs#L1-L6):
+[pemiliknya menentukan keranjang mana yang dijangkau](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/traits/promotion_scope.rs#L1-L6):
 
 - **Promo yang dibuat admin milik platform** dan berlaku untuk setiap keranjang.
 - **Promo yang dibuat seller milik merchant-nya** — merchant yang disebut identity untuk seller itu, dan
@@ -78,7 +78,7 @@ Setiap promo punya pemilik, dan
   catatan catalog. Diskon kategori dari seller tidak perlu dicek begitu: diskon itu hanya bisa menjangkau
   keranjang seller itu sendiri.
 
-[Pengecekan ini](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/services/promotion_service.rs#L25-L76)
+[Pengecekan ini](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/services/promotion_service.rs#L25-L76)
 berjalan sebelum apa pun ditulis. Kalau identity atau catalog tidak bisa ditanya, promo ditolak dengan `503`
 alih-alih disimpan berdasarkan tebakan.
 
@@ -87,7 +87,7 @@ alih-alih disimpan berdasarkan tebakan.
 `RedeemVoucher` dan `AllocateFlashSaleStock` masing-masing berjalan dalam satu transaksi dan menulis satu
 baris ledger per order, sehingga panggilan yang di-retry menemukan barisnya sendiri dan menjawab seperti
 sebelumnya alih-alih memakai lagi. Pemakaiannya sendiri adalah
-[satu statement yang dijaga kondisi](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/repositories/quota_repository.rs#L78-L94):
+[satu statement yang dijaga kondisi](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/repositories/quota_repository.rs#L78-L94):
 
 ```sql
 UPDATE vouchers
@@ -127,17 +127,17 @@ pada Diesel atau gRPC, sehingga keduanya diuji dengan tiruan tanpa database.
 
 PostgreSQL, lewat Diesel, menyimpan
 [diskon, voucher, dan flash sale, masing-masing dengan merchant pemiliknya atau tanpa pemilik; ledger
-penukaran voucher dan alokasi flash sale; dan tarif ongkir](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/schema.rs).
+penukaran voucher dan alokasi flash sale; dan tarif ongkir](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/schema.rs).
 Migration-nya dikompilasi ke dalam binary dan
-[dijalankan oleh image yang sama dengan `--migrate`](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/main.rs#L45-L59),
+[dijalankan oleh image yang sama dengan `--migrate`](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/main.rs#L45-L59),
 di container sekali jalan yang harus selesai sebelum service dimulai.
 
 ## Siapa boleh melakukan apa
 
 - **Membuat promo** memerlukan access token dari identity —
-  [hanya access token](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/security/jwt.rs#L180-L182),
+  [hanya access token](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/security/jwt.rs#L181-L183),
   lihat [Token yang bisa ditarik kembali](/id/learn/tokens-that-can-be-taken-back/) — dengan
-  [peran `admin` atau `seller`](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/guards/auth_guard.rs#L72-L99),
+  [peran `admin` atau `seller`](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/guards/auth_guard.rs#L72-L99),
   lalu pengecekan kepemilikan di atas.
 - **Membaca** diskon yang aktif, voucher berdasarkan kodenya, dan flash sale sebuah produk tidak memerlukan
   token. Begitu juga preview voucher, yang menerima merchant keranjang bersama kode dan subtotal, dan
@@ -149,11 +149,14 @@ di container sekali jalan yang harus selesai sebelum service dimulai.
 ## Mengoperasikannya
 
 - `/health` menjawab ketika prosesnya hidup; `/health/ready`
-  [menjalankan query sungguhan](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/routes/health_routes.rs#L16-L38),
+  [menjalankan query sungguhan](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/routes/health_routes.rs#L16-L38),
   sehingga container dianggap sehat hanya ketika service bisa melayani.
 - `/metrics` menyajikan teks Prometheus dengan nama-nama yang diberikan kontrak platform untuk pricing.
+- Token yang ditandatangani kunci yang tidak dipegang pricing membuatnya
+  [mengambil ulang key set identity hanya jika pengambilan terakhir sudah berumur sepuluh detik](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/security/jwt.rs#L166-L171),
+  sehingga token dengan key id karangan tidak bisa membuat identity menjawab sekali per request.
 - Setiap panggilan ke identity dan catalog
-  [punya deadline lima detik](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/clients/identity_merchant_directory.rs#L11),
+  [punya deadline lima detik](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/clients/identity_merchant_directory.rs#L11),
   sehingga peer yang hang menjadi penolakan, bukan request yang macet.
 - Saat `SIGTERM`, kedua server berhenti menerima pekerjaan dan menyelesaikan yang sedang dipegang, dalam
-  [batas waktu 25 detik](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/main.rs#L37).
+  [batas waktu 25 detik](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/main.rs#L37).

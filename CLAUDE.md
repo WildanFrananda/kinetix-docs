@@ -217,7 +217,8 @@ disagree; this repository writes no verification logic of its own.
   Verify pages point at that commit. Moving
   the liabilities pages from v1.4.0 (`7d292fa`) changed one range: every other linked file is byte-identical
   between the two tags, and the WebAssembly entry point's `run` moved to L86–L106. The owners' logs are linked at
-  the tags production runs: order v1.1.0 (`ebcaa31`), matching v1.1.0 (`cfea287`) and review v1.1.1 (`d259ba5`).
+  the tags production runs: order v1.2.0 (`0c3698e`), matching v1.3.0 (`f2f99d9`) and review v1.1.1 (`d259ba5`),
+  moved on 2026-10-19; matching's upload signing now lives in `storage/s3.ex`, since MinIO left the estate.
 
 ## Design system
 

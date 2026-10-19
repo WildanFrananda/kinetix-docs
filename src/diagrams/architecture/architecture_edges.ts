@@ -22,8 +22,8 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "midtrans",
     kind: "external",
     calls: [
-      { operation: "POST /v2/charge", source: { label: "MidtransPaymentGatewayAdapter.java:84", href: "https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/gateway/MidtransPaymentGatewayAdapter.java#L84" } },
-      { operation: "GET /v2/{reference}/status", source: { label: "MidtransPaymentGatewayAdapter.java:115", href: "https://github.com/WildanFrananda/kinetix-payment-service/blob/7f95af6c1fb44831114be34929981484b9180f94/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/gateway/MidtransPaymentGatewayAdapter.java#L115" } }
+      { operation: "POST /v2/charge", source: { label: "MidtransPaymentGatewayAdapter.java:84", href: "https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/gateway/MidtransPaymentGatewayAdapter.java#L84" } },
+      { operation: "GET /v2/{reference}/status", source: { label: "MidtransPaymentGatewayAdapter.java:115", href: "https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/gateway/MidtransPaymentGatewayAdapter.java#L115" } }
     ]
   },
   {
@@ -48,7 +48,7 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "nominatim",
     kind: "external",
     calls: [
-      { operation: "GET /search", source: { label: "nominatim_geocoding.adapter.ts:21", href: "https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/infrastructure/geocoding/nominatim_geocoding.adapter.ts#L21" } }
+      { operation: "GET /search", source: { label: "nominatim_geocoding.adapter.ts:21", href: "https://github.com/WildanFrananda/kinetix-identity-service/blob/40b7e4f76a3f151100f1d48dd9253126ee16ddcb/src/infrastructure/geocoding/nominatim_geocoding.adapter.ts#L21" } }
     ]
   },
   {
@@ -56,8 +56,8 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "matching",
     kind: "grpc",
     calls: [
-      { operation: "fleet.v1.FleetRegistryService/RegisterDriver", source: { label: "fleet_registry_grpc.adapter.ts:38", href: "https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L38" } },
-      { operation: "fleet.v1.FleetRegistryService/ActivateDriver", source: { label: "fleet_registry_grpc.adapter.ts:55", href: "https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L55" } }
+      { operation: "fleet.v1.FleetRegistryService/RegisterDriver", source: { label: "fleet_registry_grpc.adapter.ts:38", href: "https://github.com/WildanFrananda/kinetix-identity-service/blob/40b7e4f76a3f151100f1d48dd9253126ee16ddcb/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L38" } },
+      { operation: "fleet.v1.FleetRegistryService/ActivateDriver", source: { label: "fleet_registry_grpc.adapter.ts:55", href: "https://github.com/WildanFrananda/kinetix-identity-service/blob/40b7e4f76a3f151100f1d48dd9253126ee16ddcb/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L55" } }
     ]
   },
   {
@@ -65,8 +65,8 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "warehouse",
     kind: "grpc",
     calls: [
-      { operation: "fulfillment.v1.BinStockService/CheckBinStock", source: { label: "bin_stock_client.py:44", href: "https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/infrastructure/grpc/bin_stock_client.py#L44" } },
-      { operation: "fulfillment.v1.BinStockService/CheckBinStockBatch", source: { label: "bin_stock_client.py:83", href: "https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/infrastructure/grpc/bin_stock_client.py#L83" } }
+      { operation: "fulfillment.v1.BinStockService/CheckBinStock", source: { label: "bin_stock_client.py:44", href: "https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/grpc/bin_stock_client.py#L44" } },
+      { operation: "fulfillment.v1.BinStockService/CheckBinStockBatch", source: { label: "bin_stock_client.py:83", href: "https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/grpc/bin_stock_client.py#L83" } }
     ]
   },
   {
@@ -74,7 +74,7 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "identity",
     kind: "grpc",
     calls: [
-      { operation: "identity.v1.IdentityService/GetMerchantInfo", source: { label: "identity_client.py:54", href: "https://github.com/WildanFrananda/kinetix-catalog-service/blob/776bc6acb74c48b45fa9b30a98a2a12609b104ab/core/infrastructure/grpc/identity_client.py#L54" } }
+      { operation: "identity.v1.IdentityService/GetMerchantInfo", source: { label: "identity_client.py:54", href: "https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/grpc/identity_client.py#L54" } }
     ]
   },
   {
@@ -82,7 +82,7 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "identity",
     kind: "grpc",
     calls: [
-      { operation: "identity.v1.IdentityService/GetMerchantInfo", source: { label: "identity_merchant_directory.rs:39", href: "https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/clients/identity_merchant_directory.rs#L39" } }
+      { operation: "identity.v1.IdentityService/GetMerchantInfo", source: { label: "identity_merchant_directory.rs:39", href: "https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/clients/identity_merchant_directory.rs#L39" } }
     ]
   },
   {
@@ -90,7 +90,7 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "catalog",
     kind: "grpc",
     calls: [
-      { operation: "catalog.v1.CatalogService/GetProduct", source: { label: "catalog_product_directory.rs:36", href: "https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/clients/catalog_product_directory.rs#L36" } }
+      { operation: "catalog.v1.CatalogService/GetProduct", source: { label: "catalog_product_directory.rs:36", href: "https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/clients/catalog_product_directory.rs#L36" } }
     ]
   },
   {
@@ -163,9 +163,9 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "order",
     kind: "grpc",
     calls: [
-      { operation: "order.v1.OrderService/FulfillmentPacked", source: { label: "grpc_client.rb:51", href: "https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/app/clients/order/grpc_client.rb#L51" } },
-      { operation: "order.v1.OrderService/OpenReturn", source: { label: "grpc_client.rb:80", href: "https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/app/clients/order/grpc_client.rb#L80" } },
-      { operation: "order.v1.OrderService/ReturnGoodsReceived", source: { label: "grpc_client.rb:113", href: "https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/app/clients/order/grpc_client.rb#L113" } }
+      { operation: "order.v1.OrderService/FulfillmentPacked", source: { label: "grpc_client.rb:51", href: "https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/app/clients/order/grpc_client.rb#L51" } },
+      { operation: "order.v1.OrderService/OpenReturn", source: { label: "grpc_client.rb:80", href: "https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/app/clients/order/grpc_client.rb#L80" } },
+      { operation: "order.v1.OrderService/ReturnGoodsReceived", source: { label: "grpc_client.rb:113", href: "https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/app/clients/order/grpc_client.rb#L113" } }
     ]
   },
   {
@@ -173,7 +173,7 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "identity",
     kind: "grpc",
     calls: [
-      { operation: "identity.v1.IdentityService/GetMerchantInfo", source: { label: "grpc_client.rb:41", href: "https://github.com/WildanFrananda/kinetix-warehouse-service/blob/377490ff62a3a0d3393c15fb7f55995fef21a2a9/app/clients/identity/grpc_client.rb#L41" } }
+      { operation: "identity.v1.IdentityService/GetMerchantInfo", source: { label: "grpc_client.rb:41", href: "https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/app/clients/identity/grpc_client.rb#L41" } }
     ]
   },
   {
@@ -214,8 +214,8 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "catalog",
     kind: "grpc",
     calls: [
-      { operation: "catalog.v1.CatalogService/ChangedSince", source: { label: "client.go:62", href: "https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/catalogclient/client.go#L62" } },
-      { operation: "catalog.v1.CatalogService/CountProducts", source: { label: "client.go:82", href: "https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/catalogclient/client.go#L82" }, note: "map.note.reindex" }
+      { operation: "catalog.v1.CatalogService/ChangedSince", source: { label: "client.go:62", href: "https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/catalogclient/client.go#L62" } },
+      { operation: "catalog.v1.CatalogService/CountProducts", source: { label: "client.go:91", href: "https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/catalogclient/client.go#L91" }, note: "map.note.reindex" }
     ]
   },
   {
@@ -223,7 +223,7 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "identity",
     kind: "grpc",
     calls: [
-      { operation: "identity.v1.IdentityService/MerchantsChangedSince", source: { label: "client.go:62", href: "https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/identityclient/client.go#L62" } }
+      { operation: "identity.v1.IdentityService/MerchantsChangedSince", source: { label: "client.go:62", href: "https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/identityclient/client.go#L62" } }
     ]
   },
   {
@@ -231,7 +231,7 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "order",
     kind: "grpc",
     calls: [
-      { operation: "order.v1.OrderService/OrdersChangedSince", source: { label: "client.go:62", href: "https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/internal/orderclient/client.go#L62" } }
+      { operation: "order.v1.OrderService/OrdersChangedSince", source: { label: "client.go:62", href: "https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/orderclient/client.go#L62" } }
     ]
   },
   {

@@ -17,15 +17,15 @@ Each log is written by the same transaction as the change it records, and Postgr
 - **Order** keeps every status an order reaches and every step of its return, with who made it, in
   `order_lifecycle_events`. A status with no event of its own in the same transaction cannot commit, and the
   log refuses `UPDATE`, `DELETE` and `TRUNCATE`
-  ([the triggers](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Migrations/20261016134224_OrdersKeepALifecycleLog.cs#L62-L127)).
+  ([the triggers](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Migrations/20261016134224_OrdersKeepALifecycleLog.cs#L62-L127)).
 - **Matching** keeps every delivery with the SHA-256 of its photo and of its signature, in `delivery_evidence`.
   A job cannot become delivered without its row in the same transaction
-  ([the log](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/priv/repo/migrations/20261016160000_deliveries_keep_an_evidence_log.exs#L9-L79)).
+  ([the log](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/priv/repo/migrations/20261016160000_deliveries_keep_an_evidence_log.exs#L9-L79)).
   The hash is of the bytes that were stored: the courier's upload URL is signed over the photo's SHA-256 and
   refuses a second write to the same name
-  ([the upload](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/storage/minio.ex#L21-L29)),
+  ([the upload](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/storage/s3.ex#L22-L30)),
   and matching checks the stored object's SHA-256 against it before it records the delivery
-  ([the check](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/dispatch.ex#L276-L295)).
+  ([the check](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch.ex#L298-L317)).
 - **Review** keeps every product review and courier rating as it was written, the comment as the SHA-256 of
   its UTF-8 bytes, in `review_evidence`. A trigger writes the row in the statement that inserts the review;
   a row written any other way, and any change to one, is refused
@@ -39,7 +39,7 @@ against the owner is the anchor.
 The notary reads each log through its owner's feed, from a cursor of a transaction id and a sequence. A
 feed serves only rows whose transaction is older than every transaction still running, so a record whose
 transaction commits late is served late, never skipped
-([order's feed](https://github.com/WildanFrananda/kinetix-order-service/blob/ebcaa31d2ec221774902f054a5f34456bced9f31/Infrastructure/Persistence/OrderLifecycleFeed.cs#L10-L30)).
+([order's feed](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Persistence/OrderLifecycleFeed.cs#L10-L30)).
 
 Every record gets a random 32-byte salt of its own
 ([the salts](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/entropy/salts.go#L17-L29)).

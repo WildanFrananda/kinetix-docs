@@ -14,7 +14,7 @@ voucher's quota and a flash sale's stock impossible to spend twice.
 
 The tables on this page are generated from the same verified data as the
 [system map](/architecture/system-map/), at the commits linked from each row. The prose is checked
-against pricing [v0.1.10](https://github.com/WildanFrananda/kinetix-pricing-service/tree/76e134d02c6bffba658eede7db7553d5b108bc80),
+against pricing [v1.0.1](https://github.com/WildanFrananda/kinetix-pricing-service/tree/0b990129286ce38750cf418d54c3bd52edf31d9e),
 the version in production.
 
 ## At a glance
@@ -41,17 +41,17 @@ trades as and whether it may sell, and catalog, to learn who owns the product a 
 1. **Each line starts at the base price order sends**, which is catalog's price for the product, never
    the price stored in the cart — see [Never trust a number the client can type](/learn/trust-boundaries/).
 2. **A flash sale or a discount lowers the unit price.**
-   [A running flash sale that is cheaper wins](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/services/pricing_service.rs#L156-L189);
+   [A running flash sale that is cheaper wins](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/services/pricing_service.rs#L156-L189);
    otherwise the discount that saves the most, among those that name the product, its category, or
    nothing at all.
 3. **A voucher is checked against the subtotal** —
-   [active, unexpired, with quota left and the minimum spend met](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/traits/voucher_evaluator.rs#L15-L43)
+   [active, unexpired, with quota left and the minimum spend met](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/traits/voucher_evaluator.rs#L15-L43)
    — and takes a percentage, capped at its maximum, or a fixed amount, never more than the subtotal. A
    promotion of any kind other than `PERCENTAGE` or `FIXED` applies nothing.
 4. **Shipping comes from the rate card** for the tier matching quoted:
-   [a base fee, plus a fee per kilometre, per kilogram, and per kilogram per hundred kilometres](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/models/shipping_rate.rs#L43-L59),
+   [a base fee, plus a fee per kilometre, per kilogram, and per kilogram per hundred kilometres](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/models/shipping_rate.rs#L43-L59),
    rounded to the cent. A tier with no rate
-   [is refused](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/services/pricing_service.rs#L107-L129),
+   [is refused](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/services/pricing_service.rs#L107-L129),
    not priced at nothing.
 5. **The total** is the subtotal, less the voucher, plus shipping. A voucher discounts the goods only: the
    shipping fee is what the courier is paid, and no promotion reduces it.
@@ -63,7 +63,7 @@ out — see [Unknown is not no](/learn/unknown-is-not-no/).
 ## Promotions and who owns them
 
 Every promotion has an owner, and
-[the owner decides which carts it reaches](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/traits/promotion_scope.rs#L1-L6):
+[the owner decides which carts it reaches](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/traits/promotion_scope.rs#L1-L6):
 
 - **A promotion an admin creates belongs to the platform** and applies to every cart.
 - **A promotion a seller creates belongs to their merchant** — the merchant identity names for that
@@ -72,7 +72,7 @@ Every promotion has an owner, and
 - **A flash sale, or a discount that names a product, must name the seller's own product**, as catalog
   records it. A seller's category discount needs no such check: it can only reach the seller's own cart.
 
-[These checks](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/services/promotion_service.rs#L25-L76)
+[These checks](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/services/promotion_service.rs#L25-L76)
 run before anything is written. If identity or catalog cannot be asked, the promotion is refused with
 `503` rather than filed on a guess.
 
@@ -80,7 +80,7 @@ run before anything is written. If identity or catalog cannot be asked, the prom
 
 `RedeemVoucher` and `AllocateFlashSaleStock` each run in one transaction and write a ledger row per order,
 so a retried call finds its own row and answers as before instead of spending again. The spend itself is
-[one guarded statement](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/repositories/quota_repository.rs#L78-L94):
+[one guarded statement](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/repositories/quota_repository.rs#L78-L94):
 
 ```sql
 UPDATE vouchers
@@ -120,17 +120,17 @@ Diesel or gRPC, so both are tested with fakes and no database.
 
 PostgreSQL, through Diesel, holds
 [discounts, vouchers and flash sales, each with its owning merchant or none; the voucher redemption and
-flash-sale allocation ledgers; and the shipping rate card](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/schema.rs).
+flash-sale allocation ledgers; and the shipping rate card](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/schema.rs).
 The migrations are compiled into the binary and
-[run by the same image with `--migrate`](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/main.rs#L45-L59),
+[run by the same image with `--migrate`](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/main.rs#L45-L59),
 in a one-shot container that must finish before the service starts.
 
 ## Who may do what
 
 - **Creating a promotion** takes an identity access token —
-  [only an access token](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/security/jwt.rs#L180-L182),
+  [only an access token](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/security/jwt.rs#L181-L183),
   see [Tokens that can be taken back](/learn/tokens-that-can-be-taken-back/) — with
-  [the `admin` or `seller` role](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/guards/auth_guard.rs#L72-L99),
+  [the `admin` or `seller` role](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/guards/auth_guard.rs#L72-L99),
   and then the ownership checks above.
 - **Reading** the active discounts, a voucher by its code and a product's flash sale needs no token. So
   does the voucher preview, which takes the cart's merchant with the code and the subtotal and answers as
@@ -142,11 +142,14 @@ in a one-shot container that must finish before the service starts.
 ## Operating it
 
 - `/health` answers when the process is up; `/health/ready`
-  [runs a real query](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/routes/health_routes.rs#L16-L38),
+  [runs a real query](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/routes/health_routes.rs#L16-L38),
   so the container is healthy only when the service can serve.
 - `/metrics` serves Prometheus text with the names the platform contract gives pricing.
+- A token signed by a key pricing does not hold makes it
+  [fetch identity's key set again only if the last fetch is ten seconds old](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/security/jwt.rs#L166-L171),
+  so tokens with made-up key ids cannot make identity answer once per request.
 - Every call to identity and catalog
-  [has a five-second deadline](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/clients/identity_merchant_directory.rs#L11),
+  [has a five-second deadline](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/clients/identity_merchant_directory.rs#L11),
   so a peer that hangs becomes a refusal instead of a stuck request.
 - On `SIGTERM` both servers stop taking work and finish what they hold, within
-  [a 25-second budget](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/main.rs#L37).
+  [a 25-second budget](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/main.rs#L37).
