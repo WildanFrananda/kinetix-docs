@@ -1,7 +1,7 @@
 ---
 title: Identity satu-satunya penerbit kredensial
 description: Hanya identity yang menyimpan password dan menandatangani token. Setiap service lain memverifikasi access token RS256 dari identity sendiri, terhadap key yang dipublikasikan identity, dan mengenal orang hanya sebagai principal identity.
-sourceHash: "a81b71959f92"
+sourceHash: "e103a774f74f"
 sidebar:
   order: 6
 adr:
@@ -73,6 +73,11 @@ matching, dan tabel login milik catalog.
   [`503`, bukan `401`](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/CLAUDE.md#L175-L177),
   jadi orang yang sudah login tidak disuruh login lagi; lihat
   [Tidak tahu bukan berarti tidak](/id/learn/unknown-is-not-no/).
+- **Logout langsung berlaku di identity, dan di tempat lain saat access token kedaluwarsa.** Logout
+  [mencabut access token dan refresh token session itu](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/application/services/token.service.ts#L215-L222), tetapi hanya identity yang
+  [membaca daftar access token yang dicabut](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/application/services/token.service.ts#L116-L129). Setiap service lain menerima token itu sampai
+  kedaluwarsa, [lima belas menit secara default](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/application/services/token.service.ts#L40). Ini diterima sebagai biaya mengecek token secara
+  lokal: refresh token langsung mati, jadi session-nya tidak bisa diperpanjang.
 - **Satu aturan, sembilan implementasi.** Pengecekan yang sama ditulis dalam sembilan bahasa, jadi sebagian
   darinya bisa hilang di salah satunya; lihat
   [Token yang bisa ditarik kembali](/id/learn/tokens-that-can-be-taken-back/).

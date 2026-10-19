@@ -67,6 +67,11 @@ API keys, and catalog's login table.
 - **Keys that cannot be fetched are not a bad token.** A service that cannot reach identity's keys answers
   [`503`, not `401`](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/CLAUDE.md#L175-L177),
   so a person who is signed in is not sent to sign in again; see [Unknown is not no](/learn/unknown-is-not-no/).
+- **Signing out takes effect at identity at once, and elsewhere when the access token expires.** Signing out
+  [revokes the access token and the session's refresh tokens](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/application/services/token.service.ts#L215-L222), but only identity
+  [reads its list of revoked access tokens](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/application/services/token.service.ts#L116-L129). Every other service accepts the token until it
+  expires, [fifteen minutes by default](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/application/services/token.service.ts#L40). This is accepted as the cost of checking tokens locally:
+  the refresh token is dead at once, so the session cannot be renewed.
 - **One rule, nine implementations.** The same check is written in nine languages, so a part of it can be
   missing from one of them; see [Tokens that can be taken back](/learn/tokens-that-can-be-taken-back/).
 
