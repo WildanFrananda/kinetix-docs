@@ -1,0 +1,109 @@
+---
+title: Row yang commit terlambat
+description: Mengapa change feed yang membaca per timestamp kehilangan perubahan untuk selamanya, dan bagaimana cursor pada transaksi yang menulis setiap row tidak bisa kehilangannya.
+sourceHash: "06dd2caa3487"
+sidebar:
+  order: 11
+---
+
+import LateCommitDiagram from "../../../../components/LateCommitDiagram.astro";
+
+[search](/id/services/search/) menyimpan salinan setiap produk, merchant, dan order, dan menjaganya tetap baru
+dengan membaca change feed setiap pemiliknya: "beri saya yang berubah sejak titik ini". Sampai 2026-10-19
+"titik ini" adalah timestamp. Produk yang namanya diganti oleh transaksi yang commit sesaat setelah transaksi
+yang lebih baru tidak pernah di-index. Tidak ada yang gagal, tidak ada yang tercatat di log, dan etalase toko
+terus menampilkan nama lama.
+
+Pelajaran ini menunjukkan mengapa timestamp tidak bisa menjadi cursor atas row yang masih sedang ditulis
+transaksi lain, dan apa yang dipakai catalog, identity, dan order sebagai gantinya.
+
+## Jalankan
+
+Jalankan **Cursor pada updated_at** lebih dulu, lalu **Cursor pada transaksi**. Nilainya diambil dari run
+sungguhan terhadap PostgreSQL 16: dua sesi menulis, sesi ketiga membaca feed.
+
+<LateCommitDiagram />
+
+## Timestamp ditulis sebelum commit
+
+Change feed catalog, seperti yang berjalan di production sampai 2026-10-19,
+[membaca per `(updated_at, sku)`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/repositories/django_product_repository.py#L32-L74):
+semua yang ada setelah cursor, yang tertua lebih dulu, dan cursor pindah ke row terakhir yang dikembalikan.
+Itu benar untuk row yang sudah commit, dan tidak untuk yang lain.
+
+`updated_at`
+[diisi oleh Django saat menyimpan row-nya](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/models/product_model.py#L18),
+di dalam transaksi. Dengan isolasi default PostgreSQL,
+[Read Committed](https://www.postgresql.org/docs/16/transaction-iso.html#XACT-READ-COMMITTED), sebuah query
+hanya melihat row yang sudah commit sebelum query itu dimulai. Jadi sebuah row ada bagi pembacanya sejak
+transaksinya commit, sambil membawa waktu dari sebelum saat itu. Kalau transaksi lain commit di antaranya
+dengan waktu yang lebih baru, pembaca melihat transaksi itu lebih dulu, memindahkan cursor-nya melewatinya,
+dan row yang terlambat tiba di belakang cursor:
+
+- **Tidak ada yang gagal.** Setiap query berhasil dan setiap halaman benar untuk apa yang bisa dilihatnya.
+- **Tidak ada yang mengulangnya.** Halaman berikutnya mulai setelah cursor, jadi tidak pernah menoleh ke
+  belakang.
+- **Jam milik database sendiri tidak membantu.** `now()` adalah
+  [waktu transaksi dimulai](https://www.postgresql.org/docs/16/functions-datetime.html#FUNCTIONS-DATETIME-CURRENT),
+  lebih awal lagi.
+
+Pemecah seri yang unik, seperti `(updated_at, sku)`, memang menyelesaikan masalah lain: dua row dengan waktu
+yang sama. Ia tidak berguna untuk row yang waktunya sudah di belakang cursor pada saat siapa pun bisa melihatnya.
+
+## Baca per transaksi
+
+Setiap transaksi PostgreSQL yang menulis mendapat id, dan id dibagikan secara berurutan naik. Sejak 2026-10-19
+setiap produk membawa
+[id transaksi yang terakhir mengubahnya](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/migrations/0009_products_record_their_change_transaction.py#L10-L33),
+sebagai `xid8`, diisi oleh trigger pada setiap insert dan update dengan
+[`pg_current_xact_id()`](https://www.postgresql.org/docs/16/functions-info.html#FUNCTIONS-PG-SNAPSHOT).
+`xid8` adalah bentuk 64-bit yang tidak berputar balik, jadi bisa dibandingkan dan disimpan selamanya.
+
+Id saja tidak cukup: transaksi 737 bisa commit sebelum 736. Karena itu feed-nya
+[hanya menyajikan row yang ditulis oleh transaksi yang lebih tua dari setiap transaksi yang masih berjalan](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/repositories/django_product_repository.py#L77-L134):
+
+```sql
+WHERE change_transaction_id < pg_snapshot_xmin(pg_current_snapshot())
+  AND (change_transaction_id, sku) > (:transaction, :sku)
+ORDER BY change_transaction_id, sku
+```
+
+`pg_snapshot_xmin` adalah transaksi tertua yang masih berjalan. Setiap transaksi di bawahnya sudah berakhir,
+commit atau rollback, dan transaksi yang belum menulis akan mendapat id di atas semua id yang sudah ada. Jadi
+row di bawah horizon sudah final: tidak ada yang bisa muncul di antaranya nanti, dan cursor yang sudah
+melewatinya tidak mungkin salah tentangnya. Row dari satu transaksi berbagi id yang sama, dan key-nya memecah
+seri, sehingga sebuah halaman bisa berakhir di tengah transaksi dan halaman berikutnya melanjutkan dari tempat
+yang sama.
+
+## Harganya
+
+Transaksi yang masih terbuka menahan feed. Di diagram, B menunggu A; di production, transaksi apa pun yang
+dibiarkan terbuka di cluster database menahan setiap feed yang dilayani darinya, selama ia tetap terbuka. Itu
+penundaan, bukan celah: ketika transaksinya berakhir, semua yang di belakangnya dilayani, berurutan. Kinetix
+menerima pertukaran ini karena read model yang tertinggal bisa mengatakannya — search melaporkan seberapa tua
+index-nya — sedangkan yang melompat tidak bisa tahu.
+
+Setiap penulisan juga mencap sebuah kolom lewat trigger, dan migrasi yang menambahkannya mencap setiap produk
+yang sudah ada dengan transaksinya sendiri. Pembaca yang mulai dari nol melihat seluruh katalog sekali.
+
+## Di mana letaknya
+
+Cursor yang sama melayani setiap feed yang dibaca search, dan log bukti yang di-anchor oleh
+[notary](/id/services/notary/):
+
+- produk catalog, di atas;
+- merchant identity, dari
+  [tabelnya sendiri](https://github.com/WildanFrananda/kinetix-identity-service/blob/40b7e4f76a3f151100f1d48dd9253126ee16ddcb/src/infrastructure/persistence/adapters/typeorm_merchant_repository.adapter.ts#L94-L122),
+  karena kolom yang tidak bisa dipetakan TypeORM akan terbaca oleh pengecek drift-nya sebagai kolom yang
+  harus dihapus;
+- order milik order, [dibaca dalam dua query](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Services/OrderService.cs#L598-L644)
+  supaya urutan dari SQL mentahnya tetap terjaga;
+- [lifecycle log](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Persistence/OrderLifecycleFeed.cs#L10-L30)
+  order dan [bukti pengantaran](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch/evidence_feed.ex#L23-L31)
+  matching, yang lebih dulu memakainya.
+
+Di sisi pembaca, search mengirim transaksi di setiap request dan
+[menolak jawaban yang tidak membawanya](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/catalogclient/client.go#L75-L82):
+sumber yang masih membaca per waktu akan melompat lagi, diam-diam. Lihat juga
+[Tidak tahu bukan berarti tidak](/id/learn/unknown-is-not-no/) tentang mengapa jawaban yang tidak bisa
+dipercaya ditolak alih-alih dipakai.

@@ -1,0 +1,102 @@
+---
+title: The row that committed late
+description: Why a change feed that pages by a timestamp loses changes for good, and how a cursor on the transaction that wrote each row cannot.
+sidebar:
+  order: 11
+---
+
+import LateCommitDiagram from "../../../components/LateCommitDiagram.astro";
+
+[search](/services/search/) keeps a copy of every product, merchant and order, and keeps it current by reading
+each owner's change feed: "give me what changed since here". Until 2026-10-19 "here" was a timestamp. A
+product renamed by a transaction that committed a moment after a later one was never indexed. Nothing failed,
+nothing was logged, and the shop window kept showing the old name.
+
+This lesson shows why a timestamp cannot be a cursor over rows that other transactions are still writing, and
+what catalog, identity and order use instead.
+
+## Play it
+
+Run **Cursor on updated_at** first, then **Cursor on the transaction**. The values are from a real run against
+PostgreSQL 16: two sessions writing, a third reading the feed.
+
+<LateCommitDiagram />
+
+## A timestamp is written before the commit
+
+Catalog's change feed, as it ran in production until 2026-10-19,
+[paged by `(updated_at, sku)`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/repositories/django_product_repository.py#L32-L74):
+everything after the cursor, oldest first, and the cursor moves to the last row returned. That is correct for
+rows that are already committed, and for nothing else.
+
+`updated_at` is
+[filled in by Django when it saves the row](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/models/product_model.py#L18),
+inside the transaction. Under PostgreSQL's default
+[Read Committed](https://www.postgresql.org/docs/16/transaction-iso.html#XACT-READ-COMMITTED) isolation, a query
+sees only rows committed before it began. So a row exists for the reader from the moment its transaction
+commits, carrying a time from before that moment. If another transaction commits in between with a later
+time, the reader sees that one first, moves its cursor past it, and the late row arrives behind the cursor:
+
+- **Nothing fails.** Every query succeeds and every page is correct for what it could see.
+- **Nothing repeats it.** The next page starts after the cursor, so it never looks back.
+- **The database's own clock does not help.** `now()` is
+  [the time the transaction started](https://www.postgresql.org/docs/16/functions-datetime.html#FUNCTIONS-DATETIME-CURRENT),
+  earlier still.
+
+A unique tiebreak, such as `(updated_at, sku)`, does solve a different problem: two rows with the same time.
+It does nothing for a row whose time is behind the cursor by the time anyone can see it.
+
+## Page by the transaction instead
+
+Every PostgreSQL transaction that writes gets an id, and ids are handed out in increasing order. Since
+2026-10-19 every product carries
+[the id of the transaction that last changed it](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/migrations/0009_products_record_their_change_transaction.py#L10-L33),
+as an `xid8`, set by a trigger on every insert and update with
+[`pg_current_xact_id()`](https://www.postgresql.org/docs/16/functions-info.html#FUNCTIONS-PG-SNAPSHOT).
+An `xid8` is the 64-bit form that does not wrap around, so it can be compared and stored for good.
+
+The id alone is not enough: transaction 737 can commit before 736. The feed therefore
+[serves only rows written by transactions older than every transaction still running](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/repositories/django_product_repository.py#L77-L134):
+
+```sql
+WHERE change_transaction_id < pg_snapshot_xmin(pg_current_snapshot())
+  AND (change_transaction_id, sku) > (:transaction, :sku)
+ORDER BY change_transaction_id, sku
+```
+
+`pg_snapshot_xmin` is the oldest transaction still running. Every transaction below it has ended, committed or
+rolled back, and a transaction that has not written yet will get an id above every id so far. So the rows below
+the horizon are final: nothing can appear among them later, and a cursor that has passed them can never be
+wrong about them. Rows of one transaction share its id, and the key breaks the tie, so a page can end in the
+middle of a transaction and the next one picks up from the same place.
+
+## What it costs
+
+An open transaction holds the feed back. In the diagram B waits for A; in production, any transaction left
+open in the database cluster holds back every feed served from it, for as long as it stays open. That is a
+delay, never a gap: when the transaction ends, everything behind it is served, in order. Kinetix accepts the
+trade because a read model that falls behind can say so — search reports how old its index is — while one that
+skips cannot know.
+
+Every write also stamps a column through a trigger, and the migration that added it stamped every existing
+product with its own transaction. A reader starting from zero sees the whole catalogue once.
+
+## Where it lives
+
+The same cursor serves every feed search reads, and the evidence logs the [notary](/services/notary/) anchors:
+
+- catalog's products, above;
+- identity's merchants, from
+  [a table of their own](https://github.com/WildanFrananda/kinetix-identity-service/blob/40b7e4f76a3f151100f1d48dd9253126ee16ddcb/src/infrastructure/persistence/adapters/typeorm_merchant_repository.adapter.ts#L94-L122),
+  because a column TypeORM cannot map would read to its drift check as one to drop;
+- order's orders, [read in two queries](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Services/OrderService.cs#L598-L644)
+  so the raw SQL's order survives;
+- order's [lifecycle log](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Persistence/OrderLifecycleFeed.cs#L10-L30)
+  and matching's [delivery evidence](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch/evidence_feed.ex#L23-L31),
+  which used it first.
+
+On the reading side, search sends a transaction with every request and
+[refuses an answer that carries none](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/catalogclient/client.go#L75-L82):
+a source still paging by time would skip again, and quietly. See also
+[Unknown is not no](/learn/unknown-is-not-no/) for why an answer that cannot be trusted is refused rather than
+used.

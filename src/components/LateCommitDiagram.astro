@@ -1,0 +1,17 @@
+---
+import { catalogueFor } from "../diagrams/engine/catalogue_for";
+import { localeOf } from "../diagrams/engine/locale_of";
+import { localizeScenarios } from "../diagrams/engine/localize_scenarios";
+import { playerLabels } from "../diagrams/engine/player_labels";
+import LateCommit from "../diagrams/late-commit/LateCommit.svelte";
+import { lateCommitLabels } from "../diagrams/late-commit/late_commit_labels";
+import { lateCommitScenarios } from "../diagrams/late-commit/late_commit_scenarios";
+import DiagramTranscript from "./DiagramTranscript.astro";
+
+const catalogue = catalogueFor(localeOf(Astro.locals.starlightRoute.entryMeta.lang));
+const variants = localizeScenarios(lateCommitScenarios, catalogue);
+const labels = playerLabels(catalogue);
+---
+
+<LateCommit client:visible variants={variants} labels={labels} sceneLabels={lateCommitLabels(catalogue)} />
+<DiagramTranscript variants={variants} labels={labels} />
