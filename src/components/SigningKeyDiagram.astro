@@ -1,0 +1,17 @@
+---
+import { catalogueFor } from "../diagrams/engine/catalogue_for";
+import { localeOf } from "../diagrams/engine/locale_of";
+import { localizeScenarios } from "../diagrams/engine/localize_scenarios";
+import { playerLabels } from "../diagrams/engine/player_labels";
+import SigningKey from "../diagrams/signing-key/SigningKey.svelte";
+import { signingKeyLabels } from "../diagrams/signing-key/signing_key_labels";
+import { signingKeyScenarios } from "../diagrams/signing-key/signing_key_scenarios";
+import DiagramTranscript from "./DiagramTranscript.astro";
+
+const catalogue = catalogueFor(localeOf(Astro.locals.starlightRoute.entryMeta.lang));
+const variants = localizeScenarios(signingKeyScenarios, catalogue);
+const labels = playerLabels(catalogue);
+---
+
+<SigningKey client:visible variants={variants} labels={labels} sceneLabels={signingKeyLabels(catalogue)} />
+<DiagramTranscript variants={variants} labels={labels} />

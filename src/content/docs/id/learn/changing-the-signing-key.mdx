@@ -1,0 +1,101 @@
+---
+title: Mengganti key yang menandatangani setiap token
+description: Mengapa mengganti signing key identity dulu membuat semua orang ter-logout, bagaimana menerbitkan key sebelumnya menjaga setiap sesi tetap hidup, dan mengapa sebuah service tidak boleh meminta key set lagi untuk setiap token yang tidak bisa ia cocokkan.
+sourceHash: "4705085af4eb"
+sidebar:
+  order: 12
+---
+
+import SigningKeyDiagram from "../../../../components/SigningKeyDiagram.astro";
+
+[identity](/id/services/identity/) menandatangani setiap access token dan refresh token dengan satu key RSA dan
+menyebutnya di `kid` token. Sembilan service memeriksa token itu sendiri, terhadap public key yang diterbitkan
+identity di `/.well-known/jwks.json`. Signing key sesekali harus diganti: sesuai jadwal, atau segera karena
+bocor. Sampai 2026-10-19 penggantian itu membuat semua orang ter-logout. Terpisah dari itu, token yang menyebut
+key yang tidak dipegang sebuah service membuat kebanyakan service mengambil key set lagi, setiap kali.
+
+Pelajaran ini mengikuti satu rotasi melewati identity dan order, dengan dan tanpa key sebelumnya.
+
+## Jalankan
+
+Jalankan **Tanpa key sebelumnya**, lalu **Dengan key sebelumnya**. Jawaban identity diambil dari kodenya sendiri
+di v1.1.0, dijalankan dengan dua key RSA sungguhan: K1 dan K2 adalah karakter pertama dari key id aslinya.
+
+<SigningKeyDiagram />
+
+## Key set dengan satu key
+
+Identity v1.0.0
+[menerbitkan tepat satu key](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/infrastructure/crypto/jwt_key_provider.ts#L71-L83)
+dan [memverifikasi setiap token terhadapnya](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/application/services/token.service.ts#L259-L261).
+Mengganti key berarti mengganti seluruh key set. Sejak saat itu, tidak ada yang pernah ditandatangani K1 yang
+bisa diperiksa di mana pun:
+
+- service menolak access token-nya, begitu mereka mengambil set yang baru;
+- identity menolak refresh token-nya, jadi tidak ada client yang bisa pulih dengan refresh. Refresh token
+  berlaku tiga puluh hari, dan semuanya mati sekaligus.
+
+Tidak ada token yang salah. Key yang bisa memeriksanya saja yang hilang.
+
+## Terbitkan key sebelumnya, tanda tangani dengan satu
+
+Sejak v1.1.0 identity membaca
+[daftar public key sebelumnya](https://github.com/WildanFrananda/kinetix-identity-service/blob/40b7e4f76a3f151100f1d48dd9253126ee16ddcb/src/infrastructure/crypto/jwt_key_provider.ts#L61-L98)
+di samping private key yang dipakainya menandatangani. Ia menolak start kalau salah satunya bukan public key
+RSA minimal 2048 bit, atau justru signing key itu sendiri. Ia
+[menerbitkannya setelah signing key](https://github.com/WildanFrananda/kinetix-identity-service/blob/40b7e4f76a3f151100f1d48dd9253126ee16ddcb/src/infrastructure/crypto/jwt_key_provider.ts#L126-L137),
+dan memeriksa token dengan
+[key yang disebut `kid`-nya](https://github.com/WildanFrananda/kinetix-identity-service/blob/40b7e4f76a3f151100f1d48dd9253126ee16ddcb/src/application/services/token.service.ts#L259-L282):
+token yang tidak menyebut key, atau menyebut key yang tidak dipegang identity, ditolak sebelum tanda tangan apa
+pun diperiksa. Key sebelumnya hanya memverifikasi dan tidak pernah menandatangani, jadi setiap token yang terbit
+setelah rotasi membawa key baru.
+
+Key sebelumnya disimpan selama umur sebuah refresh token, tiga puluh hari. Saat itu setiap refresh token yang
+ditandatanganinya sudah kedaluwarsa, setiap client sudah refresh ke key baru atau login lagi, dan key lama boleh
+dibuang. Ada satu pengecualian: **key yang bocor tidak pernah disimpan.** Key sebelumnya memverifikasi apa pun
+yang ditandatanganinya, termasuk apa pun yang ditandatangani penyerang dengannya, jadi key yang bocor diganti
+tanpa key sebelumnya, dan semua orang login lagi. Itulah skenario pertama, dilakukan dengan sengaja.
+
+## Bertanya lagi, tapi tidak setiap kali
+
+Sebuah service tahu ada key baru saat pertama kali sebuah token menyebut key yang tidak dipegangnya: ia
+mengambil key set lagi. Sebelum 2026-10-19, enam dari sembilan verifier melakukannya untuk setiap token seperti
+itu, sehingga serangkaian token dengan key id karangan membuat identity menjawab sekali per request. Token tidak
+butuh biaya untuk dipalsukan kalau tanda tangannya tidak akan pernah diperiksa: siapa pun bisa menulis
+`"kid": "apa saja"` tanpa key.
+
+Sekarang masing-masing hanya mengambil lagi kalau pengambilan terakhirnya sudah berumur minimal sepuluh detik:
+
+| Service | Letaknya |
+| --- | --- |
+| order | [`JwksKeyProvider.cs`](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Security/JwksKeyProvider.cs#L77-L97) |
+| warehouse | [`token_verifier.rb`](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/lib/kinetix/token_verifier.rb#L87-L103) |
+| catalog | [`signing_key_set.py`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/security/signing_key_set.py#L50-L61) |
+| matching | [`token_verifier.ex`](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/security/token_verifier.ex#L90-L95) |
+| pricing | [`jwt.rs`](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/security/jwt.rs#L166-L171) |
+| payment | [`RateLimitedKeys.java`](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/api/src/main/java/com/kinetix/payment/api/security/RateLimitedKeys.java#L25-L47), paling banyak dua kali dalam sepuluh detik |
+
+Tiga lainnya sudah membatasi diri sejak awal:
+[notary sekali tiap sepuluh detik](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/tokens/authenticator.go#L20-L40),
+[review lewat rate limit cache key-nya](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Security/TokenVerifier.php#L25-L32),
+dan [notification lewat default library JOSE-nya](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/http/NimbusAccessTokenVerifier.scala#L53).
+Di production, pada hari perubahan ini dirilis, empat puluh token dengan empat puluh key id karangan yang
+berbeda, dikirim ke order dalam dua gelombang berjarak sebelas detik, membuat identity menjawab dua kali.
+
+Sepuluh detik juga lamanya key yang benar-benar baru bisa menunggu: di enam service tadi, service yang mengambil
+set-nya tepat sebelum identity restart menemukan key baru paling lambat sepuluh detik setelah token pertama yang
+membawanya. Dan pengambilan yang gagal bukan jawaban tentang token-nya. Warehouse dan catalog
+[menjawab `503`, bukan "token tidak valid"](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/app/controllers/concerns/api_authentication.rb#L39-L46)
+ketika key set identity tidak bisa diambil, karena memberi tahu pengguna yang sedang login bahwa token-nya buruk
+padahal identity hanya tidak menjawab adalah [kegagalan khas di rumah ini](/id/learn/unknown-is-not-no/).
+
+## Gateway memegang satu key
+
+Ada satu verifier yang bukan service. Gateway memeriksa token di route yang dilindunginya dengan
+[satu key statis](https://github.com/WildanFrananda/kinetix-api-gateway/blob/950ae468ea021ff4b17bb2336790f6316ef98d9a/config/gateway.pkl#L349-L353),
+yang diatur saat container-nya start. Setelah rotasi ia hanya memegang key baru, jadi access token yang
+ditandatangani key lama ditolak di gateway, walaupun identity masih menerbitkan key itu. Route refresh
+[publik di gateway](https://github.com/WildanFrananda/kinetix-api-gateway/blob/950ae468ea021ff4b17bb2336790f6316ef98d9a/config/gateway.pkl#L42-L46),
+dan identity menerima refresh token lama, jadi client yang melakukan refresh saat ditolak pulih dengan satu
+request tambahan. Client yang logout saat ditolak tidak pulih. Untuk sisa rancangan token, lihat
+[Token yang bisa ditarik kembali](/id/learn/tokens-that-can-be-taken-back/).

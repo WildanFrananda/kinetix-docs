@@ -1,0 +1,97 @@
+---
+title: Changing the key that signs every token
+description: Why replacing identity's signing key used to sign everyone out, how publishing the previous key keeps every session alive, and why a service must not ask for the key set again on every token it cannot place.
+sidebar:
+  order: 12
+---
+
+import SigningKeyDiagram from "../../../components/SigningKeyDiagram.astro";
+
+[identity](/services/identity/) signs every access and refresh token with one RSA key and names it in the token's
+`kid`. Nine services check those tokens themselves, against the public keys identity publishes at
+`/.well-known/jwks.json`. A signing key has to change sometimes: on a schedule, or at once because it leaked.
+Until 2026-10-19 that change signed everyone out. Separately, a token naming a key a service did not hold made
+most services fetch the key set again, every time.
+
+This lesson follows one rotation through identity and order, with and without the previous key.
+
+## Play it
+
+Run **Without the previous key**, then **With the previous key**. Identity's answers are from its own code at
+v1.1.0, run with two real RSA keys: K1 and K2 are the first characters of their real key ids.
+
+<SigningKeyDiagram />
+
+## A key set with one key
+
+Identity v1.0.0
+[published exactly one key](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/infrastructure/crypto/jwt_key_provider.ts#L71-L83)
+and [verified every token against it](https://github.com/WildanFrananda/kinetix-identity-service/blob/16fba71e46c89d6032b5ccc94a040af2fe97b1f1/src/application/services/token.service.ts#L259-L261).
+Replacing the key replaced the whole key set. From then on, nothing K1 had signed could be checked anywhere:
+
+- services refused the access tokens, once they had fetched the new set;
+- identity refused the refresh tokens, so no client could recover by refreshing. A refresh token lives thirty
+  days, and every one of them died at once.
+
+Nothing was wrong with any token. The key that could check them had gone.
+
+## Publish the previous key, sign with one
+
+Since v1.1.0 identity reads
+[a list of previous public keys](https://github.com/WildanFrananda/kinetix-identity-service/blob/40b7e4f76a3f151100f1d48dd9253126ee16ddcb/src/infrastructure/crypto/jwt_key_provider.ts#L61-L98)
+beside the private key it signs with. It refuses to start if one of them is not an RSA public key of at least
+2048 bits, or is the signing key itself. It
+[publishes them after the signing key](https://github.com/WildanFrananda/kinetix-identity-service/blob/40b7e4f76a3f151100f1d48dd9253126ee16ddcb/src/infrastructure/crypto/jwt_key_provider.ts#L126-L137),
+and checks a token with
+[the key its `kid` names](https://github.com/WildanFrananda/kinetix-identity-service/blob/40b7e4f76a3f151100f1d48dd9253126ee16ddcb/src/application/services/token.service.ts#L259-L282):
+a token that names no key, or one identity does not hold, is refused before any signature is checked. A previous
+key verifies and never signs, so every token issued after the rotation carries the new key.
+
+The previous key stays for as long as a refresh token lives, thirty days. By then every refresh token it
+signed has expired, every client has refreshed onto the new key or signed in again, and the old key can go.
+There is one exception: **a key that leaked is never kept.** A previous key verifies whatever it signed,
+including whatever an attacker signed with it, so a leaked key is replaced without a previous key, and everyone
+signs in again. That is the first scenario, done on purpose.
+
+## Asking again, but not every time
+
+A service learns about a new key the first time a token names one it does not hold: it fetches the key set
+again. Before 2026-10-19, six of the nine verifiers did that for every such token, so a stream of tokens with
+made-up key ids made identity answer once per request. A token costs nothing to forge when its signature is
+never going to be checked: nobody needs a key to write `"kid": "anything"`.
+
+Each now fetches again only if its last fetch is at least ten seconds old:
+
+| Service | Where |
+| --- | --- |
+| order | [`JwksKeyProvider.cs`](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Security/JwksKeyProvider.cs#L77-L97) |
+| warehouse | [`token_verifier.rb`](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/lib/kinetix/token_verifier.rb#L87-L103) |
+| catalog | [`signing_key_set.py`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/security/signing_key_set.py#L50-L61) |
+| matching | [`token_verifier.ex`](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/security/token_verifier.ex#L90-L95) |
+| pricing | [`jwt.rs`](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/security/jwt.rs#L166-L171) |
+| payment | [`RateLimitedKeys.java`](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/api/src/main/java/com/kinetix/payment/api/security/RateLimitedKeys.java#L25-L47), at most twice in ten seconds |
+
+The other three already limited themselves:
+[the notary to one fetch every ten seconds](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/tokens/authenticator.go#L20-L40),
+[review through its key cache's rate limit](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Security/TokenVerifier.php#L25-L32),
+and [notification through its JOSE library's defaults](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/http/NimbusAccessTokenVerifier.scala#L53).
+In production, on the day it shipped, forty tokens with forty different made-up key ids, sent to order in two
+bursts eleven seconds apart, made identity answer twice.
+
+Ten seconds is also how long a genuinely new key can wait: in those six services, one that fetched the
+set just before identity restarted finds the new key at most ten seconds after the first token that carries it. And a fetch that fails
+is not an answer about the token. Warehouse and catalog
+[say `503`, not "invalid token"](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/app/controllers/concerns/api_authentication.rb#L39-L46)
+when identity's key set cannot be fetched, because telling a signed-in user their token is bad when identity
+simply did not answer is [the house failure mode](/learn/unknown-is-not-no/).
+
+## The gateway holds one key
+
+One verifier is not a service. The gateway checks tokens on its protected routes with
+[a single static key](https://github.com/WildanFrananda/kinetix-api-gateway/blob/950ae468ea021ff4b17bb2336790f6316ef98d9a/config/gateway.pkl#L349-L353),
+set when its container starts. After a rotation it holds the new key only, so an access token the old key
+signed is refused at the gateway even while identity still publishes that key. The refresh route is
+[public at the gateway](https://github.com/WildanFrananda/kinetix-api-gateway/blob/950ae468ea021ff4b17bb2336790f6316ef98d9a/config/gateway.pkl#L42-L46),
+and identity accepts the old refresh token, so a client that refreshes when it is refused recovers with one
+extra request. A client that signs out when it is refused does not. For the rest of the token design, see
+[Tokens that can be taken back](/learn/tokens-that-can-be-taken-back/).
