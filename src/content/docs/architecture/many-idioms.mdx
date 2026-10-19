@@ -1,0 +1,250 @@
+---
+title: One rule, eleven idioms
+description: How every Kinetix service keeps its business logic behind ports in its own language, where the build holds that rule and where only code review does, and where a language changes the design itself.
+sidebar:
+  order: 5
+---
+
+Kinetix runs eleven services in production, and every one keeps the same rule: the business logic
+depends on ports, adapters implement them, and one place outside the logic chooses the adapters. What
+changes from service to service is how the language says it. A port is an interface in C#, a trait in
+Rust, a behaviour in Elixir and an abstract class in Python; the wiring is a dependency injection
+container in one service, a function in another and a configuration lookup in a third.
+
+This page sets the eleven side by side. Each service page has a section, "How the code is laid out",
+for its own directories; this one is about what they have in common and why they differ.
+
+## The rule
+
+- **A port says what the logic needs, in the logic's words**: "who owns this product", "tell order this
+  parcel arrived". It does not say `catalog.v1.CatalogService/GetProduct`.
+- **An adapter is the only code that knows the wire or the database.** It implements one port and turns
+  failures it understands into answers the logic can act on, such as "unavailable", which is not
+  "not found".
+- **The wiring chooses adapters at the edge of the program**, where the logic cannot see it. A test wires
+  fakes instead and runs the logic with no network and, mostly, no database.
+
+The examples below follow one port per service, chosen where the logic reaches another service or the
+database.
+
+## Interfaces named at the call site: C#, Java, PHP and TypeScript
+
+In these four languages a class declares the interfaces it implements, and the container resolves a
+dependency by the interface's name.
+
+- **order**, C#.
+  [`IPricingClient`](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Ports/IPricingClient.cs#L6-L17)
+  lives in `Application/Ports`, and
+  [`PricingGrpcClient`](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/PricingGrpcClient.cs#L9-L12)
+  implements it. `Program.cs`
+  [registers the pair](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Program.cs#L268),
+  and `OrderService`
+  [names its ports in a primary constructor](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Services/OrderService.cs#L18-L29).
+  One dependency there is not a port: order reaches its own tables through EF Core's `OrderDbContext`,
+  which is already a unit of work over a set of repositories. Ports cover the other services, and the
+  database work EF Core's queries cannot express, such as the
+  [row lock](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Ports/IOrderRowLock.cs#L3-L5)
+  and the
+  [lifecycle feed](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Ports/IOrderLifecycleFeed.cs#L5-L9).
+- **payment**, Java.
+  [`EscrowRepositoryPort`](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/domain/src/main/java/com/kinetix/payment/domain/port/EscrowRepositoryPort.java#L6-L12)
+  is in the domain module and
+  [`EscrowAdapter`](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/persistence/EscrowAdapter.java#L11-L17),
+  a Spring component over JPA, in the infrastructure module. `EscrowService` is plain Java with
+  [a constructor of ports](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L53-L73),
+  and a
+  [`@Bean` method builds it](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/api/src/main/java/com/kinetix/payment/api/config/BeanConfig.java#L37-L60)
+  from whatever Spring found for each port.
+- **review**, PHP.
+  [`OrderClientInterface`](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Contracts/Clients/OrderClientInterface.php#L9-L11)
+  is a contract,
+  [`GrpcOrderClient`](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Clients/GrpcOrderClient.php#L21)
+  implements it, and a service provider
+  [binds one to the other](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Providers/AppServiceProvider.php#L30).
+  Laravel's container reads
+  [the constructor's parameter types](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Services/ProductReviewService.php#L13-L17)
+  and supplies the bound class.
+- **identity**, TypeScript.
+  [`FleetRegistryPort`](https://github.com/WildanFrananda/kinetix-identity-service/blob/40b7e4f76a3f151100f1d48dd9253126ee16ddcb/src/domain/ports/fleet_registry.port.ts#L7-L10)
+  is the port to matching's fleet and
+  [`FleetRegistryGrpcAdapter`](https://github.com/WildanFrananda/kinetix-identity-service/blob/40b7e4f76a3f151100f1d48dd9253126ee16ddcb/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L32-L52)
+  implements it. Here the idiom bends: a TypeScript interface is erased when the code is compiled, so at
+  run time there is nothing for NestJS to resolve by. The module therefore
+  [registers the adapter under a string](https://github.com/WildanFrananda/kinetix-identity-service/blob/40b7e4f76a3f151100f1d48dd9253126ee16ddcb/src/app.module.ts#L143-L146),
+  and the use case
+  [asks for that string](https://github.com/WildanFrananda/kinetix-identity-service/blob/40b7e4f76a3f151100f1d48dd9253126ee16ddcb/src/application/services/courier_onboarding_usecase.service.ts#L20-L26)
+  with `@Inject("FleetRegistryPort")`. The compiler checks that the adapter fits the interface; a
+  misspelt token is found when the application starts, because NestJS refuses to start with a
+  dependency it cannot resolve.
+
+## Structural interfaces: Go
+
+A Go type satisfies an interface by having its methods; nothing declares it. Both Go services say it
+anyway, in one line the compiler checks, and both wire with
+[dig](https://github.com/uber-go/dig) in a single `internal/wiring` package.
+
+- **search** reads three owners through
+  [one generic port, `Source[D]`](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/search/service.go#L22-L24):
+  products, merchants and orders are the same question with a different document type. The catalog
+  client
+  [asserts that it is a `Source[ProductDoc]`](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/catalogclient/client.go#L16-L22),
+  so a changed method signature breaks the build where the adapter is written rather than where it is
+  wired. The wiring
+  [offers the client as that port](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/wiring/sources.go#L19-L36)
+  through a `dig.Out` struct, and
+  [one generic `dig.In` struct](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/wiring/indexing.go#L13-L28)
+  builds the syncer for each of the three
+  [in the indexing container](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/wiring/containers.go#L27-L43).
+- **notary** asks payment for what it owes through
+  [`SnapshotSource`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/notary/snapshot_source.go#L5-L7);
+  [the payment adapter](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/payment/source.go#L21-L27)
+  asserts it the same way, and the wiring
+  [provides it](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/wiring/snapshot_source.go#L20-L40)
+  to
+  [the anchorer](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/wiring/anchoring.go#L52-L81).
+  The rule reaches the chain as well: the ledger contract
+  [implements a Solidity interface](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/LiabilityLedger.sol#L16),
+  [`ILiabilityLedger`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/ILiabilityLedger.sol#L8-L62),
+  and the Go code that talks to it
+  [is an adapter for the `Ledger` port](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/ethereum/ledger.go#L32).
+
+## Traits: Rust and Scala
+
+- **pricing**, Rust. Ownership checks ask catalog through
+  [`ProductDirectoryPort`](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/clients/ports.rs#L20-L23),
+  which
+  [`CatalogProductDirectory` implements](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/clients/catalog_product_directory.rs#L25-L54).
+  Rust offers two ways to depend on a trait, and pricing uses both. The promotion service holds
+  [trait objects](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/services/promotion_service.rs#L9-L23),
+  `Arc<dyn ProductDirectoryPort>`, chosen at run time and
+  [built in `main`](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/main.rs#L92-L95).
+  The price engine is
+  [generic over its four repositories](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/services/pricing_service.rs#L19-L32),
+  so the compiler produces one engine for the concrete set and calls them with no indirection; that set
+  is named by
+  [a `Default` implementation](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/services/pricing_service.rs#L34-L52)
+  that
+  [the gRPC server uses](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/grpc/pricing_grpc_server.rs#L39-L46).
+  Kinetix's Rust also writes `return` explicitly, on a function's last line and in match arms too.
+- **notification**, Scala 3, written tagless-final. The port is
+  [generic in its effect](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/domain/ports/RecipientDirectory.scala#L5-L6),
+  `RecipientDirectory[F[_]]`, and so is the use case,
+  [`Notify[F[_]: Monad]`](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/application/Notify.scala#L9-L18).
+  `Monad` lets the use case put steps in order and nothing more: it gives no way to delay a side effect
+  of its own until `F` runs. Reading the clock and drawing an id are therefore ports too,
+  `TimeSource[F]` and `NotificationIdSource[F]`. The adapter
+  [fixes `F` to Cats Effect's `IO`](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/grpc/GrpcIdentityRecipientDirectory.scala#L12-L23),
+  and `Main`
+  [builds the adapters and the use case by hand](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/Main.scala#L100-L122),
+  with no container.
+
+## Classes checked as the code runs: Python and Ruby
+
+- **catalog**, Python.
+  [`BinStockServicePort`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/domain/repositories/bin_stock_service_port.py#L6-L15)
+  is an abstract base class, and
+  [`BinStockGrpcClient`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/grpc/bin_stock_client.py#L26-L34)
+  subclasses it. Python refuses to create an instance of a subclass that leaves an abstract method out,
+  and mypy,
+  [which catalog's CI runs](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/.github/workflows/ci.yml#L43),
+  checks the signatures before that. `ProductService`
+  [takes its ports in its constructor](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/application/services/product_service.py#L18-L27),
+  and
+  [`core/api/di.py`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/api/di.py#L33-L57)
+  builds each client once per process and hands it to the services the views ask for. catalog's
+  `domain/` and `application/` import the standard library and catalog's own packages, never Django.
+- **warehouse**, Ruby. Ruby has no interfaces, so warehouse uses Sorbet's:
+  [`IdentityMerchantLookupInterface`](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/app/contracts/identity_merchant_lookup_interface.rb#L3-L10)
+  is a module marked `interface!` with an `abstract` signature. The identity client
+  [includes it](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/app/clients/identity/grpc_client.rb#L9-L11)
+  and
+  [marks its method `override`](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/app/clients/identity/grpc_client.rb#L28-L54).
+  The services are `# typed: strict` and
+  [declare their dependencies by interface](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/app/services/merchants/resolve_service.rb#L1-L26);
+  `sorbet-runtime` checks those signatures every time a method is called. The wiring is a
+  [dry-container](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/config/initializers/container.rb#L21-L28)
+  filled when Rails boots.
+
+## Behaviours: Elixir
+
+**matching** declares what it needs from order as
+[a behaviour with one callback](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/clients/order.ex#L8-L23),
+and
+[`OrderGrpc` implements it](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/clients/order_grpc.ex#L21-L34)
+under `@impl`, so the compiler warns if the two drift apart, and
+[matching's CI turns warnings into errors](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/.github/workflows/ci.yml#L76).
+There is no container. A module is a value in Elixir, so the behaviour's own module reads the
+implementation from the application's configuration on each call, defaulting to the gRPC adapter, and
+the test configuration
+[names the fake instead](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/config/test.exs#L62).
+
+## Where the build holds the rule
+
+In two services, the rule is not a convention: breaking it stops the build.
+
+- **search**: `internal/search` holds the domain and the ports, and
+  [a script fails if it imports anything outside the standard library](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/bin/check-core-purity#L24-L37),
+  directly or through another package. The
+  [image build runs it](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/Dockerfile#L33),
+  so a core that reaches Typesense or PostgreSQL cannot be shipped.
+- **payment**: the layers are Gradle modules. The domain module
+  [has no dependencies at all](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/domain/build.gradle#L1-L8),
+  the application module
+  [sees the domain and a logging API](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/build.gradle#L5-L14),
+  and JPA and gRPC enter
+  [in infrastructure](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/infrastructure/build.gradle#L15-L34).
+  A use case that imports Spring does not compile. That has a visible consequence: the application
+  cannot write `@Transactional`, so a transaction is a port,
+  [`TransactionRunnerPort`](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/domain/src/main/java/com/kinetix/payment/domain/port/TransactionRunnerPort.java#L5-L7),
+  which
+  [Spring implements in infrastructure](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/persistence/SpringTransactionRunner.java#L13-L39)
+  and a test implements
+  [by running the work directly](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/src/test/java/com/kinetix/payment/application/DirectTransactionRunner.java#L6-L11).
+
+Everywhere else the boundary is a directory, and it is held by the people who review the code. The
+type checkers above prove that an adapter fits its port; none of them proves that the logic used a port
+instead of reaching past it.
+
+## Fakes, and what they prove
+
+Every service tests its logic against fakes of its ports. Most are written by hand and implement the
+port like any adapter:
+[catalog's stock](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/tests/unit/fake_bin_stock_service_port.py#L6-L35),
+[warehouse's identity](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/spec/support/fake_identity_client.rb#L4-L31),
+[matching's order](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/test/support/fake_order.ex#L1-L43),
+[pricing's catalog](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/tests/promotion_ownership_test.rs#L34-L39),
+[review's order](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/tests/FakeOrderClient.php#L11-L35),
+[search's sources](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/tests/searchtest/source.go#L9-L19),
+[notary's payment](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/tests/notarytest/source.go#L9-L19)
+and
+[notification's identity](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/test/scala/com/kinetix/notification/fakes/FakeDirectory.scala#L9-L14).
+order and payment build theirs from the interface with a mocking library,
+[Moq](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/tests/OrderServiceTests.cs#L222-L240)
+and Mockito.
+
+A hand-written fake records what it was asked and answers what the test told it to, including
+"unavailable", so a test can show that the logic tells "could not ask" apart from "no". A fake that
+implements the port is held to it the way an adapter is, by the compiler or the type checker of its
+language. When the port changes the fake has to follow, and a test cannot go on describing a service
+that no longer exists.
+
+## Where the language changes the design
+
+Most of the time the idiom changes how the rule is written, not what the service does. In one place it
+changes the design. Both warehouse and matching must stop two requests from taking the same thing:
+the last units of a product, or a courier's last free slot.
+
+- **warehouse** keeps stock in PostgreSQL, so it uses the database's tool. A reservation
+  [locks every bin that carries the product before reading them](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/app/services/inventory/reserve_stock_service.rb#L84-L120),
+  in the same order every time, and the second checkout waits for the first to commit. The lesson
+  [Two buyers, one item](/learn/two-buyers-one-item/) walks through it.
+- **matching** keeps each online courier
+  [in a process of their own](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/tracking/driver_state.ex#L66-L69),
+  registered under the courier's id. A process handles one message at a time, so
+  [a claim is a message](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/tracking/driver_state.ex#L205-L214):
+  it succeeds while the courier is online, counts the job, and marks the courier busy at their limit.
+  Two claims for the same courier are answered one after the other, with no lock and no transaction.
+
+Each is the natural tool of its runtime. PostgreSQL already holds warehouse's stock and serialises
+access to a row. The BEAM, Elixir's virtual machine, gives matching a cheap process per courier, whose
+state also changes with every location update the courier sends, without a database write.

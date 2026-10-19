@@ -1,0 +1,259 @@
+---
+title: Satu aturan, sebelas idiom
+description: Bagaimana setiap service Kinetix menaruh logika bisnisnya di balik port dalam bahasanya sendiri, di mana build yang menjaga aturan itu dan di mana hanya code review yang menjaganya, dan di mana sebuah bahasa mengubah desainnya sendiri.
+sourceHash: "bcdb4be2d494"
+sidebar:
+  order: 5
+---
+
+Kinetix menjalankan sebelas service di production, dan semuanya memegang aturan yang sama: logika
+bisnis bergantung pada port, adapter mengimplementasikannya, dan satu tempat di luar logika memilih
+adapter-nya. Yang berubah dari service ke service adalah cara bahasanya mengatakan hal itu. Port adalah
+interface di C#, trait di Rust, behaviour di Elixir, dan abstract class di Python; wiring-nya berupa
+container dependency injection di satu service, sebuah fungsi di service lain, dan lookup konfigurasi di
+service ketiga.
+
+Halaman ini menjajarkan kesebelasnya. Setiap halaman service punya bagian "Bagaimana kodenya disusun"
+untuk direktorinya sendiri; halaman ini membahas apa yang sama di antara mereka dan kenapa mereka
+berbeda.
+
+## Aturannya
+
+- **Port menyebut apa yang dibutuhkan logika, dengan kata-kata logika itu sendiri**: "siapa pemilik
+  produk ini", "beri tahu order bahwa paket ini sudah sampai". Port tidak menyebut
+  `catalog.v1.CatalogService/GetProduct`.
+- **Adapter adalah satu-satunya kode yang mengenal jaringan atau database.** Ia mengimplementasikan satu
+  port dan mengubah kegagalan yang ia pahami menjadi jawaban yang bisa ditindaklanjuti logika, misalnya
+  "unavailable", yang bukan "not found".
+- **Wiring memilih adapter di tepi program**, di tempat yang tidak terlihat oleh logika. Test memasang
+  fake sebagai gantinya dan menjalankan logika tanpa jaringan dan, sebagian besar, tanpa database.
+
+Contoh di bawah mengikuti satu port per service, dipilih di tempat logika menjangkau service lain atau
+database.
+
+## Interface yang disebut di titik pemakaian: C#, Java, PHP, dan TypeScript
+
+Di keempat bahasa ini sebuah class menyatakan interface yang ia implementasikan, dan container
+me-resolve dependency berdasarkan nama interface-nya.
+
+- **order**, C#.
+  [`IPricingClient`](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Ports/IPricingClient.cs#L6-L17)
+  ada di `Application/Ports`, dan
+  [`PricingGrpcClient`](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/PricingGrpcClient.cs#L9-L12)
+  mengimplementasikannya. `Program.cs`
+  [mendaftarkan pasangan itu](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Program.cs#L268),
+  dan `OrderService`
+  [menyebut port-port-nya di primary constructor](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Services/OrderService.cs#L18-L29).
+  Satu dependency di sana bukan port: order menjangkau tabelnya sendiri lewat `OrderDbContext` milik
+  EF Core, yang memang sudah merupakan unit of work atas sekumpulan repository. Port menutupi service
+  lain, dan pekerjaan database yang tidak bisa diungkapkan query EF Core, misalnya
+  [row lock](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Ports/IOrderRowLock.cs#L3-L5)
+  dan
+  [lifecycle feed](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Ports/IOrderLifecycleFeed.cs#L5-L9).
+- **payment**, Java.
+  [`EscrowRepositoryPort`](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/domain/src/main/java/com/kinetix/payment/domain/port/EscrowRepositoryPort.java#L6-L12)
+  ada di modul domain dan
+  [`EscrowAdapter`](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/persistence/EscrowAdapter.java#L11-L17),
+  sebuah komponen Spring di atas JPA, ada di modul infrastructure. `EscrowService` adalah Java biasa
+  dengan
+  [constructor berisi port](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L53-L73),
+  dan sebuah
+  [method `@Bean` membangunnya](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/api/src/main/java/com/kinetix/payment/api/config/BeanConfig.java#L37-L60)
+  dari apa pun yang ditemukan Spring untuk setiap port.
+- **review**, PHP.
+  [`OrderClientInterface`](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Contracts/Clients/OrderClientInterface.php#L9-L11)
+  adalah sebuah contract,
+  [`GrpcOrderClient`](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Clients/GrpcOrderClient.php#L21)
+  mengimplementasikannya, dan sebuah service provider
+  [mengikat yang satu ke yang lain](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Providers/AppServiceProvider.php#L30).
+  Container Laravel membaca
+  [tipe parameter constructor](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Services/ProductReviewService.php#L13-L17)
+  dan memberikan class yang terikat.
+- **identity**, TypeScript.
+  [`FleetRegistryPort`](https://github.com/WildanFrananda/kinetix-identity-service/blob/40b7e4f76a3f151100f1d48dd9253126ee16ddcb/src/domain/ports/fleet_registry.port.ts#L7-L10)
+  adalah port ke armada milik matching dan
+  [`FleetRegistryGrpcAdapter`](https://github.com/WildanFrananda/kinetix-identity-service/blob/40b7e4f76a3f151100f1d48dd9253126ee16ddcb/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L32-L52)
+  mengimplementasikannya. Di sini idiomnya melengkung: interface TypeScript dihapus saat kode
+  dikompilasi, jadi saat runtime tidak ada apa pun yang bisa dipakai NestJS untuk me-resolve. Karena
+  itu modulnya
+  [mendaftarkan adapter di bawah sebuah string](https://github.com/WildanFrananda/kinetix-identity-service/blob/40b7e4f76a3f151100f1d48dd9253126ee16ddcb/src/app.module.ts#L143-L146),
+  dan use case-nya
+  [meminta string itu](https://github.com/WildanFrananda/kinetix-identity-service/blob/40b7e4f76a3f151100f1d48dd9253126ee16ddcb/src/application/services/courier_onboarding_usecase.service.ts#L20-L26)
+  dengan `@Inject("FleetRegistryPort")`. Compiler memeriksa bahwa adapter cocok dengan interface-nya;
+  token yang salah eja ketahuan saat aplikasi start, karena NestJS menolak start dengan dependency yang
+  tidak bisa ia resolve.
+
+## Interface struktural: Go
+
+Sebuah tipe Go memenuhi interface dengan memiliki method-method-nya; tidak ada yang menyatakannya. Kedua
+service Go tetap menyatakannya, dalam satu baris yang diperiksa compiler, dan keduanya melakukan wiring
+dengan [dig](https://github.com/uber-go/dig) di satu package `internal/wiring`.
+
+- **search** membaca tiga pemilik lewat
+  [satu port generik, `Source[D]`](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/search/service.go#L22-L24):
+  produk, merchant, dan order adalah pertanyaan yang sama dengan tipe dokumen yang berbeda. Client
+  catalog
+  [menegaskan bahwa ia adalah `Source[ProductDoc]`](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/catalogclient/client.go#L16-L22),
+  sehingga signature method yang berubah merusak build di tempat adapter ditulis, bukan di tempat ia
+  di-wire. Wiring-nya
+  [menawarkan client itu sebagai port tersebut](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/wiring/sources.go#L19-L36)
+  lewat struct `dig.Out`, dan
+  [satu struct `dig.In` generik](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/wiring/indexing.go#L13-L28)
+  membangun syncer untuk masing-masing dari ketiganya
+  [di container indexing](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/wiring/containers.go#L27-L43).
+- **notary** menanyakan ke payment apa yang ia utang lewat
+  [`SnapshotSource`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/notary/snapshot_source.go#L5-L7);
+  [adapter payment](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/payment/source.go#L21-L27)
+  menegaskannya dengan cara yang sama, dan wiring-nya
+  [menyediakannya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/wiring/snapshot_source.go#L20-L40)
+  untuk
+  [anchorer](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/wiring/anchoring.go#L52-L81).
+  Aturannya sampai ke chain juga: kontrak ledger
+  [mengimplementasikan sebuah interface Solidity](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/LiabilityLedger.sol#L16),
+  [`ILiabilityLedger`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/ILiabilityLedger.sol#L8-L62),
+  dan kode Go yang berbicara dengannya
+  [adalah adapter untuk port `Ledger`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/ethereum/ledger.go#L32).
+
+## Trait: Rust dan Scala
+
+- **pricing**, Rust. Pemeriksaan kepemilikan bertanya ke catalog lewat
+  [`ProductDirectoryPort`](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/clients/ports.rs#L20-L23),
+  yang
+  [diimplementasikan `CatalogProductDirectory`](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/clients/catalog_product_directory.rs#L25-L54).
+  Rust menawarkan dua cara untuk bergantung pada trait, dan pricing memakai keduanya. Service promosi
+  memegang
+  [trait object](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/services/promotion_service.rs#L9-L23),
+  `Arc<dyn ProductDirectoryPort>`, yang dipilih saat runtime dan
+  [dibangun di `main`](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/main.rs#L92-L95).
+  Mesin harganya
+  [generik atas empat repository-nya](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/services/pricing_service.rs#L19-L32),
+  sehingga compiler menghasilkan satu mesin untuk set konkretnya dan memanggil repository-repository itu
+  tanpa indirection; set itu disebut oleh
+  [sebuah implementasi `Default`](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/services/pricing_service.rs#L34-L52)
+  yang
+  [dipakai server gRPC](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/grpc/pricing_grpc_server.rs#L39-L46).
+  Rust di Kinetix juga menulis `return` secara eksplisit, di baris terakhir fungsi dan di match arm juga.
+- **notification**, Scala 3, ditulis secara tagless-final. Port-nya
+  [generik pada effect-nya](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/domain/ports/RecipientDirectory.scala#L5-L6),
+  `RecipientDirectory[F[_]]`, begitu juga use case-nya,
+  [`Notify[F[_]: Monad]`](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/application/Notify.scala#L9-L18).
+  `Monad` membuat use case bisa mengurutkan langkah dan tidak lebih: ia tidak memberi cara untuk menunda
+  side effect miliknya sendiri sampai `F` dijalankan. Karena itu membaca jam dan mengambil id juga
+  merupakan port, `TimeSource[F]` dan `NotificationIdSource[F]`. Adapter-nya
+  [mengunci `F` ke `IO` milik Cats Effect](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/grpc/GrpcIdentityRecipientDirectory.scala#L12-L23),
+  dan `Main`
+  [membangun adapter dan use case dengan tangan](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/Main.scala#L100-L122),
+  tanpa container.
+
+## Class yang diperiksa saat kode berjalan: Python dan Ruby
+
+- **catalog**, Python.
+  [`BinStockServicePort`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/domain/repositories/bin_stock_service_port.py#L6-L15)
+  adalah abstract base class, dan
+  [`BinStockGrpcClient`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/grpc/bin_stock_client.py#L26-L34)
+  menjadi subclass-nya. Python menolak membuat instance dari subclass yang melewatkan sebuah abstract
+  method, dan mypy,
+  [yang dijalankan CI catalog](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/.github/workflows/ci.yml#L43),
+  memeriksa signature-nya lebih dulu. `ProductService`
+  [menerima port-port-nya di constructor](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/application/services/product_service.py#L18-L27),
+  dan
+  [`core/api/di.py`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/api/di.py#L33-L57)
+  membangun setiap client sekali per proses dan menyerahkannya ke service yang diminta view. `domain/` dan
+  `application/` milik catalog meng-import standard library dan package catalog sendiri, tidak pernah
+  Django.
+- **warehouse**, Ruby. Ruby tidak punya interface, jadi warehouse memakai milik Sorbet:
+  [`IdentityMerchantLookupInterface`](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/app/contracts/identity_merchant_lookup_interface.rb#L3-L10)
+  adalah module yang ditandai `interface!` dengan signature `abstract`. Client identity
+  [meng-include-nya](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/app/clients/identity/grpc_client.rb#L9-L11)
+  dan
+  [menandai method-nya `override`](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/app/clients/identity/grpc_client.rb#L28-L54).
+  Service-service-nya `# typed: strict` dan
+  [menyatakan dependency-nya lewat interface](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/app/services/merchants/resolve_service.rb#L1-L26);
+  `sorbet-runtime` memeriksa signature itu setiap kali sebuah method dipanggil. Wiring-nya adalah
+  [dry-container](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/config/initializers/container.rb#L21-L28)
+  yang diisi saat Rails boot.
+
+## Behaviour: Elixir
+
+**matching** menyatakan apa yang ia butuhkan dari order sebagai
+[behaviour dengan satu callback](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/clients/order.ex#L8-L23),
+dan
+[`OrderGrpc` mengimplementasikannya](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/clients/order_grpc.ex#L21-L34)
+di bawah `@impl`, sehingga compiler memberi warning bila keduanya tidak lagi cocok, dan
+[CI matching mengubah warning menjadi error](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/.github/workflows/ci.yml#L76).
+Tidak ada container. Di Elixir sebuah module adalah nilai, jadi module milik behaviour itu sendiri
+membaca implementasinya dari konfigurasi aplikasi di setiap panggilan, dengan adapter gRPC sebagai
+default, dan konfigurasi test
+[menyebut fake sebagai gantinya](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/config/test.exs#L62).
+
+## Di mana build yang menjaga aturan
+
+Di dua service, aturan ini bukan konvensi: melanggarnya menghentikan build.
+
+- **search**: `internal/search` berisi domain dan port-nya, dan
+  [sebuah script gagal bila package itu meng-import apa pun di luar standard library](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/bin/check-core-purity#L24-L37),
+  langsung atau lewat package lain.
+  [Build image menjalankannya](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/Dockerfile#L33),
+  jadi core yang menjangkau Typesense atau PostgreSQL tidak bisa dikirim.
+- **payment**: layer-layernya adalah modul Gradle. Modul domain
+  [tidak punya dependency sama sekali](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/domain/build.gradle#L1-L8),
+  modul application
+  [hanya melihat domain dan sebuah API logging](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/build.gradle#L5-L14),
+  dan JPA serta gRPC masuk
+  [di infrastructure](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/infrastructure/build.gradle#L15-L34).
+  Use case yang meng-import Spring tidak akan terkompilasi. Akibatnya terlihat: application tidak bisa
+  menulis `@Transactional`, jadi transaksi adalah sebuah port,
+  [`TransactionRunnerPort`](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/domain/src/main/java/com/kinetix/payment/domain/port/TransactionRunnerPort.java#L5-L7),
+  yang
+  [diimplementasikan Spring di infrastructure](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/persistence/SpringTransactionRunner.java#L13-L39)
+  dan diimplementasikan sebuah test
+  [dengan langsung menjalankan pekerjaannya](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/src/test/java/com/kinetix/payment/application/DirectTransactionRunner.java#L6-L11).
+
+Di tempat lain batasnya adalah sebuah direktori, dan yang menjaganya adalah orang-orang yang me-review
+kodenya. Type checker di atas membuktikan bahwa sebuah adapter cocok dengan port-nya; tidak satu pun
+membuktikan bahwa logika memakai port alih-alih melewatinya.
+
+## Fake, dan apa yang dibuktikannya
+
+Setiap service menguji logikanya terhadap fake dari port-port-nya. Sebagian besar ditulis dengan tangan
+dan mengimplementasikan port seperti adapter lainnya:
+[stok milik catalog](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/tests/unit/fake_bin_stock_service_port.py#L6-L35),
+[identity milik warehouse](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/spec/support/fake_identity_client.rb#L4-L31),
+[order milik matching](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/test/support/fake_order.ex#L1-L43),
+[catalog milik pricing](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/tests/promotion_ownership_test.rs#L34-L39),
+[order milik review](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/tests/FakeOrderClient.php#L11-L35),
+[sumber milik search](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/tests/searchtest/source.go#L9-L19),
+[payment milik notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/tests/notarytest/source.go#L9-L19),
+dan
+[identity milik notification](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/test/scala/com/kinetix/notification/fakes/FakeDirectory.scala#L9-L14).
+order dan payment membangun fake-nya dari interface dengan library mocking,
+[Moq](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/tests/OrderServiceTests.cs#L222-L240)
+dan Mockito.
+
+Fake yang ditulis dengan tangan mencatat apa yang ditanyakan kepadanya dan menjawab apa yang
+diperintahkan test, termasuk "unavailable", sehingga test bisa menunjukkan bahwa logika membedakan
+"tidak bisa bertanya" dari "tidak". Fake yang mengimplementasikan port dijaga terhadap port itu dengan
+cara yang sama seperti adapter, oleh compiler atau type checker bahasanya. Ketika port berubah, fake-nya
+harus ikut berubah, dan sebuah test tidak bisa terus menggambarkan service yang sudah tidak ada.
+
+## Di mana bahasa mengubah desain
+
+Biasanya idiom mengubah cara aturan ditulis, bukan apa yang dilakukan service. Di satu tempat ia
+mengubah desainnya. warehouse dan matching sama-sama harus mencegah dua request mengambil hal yang sama:
+unit terakhir sebuah produk, atau slot kosong terakhir seorang kurir.
+
+- **warehouse** menyimpan stok di PostgreSQL, jadi ia memakai alat milik database. Sebuah reservasi
+  [mengunci setiap bin yang memuat produk itu sebelum membacanya](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/app/services/inventory/reserve_stock_service.rb#L84-L120),
+  selalu dengan urutan yang sama, dan checkout kedua menunggu yang pertama commit. Pelajaran
+  [Dua pembeli, satu barang](/id/learn/two-buyers-one-item/) membahasnya langkah demi langkah.
+- **matching** menyimpan setiap kurir yang online
+  [di proses miliknya sendiri](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/tracking/driver_state.ex#L66-L69),
+  terdaftar di bawah id kurir itu. Sebuah proses menangani satu pesan pada satu waktu, jadi
+  [klaim adalah sebuah pesan](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/tracking/driver_state.ex#L205-L214):
+  ia berhasil selama kurir online, menghitung job-nya, dan menandai kurir sibuk saat mencapai batasnya.
+  Dua klaim untuk kurir yang sama dijawab satu per satu, tanpa lock dan tanpa transaksi.
+
+Masing-masing adalah alat alami di runtime-nya. PostgreSQL memang sudah memegang stok warehouse dan
+menyerialkan akses ke sebuah baris. BEAM, mesin virtual Elixir, memberi matching satu proses murah per
+kurir, yang state-nya juga berubah di setiap update lokasi yang dikirim kurir, tanpa menulis ke
+database.
