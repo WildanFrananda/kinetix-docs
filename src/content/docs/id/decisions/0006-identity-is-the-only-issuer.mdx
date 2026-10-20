@@ -1,7 +1,7 @@
 ---
 title: Identity satu-satunya penerbit kredensial
 description: Hanya identity yang menyimpan password dan menandatangani token. Setiap service lain memverifikasi access token RS256 dari identity sendiri, terhadap key yang dipublikasikan identity, dan mengenal orang hanya sebagai principal identity.
-sourceHash: "e103a774f74f"
+sourceHash: "bc0b8a4e9542"
 sidebar:
   order: 6
 adr:
@@ -56,7 +56,7 @@ Sembilan service memverifikasi token identity, masing-masing dalam bahasanya sen
 | catalog | Python | [`token_verifier.py`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2c14b3ad9d7f8de5df3e6eb584dd4e25a8eca564/core/infrastructure/security/token_verifier.py#L34-L44) |
 | matching | Elixir | [`token_verifier.ex`](https://github.com/WildanFrananda/kinetix-matching-service/blob/cfea287f14b21d36639afc9e196aec13387f3b16/lib/fleet_pulse/security/token_verifier.ex#L29-L40) |
 | pricing | Rust | [`jwt.rs`](https://github.com/WildanFrananda/kinetix-pricing-service/blob/76e134d02c6bffba658eede7db7553d5b108bc80/src/security/jwt.rs#L157-L185) |
-| notary | Go | [`authenticator.go`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/tokens/authenticator.go#L65-L93) |
+| notary | Go | [`authenticator.go`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/tokens/authenticator.go#L65-L93) |
 | notification | Scala | [`NimbusAccessTokenVerifier.scala`](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/http/NimbusAccessTokenVerifier.scala#L36-L47) |
 
 Kredensial service lain sudah dihapus: login staff milik warehouse, password operator dan API key milik

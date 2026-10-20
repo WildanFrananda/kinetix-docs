@@ -2,7 +2,7 @@
 title: "order.v1"
 description: "Paket gRPC order.v1 di kinetix-contracts 1.5.0: service, message, dan enum-nya."
 editUrl: false
-sourceHash: "81c6f486657c"
+sourceHash: "b05aae13053a"
 ---
 
 <div class="grpc-reference">
@@ -17,7 +17,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`LifecycleEventsSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/order/v1/lifecycle.proto#L10) | [`LifecycleEventsSinceRequest`](#lifecycleeventssincerequest) → [`LifecycleEventsSinceResponse`](#lifecycleeventssinceresponse) | [order](/id/services/order/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/feeds/lifecycle_feed.go#L50) |
+| [`LifecycleEventsSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/order/v1/lifecycle.proto#L10) | [`LifecycleEventsSinceRequest`](#lifecycleeventssincerequest) → [`LifecycleEventsSinceResponse`](#lifecycleeventssinceresponse) | [order](/id/services/order/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/feeds/lifecycle_feed.go#L50) |
 
 ### OrderService
 

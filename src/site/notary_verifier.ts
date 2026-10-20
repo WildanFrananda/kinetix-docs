@@ -2,11 +2,11 @@ import type { NotaryVerifier } from "./types/notary_verifier.type";
 
 export const notaryVerifier: NotaryVerifier = {
   repository: "https://github.com/WildanFrananda/kinetix-notary-service",
-  release: "v1.5.0",
+  release: "v1.6.1",
   module: {
     file: "notary-verify.wasm",
-    sha256: "97c5f5f98fc7b035b9d078b04c28a28ffcf44a939df6ac56414393edae60f7d8",
-    bytes: 45086313
+    sha256: "9f32b779283ceb32e2c032b161414159c9a402c729415e09a71f6cdb5f256b2d",
+    bytes: 49859519
   },
   runtime: {
     file: "wasm_exec.js",

@@ -1,7 +1,7 @@
 ---
 title: Memverifikasi evidence sebuah order atau review
 description: Periksa dari browser-mu sendiri, terhadap chain publik, bahwa perubahan status sebuah order, pengirimannya, atau sebuah review tercatat persis seperti yang terjadi. Tidak ada server Kinetix yang ikut terlibat.
-sourceHash: "a49d98b8b451"
+sourceHash: "f9245301b936"
 sidebar:
   order: 3
 ---
@@ -30,25 +30,25 @@ Authorization: Bearer <access token>
 ```
 
 `{order}` adalah nomor order dan `{review}` adalah id review
-([route-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/httpapi/evidence_proofs.go#L14-L19)).
+([route-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/httpapi/evidence_proofs.go#L14-L19)).
 Kamu mendapat record yang melibatkanmu
-([aturannya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/evidencing/prover.go#L19-L79)):
+([aturannya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/evidencing/prover.go#L19-L79)):
 
 | Record | Siapa yang mendapat proof-nya |
 | --- | --- |
-| perubahan status sebuah order, atau satu langkah returnya | pembeli, merchant, dan siapa pun yang melakukan perubahan itu ([pihaknya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/notary/lifecycle_record.go#L26-L28)) |
+| perubahan status sebuah order, atau satu langkah returnya | pembeli, merchant, dan siapa pun yang melakukan perubahan itu ([pihaknya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/notary/lifecycle_record.go#L26-L28)) |
 | pengiriman sebuah order | kurir yang mengantarnya, serta pembeli dan merchant order itu |
 | review produk | penulisnya dan merchant |
-| rating untuk kurir | penulisnya dan kurir yang dinilai: review tidak mencatat merchant untuk sebuah rating ([pihaknya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/notary/review_record.go#L26-L32), [log review](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/database/migrations/2026_10_16_000001_reviews_keep_an_evidence_log.php#L101-L112)) |
+| rating untuk kurir | penulisnya dan kurir yang dinilai: review tidak mencatat merchant untuk sebuah rating ([pihaknya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/notary/review_record.go#L26-L32), [log review](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/database/migrations/2026_10_16_000001_reviews_keep_an_evidence_log.php#L101-L112)) |
 
 Selain mereka, siapa pun mendapat `404` dengan `no_evidence`, jawaban yang sama seperti untuk order yang tidak
 punya record di notary
-([kodenya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/httpapi/evidence_proofs.go#L106-L121)).
+([kodenya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/httpapi/evidence_proofs.go#L106-L121)).
 
 Jawabannya `{"proofs": [...], "pending": n}`. Setiap entri `proofs` adalah satu record beserta salt-nya dan
 path-nya ke root sebuah batch yang sudah di-anchor dan final. `pending` menghitung record milikmu yang belum
 masuk batch yang final
-([hitungannya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/evidencing/prover.go#L81-L134)):
+([hitungannya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/evidencing/prover.go#L81-L134)):
 batch sebuah stream ditutup sehari setelah batch sebelumnya, dan chain butuh sekitar dua puluh menit lagi
 untuk memfinalisasinya, jadi proof sebuah record bisa baru muncul hingga sehari kemudian. Simpan seluruh
 jawabannya sebagai `evidence.json`. Verifier menerimanya apa adanya, atau satu dokumen mana pun dari daftar
@@ -66,11 +66,11 @@ Ini verifier yang sama dengan di [Memverifikasi proof of liabilities](/id/verify
 `notary-verify` yang dikompilasi ke WebAssembly, release <code>{notaryVerifier.release}</code>, diperiksa
 SHA-256-nya sebelum dijalankan. Verifier membedakan dua jenis dokumen dari `format`-nya dan menyerahkan dokumen
 evidence ke verifier evidence
-([entry point-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/cmd/notary-verify-wasm/main.go#L86-L128)).
+([entry point-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/cmd/notary-verify-wasm/main.go#L86-L132)).
 
 Field record di-hash di browser dan tidak pernah dikirim. Endpoint ditanya soal batch-nya, dan diberi digest
 record, salt-nya dan path-nya, karena kontrak registry memeriksa proof itu sekali lagi dengan sendirinya
-([`verifyInclusion`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/evidence/EvidenceRegistry.sol#L156-L175)).
+([`verifyInclusion`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/evidence/EvidenceRegistry.sol#L156-L175)).
 Salt itulah yang mencegah tebakan atas sebuah record bisa dikonfirmasi lewat chain, jadi kalau endpoint tidak
 boleh memegangnya, arahkan verifier ke node milikmu sendiri.
 
@@ -78,17 +78,17 @@ boleh memegangnya, arahkan verifier ke node milikmu sendiri.
 
 Halaman ini mencetak satu verdict untuk setiap proof dan exit code yang dicetak `notary-verify` untuk dokumen
 yang sama
-([verifikasinya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/verifying/evidence_verifier.go#L18-L123),
-[kodenya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/verifycli/exit.go#L3-L18)).
+([verifikasinya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/verifying/evidence_verifier.go#L18-L123),
+[kodenya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/verifycli/exit.go#L3-L18)).
 Dengan beberapa proof, exit code-nya adalah milik proof pertama yang bukan `included`
-([`RunEvidence`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/verifycli/evidence.go#L37-L59)).
+([`RunEvidence`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/verifycli/evidence.go#L37-L59)).
 
 | Verdict | Exit | Artinya |
 | --- | --- | --- |
 | `included` | 0 | batch-nya final di chain, dan record itu, dengan salt-nya, berujung pada root batch |
 | `rejected` | 1 | batch-nya ada di chain, tetapi record itu tidak berujung pada root-nya; `reason` menyebut pemeriksaan mana yang gagal |
 | `not_anchored` | 2 | registry tidak menyimpan batch seperti itu untuk stream record ini |
-| `not_final` | 3 | batch-nya sudah di-anchor, tetapi chain belum memfinalisasinya ([cara mengetahuinya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/ethereum/evidence_registry.go#L158-L208)) |
+| `not_final` | 3 | batch-nya sudah di-anchor, tetapi chain belum memfinalisasinya ([cara mengetahuinya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/ethereum/evidence_registry.go#L158-L208)) |
 | `unknown` | 4 | chain tidak bisa ditanya; belum ada yang diketahui, dan ini bukan penolakan |
 | `wrong_ledger` | 5 | proof diterbitkan untuk registry lain, atau chain lain, dari yang diberikan |
 | `disagreement` | 6 | verifier dan kontrak registry menghitung jawaban berbeda, jadi tidak ada yang diberikan |
@@ -116,7 +116,7 @@ ketika batch ditutup dan tidak berubah sejak itu.
 ## Verifikasi tanpa halaman ini
 
 Verifier yang sama diterbitkan sebagai container image untuk amd64 dan arm64
-([perintahnya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/cmd/notary-verify/main.go#L40-L42)):
+([perintahnya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/cmd/notary-verify/main.go#L40-L42)):
 
 ```sh
 docker run --rm -i \
@@ -124,7 +124,7 @@ docker run --rm -i \
   -e KINETIX_NOTARY_CHAIN_ID=84532 \
   -e KINETIX_NOTARY_EVIDENCE_REGISTRY_ADDRESS=0xbF1F15F40cA8Dd63c070d223243febf6731EF480 \
   -e KINETIX_NOTARY_RPC_TIMEOUT=20s \
-  ghcr.io/wildanfrananda/kinetix-notary-cli:v1.5.0 \
+  ghcr.io/wildanfrananda/kinetix-notary-cli:v1.6.1 \
   notary-verify /dev/stdin < evidence.json
 ```
 

@@ -1,7 +1,7 @@
 ---
 title: Apa yang dibuktikan evidence
 description: Apa yang ditunjukkan commitment harian notary atas log order, pengiriman dan review kepada orang-orang di dalamnya, apa yang tidak bisa ditunjukkannya, dan kode mana yang bertanggung jawab atas tiap bagiannya.
-sourceHash: "1d578350c833"
+sourceHash: "690b1e596f7f"
 sidebar:
   order: 4
 ---
@@ -45,20 +45,20 @@ yang transaction-nya commit terlambat disajikan terlambat, tidak pernah dilewati
 ([feed order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Persistence/OrderLifecycleFeed.cs#L10-L30)).
 
 Setiap record mendapat salt acak 32 byte miliknya sendiri
-([salt-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/entropy/salts.go#L17-L29)).
+([salt-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/entropy/salts.go#L17-L29)).
 Leaf-nya adalah hash Keccak-256 dari stream, salt dan digest field record itu
-([leaf-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/keccak/evidence.go#L30-L37),
-[record-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/keccak/evidence.go#L68-L120)).
+([leaf-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/keccak/evidence.go#L30-L37),
+[record-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/keccak/evidence.go#L68-L120)).
 Sehari setelah batch terakhir sebuah stream ditutup, atau begitu 65.536 record menunggu, record yang terkumpul
 sejak itu dimasukkan ke Merkle tree
-([kapan batch ditutup](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/evidencing/closer.go#L120-L123)).
+([kapan batch ditutup](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/evidencing/closer.go#L120-L123)).
 Batch itu di-anchor di evidence registry di Base Sepolia: root-nya, jumlah leaf-nya, posisi feed yang
 dibacanya, waktu ditutupnya, dan digest batch sebelumnya
-([digest-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/keccak/evidence.go#L52-L66)).
+([digest-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/keccak/evidence.go#L52-L66)).
 
 Registry menerima batch setiap stream secara berurutan dan menolak batch yang tidak menyambung
-([`anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/evidence/EvidenceRegistry.sol#L78-L125),
-[pemeriksaannya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/evidence/EvidenceRegistry.sol#L255-L284)):
+([`anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/evidence/EvidenceRegistry.sol#L78-L125),
+[pemeriksaannya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/evidence/EvidenceRegistry.sol#L255-L284)):
 
 - hanya key anchorer yang boleh meng-anchor, dan hanya batch berikutnya dari stream itu, setelah head yang
   disebutnya;
@@ -83,7 +83,7 @@ Ketika proof itu terverifikasi terhadap batch yang sudah di-anchor dan final, pr
   demi byte; untuk sebuah review, begitu juga komentarnya.
 
 Verifier menghitung path-nya sendiri dan meminta kontrak registry menghitungnya juga
-([`verifyInclusion`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/evidence/EvidenceRegistry.sol#L156-L175)).
+([`verifyInclusion`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/evidence/EvidenceRegistry.sol#L156-L175)).
 Verifier hanya memberi verdict ketika keduanya sepakat.
 
 ## Apa yang tidak ditunjukkannya

@@ -16,7 +16,7 @@ Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`DeliveriesSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/delivery_evidence.proto#L9) | [`DeliveriesSinceRequest`](#deliveriessincerequest) → [`DeliveriesSinceResponse`](#deliveriessinceresponse) | [matching](/services/matching/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/feeds/delivery_feed.go#L50) |
+| [`DeliveriesSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/fulfillment/v1/delivery_evidence.proto#L9) | [`DeliveriesSinceRequest`](#deliveriessincerequest) → [`DeliveriesSinceResponse`](#deliveriessinceresponse) | [matching](/services/matching/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/feeds/delivery_feed.go#L50) |
 
 ### BinStockService
 

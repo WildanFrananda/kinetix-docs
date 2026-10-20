@@ -1,7 +1,7 @@
 ---
 title: Satu aturan, sebelas idiom
 description: Bagaimana setiap service Kinetix menaruh logika bisnisnya di balik port dalam bahasanya sendiri, di mana build yang menjaga aturan itu dan di mana hanya code review yang menjaganya, dan di mana sebuah bahasa mengubah desainnya sendiri.
-sourceHash: "bcdb4be2d494"
+sourceHash: "5e607489e277"
 sidebar:
   order: 5
 ---
@@ -102,17 +102,17 @@ dengan [dig](https://github.com/uber-go/dig) di satu package `internal/wiring`.
   membangun syncer untuk masing-masing dari ketiganya
   [di container indexing](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/wiring/containers.go#L27-L43).
 - **notary** menanyakan ke payment apa yang ia utang lewat
-  [`SnapshotSource`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/notary/snapshot_source.go#L5-L7);
-  [adapter payment](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/payment/source.go#L21-L27)
+  [`SnapshotSource`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/notary/snapshot_source.go#L5-L7);
+  [adapter payment](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/payment/source.go#L21-L27)
   menegaskannya dengan cara yang sama, dan wiring-nya
-  [menyediakannya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/wiring/snapshot_source.go#L20-L40)
+  [menyediakannya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/wiring/snapshot_source.go#L20-L40)
   untuk
-  [anchorer](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/wiring/anchoring.go#L52-L81).
+  [anchorer](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/wiring/anchoring.go#L52-L83).
   Aturannya sampai ke chain juga: kontrak ledger
-  [mengimplementasikan sebuah interface Solidity](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/LiabilityLedger.sol#L16),
-  [`ILiabilityLedger`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/ILiabilityLedger.sol#L8-L62),
+  [mengimplementasikan sebuah interface Solidity](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/LiabilityLedger.sol#L16),
+  [`ILiabilityLedger`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/ILiabilityLedger.sol#L8-L62),
   dan kode Go yang berbicara dengannya
-  [adalah adapter untuk port `Ledger`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/ethereum/ledger.go#L32).
+  [adalah adapter untuk port `Ledger`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/ethereum/ledger.go#L36).
 
 ## Trait: Rust dan Scala
 
@@ -223,7 +223,7 @@ dan mengimplementasikan port seperti adapter lainnya:
 [catalog milik pricing](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/tests/promotion_ownership_test.rs#L34-L39),
 [order milik review](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/tests/FakeOrderClient.php#L11-L35),
 [sumber milik search](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/tests/searchtest/source.go#L9-L19),
-[payment milik notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/tests/notarytest/source.go#L9-L19),
+[payment milik notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/tests/notarytest/source.go#L9-L19),
 dan
 [identity milik notification](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/test/scala/com/kinetix/notification/fakes/FakeDirectory.scala#L9-L14).
 order dan payment membangun fake-nya dari interface dengan library mocking,

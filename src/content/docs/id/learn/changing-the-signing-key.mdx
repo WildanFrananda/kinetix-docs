@@ -1,7 +1,7 @@
 ---
 title: Mengganti key yang menandatangani setiap token
 description: Mengapa mengganti signing key identity dulu membuat semua orang ter-logout, bagaimana menerbitkan key sebelumnya menjaga setiap sesi tetap hidup, dan mengapa sebuah service tidak boleh meminta key set lagi untuk setiap token yang tidak bisa ia cocokkan.
-sourceHash: "4705085af4eb"
+sourceHash: "a7308528101f"
 sidebar:
   order: 12
 ---
@@ -76,7 +76,7 @@ Sekarang masing-masing hanya mengambil lagi kalau pengambilan terakhirnya sudah 
 | payment | [`RateLimitedKeys.java`](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/api/src/main/java/com/kinetix/payment/api/security/RateLimitedKeys.java#L25-L47), paling banyak dua kali dalam sepuluh detik |
 
 Tiga lainnya sudah membatasi diri sejak awal:
-[notary sekali tiap sepuluh detik](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/tokens/authenticator.go#L20-L40),
+[notary sekali tiap sepuluh detik](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/tokens/authenticator.go#L20-L40),
 [review lewat rate limit cache key-nya](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/app/Security/TokenVerifier.php#L25-L32),
 dan [notification lewat default library JOSE-nya](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/http/NimbusAccessTokenVerifier.scala#L53).
 Di production, pada hari perubahan ini dirilis, empat puluh token dengan empat puluh key id karangan yang

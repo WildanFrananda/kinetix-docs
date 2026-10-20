@@ -1,7 +1,7 @@
 ---
 title: Setiap service ditulis dalam bahasanya sendiri
 description: Setiap service punya bahasanya sendiri, sehingga satu domain dibangun dalam sebelas idiom dan kontraknya harus berlaku di antara semuanya. Go milik notary dan build RoadRunner milik review adalah dua pengecualian, masing-masing karena alasan di domainnya.
-sourceHash: "651b47cb4909"
+sourceHash: "412a1726273d"
 sidebar:
   order: 5
 adr:
@@ -36,10 +36,10 @@ sebelas idiom, dan kontrak yang harus berlaku di antara semuanya.
 ## Yang sudah berlaku
 
 - **notary berbagi Go dengan search.** notary adalah
-  [Solidity di chain dan Go di luar chain](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/CLAUDE.md#L3-L5),
-  [diputuskan sebagai keputusan keduanya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L35).
+  [Solidity di chain dan Go di luar chain](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/CLAUDE.md#L3-L5),
+  [diputuskan sebagai keputusan keduanya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/PLAN.md#L35).
   Pekerjaannya adalah membaca dan menulis ke chain, dan ia melakukannya lewat
-  [go-ethereum](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/go.mod#L7),
+  [go-ethereum](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/go.mod#L9),
   library client milik chain itu sendiri.
 - **review membawa Go di `rr/`**, build RoadRunner miliknya sendiri,
   [diberikan sebagai pengecualian pada 2026-10-17](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/CLAUDE.md#L109-L112):

@@ -17,49 +17,49 @@ import DecisionStatus from "../../../components/DecisionStatus.astro";
 
 Kinetix holds other people's money — buyers' funds in escrow, merchants' and couriers' balances,
 customers' wallets — and
-[every one of those numbers was visible only inside payment](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L10-L16).
+[every one of those numbers was visible only inside payment](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/PLAN.md#L10-L16).
 A holder could only take Kinetix's word that their balance was counted. The record of what happened to an
 order, a delivery or a review lived in its owner's database, where its owner could change it.
 
 ## Decision
 
 The notary's decisions were taken on
-[2026-10-11](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L30),
+[2026-10-11](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/PLAN.md#L30),
 and those that followed are dated in the same table.
 
 - **Commit on a public chain.** Anyone can check a proof against the chain without trusting Kinetix, and
   nobody, Kinetix included, can rewrite an anchored commitment
-  ([the purpose](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L10-L16)).
+  ([the purpose](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/PLAN.md#L10-L16)).
   Whatever a stranger must be able to check or enforce
-  [lives in a contract](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L44).
+  [lives in a contract](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/PLAN.md#L44).
 - **A record, never a payment rail.** Indonesian law does not allow crypto as a means of payment, so the
   notary
-  [never moves money on chain](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L25-L28).
+  [never moves money on chain](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/PLAN.md#L25-L28).
 - **A testnet, permanently: Base Sepolia**, with production-grade code, so that
-  [moving to another network is an RPC endpoint, a chain id, keys and an address](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L36).
+  [moving to another network is an RPC endpoint, a chain id, keys and an address](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/PLAN.md#L36).
   The money is sandbox money, as payment's provider is
   [in sandbox in production too](/services/payment/#operating-it).
 - **Immutable contracts**, replaced by
-  [redeploying with a hash-chained history that a successor continues](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L37),
-  and [a directory that says which generation counts](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L56-L57).
+  [redeploying with a hash-chained history that a successor continues](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/PLAN.md#L37),
+  and [a directory that says which generation counts](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/PLAN.md#L56-L57).
 - **No single key anchors.** A council of two, the notary and its watch, is the ledger's only anchorer,
-  [with no spare Kinetix key](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L52):
+  [with no spare Kinetix key](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/PLAN.md#L52):
   a third key would let Kinetix anchor without the watch. The contract
-  [refuses a threshold below two](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/council/AnchorCouncil.sol#L21).
+  [refuses a threshold below two](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/council/AnchorCouncil.sol#L21).
 - **A lie and a silence are both provable on chain.** Courts let anyone prove that a signed statement is
   false, and let a holder prove they asked and got no answer, so
-  [a holder left out can show it](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L96-L98).
+  [a holder left out can show it](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/PLAN.md#L97-L99).
 - **A holder needs no ether.** A paymaster pays for
-  [a holder's own court calls, and only those](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L61).
+  [a holder's own court calls, and only those](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/PLAN.md#L61).
 - **Commitments, not content.** Each record is committed to with its own salt, so
-  [nothing on chain names a buyer, an order or a review's text](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L1318-L1323),
+  [nothing on chain names a buyer, an order or a review's text](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/PLAN.md#L1319-L1324),
   one log's outage stalls only its own chain of batches, and each log is
-  [anchored daily, and only when it has new records](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L76).
+  [anchored daily, and only when it has new records](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/PLAN.md#L76).
 
 ## In effect
 
 The contracts and their addresses are on the [notary](/services/notary/#on-chain) page. The council holds
-[a threshold of two and is the ledger's only anchorer](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/deploy/base-sepolia.env#L28-L38).
+[a threshold of two and is the ledger's only anchorer](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/deploy/base-sepolia.env#L29-L39).
 How to check a proof is on the Verify pages:
 [What a proof of liabilities proves](/verify/what-the-proof-proves/) and
 [What the evidence proves](/verify/what-the-evidence-proves/).
@@ -67,10 +67,10 @@ How to check a proof is on the Verify pages:
 ## Consequences
 
 - **A proof waits for finality**, which follows the layer below:
-  [roughly fifteen to twenty minutes](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L203-L204),
+  [roughly fifteen to twenty minutes](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/PLAN.md#L204-L205),
   during which the verifier says the epoch is not final yet.
 - **Testnets are retired.** The ledger can be sealed and continued on another network, and
-  [the notary keeps every anchored header and receipt itself](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L182-L186),
+  [the notary keeps every anchored header and receipt itself](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/PLAN.md#L183-L187),
   so history survives a network that does not.
 - **A fix is a new generation**, never an upgrade in place.
 - **The total is public** in the first commitment scheme, which is acceptable only because the money is
@@ -78,7 +78,7 @@ How to check a proof is on the Verify pages:
 - **Evidence is provable the day after.** A batch closes once a day per log.
 - **Both council members are run by Kinetix today.** The council stops a single stolen key from anchoring;
   it does not yet stop Kinetix itself, and
-  [the watch is meant to move to a different operator](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L891-L896).
+  [the watch is meant to move to a different operator](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/PLAN.md#L892-L897).
 
 ## Alternatives rejected
 
@@ -88,5 +88,5 @@ How to check a proof is on the Verify pages:
 - **Anchoring evidence hourly**: daily was chosen instead, for a proof the day after the event at a
   twenty-fourth of the gas.
 - **A second verifier for the browser**: the page runs
-  [the same Go verifier compiled to WebAssembly](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L65),
+  [the same Go verifier compiled to WebAssembly](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/PLAN.md#L65),
   so the page and the command line cannot disagree.

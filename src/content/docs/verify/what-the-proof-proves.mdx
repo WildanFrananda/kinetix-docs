@@ -12,36 +12,65 @@ checkable from the outside, without trusting Kinetix to report on itself.
 
 ## What is committed
 
-Every hour the notary takes payment's snapshot of what the platform owes and builds a Merkle sum tree
-over it. Each leaf is an account's commitment and amount; each node carries the hash and the sum of the
-two below it, so the root fixes every balance and the total at once. The notary anchors the root, the
-total and the number of accounts as one epoch in the ledger contract on Base Sepolia.
+Every hour the notary takes payment's snapshot of what the platform owes and anchors a commitment to it as
+one epoch in a ledger contract on Base Sepolia. The way it commits has changed once. Each epoch keeps the
+scheme it was anchored under:
 
-The ledger takes each epoch once. A second epoch with the same number is refused, and every epoch's
-digest includes the digest before it, so an anchored epoch cannot be changed, dropped or reordered
-([`anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/LiabilityLedger.sol#L50-L89)).
+- **Epochs 0 to 182, the first generation (scheme 1).** The notary builds a Merkle sum tree. Each leaf is an
+  account's commitment and amount, and each node carries the hash and the sum of the two below it, so the
+  root fixes every balance and the total at once. The ledger stores the root, the total and the number of
+  accounts
+  ([`anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/LiabilityLedger.sol#L50-L89)).
+- **From epoch 183, the second generation (scheme 2, since 2026-10-20).** The total is no longer published.
+  The leaves are hashed with Poseidon2 into a tree of fixed depth 8, which holds up to 256 accounts. The
+  ledger stores the tree's root and `C`, a commitment to the total under a random blinding that the notary
+  keeps. A zero-knowledge proof (PLONK) shows three things without revealing any amount: every amount is a
+  64-bit unsigned integer, the leaves hash to that root, and their sum is the total that `C` commits to
+  ([the circuit](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/plonk/circuit.go#L34-L91)).
+  The ledger runs the proof's verifier itself
+  ([`proveEpoch`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/confidential/LiabilityLedgerV2.sol#L75-L115)),
+  and it anchors an epoch only after that epoch's proof has passed
+  ([`anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/confidential/LiabilityLedgerV2.sol#L117-L166)).
 
-An account appears in the tree only as a commitment: a hash of the account kind, a salt and the holder,
-and in later epochs of a secret that only the account's holder is given. The tree shows the amounts and
-the total, not whose they are.
+The ledger takes each epoch once. A second epoch with the same number is refused. Every epoch's digest
+includes the digest before it, so an anchored epoch cannot be changed, dropped or reordered. The second
+generation starts where the first was sealed: its first epoch follows the first generation's last digest.
+The ledger directory names both generations, so a proof of either is verified through the same address
+([`LedgerDirectory`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/directory/LedgerDirectory.sol#L39-L58)).
+
+An account appears in the tree only as a commitment: a hash of the account kind, a salt and the holder, and,
+in later epochs, of a secret that only the account's holder is given. The first generation's tree shows the
+amounts and the total, but not whose they are. The second generation publishes neither: on chain an epoch is
+the tree's root, `C` and the number of accounts.
 
 Anchoring takes two keys: the notary's, and an independent watch that checks the snapshot against
 payment's own record of it before it approves. The ledger accepts an epoch only from the council that
-holds both ([`AnchorCouncil.anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/council/AnchorCouncil.sol#L53-L59)).
+holds both
+([`AnchorCouncil.anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/council/AnchorCouncil.sol#L53-L59),
+and in the second generation
+[`ConfidentialAnchorCouncil.anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/confidential/ConfidentialAnchorCouncil.sol#L54-L60)).
+For a second-generation epoch the watch rebuilds the tree's root and `C` itself. It signs only after the
+ledger reports that the epoch's proof has passed
+([the watch's check](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/approving/approver.go#L260-L286)).
 
 ## What a proof shows
 
-A proof opens one account's commitment and gives the sibling hashes and sums on the path from its leaf
-to the root. When it verifies against an anchored, final epoch, it shows that:
+A proof opens one account's commitment and gives the sibling hashes on the path from its leaf to the root.
+In the first generation each sibling also carries its sum. In the second, every proof carries exactly eight
+siblings and no sums, because the sums are proven inside the zero-knowledge proof and never published.
+When a proof verifies against an anchored, final epoch, it shows that:
 
 - Kinetix committed, publicly and at a recorded time, to one specific set of balances and their exact
-  total;
+  total. In the second generation the total stays behind `C`, and the zero-knowledge proof shows that
+  it is the sum of those balances;
 - this account's balance is in that set, at that amount;
 - the commitment cannot be changed afterwards.
 
 The verifier computes the path itself and asks the ledger contract to compute it too
-([`verifyInclusion`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/LiabilityLedger.sol#L102-L120)). It gives a verdict only when
-both agree.
+([`verifyInclusion`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/LiabilityLedger.sol#L102-L120),
+and in the second generation
+[`verifyInclusion`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/confidential/LiabilityLedgerV2.sol#L181-L204)).
+It gives a verdict only when both agree.
 
 ## What it does not show
 
@@ -53,27 +82,33 @@ both agree.
   about it can be proved, as below.
 - **That payment's numbers are right.** The tree commits to whatever the snapshot says. If a balance is
   wrong in payment, the notary anchors the wrong balance faithfully.
-- **That your amount stays between you and Kinetix.** The epoch total is public, and checking a proof
-  through an RPC endpoint tells that endpoint the commitment and amount being checked.
+- **The second generation's total.** The notary keeps each epoch's blinding, so it can open `C` to an
+  auditor, and nobody else can read it
+  ([decision 47](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/PLAN.md#L1715)).
+- **That your amount stays between you and Kinetix.** In the first generation the epoch total is public.
+  In both generations, checking a proof through an RPC endpoint tells that endpoint the commitment and
+  amount being checked.
 
 ## When the notary lies or stays silent
 
 A proof also carries a statement: its commitment, amount and path, signed by the key the statement
-court has registered as the signer for that epoch. That turns two failures into evidence that anyone can
-put on chain:
+court has registered as the signer for that epoch. Each generation has its own statement court and
+withholding court, and the directory names them beside the ledger. That turns two failures into evidence
+that anyone can put on chain:
 
 - **A false proof.** If a signed proof does not verify, the court verifies it again on chain and records
-  a fault against the epoch ([`proveBadProof`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/court/StatementCourt.sol#L59-L78)).
+  a fault against the epoch ([`proveBadProof`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/court/StatementCourt.sol#L59-L78)).
   Two different signed statements for one epoch that name the same commitment, or the same position in
-  the tree, contradict each other and are recorded the same way ([`proveEquivocation`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/court/StatementCourt.sol#L80-L101)).
+  the tree, contradict each other and are recorded the same way ([`proveEquivocation`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/court/StatementCourt.sol#L80-L101)).
 - **Silence.** A holder who registered an address can ask the withholding court for their statement for
   an epoch, within a week of its anchoring
-  ([`requestStatement`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/withholding/WithholdingCourt.sol#L49-L91)). If the notary has
+  ([`requestStatement`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/withholding/WithholdingCourt.sol#L49-L91)). If the notary has
   not answered within 24 hours, anyone may record the silence
-  ([`recordUnanswered`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/withholding/WithholdingCourt.sol#L121-L146)).
+  ([`recordUnanswered`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/withholding/WithholdingCourt.sol#L121-L146)).
+  A registration is made for one withholding court, so a holder registers again for the second generation.
 
 A recorded fault or silence is never cleared. The verifier reports how many faults an epoch carries
-beside every verdict. Putting a fault or a request on chain costs gas, which the notary's paymaster
-pays, so a holder needs a key and no ETH.
+beside every verdict. Putting a fault or a request on chain costs gas, which the paymaster of the epoch's
+generation pays, so a holder needs a key and no ETH.
 
 To check a proof of your own, see [Verify a proof of liabilities](/verify/proof-of-liabilities/).

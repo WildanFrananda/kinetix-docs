@@ -96,17 +96,17 @@ anyway, in one line the compiler checks, and both wire with
   builds the syncer for each of the three
   [in the indexing container](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/wiring/containers.go#L27-L43).
 - **notary** asks payment for what it owes through
-  [`SnapshotSource`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/notary/snapshot_source.go#L5-L7);
-  [the payment adapter](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/payment/source.go#L21-L27)
+  [`SnapshotSource`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/notary/snapshot_source.go#L5-L7);
+  [the payment adapter](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/payment/source.go#L21-L27)
   asserts it the same way, and the wiring
-  [provides it](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/wiring/snapshot_source.go#L20-L40)
+  [provides it](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/wiring/snapshot_source.go#L20-L40)
   to
-  [the anchorer](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/wiring/anchoring.go#L52-L81).
+  [the anchorer](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/wiring/anchoring.go#L52-L83).
   The rule reaches the chain as well: the ledger contract
-  [implements a Solidity interface](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/LiabilityLedger.sol#L16),
-  [`ILiabilityLedger`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/ILiabilityLedger.sol#L8-L62),
+  [implements a Solidity interface](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/LiabilityLedger.sol#L16),
+  [`ILiabilityLedger`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/ILiabilityLedger.sol#L8-L62),
   and the Go code that talks to it
-  [is an adapter for the `Ledger` port](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/ethereum/ledger.go#L32).
+  [is an adapter for the `Ledger` port](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/ethereum/ledger.go#L36).
 
 ## Traits: Rust and Scala
 
@@ -215,7 +215,7 @@ port like any adapter:
 [pricing's catalog](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/tests/promotion_ownership_test.rs#L34-L39),
 [review's order](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/tests/FakeOrderClient.php#L11-L35),
 [search's sources](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/tests/searchtest/source.go#L9-L19),
-[notary's payment](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/tests/notarytest/source.go#L9-L19)
+[notary's payment](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/tests/notarytest/source.go#L9-L19)
 and
 [notification's identity](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/test/scala/com/kinetix/notification/fakes/FakeDirectory.scala#L9-L14).
 order and payment build theirs from the interface with a mocking library,

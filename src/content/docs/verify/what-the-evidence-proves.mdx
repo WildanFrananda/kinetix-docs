@@ -42,20 +42,20 @@ transaction commits late is served late, never skipped
 ([order's feed](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Persistence/OrderLifecycleFeed.cs#L10-L30)).
 
 Every record gets a random 32-byte salt of its own
-([the salts](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/entropy/salts.go#L17-L29)).
+([the salts](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/entropy/salts.go#L17-L29)).
 Its leaf is the Keccak-256 hash of the stream, the salt and the digest of the record's fields
-([the leaf](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/keccak/evidence.go#L30-L37),
-[the record](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/keccak/evidence.go#L68-L120)).
+([the leaf](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/keccak/evidence.go#L30-L37),
+[the record](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/keccak/evidence.go#L68-L120)).
 A day after a stream's last batch closed, or as soon as 65,536 records are waiting, the records collected
 since then go into a Merkle tree
-([when a batch closes](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/evidencing/closer.go#L120-L123)).
+([when a batch closes](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/evidencing/closer.go#L120-L123)).
 The batch is anchored in the evidence registry on Base Sepolia: its root, its number of leaves, the feed
 position it reads through, the time it closed, and the digest of the batch before it
-([the digest](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/keccak/evidence.go#L52-L66)).
+([the digest](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/keccak/evidence.go#L52-L66)).
 
 The registry takes each stream's batches in order and refuses any that does not follow
-([`anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/evidence/EvidenceRegistry.sol#L78-L125),
-[the checks](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/evidence/EvidenceRegistry.sol#L255-L284)):
+([`anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/evidence/EvidenceRegistry.sol#L78-L125),
+[the checks](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/evidence/EvidenceRegistry.sol#L255-L284)):
 
 - only the anchorer's key may anchor, and only the stream's next batch, after the head it names;
 - a batch is never empty, closes after the batch before it and not in the future, and reads through a feed
@@ -79,7 +79,7 @@ verifies against an anchored, final batch, it shows that:
   review, so did the comment.
 
 The verifier computes the path itself and asks the registry contract to compute it too
-([`verifyInclusion`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/evidence/EvidenceRegistry.sol#L156-L175)).
+([`verifyInclusion`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/evidence/EvidenceRegistry.sol#L156-L175)).
 It gives a verdict only when both agree.
 
 ## What it does not show

@@ -28,23 +28,23 @@ Authorization: Bearer <access token>
 ```
 
 `{order}` is the order number and `{review}` the review's id
-([the routes](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/httpapi/evidence_proofs.go#L14-L19)).
+([the routes](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/httpapi/evidence_proofs.go#L14-L19)).
 You get the records you are a party to
-([the rules](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/evidencing/prover.go#L19-L79)):
+([the rules](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/evidencing/prover.go#L19-L79)):
 
 | Record | Who gets its proof |
 | --- | --- |
-| a status change of an order, or a step of its return | the buyer, the merchant, and whoever made the change ([parties](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/notary/lifecycle_record.go#L26-L28)) |
+| a status change of an order, or a step of its return | the buyer, the merchant, and whoever made the change ([parties](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/notary/lifecycle_record.go#L26-L28)) |
 | the delivery of an order | the courier who delivered it, and the order's buyer and merchant |
 | a product review | its author and the merchant |
-| a rating of a courier | its author and the courier rated: review logs no merchant for a rating ([parties](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/notary/review_record.go#L26-L32), [review's log](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/database/migrations/2026_10_16_000001_reviews_keep_an_evidence_log.php#L101-L112)) |
+| a rating of a courier | its author and the courier rated: review logs no merchant for a rating ([parties](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/notary/review_record.go#L26-L32), [review's log](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/database/migrations/2026_10_16_000001_reviews_keep_an_evidence_log.php#L101-L112)) |
 
 Anyone else gets `404` with `no_evidence`, the same answer as for an order the notary has no record of
-([the codes](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/httpapi/evidence_proofs.go#L106-L121)).
+([the codes](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/httpapi/evidence_proofs.go#L106-L121)).
 
 The answer is `{"proofs": [...], "pending": n}`. Each entry of `proofs` is one record with its salt and its
 path to the root of an anchored, final batch. `pending` counts the records of yours that are not in a final
-batch yet ([the count](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/evidencing/prover.go#L81-L134)):
+batch yet ([the count](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/evidencing/prover.go#L81-L134)):
 a stream's batch closes a day after the one before it, and the chain takes about twenty minutes more to
 finalize it, so a record's proof can take up to a day to appear. Save the whole answer as `evidence.json`. The verifier takes it as
 it is, or any one document from its `proofs` list.
@@ -61,28 +61,28 @@ This is the same verifier as on [Verify a proof of liabilities](/verify/proof-of
 `notary-verify` compiled to WebAssembly, release <code>{notaryVerifier.release}</code>, checked against its
 SHA-256 before it runs. It tells the two kinds of document apart by their `format` and hands an evidence
 document to the evidence verifier
-([the entry point](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/cmd/notary-verify-wasm/main.go#L86-L128)).
+([the entry point](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/cmd/notary-verify-wasm/main.go#L86-L132)).
 
 The record's fields are hashed in the browser and never sent. The endpoint is asked about the batch, and given
 the record's digest, its salt and its path, because the registry contract checks the proof a second time on
-its own ([`verifyInclusion`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/evidence/EvidenceRegistry.sol#L156-L175)).
+its own ([`verifyInclusion`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/evidence/EvidenceRegistry.sol#L156-L175)).
 The salt is what keeps a guess at a record from being confirmed against the chain, so if the endpoint should
 not hold it, point the verifier at a node of your own.
 
 ## Read the answer
 
 The page prints one verdict for each proof and the exit code `notary-verify` prints for the same document
-([the verification](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/verifying/evidence_verifier.go#L18-L123),
-[the codes](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/verifycli/exit.go#L3-L18)).
+([the verification](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/verifying/evidence_verifier.go#L18-L123),
+[the codes](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/verifycli/exit.go#L3-L18)).
 With several proofs, the exit code is that of the first one that is not `included`
-([`RunEvidence`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/verifycli/evidence.go#L37-L59)).
+([`RunEvidence`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/verifycli/evidence.go#L37-L59)).
 
 | Verdict | Exit | Means |
 | --- | --- | --- |
 | `included` | 0 | the batch is final on chain, and the record, with its salt, leads to the batch's root |
 | `rejected` | 1 | the batch is on chain, but the record does not lead to its root; `reason` says which check failed |
 | `not_anchored` | 2 | the registry holds no such batch for the record's stream |
-| `not_final` | 3 | the batch is anchored, but the chain has not finalized it yet ([how it is told](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/internal/ethereum/evidence_registry.go#L158-L208)) |
+| `not_final` | 3 | the batch is anchored, but the chain has not finalized it yet ([how it is told](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/ethereum/evidence_registry.go#L158-L208)) |
 | `unknown` | 4 | the chain could not be asked; nothing is known, and it is not a rejection |
 | `wrong_ledger` | 5 | the proof was issued against another registry, or another chain, than the one given |
 | `disagreement` | 6 | the verifier and the registry contract computed different answers, so neither is given |
@@ -109,7 +109,7 @@ existed when the batch closed and have not changed since.
 ## Verify it without this page
 
 The same verifier is published as a container image for amd64 and arm64
-([the command](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/cmd/notary-verify/main.go#L40-L42)):
+([the command](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/cmd/notary-verify/main.go#L40-L42)):
 
 ```sh
 docker run --rm -i \
@@ -117,7 +117,7 @@ docker run --rm -i \
   -e KINETIX_NOTARY_CHAIN_ID=84532 \
   -e KINETIX_NOTARY_EVIDENCE_REGISTRY_ADDRESS=0xbF1F15F40cA8Dd63c070d223243febf6731EF480 \
   -e KINETIX_NOTARY_RPC_TIMEOUT=20s \
-  ghcr.io/wildanfrananda/kinetix-notary-cli:v1.5.0 \
+  ghcr.io/wildanfrananda/kinetix-notary-cli:v1.6.1 \
   notary-verify /dev/stdin < evidence.json
 ```
 

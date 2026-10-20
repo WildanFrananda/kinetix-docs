@@ -35,7 +35,7 @@ can leak.
   - **a change feed**, for a read model built from several owners —
     [search pulls each owner's feed with a cursor](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L16);
   - **an append-only evidence log**, for a record someone else commits to —
-    [the notary reads a snapshot from the owner and commits to it](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L21-L23).
+    [the notary reads a snapshot from the owner and commits to it](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/PLAN.md#L21-L23).
 - In production every database lives in one PostgreSQL cluster. Each service has its own login, which
   can open only that service's databases, and setting the cluster up fails if any service's login can open
   another's.

@@ -1,7 +1,7 @@
 ---
 title: Apa yang dibuktikan proof of liabilities
 description: Apa yang ditunjukkan commitment on-chain milik notary kepada pemilik akun, apa yang tidak bisa ditunjukkannya, dan kontrak mana yang bertanggung jawab atas tiap bagiannya.
-sourceHash: "c821794847a7"
+sourceHash: "5a1527ea2caf"
 sidebar:
   order: 2
 ---
@@ -13,37 +13,67 @@ memercayai Kinetix untuk melaporkan dirinya sendiri.
 
 ## Apa yang di-commit
 
-Setiap jam notary mengambil snapshot payment tentang apa yang diutangi platform, lalu membangun Merkle sum
-tree di atasnya. Setiap leaf adalah commitment dan amount sebuah akun; setiap node membawa hash dan sum
-dari dua node di bawahnya, sehingga root sekaligus mengunci setiap saldo dan total-nya. Notary meng-anchor
-root, total dan jumlah akun sebagai satu epoch di kontrak ledger di Base Sepolia.
+Setiap jam notary mengambil snapshot payment tentang apa yang diutangi platform, lalu meng-anchor commitment
+atas snapshot itu sebagai satu epoch di kontrak ledger di Base Sepolia. Cara notary meng-commit sudah berubah
+satu kali. Setiap epoch tetap memakai skema yang berlaku saat ia di-anchor:
 
-Ledger menerima setiap epoch satu kali. Epoch kedua dengan nomor yang sama ditolak, dan digest setiap epoch
+- **Epoch 0 sampai 182, generasi pertama (skema 1).** Notary membangun Merkle sum tree. Setiap leaf adalah
+  commitment dan amount sebuah akun, dan setiap node membawa hash dan sum dari dua node di bawahnya, sehingga
+  root sekaligus mengunci setiap saldo dan total-nya. Ledger menyimpan root, total dan jumlah akun
+  ([`anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/LiabilityLedger.sol#L50-L89)).
+- **Mulai epoch 183, generasi kedua (skema 2, sejak 2026-10-20).** Total tidak lagi dipublikasikan.
+  Leaf di-hash dengan Poseidon2 menjadi tree berkedalaman tetap 8, yang muat sampai 256 akun. Ledger
+  menyimpan root tree itu dan `C`, commitment atas total dengan blinding acak yang disimpan notary. Sebuah
+  zero-knowledge proof (PLONK) menunjukkan tiga hal tanpa membuka amount apa pun: setiap amount adalah
+  unsigned integer 64-bit, leaf-leaf itu menghasilkan root tersebut, dan jumlahnya adalah total yang
+  di-commit oleh `C`
+  ([circuit-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/plonk/circuit.go#L34-L91)).
+  Ledger menjalankan verifier proof itu sendiri
+  ([`proveEpoch`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/confidential/LiabilityLedgerV2.sol#L75-L115)),
+  dan hanya meng-anchor epoch yang proof-nya sudah lolos
+  ([`anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/confidential/LiabilityLedgerV2.sol#L117-L166)).
+
+Ledger menerima setiap epoch satu kali. Epoch kedua dengan nomor yang sama ditolak. Digest setiap epoch
 memuat digest epoch sebelumnya, jadi epoch yang sudah di-anchor tidak bisa diubah, dihapus, atau diurutkan
-ulang ([`anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/LiabilityLedger.sol#L50-L89)).
+ulang. Generasi kedua mulai tepat di tempat generasi pertama disegel: epoch pertamanya menyambung digest
+terakhir generasi pertama. Ledger directory mencatat kedua generasi, jadi proof dari generasi mana pun
+diverifikasi lewat alamat yang sama
+([`LedgerDirectory`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/directory/LedgerDirectory.sol#L39-L58)).
 
 Sebuah akun muncul di tree hanya sebagai commitment: hash dari jenis akun, salt dan holder, dan di epoch
-yang lebih baru juga dari secret yang hanya diberikan kepada pemilik akun itu. Tree menunjukkan amount dan
-total-nya, bukan milik siapa.
+yang lebih baru juga dari secret yang hanya diberikan kepada pemilik akun itu. Tree generasi pertama
+menunjukkan amount dan total-nya, tapi bukan milik siapa. Generasi kedua tidak mempublikasikan keduanya: di
+chain, sebuah epoch hanya berisi root tree, `C` dan jumlah akun.
 
 Anchoring memerlukan dua key: milik notary, dan milik watch independen yang memeriksa snapshot terhadap
 catatan payment sendiri tentang snapshot itu sebelum menyetujuinya. Ledger hanya menerima epoch dari council
-yang memegang keduanya ([`AnchorCouncil.anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/council/AnchorCouncil.sol#L53-L59)).
+yang memegang keduanya
+([`AnchorCouncil.anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/council/AnchorCouncil.sol#L53-L59),
+dan di generasi kedua
+[`ConfidentialAnchorCouncil.anchor`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/confidential/ConfidentialAnchorCouncil.sol#L54-L60)).
+Untuk epoch generasi kedua, watch membangun ulang root tree dan `C` sendiri. Watch baru menandatangani
+setelah ledger melaporkan bahwa proof epoch itu sudah lolos
+([pemeriksaan watch](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/approving/approver.go#L260-L286)).
 
 ## Apa yang ditunjukkan sebuah proof
 
-Sebuah proof membuka commitment satu akun dan memberikan hash dan sum sibling di sepanjang path dari
-leaf-nya ke root. Ketika proof itu terverifikasi terhadap epoch yang sudah di-anchor dan final, proof itu
+Sebuah proof membuka commitment satu akun dan memberikan hash sibling di sepanjang path dari leaf-nya ke
+root. Di generasi pertama, setiap sibling juga membawa sum-nya. Di generasi kedua, setiap proof membawa
+tepat delapan sibling tanpa sum, karena sum dibuktikan di dalam zero-knowledge proof dan tidak pernah
+dipublikasikan. Ketika proof itu terverifikasi terhadap epoch yang sudah di-anchor dan final, proof itu
 menunjukkan bahwa:
 
 - Kinetix telah meng-commit, secara publik dan pada waktu yang tercatat, satu set saldo tertentu beserta
-  total pastinya;
+  total pastinya. Di generasi kedua total itu tetap tersembunyi di balik `C`, dan zero-knowledge proof
+  menunjukkan bahwa total itu adalah jumlah saldo-saldo tersebut;
 - saldo akun ini ada di dalam set itu, dengan amount itu;
 - commitment-nya tidak bisa diubah sesudahnya.
 
 Verifier menghitung path itu sendiri dan juga meminta kontrak ledger menghitungnya
-([`verifyInclusion`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/LiabilityLedger.sol#L102-L120)). Verdict hanya diberikan kalau
-keduanya sepakat.
+([`verifyInclusion`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/LiabilityLedger.sol#L102-L120),
+dan di generasi kedua
+[`verifyInclusion`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/confidential/LiabilityLedgerV2.sol#L181-L204)).
+Verdict hanya diberikan kalau keduanya sepakat.
 
 ## Apa yang tidak ditunjukkannya
 
@@ -55,29 +85,35 @@ keduanya sepakat.
   bahwa kebohongan atau sikap diam tentangnya bisa dibuktikan, seperti di bawah ini.
 - **Bahwa angka payment benar.** Tree meng-commit apa pun yang dikatakan snapshot. Kalau sebuah saldo salah
   di payment, notary meng-anchor saldo yang salah itu dengan setia.
-- **Bahwa amount-mu tetap hanya antara kamu dan Kinetix.** Total epoch bersifat publik, dan memeriksa
-  sebuah proof lewat endpoint RPC memberi tahu endpoint itu commitment dan amount yang sedang diperiksa.
+- **Total generasi kedua.** Notary menyimpan blinding setiap epoch, jadi notary bisa membuka `C` kepada
+  auditor, dan tidak ada pihak lain yang bisa membacanya
+  ([keputusan 47](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/PLAN.md#L1715)).
+- **Bahwa amount-mu tetap hanya antara kamu dan Kinetix.** Di generasi pertama total epoch bersifat publik.
+  Di kedua generasi, memeriksa sebuah proof lewat endpoint RPC memberi tahu endpoint itu commitment dan
+  amount yang sedang diperiksa.
 
 ## Ketika notary berbohong atau diam
 
 Sebuah proof juga membawa statement: commitment, amount dan path-nya, ditandatangani key yang didaftarkan
-statement court sebagai signer untuk epoch itu. Dengan begitu dua kegagalan menjadi bukti yang bisa dibawa
-siapa pun ke chain:
+statement court sebagai signer untuk epoch itu. Setiap generasi punya statement court dan withholding court
+sendiri, dan directory mencatat keduanya di samping ledger. Dengan begitu dua kegagalan menjadi bukti yang
+bisa dibawa siapa pun ke chain:
 
 - **Proof yang salah.** Kalau proof yang ditandatangani tidak terverifikasi, court memverifikasinya lagi
   on chain dan mencatat fault atas epoch itu
-  ([`proveBadProof`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/court/StatementCourt.sol#L59-L78)). Dua statement berbeda yang
+  ([`proveBadProof`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/court/StatementCourt.sol#L59-L78)). Dua statement berbeda yang
   ditandatangani untuk satu epoch, yang menyebut commitment yang sama atau posisi yang sama di tree, saling
   bertentangan dan dicatat dengan cara yang sama
-  ([`proveEquivocation`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/court/StatementCourt.sol#L80-L101)).
+  ([`proveEquivocation`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/court/StatementCourt.sol#L80-L101)).
 - **Sikap diam.** Holder yang mendaftarkan sebuah alamat bisa meminta statement-nya untuk sebuah epoch ke
   withholding court, dalam waktu seminggu sejak epoch itu di-anchor
-  ([`requestStatement`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/withholding/WithholdingCourt.sol#L49-L91)). Kalau notary belum
+  ([`requestStatement`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/withholding/WithholdingCourt.sol#L49-L91)). Kalau notary belum
   menjawab dalam 24 jam, siapa pun boleh mencatat sikap diam itu
-  ([`recordUnanswered`](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/contracts/src/withholding/WithholdingCourt.sol#L121-L146)).
+  ([`recordUnanswered`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/withholding/WithholdingCourt.sol#L121-L146)).
+  Registrasi dibuat untuk satu withholding court, jadi holder mendaftar lagi untuk generasi kedua.
 
 Fault atau sikap diam yang sudah tercatat tidak pernah dihapus. Verifier melaporkan berapa fault yang
 dibawa sebuah epoch di samping setiap verdict. Membawa fault atau request ke chain memerlukan gas, yang
-dibayar paymaster notary, jadi holder perlu key tanpa perlu ETH.
+dibayar paymaster generasi epoch itu, jadi holder perlu key tanpa perlu ETH.
 
 Untuk memeriksa proof milikmu sendiri, lihat [Memverifikasi proof of liabilities](/id/verify/proof-of-liabilities/).

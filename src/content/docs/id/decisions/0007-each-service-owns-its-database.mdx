@@ -1,7 +1,7 @@
 ---
 title: Setiap service memiliki database-nya sendiri
 description: Sebuah service hanya membaca dan menulis database-nya sendiri. Data service lain ditanyakan — lewat gRPC, change feed, atau log evidence — tidak pernah dibaca dari tabelnya, dan orang disimpan sebagai principal identity.
-sourceHash: "3c6b987f59f8"
+sourceHash: "62c19873b0d3"
 sidebar:
   order: 7
 adr:
@@ -36,7 +36,7 @@ pribadi atau password bisa bocor.
   - **change feed**, untuk read model yang dibangun dari beberapa pemilik —
     [search menarik feed setiap pemilik dengan sebuah cursor](https://github.com/WildanFrananda/kinetix-search-service/blob/1316183858b32d1123bc5aa5c7502b74d3e5ceee/PLAN.md#L16);
   - **log evidence append-only**, untuk record yang dikomitmenkan pihak lain —
-    [notary membaca snapshot dari pemiliknya dan berkomitmen padanya](https://github.com/WildanFrananda/kinetix-notary-service/blob/b5d5e1138dcde472ee90c48c8ed3fc315e9c8a2c/PLAN.md#L21-L23).
+    [notary membaca snapshot dari pemiliknya dan berkomitmen padanya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/PLAN.md#L21-L23).
 - Di production, setiap database berada di satu cluster PostgreSQL. Setiap service punya login sendiri,
   yang hanya bisa membuka database milik service itu, dan penyiapan cluster gagal kalau login sebuah service
   bisa membuka database service lain.

@@ -212,11 +212,15 @@ disagree; this repository writes no verification logic of its own.
   bare HTML form and reloads the page with the document gone.
 - Checked on 2026-10-16 in headless Chromium against Base Sepolia: a production proof answered `included`,
   attributable, no faults, exit 0; the same proof with its amount changed answered `rejected`, exit 1.
-- The pin is v1.5.0 (notary `b5d5e11`). On 2026-10-18 a fresh clone of the tag, running the page's own command on
-  arm64, rebuilt `SHA256SUMS` byte for byte as the release job wrote it on amd64. All notary permalinks on the
-  Verify pages point at that commit. Moving
-  the liabilities pages from v1.4.0 (`7d292fa`) changed one range: every other linked file is byte-identical
-  between the two tags, and the WebAssembly entry point's `run` moved to L86–L106. The owners' logs are linked at
+- The pin is v1.6.1 (notary `0a5e21f`), since 2026-10-20, when production moved to the second generation (scheme 2,
+  the hidden total; notary PLAN.md step 13). Every notary permalink on the site points at that commit, the glossary's
+  included. The move was made by script: each linked range was compared between `b5d5e11` and `0a5e21f`; 87 were
+  byte-identical, 14 had only moved and were found again uniquely, and 10 had changed and were re-read by hand. The
+  Verify pages, the notary service page and the glossary describe both generations: epochs 0–182 are scheme 1, from
+  183 on scheme 2, and a proof's paymaster is its generation's, because `notary-sponsor` refuses another. Not yet
+  re-checked for v1.6.1: that a fresh clone of the tag rebuilds `SHA256SUMS` byte for byte (done for v1.5.0 on
+  2026-10-18, on arm64 against the release job's amd64), and a production proof answering in headless Chromium. The
+  owners' logs are linked at
   the tags production runs: order v1.2.0 (`0c3698e`), matching v1.3.0 (`f2f99d9`) and review v1.1.1 (`d259ba5`),
   moved on 2026-10-19; matching's upload signing now lives in `storage/s3.ex`, since MinIO left the estate.
 

@@ -1,7 +1,7 @@
 ---
 title: Glosarium
 description: Istilah yang dipakai kode Kinetix untuk akun, pembelian, order, uang, pengantaran, dan bukti, masing-masing didefinisikan dari kode yang berjalan di produksi.
-sourceHash: "fa46468e0cfa"
+sourceHash: "d3f69cec16fb"
 sidebar:
   order: 1
 ---
@@ -293,25 +293,30 @@ Pemilik: payment. Didefinisikan di [kontraknya](https://github.com/WildanFranand
 
 Satu komitmen bernomor atas sebuah liability snapshot, yang dirantai ke epoch sebelumnya lewat digest-nya.
 
-Pemilik: notary. Didefinisikan di [header-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/EpochHeader.sol#L4-L11) dan
-[aturan rantainya](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/LiabilityLedger.sol#L65-L69).
+Pemilik: notary. Didefinisikan di [header-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/EpochHeader.sol#L4-L11) dan
+[aturan rantainya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/LiabilityLedger.sol#L65-L69).
 
 ### anchoring
 
-Menulis header sebuah epoch (root, total, jumlah leaf, dan waktunya) ke kontrak `LiabilityLedger` di Base
-Sepolia, lewat anchor council yang membutuhkan sejumlah tanda tangan anggotanya. Tidak ada saldo maupun
-principal yang masuk ke chain.
+Menulis header sebuah epoch (root, total, jumlah leaf, dan waktunya) ke kontrak ledger generasi yang sedang
+berlaku di Base Sepolia, lewat anchor council yang membutuhkan sejumlah tanda tangan anggotanya. Di generasi
+kedua, total di header bernilai 0, dan ledger baru menerima header itu setelah zero-knowledge proof epoch-nya
+lolos. Tidak ada saldo maupun principal yang masuk ke chain.
 
-Pemilik: notary. Didefinisikan di [ledger-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/LiabilityLedger.sol#L50) dan
-[council-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/council/AnchorCouncil.sol#L53-L58).
+Pemilik: notary. Didefinisikan di [ledger-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/LiabilityLedger.sol#L50),
+[penerusnya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/confidential/LiabilityLedgerV2.sol#L117-L166) dan
+[council-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/council/AnchorCouncil.sol#L53-L58).
 
 ### proof of liabilities
 
 Bukti bahwa saldo seorang pemegang, di balik komitmen yang hanya bisa dibuka olehnya, termasuk dalam total
-yang di-anchor platform. Root sebuah epoch adalah Merkle sum tree atas semua akun. Ini bukan bukti
-solvabilitas; lihat [Apa yang dibuktikan proof of liabilities](/id/verify/what-the-proof-proves/).
+yang di-anchor platform. Di generasi pertama, root sebuah epoch adalah Merkle sum tree atas semua akun. Di
+generasi kedua, root-nya adalah tree Poseidon2 yang total-nya tetap tersembunyi di balik sebuah komitmen, dan
+dibuktikan dengan zero knowledge sebagai jumlah semua akun. Ini bukan bukti solvabilitas; lihat
+[Apa yang dibuktikan proof of liabilities](/id/verify/what-the-proof-proves/).
 
-Pemilik: notary. Didefinisikan di [pengecekan inklusinya](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/LiabilityLedger.sol#L116-L119).
+Pemilik: notary. Didefinisikan di [pengecekan inklusinya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/LiabilityLedger.sol#L116-L119) dan
+[padanannya di generasi kedua](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/confidential/LiabilityLedgerV2.sol#L181-L204).
 
 ### statement
 
@@ -319,5 +324,5 @@ Klaim bertanda tangan dari notary bahwa satu akun termasuk dalam sebuah epoch, y
 oleh siapa pun di statement court. Pemegang juga bisa memintanya di chain, dan permintaan yang tidak dijawab
 dicatat sebagai kesalahan notary.
 
-Pemilik: notary. Didefinisikan di [statement-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/court/EpochStatement.sol#L4-L11) dan
-[permintaannya](https://github.com/WildanFrananda/kinetix-notary-service/blob/7d292fa763b17f3ad5742734aeeced126e670b6a/contracts/src/withholding/WithholdingCourt.sol#L69-L84).
+Pemilik: notary. Didefinisikan di [statement-nya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/court/EpochStatement.sol#L4-L11) dan
+[permintaannya](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/withholding/WithholdingCourt.sol#L69-L84).
