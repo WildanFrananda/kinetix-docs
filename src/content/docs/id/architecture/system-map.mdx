@@ -1,7 +1,7 @@
 ---
 title: Peta sistem
 description: Setiap service, panggilan di antara mereka, dan apa yang masuk dari luar — digambar dari kodenya, dengan setiap panah menautkan baris yang melakukan panggilan itu.
-sourceHash: "368fc25e6ad2"
+sourceHash: "e35078c496d1"
 sidebar:
   order: 1
 ---
@@ -35,15 +35,16 @@ identity, diambil lewat HTTP, sehingga pengambilan itu tidak muncul sebagai pana
 berubah sejak checkpoint terakhirnya, lalu menulis hasilnya ke Typesense. Panggilan `ChangedSince`
 itulah feed-nya.
 
-**notary hanya membaca.** Ia membaca snapshot liability milik payment dan tiga log append-only: lifecycle
-order, pengiriman matching, dan ulasan review. Ia tidak mengubah apa pun di semuanya. Semua yang ia tulis
-masuk ke Base Sepolia, chain publik yang bisa dibaca siapa pun; lihat [notary](/id/services/notary/).
+**notary tidak mengubah apa pun yang ia baca.** Ia membaca snapshot liability milik payment dan tiga log
+append-only: lifecycle order, pengiriman matching, dan ulasan review. Ia tidak mengubah apa pun di semuanya.
+Semua yang ia tulis masuk ke Base Sepolia, chain publik yang bisa dibaca siapa pun. Satu-satunya panggilannya
+yang lain meminta notification memberi tahu seorang pemegang bahwa statement baru atas saldonya sudah siap;
+lihat [notary](/id/services/notary/).
 
 ## Yang tidak digambar
 
 - Panggilan yang hanya dilakukan oleh migrasi data sekali jalan.
 - Lalu lintas di dalam satu service, seperti event in-process milik matching, atau dua proses notary yang
   saling menyetujui sebuah epoch.
-- Panah yang masuk ke notification. Ia melayani API-nya, tapi belum ada service yang diberi template;
-  panahnya sendiri, ke identity, Firebase, dan Resend, adalah panggilan yang ia lakukan begitu ada.
-  communication sudah dibangun tapi belum di-deploy.
+- communication di production. Ia sudah dibangun tapi belum di-deploy; panahnya ke identity adalah
+  panggilan yang ia lakukan begitu di-deploy.

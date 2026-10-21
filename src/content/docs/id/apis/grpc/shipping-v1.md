@@ -1,29 +1,29 @@
 ---
 title: "shipping.v1"
-description: "Paket gRPC shipping.v1 di kinetix-contracts 1.5.0: service, message, dan enum-nya."
+description: "Paket gRPC shipping.v1 di kinetix-contracts 1.7.0: service, message, dan enum-nya."
 editUrl: false
-sourceHash: "85dd3b9a30d3"
+sourceHash: "e8b4a9af73bf"
 ---
 
 <div class="grpc-reference">
 
-Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v/1.5.0) kinetix-contracts: [`shipping/v1/shipping.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/shipping/v1/shipping.proto). Server dan pemanggil diambil dari [peta sistem](/id/architecture/system-map/); tanda pisah berarti peta tidak mencatat apa pun.
+Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v/1.7.0) kinetix-contracts: [`shipping/v1/shipping.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/shipping/v1/shipping.proto). Server dan pemanggil diambil dari [peta sistem](/id/architecture/system-map/); tanda pisah berarti peta tidak mencatat apa pun.
 
 ## Service
 
 ### ShippingService
 
-[`shipping/v1/shipping.proto:7`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/shipping/v1/shipping.proto#L7)
+[`shipping/v1/shipping.proto:7`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/shipping/v1/shipping.proto#L7)
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`EstimateShippingOptions`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/shipping/v1/shipping.proto#L8) | [`EstimateShippingOptionsRequest`](#estimateshippingoptionsrequest) → [`EstimateShippingOptionsResponse`](#estimateshippingoptionsresponse) | [matching](/id/services/matching/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/ShippingGrpcClient.cs#L34) |
+| [`EstimateShippingOptions`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/shipping/v1/shipping.proto#L8) | [`EstimateShippingOptionsRequest`](#estimateshippingoptionsrequest) → [`EstimateShippingOptionsResponse`](#estimateshippingoptionsresponse) | [matching](/id/services/matching/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/ShippingGrpcClient.cs#L34) |
 
 ## Message
 
 ### EstimateShippingOptionsRequest
 
-[`shipping/v1/shipping.proto:11`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/shipping/v1/shipping.proto#L11)
+[`shipping/v1/shipping.proto:11`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/shipping/v1/shipping.proto#L11)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -34,7 +34,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### CourierOption
 
-[`shipping/v1/shipping.proto:18`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/shipping/v1/shipping.proto#L18)
+[`shipping/v1/shipping.proto:18`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/shipping/v1/shipping.proto#L18)
 
 | Field | Nomor | Tipe | Catatan |
 | --- | --- | --- | --- |
@@ -48,7 +48,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### EstimateShippingOptionsResponse
 
-[`shipping/v1/shipping.proto:28`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/shipping/v1/shipping.proto#L28)
+[`shipping/v1/shipping.proto:28`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/shipping/v1/shipping.proto#L28)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |

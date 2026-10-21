@@ -31,8 +31,8 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "fcm",
     kind: "external",
     calls: [
-      { operation: "POST /token", source: { label: "GoogleAccessTokens.scala:44", href: "https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/http/GoogleAccessTokens.scala#L44" } },
-      { operation: "POST /v1/projects/{project}/messages:send", source: { label: "HttpPushSender.scala:34", href: "https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L34" } }
+      { operation: "POST /token", source: { label: "GoogleAccessTokens.scala:44", href: "https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/http/GoogleAccessTokens.scala#L44" } },
+      { operation: "POST /v1/projects/{project}/messages:send", source: { label: "HttpPushSender.scala:34", href: "https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L34" } }
     ]
   },
   {
@@ -40,7 +40,7 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "resend",
     kind: "external",
     calls: [
-      { operation: "POST /emails", source: { label: "HttpEmailSender.scala:33", href: "https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/http/HttpEmailSender.scala#L33" } }
+      { operation: "POST /emails", source: { label: "HttpEmailSender.scala:33", href: "https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/http/HttpEmailSender.scala#L33" } }
     ]
   },
   {
@@ -197,7 +197,7 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "identity",
     kind: "grpc",
     calls: [
-      { operation: "identity.v1.IdentityService/GetUserProfile", source: { label: "GrpcIdentityRecipientDirectory.scala:17", href: "https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/grpc/GrpcIdentityRecipientDirectory.scala#L17" } }
+      { operation: "identity.v1.IdentityService/GetUserProfile", source: { label: "GrpcIdentityRecipientDirectory.scala:17", href: "https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/grpc/GrpcIdentityRecipientDirectory.scala#L17" } }
     ]
   },
   {
@@ -239,8 +239,8 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "payment",
     kind: "grpc",
     calls: [
-      { operation: "payment.v1.LiabilityService/StreamLiabilitySnapshot", source: { label: "source.go:61", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/payment/source.go#L61" } },
-      { operation: "payment.v1.LiabilityRecordService/GetLiabilitySnapshotRecord", source: { label: "records.go:56", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/payment/records.go#L56" } }
+      { operation: "payment.v1.LiabilityService/StreamLiabilitySnapshot", source: { label: "source.go:61", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/payment/source.go#L61" } },
+      { operation: "payment.v1.LiabilityRecordService/GetLiabilitySnapshotRecord", source: { label: "records.go:56", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/payment/records.go#L56" } }
     ]
   },
   {
@@ -248,7 +248,7 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "order",
     kind: "grpc",
     calls: [
-      { operation: "order.v1.OrderLifecycleService/LifecycleEventsSince", source: { label: "lifecycle_feed.go:50", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/feeds/lifecycle_feed.go#L50" } }
+      { operation: "order.v1.OrderLifecycleService/LifecycleEventsSince", source: { label: "lifecycle_feed.go:50", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/feeds/lifecycle_feed.go#L50" } }
     ]
   },
   {
@@ -256,7 +256,7 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "matching",
     kind: "grpc",
     calls: [
-      { operation: "fulfillment.v1.DeliveryEvidenceService/DeliveriesSince", source: { label: "delivery_feed.go:50", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/feeds/delivery_feed.go#L50" } }
+      { operation: "fulfillment.v1.DeliveryEvidenceService/DeliveriesSince", source: { label: "delivery_feed.go:50", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/feeds/delivery_feed.go#L50" } }
     ]
   },
   {
@@ -264,7 +264,15 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "review",
     kind: "grpc",
     calls: [
-      { operation: "review.v1.ReviewEvidenceService/ReviewsSince", source: { label: "review_feed.go:50", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/feeds/review_feed.go#L50" } }
+      { operation: "review.v1.ReviewEvidenceService/ReviewsSince", source: { label: "review_feed.go:50", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/feeds/review_feed.go#L50" } }
+    ]
+  },
+  {
+    from: "notary",
+    to: "notification",
+    kind: "grpc",
+    calls: [
+      { operation: "notification.v1.NotificationService/Notify", source: { label: "notifier.go:75", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/notification/notifier.go#L75" } }
     ]
   },
   {
@@ -272,9 +280,9 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "chain",
     kind: "external",
     calls: [
-      { operation: "eth_sendRawTransaction", source: { label: "transactor.go:189", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/ethereum/transactor.go#L189" } },
-      { operation: "eth_getLogs", source: { label: "withholding_court.go:184", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/ethereum/withholding_court.go#L184" } },
-      { operation: "eth_call", source: { label: "ledger.go:281", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/ethereum/ledger.go#L281" } }
+      { operation: "eth_sendRawTransaction", source: { label: "transactor.go:189", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/ethereum/transactor.go#L189" } },
+      { operation: "eth_getLogs", source: { label: "withholding_court.go:184", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/ethereum/withholding_court.go#L184" } },
+      { operation: "eth_call", source: { label: "ledger.go:281", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/ethereum/ledger.go#L281" } }
     ]
   }
 ];

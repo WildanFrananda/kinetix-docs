@@ -1,50 +1,50 @@
 ---
 title: "payment.v1"
-description: "Paket gRPC payment.v1 di kinetix-contracts 1.5.0: service, message, dan enum-nya."
+description: "Paket gRPC payment.v1 di kinetix-contracts 1.7.0: service, message, dan enum-nya."
 editUrl: false
-sourceHash: "7b0b0c0b3659"
+sourceHash: "6f2382b2483a"
 ---
 
 <div class="grpc-reference">
 
-Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v/1.5.0) kinetix-contracts: [`payment/v1/liability_record.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability_record.proto), [`payment/v1/liability.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability.proto), [`payment/v1/payment.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto). Server dan pemanggil diambil dari [peta sistem](/id/architecture/system-map/); tanda pisah berarti peta tidak mencatat apa pun.
+Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v/1.7.0) kinetix-contracts: [`payment/v1/liability_record.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/liability_record.proto), [`payment/v1/liability.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/liability.proto), [`payment/v1/payment.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto). Server dan pemanggil diambil dari [peta sistem](/id/architecture/system-map/); tanda pisah berarti peta tidak mencatat apa pun.
 
 ## Service
 
 ### LiabilityRecordService
 
-[`payment/v1/liability_record.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability_record.proto#L8)
+[`payment/v1/liability_record.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/liability_record.proto#L8)
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`GetLiabilitySnapshotRecord`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability_record.proto#L9) | [`GetLiabilitySnapshotRecordRequest`](#getliabilitysnapshotrecordrequest) → [`GetLiabilitySnapshotRecordResponse`](#getliabilitysnapshotrecordresponse) | [payment](/id/services/payment/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/payment/records.go#L56) |
+| [`GetLiabilitySnapshotRecord`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/liability_record.proto#L9) | [`GetLiabilitySnapshotRecordRequest`](#getliabilitysnapshotrecordrequest) → [`GetLiabilitySnapshotRecordResponse`](#getliabilitysnapshotrecordresponse) | [payment](/id/services/payment/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/payment/records.go#L56) |
 
 ### LiabilityService
 
-[`payment/v1/liability.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability.proto#L8)
+[`payment/v1/liability.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/liability.proto#L8)
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`StreamLiabilitySnapshot`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability.proto#L9) | [`StreamLiabilitySnapshotRequest`](#streamliabilitysnapshotrequest) → `stream` [`StreamLiabilitySnapshotResponse`](#streamliabilitysnapshotresponse) | [payment](/id/services/payment/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/payment/source.go#L61) |
+| [`StreamLiabilitySnapshot`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/liability.proto#L9) | [`StreamLiabilitySnapshotRequest`](#streamliabilitysnapshotrequest) → `stream` [`StreamLiabilitySnapshotResponse`](#streamliabilitysnapshotresponse) | [payment](/id/services/payment/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/payment/source.go#L61) |
 
 ### PaymentService
 
-[`payment/v1/payment.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L8)
+[`payment/v1/payment.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L8)
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`CreateEscrowHold`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L9) | [`CreateEscrowHoldRequest`](#createescrowholdrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/id/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L49) |
-| [`ReleaseEscrow`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L10) | [`ReleaseEscrowRequest`](#releaseescrowrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/id/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L95) |
-| [`RefundEscrow`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L11) | [`RefundEscrowRequest`](#refundescrowrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/id/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L73) |
-| [`GetEscrowStatus`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L12) | [`GetEscrowStatusRequest`](#getescrowstatusrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/id/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L158) |
-| [`SettleShippingFee`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L13) | [`SettleShippingFeeRequest`](#settleshippingfeerequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/id/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L137) |
-| [`RefundGoods`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L14) | [`RefundGoodsRequest`](#refundgoodsrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/id/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L110) |
+| [`CreateEscrowHold`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L9) | [`CreateEscrowHoldRequest`](#createescrowholdrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/id/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L49) |
+| [`ReleaseEscrow`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L10) | [`ReleaseEscrowRequest`](#releaseescrowrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/id/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L95) |
+| [`RefundEscrow`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L11) | [`RefundEscrowRequest`](#refundescrowrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/id/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L73) |
+| [`GetEscrowStatus`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L12) | [`GetEscrowStatusRequest`](#getescrowstatusrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/id/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L158) |
+| [`SettleShippingFee`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L13) | [`SettleShippingFeeRequest`](#settleshippingfeerequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/id/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L137) |
+| [`RefundGoods`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L14) | [`RefundGoodsRequest`](#refundgoodsrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/id/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L110) |
 
 ## Message
 
 ### GetLiabilitySnapshotRecordRequest
 
-[`payment/v1/liability_record.proto:12`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability_record.proto#L12)
+[`payment/v1/liability_record.proto:12`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/liability_record.proto#L12)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -52,7 +52,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### GetLiabilitySnapshotRecordResponse
 
-[`payment/v1/liability_record.proto:16`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability_record.proto#L16)
+[`payment/v1/liability_record.proto:16`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/liability_record.proto#L16)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -65,7 +65,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### StreamLiabilitySnapshotRequest
 
-[`payment/v1/liability.proto:23`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability.proto#L23)
+[`payment/v1/liability.proto:23`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/liability.proto#L23)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -73,7 +73,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### StreamLiabilitySnapshotResponse
 
-[`payment/v1/liability.proto:27`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability.proto#L27)
+[`payment/v1/liability.proto:27`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/liability.proto#L27)
 
 | Field | Nomor | Tipe | Catatan |
 | --- | --- | --- | --- |
@@ -83,7 +83,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### LiabilitySnapshotHeader
 
-[`payment/v1/liability.proto:35`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability.proto#L35)
+[`payment/v1/liability.proto:35`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/liability.proto#L35)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -93,7 +93,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### LiabilityAccountBatch
 
-[`payment/v1/liability.proto:41`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability.proto#L41)
+[`payment/v1/liability.proto:41`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/liability.proto#L41)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -101,7 +101,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### LiabilityAccount
 
-[`payment/v1/liability.proto:45`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability.proto#L45)
+[`payment/v1/liability.proto:45`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/liability.proto#L45)
 
 | Field | Nomor | Tipe | Catatan |
 | --- | --- | --- | --- |
@@ -112,7 +112,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### LiabilitySnapshotTrailer
 
-[`payment/v1/liability.proto:54`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability.proto#L54)
+[`payment/v1/liability.proto:54`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/liability.proto#L54)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -122,7 +122,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### CreateEscrowHoldRequest
 
-[`payment/v1/payment.proto:26`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L26)
+[`payment/v1/payment.proto:26`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L26)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -137,7 +137,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ReleaseEscrowRequest
 
-[`payment/v1/payment.proto:37`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L37)
+[`payment/v1/payment.proto:37`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L37)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -146,7 +146,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### RefundEscrowRequest
 
-[`payment/v1/payment.proto:42`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L42)
+[`payment/v1/payment.proto:42`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L42)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -156,7 +156,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### RefundGoodsRequest
 
-[`payment/v1/payment.proto:48`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L48)
+[`payment/v1/payment.proto:48`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L48)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -167,7 +167,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### GetEscrowStatusRequest
 
-[`payment/v1/payment.proto:55`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L55)
+[`payment/v1/payment.proto:55`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L55)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -175,7 +175,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### SettleShippingFeeRequest
 
-[`payment/v1/payment.proto:59`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L59)
+[`payment/v1/payment.proto:59`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L59)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -185,7 +185,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### EscrowHoldResponse
 
-[`payment/v1/payment.proto:65`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L65)
+[`payment/v1/payment.proto:65`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L65)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -211,7 +211,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### LiabilityKind
 
-[`payment/v1/liability.proto:12`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/liability.proto#L12)
+[`payment/v1/liability.proto:12`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/liability.proto#L12)
 
 | Nama | Nomor |
 | --- | --- |
@@ -226,7 +226,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### EscrowStatus
 
-[`payment/v1/payment.proto:17`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/payment/v1/payment.proto#L17)
+[`payment/v1/payment.proto:17`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L17)
 
 | Nama | Nomor |
 | --- | --- |

@@ -102,7 +102,7 @@ export const architectureNodes: readonly MapNode[] = [
       "fulfillment.v1.DeliveryEvidenceService/DeliveriesSince"
     ],
     routes: ["/api/v1/matching", "/ws/v1/matching/driver", "/ws/v1/matching/merchant"],
-    stores: [postgres, "MinIO"],
+    stores: [postgres, "VersityGW"],
     deployed: true
   },
   {
@@ -215,7 +215,7 @@ export const architectureNodes: readonly MapNode[] = [
     name: "notification",
     summary: "service.notification.owns",
     x: 905,
-    y: 360,
+    y: 415,
     logo: "scala",
     repository: `${github}/kinetix-notification-service`,
     serves: [
@@ -312,7 +312,7 @@ export const architectureNodes: readonly MapNode[] = [
     name: "Resend",
     summary: "map.node.resend.summary",
     x: 905,
-    y: 480,
+    y: 500,
     serves: [],
     routes: [],
     stores: [],

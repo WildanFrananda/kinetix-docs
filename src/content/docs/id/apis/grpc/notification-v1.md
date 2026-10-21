@@ -1,32 +1,32 @@
 ---
 title: "notification.v1"
-description: "Paket gRPC notification.v1 di kinetix-contracts 1.5.0: service, message, dan enum-nya."
+description: "Paket gRPC notification.v1 di kinetix-contracts 1.7.0: service, message, dan enum-nya."
 editUrl: false
-sourceHash: "fba1b37cf3f5"
+sourceHash: "e441c00bafc5"
 ---
 
 <div class="grpc-reference">
 
-Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v/1.5.0) kinetix-contracts: [`notification/v1/notification.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto). Server dan pemanggil diambil dari [peta sistem](/id/architecture/system-map/); tanda pisah berarti peta tidak mencatat apa pun.
+Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v/1.7.0) kinetix-contracts: [`notification/v1/notification.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notification/v1/notification.proto). Server dan pemanggil diambil dari [peta sistem](/id/architecture/system-map/); tanda pisah berarti peta tidak mencatat apa pun.
 
 ## Service
 
 ### NotificationService
 
-[`notification/v1/notification.proto:7`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L7)
+[`notification/v1/notification.proto:7`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notification/v1/notification.proto#L7)
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`Notify`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L8) | [`NotifyRequest`](#notifyrequest) → [`NotifyResponse`](#notifyresponse) | [notification](/id/services/notification/) | — |
-| [`GetDelivery`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L9) | [`GetDeliveryRequest`](#getdeliveryrequest) → [`GetDeliveryResponse`](#getdeliveryresponse) | [notification](/id/services/notification/) | — |
-| [`RegisterDevice`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L10) | [`RegisterDeviceRequest`](#registerdevicerequest) → [`RegisterDeviceResponse`](#registerdeviceresponse) | [notification](/id/services/notification/) | — |
-| [`ForgetDevice`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L11) | [`ForgetDeviceRequest`](#forgetdevicerequest) → [`ForgetDeviceResponse`](#forgetdeviceresponse) | [notification](/id/services/notification/) | — |
+| [`Notify`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notification/v1/notification.proto#L8) | [`NotifyRequest`](#notifyrequest) → [`NotifyResponse`](#notifyresponse) | [notification](/id/services/notification/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/notification/notifier.go#L75) |
+| [`GetDelivery`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notification/v1/notification.proto#L9) | [`GetDeliveryRequest`](#getdeliveryrequest) → [`GetDeliveryResponse`](#getdeliveryresponse) | [notification](/id/services/notification/) | — |
+| [`RegisterDevice`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notification/v1/notification.proto#L10) | [`RegisterDeviceRequest`](#registerdevicerequest) → [`RegisterDeviceResponse`](#registerdeviceresponse) | [notification](/id/services/notification/) | — |
+| [`ForgetDevice`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notification/v1/notification.proto#L11) | [`ForgetDeviceRequest`](#forgetdevicerequest) → [`ForgetDeviceResponse`](#forgetdeviceresponse) | [notification](/id/services/notification/) | — |
 
 ## Message
 
 ### RegisterDeviceRequest
 
-[`notification/v1/notification.proto:20`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L20)
+[`notification/v1/notification.proto:20`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notification/v1/notification.proto#L20)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -36,7 +36,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### RegisterDeviceResponse
 
-[`notification/v1/notification.proto:26`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L26)
+[`notification/v1/notification.proto:26`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notification/v1/notification.proto#L26)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -46,7 +46,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ForgetDeviceRequest
 
-[`notification/v1/notification.proto:32`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L32)
+[`notification/v1/notification.proto:32`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notification/v1/notification.proto#L32)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -54,7 +54,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ForgetDeviceResponse
 
-[`notification/v1/notification.proto:36`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L36)
+[`notification/v1/notification.proto:36`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notification/v1/notification.proto#L36)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -63,7 +63,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### NotifyRequest
 
-[`notification/v1/notification.proto:65`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L65)
+[`notification/v1/notification.proto:66`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notification/v1/notification.proto#L66)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -75,7 +75,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### NotifyResponse
 
-[`notification/v1/notification.proto:73`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L73)
+[`notification/v1/notification.proto:74`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notification/v1/notification.proto#L74)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -86,7 +86,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### GetDeliveryRequest
 
-[`notification/v1/notification.proto:80`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L80)
+[`notification/v1/notification.proto:81`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notification/v1/notification.proto#L81)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -94,7 +94,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### DeliveryAttempt
 
-[`notification/v1/notification.proto:84`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L84)
+[`notification/v1/notification.proto:85`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notification/v1/notification.proto#L85)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -106,7 +106,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### GetDeliveryResponse
 
-[`notification/v1/notification.proto:92`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L92)
+[`notification/v1/notification.proto:93`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notification/v1/notification.proto#L93)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -120,7 +120,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### DevicePlatform
 
-[`notification/v1/notification.proto:14`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L14)
+[`notification/v1/notification.proto:14`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notification/v1/notification.proto#L14)
 
 | Nama | Nomor |
 | --- | --- |
@@ -130,7 +130,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### Channel
 
-[`notification/v1/notification.proto:41`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L41)
+[`notification/v1/notification.proto:41`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notification/v1/notification.proto#L41)
 
 | Nama | Nomor |
 | --- | --- |
@@ -140,7 +140,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### DeliveryStatus
 
-[`notification/v1/notification.proto:47`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L47)
+[`notification/v1/notification.proto:47`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notification/v1/notification.proto#L47)
 
 | Nama | Nomor |
 | --- | --- |
@@ -152,7 +152,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### Template
 
-[`notification/v1/notification.proto:55`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notification/v1/notification.proto#L55)
+[`notification/v1/notification.proto:55`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notification/v1/notification.proto#L55)
 
 | Nama | Nomor |
 | --- | --- |
@@ -163,5 +163,6 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 | `TEMPLATE_ORDER_DELIVERED` | 4 |
 | `TEMPLATE_COURIER_OFFER` | 5 |
 | `TEMPLATE_RETURN_OPENED` | 6 |
+| `TEMPLATE_LIABILITY_STATEMENT` | 7 |
 
 </div>

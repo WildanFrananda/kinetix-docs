@@ -13,8 +13,11 @@ longer published: a zero-knowledge proof, checked on chain, shows that the hidde
 The second is what happened: it
 reads the append-only logs of order, matching and review, commits to every record with a salt of its own,
 and anchors a batch per log. It
-[owns no balance, no order and no review, and never moves money](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/CLAUDE.md#L12-L20):
+[owns no balance, no order and no review, and never moves money](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/CLAUDE.md#L12-L20):
 it reads what the owner wrote and commits to it.
+
+Since 2026-10-20 it also tells each holder, through notification, when a new statement of their balance is
+ready to check: [below](#telling-holders-a-statement-is-ready).
 
 What the commitments prove, and how to check one in this browser, is in the Verify section:
 [What a proof of liabilities proves](/verify/what-the-proof-proves/),
@@ -23,8 +26,9 @@ service behind them.
 
 The tables on this page are generated from the same verified data as the
 [system map](/architecture/system-map/), at the commits linked from each row. The prose is checked
-against notary [v1.6.1](https://github.com/WildanFrananda/kinetix-notary-service/tree/0a5e21f2f06e9aa404692c437dc417bdded90215),
-the version in production.
+against notary [v1.7.0](https://github.com/WildanFrananda/kinetix-notary-service/tree/9eaeb1c040e1e2518eca8417d787452ccacdaa74),
+the version in production. The verifier on the Verify pages is v1.6.1's: v1.7.0 changed nothing on the path a
+proof is checked by.
 
 ## At a glance
 
@@ -36,7 +40,7 @@ Its contracts are Solidity, built and tested with Foundry. Its zero-knowledge pr
 ## What it serves
 
 Over HTTP, through the gateway,
-[four routes](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/httpapi/router.go#L20-L25),
+[four routes](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/httpapi/router.go#L20-L25),
 all behind an identity access token:
 
 | Route | Answers |
@@ -52,8 +56,9 @@ system map, so it is not in the tables on this page.
 
 ## What it calls
 
-notary reads from four services and writes to one chain. It reads payment's liability snapshot and payment's
-own record of it, and the three evidence logs. On the chain it sends its proofs and anchors, reads the
+notary reads from four services, tells one, and writes to one chain. It reads payment's liability snapshot and
+payment's own record of it, and the three evidence logs, and it asks notification to tell a holder that a
+statement is ready. On the chain it sends its proofs and anchors, reads the
 statement requests holders make, and calls the contracts' views.
 
 <ServiceCalls service="notary" />
@@ -61,17 +66,17 @@ statement requests holders make, and calls the contracts' views.
 ## Its processes and tools
 
 One image carries
-[six programs](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/Dockerfile#L28-L52).
+[six programs](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/Dockerfile#L28-L52).
 Production runs four of them:
 
 - **notaryd**, the service. It
-  [anchors liabilities and evidence, answers statement requests, and serves the proof API](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/cmd/notaryd/main.go#L36-L61).
+  [anchors liabilities and evidence, answers statement requests, tells holders a statement is ready, and serves the proof API](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/cmd/notaryd/main.go#L38-L65).
 - **notary-prove**, which notaryd
-  [starts as a child process for each epoch](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/proverproc/client.go#L29-L80).
+  [starts as a child process for each epoch](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/proverproc/client.go#L29-L80).
   It reads the epoch's accounts on its standard input, writes the zero-knowledge proof on its standard
   output, and exits, so the prover's memory is held only while it proves.
 - **notary-watch**, the council's second member. It
-  [approves an epoch only after checking it itself](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/cmd/notary-watch/main.go#L82-L122),
+  [approves an epoch only after checking it itself](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/cmd/notary-watch/main.go#L82-L122),
   keeps no database, and signs off chain: it never sends a transaction.
 - **notary-migrate**, which applies the schema once and exits.
 
@@ -84,30 +89,30 @@ The other two are tools for people outside Kinetix:
 ## Anchoring what is owed
 
 Every hour by default
-([`defaultEpochInterval`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/config/daemon.go#L46)),
+([`defaultEpochInterval`](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/config/daemon.go#L50)),
 notaryd builds an epoch:
 
-1. It [asks payment for a snapshot](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/anchoring/anchorer.go#L146-L160)
+1. It [asks payment for a snapshot](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/anchoring/anchorer.go#L146-L160)
    of what is owed to each holder. If payment cannot answer, no epoch is built, and the next tick tries again.
 2. It commits to every balance with a salt of its own and builds a Poseidon2 tree of depth 8, with a
    commitment to the total under a fresh blinding. notary-prove proves the tree in zero knowledge, and notaryd
    sends the proof to the ledger, which
-   [verifies it on chain and records the epoch as proven](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/confidential/LiabilityLedgerV2.sol#L75-L115).
+   [verifies it on chain and records the epoch as proven](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/contracts/src/confidential/LiabilityLedgerV2.sol#L75-L115).
    The first generation, up to epoch 182, built a sum tree whose root carried the total, and needed no proof.
 3. It asks notary-watch to approve it. The watch does not take notaryd's word. It
-   [asks payment for payment's own record of that snapshot](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/approving/approver.go#L158-L258)
+   [asks payment for payment's own record of that snapshot](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/approving/approver.go#L158-L258)
    and compares the count and the total, and checks the ledger's next epoch and head. It
-   [rebuilds the tree's root and the total's commitment itself](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/approving/approver.go#L326-L363),
+   [rebuilds the tree's root and the total's commitment itself](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/approving/approver.go#L326-L363),
    from payment's rows and the salts and blinding notaryd sends, and
-   [signs only once the ledger reports the proof passed](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/approving/approver.go#L260-L286).
+   [signs only once the ledger reports the proof passed](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/approving/approver.go#L260-L286).
 4. With both signatures, sorted by signer, notaryd sends the anchor to the `ConfidentialAnchorCouncil`, the
    ledger's only anchorer, which
-   [refuses fewer approvals than its threshold, a signer that is not a member, or approvals out of order](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/confidential/ConfidentialAnchorCouncil.sol#L142-L169).
+   [refuses fewer approvals than its threshold, a signer that is not a member, or approvals out of order](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/contracts/src/confidential/ConfidentialAnchorCouncil.sol#L142-L169).
    The ledger then
-   [anchors the epoch only if it was proven](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/confidential/LiabilityLedgerV2.sol#L117-L166).
+   [anchors the epoch only if it was proven](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/contracts/src/confidential/LiabilityLedgerV2.sol#L117-L166).
 
 A refusal from the watch
-[abandons the epoch](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/anchoring/anchorer.go#L370-L377).
+[abandons the epoch](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/anchoring/anchorer.go#L370-L377).
 Any other failure is retried. So a commitment reaches the chain only when two parties have checked it
 against payment independently, and the chain itself enforces that.
 
@@ -116,79 +121,133 @@ against payment independently, and the chain itself enforces that.
 notaryd reads three append-only logs, each owned by the service that wrote it: order's lifecycle log,
 matching's delivery evidence, and review's evidence log. Each record gets a salt of its own and becomes a
 leaf. A batch per log closes every 24 hours by default
-([`defaultEvidenceBatch`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/config/daemon.go#L49)),
+([`defaultEvidenceBatch`](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/config/daemon.go#L53)),
 and
-[only one batch is in flight across the three](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/evidencing/closer.go#L42-L60).
+[only one batch is in flight across the three](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/evidencing/closer.go#L42-L60).
 Batches go to the `EvidenceRegistry`, under
-[a key that must not be the liabilities anchorer's](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/evidencing/registry_check.go#L46-L70).
+[a key that must not be the liabilities anchorer's](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/evidencing/registry_check.go#L46-L70).
 
 What notary keeps of a delivery or a review is the record's fields and the hashes the owner logged: the
 photo's and the signature's SHA-256, the comment's SHA-256. It never sees the photo or the comment.
+
+## Telling holders a statement is ready
+
+Since 2026-10-20 notaryd tells each holder whose balance changed that a new statement is ready, through
+notification. Checking a statement is then something a holder is asked to do, rather than something they must
+remember. It is one more loop in notaryd, which
+[plans](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/delivering/planner.go#L24-L75) and then
+[hands over](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/delivering/deliverer.go#L38-L63) on every tick.
+
+- **Once a day.** The day is counted at a fixed offset from UTC, +07:00 in production
+  ([`dayOf`](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/delivering/planner.go#L141-L145)). An offset beyond fourteen hours, or a Verify address
+  that is not https,
+  [stops notaryd starting](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/config/daemon.go#L284-L300). The first final epoch whose snapshot falls on
+  a new day carries that day's statements, and
+  [the rest of the day's epochs are passed over](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/delivering/planner.go#L40-L47). The first run
+  [starts at the newest final epoch](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/delivering/planner.go#L77-L92), not at the beginning of the
+  history.
+- **Only when something changed.** A holder's accounts are reduced to
+  [a fingerprint of each account's kind and amount](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/notary/statement_fingerprint.go#L12-L30), and
+  [a holder whose fingerprint is the one last planned for them is skipped](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/delivering/planner.go#L123-L136).
+  The suspense accounts are [left out](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/delivering/planner.go#L102-L105): no principal holds them.
+- **No amount.** The call names
+  [the template, the epoch and the address of the Verify page, and nothing else](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/notification/notifier.go#L75-L83).
+  A balance never passes through notification or an email provider: the holder fetches their proof with their
+  own token and checks it, on this site or with `notary-verify`.
+- **Once per holder and epoch.** The idempotency key is
+  [`liability-statement:<epoch>:<holder>`](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/notification/notifier.go#L104-L106), so a call repeated
+  after a lost answer gets the first notification back rather than a second message. A new day's statement
+  [replaces an older one still waiting](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/postgres/queries.sql#L371-L374), so a holder who could not be
+  reached for a while is told about the newest.
+
+What became of each statement is
+[kept per holder and epoch](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/migrations/00007_statement_deliveries.sql#L9-L27):
+
+| notification | the statement |
+| --- | --- |
+| accepts it and names the notification | `sent` |
+| has no address for the holder: `RECIPIENT_UNKNOWN` or `NO_CHANNEL_AVAILABLE` | `refused`, and planned again only once the holder's balance changes |
+| refuses it for any other reason, or does not answer | stays `pending`, and is tried again after a minute, then after twice as long each time, up to six hours |
+
+[notification's answers are sorted](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/notification/notifier.go#L108-L131) into those three, and
+[each one is recorded](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/delivering/deliverer.go#L65-L126) before the next statement is tried. The
+retries run [from one minute to six hours](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/wiring/delivering.go#L17-L23). A refused holder stays
+refused because [the refusal is the last statement planned for them](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/postgres/queries.sql#L357-L361)
+until their fingerprint moves. A refusal for any other reason, such as a missing grant, is retried, never taken as
+delivered. When notification does not answer at all,
+[the pass stops at that statement](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/delivering/deliverer.go#L44-L53) instead of calling again for every
+holder behind it.
+
+`sent` means notification accepted the statement and wrote it down. What each channel then did with it is in
+[notification's record](/services/notification/#sending-a-notification), not the notary's.
 
 ## On chain
 
 Everything is on Base Sepolia, chain id 84532. The contracts are deployed in generations, and the
 `LedgerDirectory` names every generation and which one is current. The addresses below are the
-[second generation's](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/deploy/base-sepolia-2.env#L1-L49),
+[second generation's](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/deploy/base-sepolia-2.env#L1-L49),
 current since epoch 183, and the two contracts every generation shares.
 
 | Contract | What it does | Address |
 | --- | --- | --- |
-| [`LiabilityLedgerV2`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/confidential/LiabilityLedgerV2.sol#L75-L204) | the hash chain of anchored epochs: it verifies each epoch's zero-knowledge proof, anchors only a proven epoch, and holds the inclusion check a proof is verified against | `0xD030069284288418c8d27e5FDD47F79BdCfeBce6` |
-| [`PlonkVerifier`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/confidential/PlonkVerifier.sol) | the verifier gnark generated for the circuit, which the ledger calls | `0xD601f0e38De7C6dbD907b16c3fb45A690846363A` |
-| [`ConfidentialAnchorCouncil`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/confidential/ConfidentialAnchorCouncil.sol#L54-L60) | the ledger's only anchorer; anchors only with a threshold of its members' approvals | `0xB1655F1518F18C73853B90fd38B6b11f2E85A45A` |
-| [`StatementCourt`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/court/StatementCourt.sol#L59-L101) | lets anyone prove that a signed statement is false, or that two contradict each other | `0x69d14fe569a288Dab93301F461A7494ADf0dCfE3` |
-| [`WithholdingCourt`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/withholding/WithholdingCourt.sol#L49-L146) | a holder asks for their statement on chain; once the deadline passes unanswered, anyone can record the silence | `0xa3a6B232f855EB1c0F09437C889DBd852A7f2bae` |
-| [`NotaryPaymaster`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/paymaster/NotaryPaymaster.sol#L113-L134) | pays for a holder's court calls, and only for calls a court would accept | `0xF0A26FC891450122F14b1f6f8839A5C5BD4f7EE6` |
-| [`LedgerDirectory`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/directory/LedgerDirectory.sol#L39-L58) | the generations of ledger and courts; a successor only continues where its predecessor was sealed | `0x6C71162b46620Aa835681ADCDC4DB4ab9bB84ac8` |
-| [`EvidenceRegistry`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/evidence/EvidenceRegistry.sol#L78-L125) | one hash chain of batches per log: order lifecycle, delivery, review | `0xbF1F15F40cA8Dd63c070d223243febf6731EF480` |
+| [`LiabilityLedgerV2`](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/contracts/src/confidential/LiabilityLedgerV2.sol#L75-L204) | the hash chain of anchored epochs: it verifies each epoch's zero-knowledge proof, anchors only a proven epoch, and holds the inclusion check a proof is verified against | `0xD030069284288418c8d27e5FDD47F79BdCfeBce6` |
+| [`PlonkVerifier`](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/contracts/src/confidential/PlonkVerifier.sol) | the verifier gnark generated for the circuit, which the ledger calls | `0xD601f0e38De7C6dbD907b16c3fb45A690846363A` |
+| [`ConfidentialAnchorCouncil`](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/contracts/src/confidential/ConfidentialAnchorCouncil.sol#L54-L60) | the ledger's only anchorer; anchors only with a threshold of its members' approvals | `0xB1655F1518F18C73853B90fd38B6b11f2E85A45A` |
+| [`StatementCourt`](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/contracts/src/court/StatementCourt.sol#L59-L101) | lets anyone prove that a signed statement is false, or that two contradict each other | `0x69d14fe569a288Dab93301F461A7494ADf0dCfE3` |
+| [`WithholdingCourt`](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/contracts/src/withholding/WithholdingCourt.sol#L49-L146) | a holder asks for their statement on chain; once the deadline passes unanswered, anyone can record the silence | `0xa3a6B232f855EB1c0F09437C889DBd852A7f2bae` |
+| [`NotaryPaymaster`](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/contracts/src/paymaster/NotaryPaymaster.sol#L113-L134) | pays for a holder's court calls, and only for calls a court would accept | `0xF0A26FC891450122F14b1f6f8839A5C5BD4f7EE6` |
+| [`LedgerDirectory`](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/contracts/src/directory/LedgerDirectory.sol#L39-L58) | the generations of ledger and courts; a successor only continues where its predecessor was sealed | `0x6C71162b46620Aa835681ADCDC4DB4ab9bB84ac8` |
+| [`EvidenceRegistry`](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/contracts/src/evidence/EvidenceRegistry.sol#L78-L125) | one hash chain of batches per log: order lifecycle, delivery, review | `0xbF1F15F40cA8Dd63c070d223243febf6731EF480` |
 
 The first generation, epochs 0 to 182, is sealed and stays verifiable through the directory
-([its addresses](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/deploy/base-sepolia.env#L1-L56)):
+([its addresses](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/deploy/base-sepolia.env#L1-L56)):
 
 | Contract | Address |
 | --- | --- |
-| [`LiabilityLedger`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/LiabilityLedger.sol#L50-L120) | `0x4E869A55031DE3B0d030AEBECc66E523686761a2` |
-| [`AnchorCouncil`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/contracts/src/council/AnchorCouncil.sol#L19-L59) | `0xf6c33dE8F884fCcfE523DdC43d454AD7023D791b` |
+| [`LiabilityLedger`](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/contracts/src/LiabilityLedger.sol#L50-L120) | `0x4E869A55031DE3B0d030AEBECc66E523686761a2` |
+| [`AnchorCouncil`](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/contracts/src/council/AnchorCouncil.sol#L19-L59) | `0xf6c33dE8F884fCcfE523DdC43d454AD7023D791b` |
 | `StatementCourt` | `0xE1Ffcb004Dd734F83ED0B194fdaFF5B0c7c5927B` |
 | `WithholdingCourt` | `0xe980Cd4199d491D635a2d8fd563FC7730716a601` |
 | `NotaryPaymaster` | `0xD38824A16EaB632dD09aa36D3Bcf245097480aeb` |
 
 notaryd also watches the withholding courts for statement requests and answers each one on chain. At start
 it
-[reads every earlier generation from the directory](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/wiring/directory.go#L58-L77),
+[reads every earlier generation from the directory](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/wiring/directory.go#L58-L77),
 so a request to the first generation's court is still answered. A holder who asks gets either an answer, or
 a deadline after which anyone can record on chain that none came. A missing answer is never just absent.
 
 ## Who may ask for what
 
 - **A proof** needs an identity access token:
-  [RS256, from identity's issuer for this audience, unexpired, and an access token, not a refresh token](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/tokens/authenticator.go#L67-L105).
+  [RS256, from identity's issuer for this audience, unexpired, and an access token, not a refresh token](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/tokens/authenticator.go#L67-L105).
   The token's subject is the caller.
 - **Liabilities**: a holder gets
-  [their own accounts only, and only from an epoch that is final](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/proving/prover.go#L165-L237)
+  [their own accounts only, and only from an epoch that is final](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/proving/prover.go#L165-L237)
   on chain.
 - **An order**:
-  [the buyer, the merchant and whoever made a change get its lifecycle records; the courier and the order's parties get its delivery record](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/evidencing/prover.go#L19-L56).
+  [the buyer, the merchant and whoever made a change get its lifecycle records; the courier and the order's parties get its delivery record](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/evidencing/prover.go#L19-L56).
 - **A review**:
-  [its author and the merchant, and the courier when it is a courier rating](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/notary/review_record.go#L26-L32).
+  [its author and the merchant, and the courier when it is a courier rating](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/notary/review_record.go#L26-L32).
 - A record not yet anchored, or anchored and not yet final, comes back
-  [counted as pending, not as absent](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/evidencing/prover.go#L81-L134).
+  [counted as pending, not as absent](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/evidencing/prover.go#L81-L134).
 - **`ApproveEpoch`**: notary-watch demands a client certificate and
-  [answers the notary's identity and no other](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/wiring/watch_servers.go#L19).
+  [answers the notary's identity and no other](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/wiring/watch_servers.go#L19).
 - **The three evidence logs** are each opened to the notary alone by the service that owns them; see
   [review's evidence log](/services/review/#the-evidence-log).
+- **To tell a holder**, notary presents its certificate to notification, which in production grants it `Notify`
+  and the liability-statement template and nothing else; see
+  [who may do what in notification](/services/notification/#who-may-do-what).
 
 ## When something is down
 
 - A feed that cannot be reached is
-  [told apart from one that refused](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/feeds/connection.go#L40-L47).
+  [told apart from one that refused](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/feeds/connection.go#L40-L47).
   One failing log does not stop the other two, and a log's cursor moves only after its page is stored.
 - The proof API answers a chain it cannot reach with
-  [`503 chain_unavailable`, a store it cannot reach with `503 unavailable`](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/httpapi/proofs.go#L127-L150),
+  [`503 chain_unavailable`, a store it cannot reach with `503 unavailable`](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/httpapi/proofs.go#L127-L150),
   and an epoch that is not anchored with `404`. An outage is never an epoch that does not exist.
 - The verifier has
-  [an exit status for each verdict](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/verifycli/exit.go#L3-L18):
+  [an exit status for each verdict](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/verifycli/exit.go#L3-L18):
   a proof that is rejected, one that cannot be decided because the chain did not answer, and one whose
   ledger has moved to a successor are three different answers.
 
@@ -197,15 +256,15 @@ This is the rule [Unknown is not no](/learn/unknown-is-not-no/) describes, appli
 ## How the code is laid out
 
 Ports and adapters, with the names of what each package provides
-([the layout rule](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/CLAUDE.md#L199-L221)):
+([the layout rule](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/CLAUDE.md#L210-L232)):
 
 | Directory | Holds |
 | --- | --- |
 | `internal/notary` | the domain and its ports, importing nothing but the standard library |
-| `internal/anchoring`, `internal/evidencing`, `internal/approving`, `internal/proving`, `internal/answering` | the use cases |
+| `internal/anchoring`, `internal/evidencing`, `internal/approving`, `internal/proving`, `internal/answering`, `internal/delivering` | the use cases |
 | `internal/poseidon`, `internal/plonk` | the second generation's Poseidon2 tree, and its circuit, prover and the Solidity verifier gnark exports |
 | `internal/ethereum` | the only package that touches a chain |
-| `internal/payment`, `internal/feeds`, `internal/epochwatch` | the only packages that speak gRPC |
+| `internal/payment`, `internal/feeds`, `internal/notification`, `internal/epochwatch` | the only packages that speak gRPC |
 | `internal/postgres` | the only package that touches the database |
 | `internal/wiring`, `cmd/` | the composition roots, the only code that uses dig |
 | `contracts/` | the Solidity contracts and their Foundry tests |
@@ -216,22 +275,28 @@ PostgreSQL, through pgx and code that sqlc generates. Epochs and their accounts,
 holders' registrations, the three logs' cursors, evidence batches with their leaves, and copies of the
 committed fields of each lifecycle, delivery and review record. A second-generation epoch also keeps its
 tree's root, the commitment to its total, its proof, and
-[the blinding](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/migrations/00006_confidential_epochs.sql#L2-L12)
+[the blinding](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/migrations/00006_confidential_epochs.sql#L2-L12)
 that lets the notary open that commitment to an auditor. A
-[single-row lease](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/migrations/00001_notary.sql#L2-L7)
-lets one writer anchor at a time. notary-watch keeps no database.
+[single-row lease](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/migrations/00001_notary.sql#L2-L7)
+lets one writer anchor at a time.
+[Each holder's statements, what became of each, and how far the statement loop has read](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/migrations/00007_statement_deliveries.sql#L2-L27)
+are kept too. notary-watch keeps no database.
 
 ## Operating it
 
-- Both long-running processes serve `/health/live`, `/health/ready` and `/metrics`.
+- Both long-running processes serve `/health/live`, `/health/ready` and `/metrics`. notaryd is ready only while
+  [its anchoring, evidence and statement loops keep completing passes and its database answers](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/wiring/http.go#L31-L49).
+- The statement loop counts
+  [`kinetix_notary_statements_total` by outcome, and the statements pending and those still pending six hours after they were planned](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/metrics/statements.go#L18-L36).
+  The last two read `NaN` until the loop has counted them, so "none" and "not yet counted" never look the same.
 - notaryd refuses to start against a chain or a contract it was not configured for. Before it serves
   anything it
-  [checks the ledger, the council, the courts, the directory, the paymaster and the registry](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/cmd/notaryd/main.go#L110-L142),
+  [checks the ledger, the council, the courts, the directory, the paymaster and the registry](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/cmd/notaryd/main.go#L115-L147),
   starting with
-  [the chain id and the ledger's code](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/ethereum/ledger.go#L61-L93).
+  [the chain id and the ledger's code](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/ethereum/ledger.go#L61-L93).
   It also
-  [refuses an SRS file that is not the pinned one](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/wiring/scheme_two.go#L33-L35):
+  [refuses an SRS file that is not the pinned one](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/wiring/scheme_two.go#L33-L35):
   the KZG parameters from the Aztec Ignition ceremony, built into the image and
-  [held to a SHA-256](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/internal/plonk/production.go#L3-L9).
+  [held to a SHA-256](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/plonk/production.go#L3-L9).
 - The chain is public, so anyone can watch notary work: every proof and every anchor is a transaction to
   the addresses above.

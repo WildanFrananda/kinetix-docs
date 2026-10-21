@@ -1,30 +1,30 @@
 ---
 title: "returns.v1"
-description: "Paket gRPC returns.v1 di kinetix-contracts 1.5.0: service, message, dan enum-nya."
+description: "Paket gRPC returns.v1 di kinetix-contracts 1.7.0: service, message, dan enum-nya."
 editUrl: false
-sourceHash: "14b22932f8e8"
+sourceHash: "5b1dcaac7a4a"
 ---
 
 <div class="grpc-reference">
 
-Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v/1.5.0) kinetix-contracts: [`returns/v1/returns.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/returns/v1/returns.proto). Server dan pemanggil diambil dari [peta sistem](/id/architecture/system-map/); tanda pisah berarti peta tidak mencatat apa pun.
+Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v/1.7.0) kinetix-contracts: [`returns/v1/returns.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/returns/v1/returns.proto). Server dan pemanggil diambil dari [peta sistem](/id/architecture/system-map/); tanda pisah berarti peta tidak mencatat apa pun.
 
 ## Service
 
 ### ReturnService
 
-[`returns/v1/returns.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/returns/v1/returns.proto#L8)
+[`returns/v1/returns.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/returns/v1/returns.proto#L8)
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`SubmitReturnClaim`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/returns/v1/returns.proto#L9) | [`SubmitReturnClaimRequest`](#submitreturnclaimrequest) → [`SubmitReturnClaimResponse`](#submitreturnclaimresponse) | — | — |
-| [`GetReturnStatus`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/returns/v1/returns.proto#L10) | [`GetReturnStatusRequest`](#getreturnstatusrequest) → [`GetReturnStatusResponse`](#getreturnstatusresponse) | — | — |
+| [`SubmitReturnClaim`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/returns/v1/returns.proto#L9) | [`SubmitReturnClaimRequest`](#submitreturnclaimrequest) → [`SubmitReturnClaimResponse`](#submitreturnclaimresponse) | — | — |
+| [`GetReturnStatus`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/returns/v1/returns.proto#L10) | [`GetReturnStatusRequest`](#getreturnstatusrequest) → [`GetReturnStatusResponse`](#getreturnstatusresponse) | — | — |
 
 ## Message
 
 ### SubmitReturnClaimRequest
 
-[`returns/v1/returns.proto:13`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/returns/v1/returns.proto#L13)
+[`returns/v1/returns.proto:13`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/returns/v1/returns.proto#L13)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -37,7 +37,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### SubmitReturnClaimResponse
 
-[`returns/v1/returns.proto:22`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/returns/v1/returns.proto#L22)
+[`returns/v1/returns.proto:22`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/returns/v1/returns.proto#L22)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -49,7 +49,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### GetReturnStatusRequest
 
-[`returns/v1/returns.proto:30`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/returns/v1/returns.proto#L30)
+[`returns/v1/returns.proto:30`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/returns/v1/returns.proto#L30)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -58,7 +58,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### GetReturnStatusResponse
 
-[`returns/v1/returns.proto:35`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/returns/v1/returns.proto#L35)
+[`returns/v1/returns.proto:35`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/returns/v1/returns.proto#L35)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |

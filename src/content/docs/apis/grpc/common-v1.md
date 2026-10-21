@@ -1,18 +1,18 @@
 ---
 title: "common.v1"
-description: "The common.v1 gRPC package in kinetix-contracts 1.5.0: its services, messages and enums."
+description: "The common.v1 gRPC package in kinetix-contracts 1.7.0: its services, messages and enums."
 editUrl: false
 ---
 
 <div class="grpc-reference">
 
-Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v/1.5.0) of kinetix-contracts: [`common/v1/common.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/common/v1/common.proto). Servers and callers are those on the [system map](/architecture/system-map/); a dash means the map records none.
+Generated from release [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v/1.7.0) of kinetix-contracts: [`common/v1/common.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/common/v1/common.proto). Servers and callers are those on the [system map](/architecture/system-map/); a dash means the map records none.
 
 ## Messages
 
 ### Money
 
-[`common/v1/common.proto:5`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/common/v1/common.proto#L5)
+[`common/v1/common.proto:5`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/common/v1/common.proto#L5)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -21,7 +21,7 @@ Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### GeoPoint
 
-[`common/v1/common.proto:46`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/common/v1/common.proto#L46)
+[`common/v1/common.proto:46`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/common/v1/common.proto#L46)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -30,7 +30,7 @@ Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### Address
 
-[`common/v1/common.proto:51`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/common/v1/common.proto#L51)
+[`common/v1/common.proto:51`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/common/v1/common.proto#L51)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -43,7 +43,7 @@ Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### OrderItem
 
-[`common/v1/common.proto:60`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/common/v1/common.proto#L60)
+[`common/v1/common.proto:60`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/common/v1/common.proto#L60)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -55,7 +55,7 @@ Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### ErrorDetail
 
-[`common/v1/common.proto:68`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/common/v1/common.proto#L68)
+[`common/v1/common.proto:68`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/common/v1/common.proto#L68)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -65,7 +65,7 @@ Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### IdempotencyKey
 
-[`common/v1/common.proto:74`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/common/v1/common.proto#L74)
+[`common/v1/common.proto:74`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/common/v1/common.proto#L74)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -73,7 +73,7 @@ Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### LogCursor
 
-[`common/v1/common.proto:78`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/common/v1/common.proto#L78)
+[`common/v1/common.proto:78`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/common/v1/common.proto#L78)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -84,7 +84,7 @@ Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### OrderStatus
 
-[`common/v1/common.proto:10`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/common/v1/common.proto#L10)
+[`common/v1/common.proto:10`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/common/v1/common.proto#L10)
 
 | Name | Number |
 | --- | --- |
@@ -104,7 +104,7 @@ Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### CourierStatus
 
-[`common/v1/common.proto:26`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/common/v1/common.proto#L26)
+[`common/v1/common.proto:26`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/common/v1/common.proto#L26)
 
 | Name | Number |
 | --- | --- |
@@ -118,7 +118,7 @@ Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### ReturnStatus
 
-[`common/v1/common.proto:36`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/common/v1/common.proto#L36)
+[`common/v1/common.proto:36`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/common/v1/common.proto#L36)
 
 | Name | Number |
 | --- | --- |

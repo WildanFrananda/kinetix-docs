@@ -1,29 +1,29 @@
 ---
 title: "search.v1"
-description: "The search.v1 gRPC package in kinetix-contracts 1.5.0: its services, messages and enums."
+description: "The search.v1 gRPC package in kinetix-contracts 1.7.0: its services, messages and enums."
 editUrl: false
 ---
 
 <div class="grpc-reference">
 
-Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v/1.5.0) of kinetix-contracts: [`search/v1/search.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto). Servers and callers are those on the [system map](/architecture/system-map/); a dash means the map records none.
+Generated from release [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v/1.7.0) of kinetix-contracts: [`search/v1/search.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/search/v1/search.proto). Servers and callers are those on the [system map](/architecture/system-map/); a dash means the map records none.
 
 ## Services
 
 ### SearchService
 
-[`search/v1/search.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L8)
+[`search/v1/search.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/search/v1/search.proto#L8)
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`SearchProducts`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L9) | [`SearchProductsRequest`](#searchproductsrequest) → [`SearchProductsResponse`](#searchproductsresponse) | [search](/services/search/) | — |
-| [`SuggestProducts`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L10) | [`SuggestProductsRequest`](#suggestproductsrequest) → [`SuggestProductsResponse`](#suggestproductsresponse) | [search](/services/search/) | — |
+| [`SearchProducts`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/search/v1/search.proto#L9) | [`SearchProductsRequest`](#searchproductsrequest) → [`SearchProductsResponse`](#searchproductsresponse) | [search](/services/search/) | — |
+| [`SuggestProducts`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/search/v1/search.proto#L10) | [`SuggestProductsRequest`](#suggestproductsrequest) → [`SuggestProductsResponse`](#suggestproductsresponse) | [search](/services/search/) | — |
 
 ## Messages
 
 ### Page
 
-[`search/v1/search.proto:20`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L20)
+[`search/v1/search.proto:20`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/search/v1/search.proto#L20)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -32,7 +32,7 @@ Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### IndexFreshness
 
-[`search/v1/search.proto:25`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L25)
+[`search/v1/search.proto:25`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/search/v1/search.proto#L25)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -42,7 +42,7 @@ Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### ProductHit
 
-[`search/v1/search.proto:31`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L31)
+[`search/v1/search.proto:31`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/search/v1/search.proto#L31)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -57,7 +57,7 @@ Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### FacetValue
 
-[`search/v1/search.proto:42`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L42)
+[`search/v1/search.proto:42`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/search/v1/search.proto#L42)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -66,7 +66,7 @@ Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### Facet
 
-[`search/v1/search.proto:47`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L47)
+[`search/v1/search.proto:47`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/search/v1/search.proto#L47)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -75,7 +75,7 @@ Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### SearchProductsRequest
 
-[`search/v1/search.proto:52`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L52)
+[`search/v1/search.proto:52`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/search/v1/search.proto#L52)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -87,7 +87,7 @@ Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### SearchProductsResponse
 
-[`search/v1/search.proto:60`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L60)
+[`search/v1/search.proto:60`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/search/v1/search.proto#L60)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -98,7 +98,7 @@ Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### SuggestProductsRequest
 
-[`search/v1/search.proto:67`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L67)
+[`search/v1/search.proto:67`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/search/v1/search.proto#L67)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -107,7 +107,7 @@ Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### SuggestProductsResponse
 
-[`search/v1/search.proto:72`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L72)
+[`search/v1/search.proto:72`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/search/v1/search.proto#L72)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -117,7 +117,7 @@ Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### RankingProfile
 
-[`search/v1/search.proto:13`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/search/v1/search.proto#L13)
+[`search/v1/search.proto:13`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/search/v1/search.proto#L13)
 
 | Name | Number |
 | --- | --- |

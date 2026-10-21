@@ -32,15 +32,15 @@ as arrows.
 **search keeps its own index.** It polls catalog, identity and order for everything that changed since
 its last checkpoint, and writes the result into Typesense. The `ChangedSince` calls are that feed.
 
-**notary only reads.** It reads payment's liability snapshot and three append-only logs: order's lifecycle,
-matching's deliveries and review's reviews. It changes nothing in any of them. Everything it writes goes to
-Base Sepolia, a public chain anyone can read; see [notary](/services/notary/).
+**notary changes nothing it reads.** It reads payment's liability snapshot and three append-only logs:
+order's lifecycle, matching's deliveries and review's reviews. It changes nothing in any of them. Everything
+it writes goes to Base Sepolia, a public chain anyone can read. Its one other call asks notification to tell a
+holder that a new statement of their balance is ready; see [notary](/services/notary/).
 
 ## What is not on it
 
 - Calls made only by one-off data migrations.
 - Traffic inside a single service, such as matching's in-process events, or notary's two processes
   approving an epoch between them.
-- An arrow into notification. It serves its API, but no service is granted a template yet; its own
-  arrows, to identity, Firebase and Resend, are the calls it makes once one is. communication is built
-  but not deployed.
+- communication in production. It is built but not deployed; its arrow to identity is the call it makes
+  once it is.

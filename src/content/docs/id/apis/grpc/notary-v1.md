@@ -1,29 +1,29 @@
 ---
 title: "notary.v1"
-description: "Paket gRPC notary.v1 di kinetix-contracts 1.5.0: service, message, dan enum-nya."
+description: "Paket gRPC notary.v1 di kinetix-contracts 1.7.0: service, message, dan enum-nya."
 editUrl: false
-sourceHash: "899f27806e42"
+sourceHash: "f125379191e2"
 ---
 
 <div class="grpc-reference">
 
-Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v/1.5.0) kinetix-contracts: [`notary/v1/watch.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notary/v1/watch.proto). Server dan pemanggil diambil dari [peta sistem](/id/architecture/system-map/); tanda pisah berarti peta tidak mencatat apa pun.
+Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v/1.7.0) kinetix-contracts: [`notary/v1/watch.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notary/v1/watch.proto). Server dan pemanggil diambil dari [peta sistem](/id/architecture/system-map/); tanda pisah berarti peta tidak mencatat apa pun.
 
 ## Service
 
 ### EpochWatchService
 
-[`notary/v1/watch.proto:9`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notary/v1/watch.proto#L9)
+[`notary/v1/watch.proto:9`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notary/v1/watch.proto#L9)
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`ApproveEpoch`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notary/v1/watch.proto#L10) | `stream` [`ApproveEpochRequest`](#approveepochrequest) → [`ApproveEpochResponse`](#approveepochresponse) | — | — |
+| [`ApproveEpoch`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notary/v1/watch.proto#L10) | `stream` [`ApproveEpochRequest`](#approveepochrequest) → [`ApproveEpochResponse`](#approveepochresponse) | — | — |
 
 ## Message
 
 ### ApproveEpochRequest
 
-[`notary/v1/watch.proto:13`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notary/v1/watch.proto#L13)
+[`notary/v1/watch.proto:13`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notary/v1/watch.proto#L13)
 
 | Field | Nomor | Tipe | Catatan |
 | --- | --- | --- | --- |
@@ -32,7 +32,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### EpochProposal
 
-[`notary/v1/watch.proto:20`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notary/v1/watch.proto#L20)
+[`notary/v1/watch.proto:20`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notary/v1/watch.proto#L20)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -43,10 +43,23 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 | `total` | 5 | [`common.v1.Money`](/id/apis/grpc/common-v1/#money) |
 | `leaf_count` | 6 | `uint64` |
 | `as_of` | 7 | `google.protobuf.Timestamp` |
+| `confidential` | 8 | [`ConfidentialProposal`](#confidentialproposal) |
+
+### ConfidentialProposal
+
+[`notary/v1/watch.proto:31`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notary/v1/watch.proto#L31)
+
+| Field | Nomor | Tipe |
+| --- | --- | --- |
+| `scheme` | 1 | `uint32` |
+| `depth` | 2 | `uint32` |
+| `tree_root` | 3 | `bytes` |
+| `total_commitment` | 4 | `bytes` |
+| `blinding` | 5 | `bytes` |
 
 ### ProposedAccountBatch
 
-[`notary/v1/watch.proto:30`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notary/v1/watch.proto#L30)
+[`notary/v1/watch.proto:39`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notary/v1/watch.proto#L39)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -54,7 +67,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ProposedAccount
 
-[`notary/v1/watch.proto:34`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notary/v1/watch.proto#L34)
+[`notary/v1/watch.proto:43`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notary/v1/watch.proto#L43)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -66,7 +79,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ApproveEpochResponse
 
-[`notary/v1/watch.proto:42`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/notary/v1/watch.proto#L42)
+[`notary/v1/watch.proto:51`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notary/v1/watch.proto#L51)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |

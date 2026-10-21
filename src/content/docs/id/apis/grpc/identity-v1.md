@@ -1,34 +1,34 @@
 ---
 title: "identity.v1"
-description: "Paket gRPC identity.v1 di kinetix-contracts 1.5.0: service, message, dan enum-nya."
+description: "Paket gRPC identity.v1 di kinetix-contracts 1.7.0: service, message, dan enum-nya."
 editUrl: false
-sourceHash: "0ca7abb28fa5"
+sourceHash: "b67a9e4e90f7"
 ---
 
 <div class="grpc-reference">
 
-Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v/1.5.0) kinetix-contracts: [`identity/v1/identity.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto). Server dan pemanggil diambil dari [peta sistem](/id/architecture/system-map/); tanda pisah berarti peta tidak mencatat apa pun.
+Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v/1.7.0) kinetix-contracts: [`identity/v1/identity.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto). Server dan pemanggil diambil dari [peta sistem](/id/architecture/system-map/); tanda pisah berarti peta tidak mencatat apa pun.
 
 ## Service
 
 ### IdentityService
 
-[`identity/v1/identity.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto#L8)
+[`identity/v1/identity.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto#L8)
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`ResolvePrincipal`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto#L9) | [`ResolvePrincipalRequest`](#resolveprincipalrequest) → [`ResolvePrincipalResponse`](#resolveprincipalresponse) | [identity](/id/services/identity/) | — |
-| [`GetPrincipal`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto#L10) | [`GetPrincipalRequest`](#getprincipalrequest) → [`GetPrincipalResponse`](#getprincipalresponse) | [identity](/id/services/identity/) | [communication](https://github.com/WildanFrananda/kinetix-communication-service/blob/db206dce65e189ad9463cf44c6b66ff36a9193bc/src/adapters/grpc/GrpcPrincipalDirectory.cpp#L28) |
-| [`GetUserProfile`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto#L11) | [`GetUserProfileRequest`](#getuserprofilerequest) → [`GetUserProfileResponse`](#getuserprofileresponse) | [identity](/id/services/identity/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/IdentityAddressDirectory.cs#L56), [notification](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/main/scala/com/kinetix/notification/infrastructure/grpc/GrpcIdentityRecipientDirectory.scala#L17) |
-| [`GetMerchantInfo`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto#L12) | [`GetMerchantInfoRequest`](#getmerchantinforequest) → [`GetMerchantInfoResponse`](#getmerchantinforesponse) | [identity](/id/services/identity/) | [catalog](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/grpc/identity_client.py#L54), [pricing](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/clients/identity_merchant_directory.rs#L39), [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/IdentityAddressDirectory.cs#L21), [warehouse](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/app/clients/identity/grpc_client.rb#L41) |
-| [`ValidateToken`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto#L13) | [`ValidateTokenRequest`](#validatetokenrequest) → [`ValidateTokenResponse`](#validatetokenresponse) | [identity](/id/services/identity/) | [communication](https://github.com/WildanFrananda/kinetix-communication-service/blob/db206dce65e189ad9463cf44c6b66ff36a9193bc/src/adapters/grpc/GrpcPrincipalAuthenticator.cpp#L33) |
-| [`MerchantsChangedSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto#L14) | [`MerchantsChangedSinceRequest`](#merchantschangedsincerequest) → [`MerchantsChangedSinceResponse`](#merchantschangedsinceresponse) | [identity](/id/services/identity/) | [search](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/identityclient/client.go#L62) |
+| [`ResolvePrincipal`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto#L9) | [`ResolvePrincipalRequest`](#resolveprincipalrequest) → [`ResolvePrincipalResponse`](#resolveprincipalresponse) | [identity](/id/services/identity/) | — |
+| [`GetPrincipal`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto#L10) | [`GetPrincipalRequest`](#getprincipalrequest) → [`GetPrincipalResponse`](#getprincipalresponse) | [identity](/id/services/identity/) | [communication](https://github.com/WildanFrananda/kinetix-communication-service/blob/db206dce65e189ad9463cf44c6b66ff36a9193bc/src/adapters/grpc/GrpcPrincipalDirectory.cpp#L28) |
+| [`GetUserProfile`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto#L11) | [`GetUserProfileRequest`](#getuserprofilerequest) → [`GetUserProfileResponse`](#getuserprofileresponse) | [identity](/id/services/identity/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/IdentityAddressDirectory.cs#L56), [notification](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/grpc/GrpcIdentityRecipientDirectory.scala#L17) |
+| [`GetMerchantInfo`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto#L12) | [`GetMerchantInfoRequest`](#getmerchantinforequest) → [`GetMerchantInfoResponse`](#getmerchantinforesponse) | [identity](/id/services/identity/) | [catalog](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/grpc/identity_client.py#L54), [pricing](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/src/clients/identity_merchant_directory.rs#L39), [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/IdentityAddressDirectory.cs#L21), [warehouse](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/app/clients/identity/grpc_client.rb#L41) |
+| [`ValidateToken`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto#L13) | [`ValidateTokenRequest`](#validatetokenrequest) → [`ValidateTokenResponse`](#validatetokenresponse) | [identity](/id/services/identity/) | [communication](https://github.com/WildanFrananda/kinetix-communication-service/blob/db206dce65e189ad9463cf44c6b66ff36a9193bc/src/adapters/grpc/GrpcPrincipalAuthenticator.cpp#L33) |
+| [`MerchantsChangedSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto#L14) | [`MerchantsChangedSinceRequest`](#merchantschangedsincerequest) → [`MerchantsChangedSinceResponse`](#merchantschangedsinceresponse) | [identity](/id/services/identity/) | [search](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/internal/identityclient/client.go#L62) |
 
 ## Message
 
 ### ServiceLocalId
 
-[`identity/v1/identity.proto:26`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto#L26)
+[`identity/v1/identity.proto:26`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto#L26)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -37,7 +37,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ResolvePrincipalRequest
 
-[`identity/v1/identity.proto:31`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto#L31)
+[`identity/v1/identity.proto:31`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto#L31)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -45,7 +45,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ResolvePrincipalResponse
 
-[`identity/v1/identity.proto:35`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto#L35)
+[`identity/v1/identity.proto:35`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto#L35)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -56,7 +56,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### GetPrincipalRequest
 
-[`identity/v1/identity.proto:42`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto#L42)
+[`identity/v1/identity.proto:42`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto#L42)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -64,7 +64,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### GetPrincipalResponse
 
-[`identity/v1/identity.proto:46`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto#L46)
+[`identity/v1/identity.proto:46`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto#L46)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -76,7 +76,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### GetUserProfileRequest
 
-[`identity/v1/identity.proto:54`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto#L54)
+[`identity/v1/identity.proto:54`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto#L54)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -84,7 +84,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### GetUserProfileResponse
 
-[`identity/v1/identity.proto:58`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto#L58)
+[`identity/v1/identity.proto:58`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto#L58)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -101,7 +101,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### GetMerchantInfoRequest
 
-[`identity/v1/identity.proto:72`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto#L72)
+[`identity/v1/identity.proto:72`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto#L72)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -109,7 +109,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### GetMerchantInfoResponse
 
-[`identity/v1/identity.proto:76`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto#L76)
+[`identity/v1/identity.proto:76`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto#L76)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -125,7 +125,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ValidateTokenRequest
 
-[`identity/v1/identity.proto:97`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto#L97)
+[`identity/v1/identity.proto:97`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto#L97)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -133,7 +133,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ValidateTokenResponse
 
-[`identity/v1/identity.proto:101`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto#L101)
+[`identity/v1/identity.proto:101`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto#L101)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -144,7 +144,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### MerchantCursor
 
-[`identity/v1/identity.proto:108`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto#L108)
+[`identity/v1/identity.proto:108`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto#L108)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -154,7 +154,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### MerchantRecord
 
-[`identity/v1/identity.proto:114`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto#L114)
+[`identity/v1/identity.proto:114`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto#L114)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -166,7 +166,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### MerchantsChangedSinceRequest
 
-[`identity/v1/identity.proto:122`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto#L122)
+[`identity/v1/identity.proto:122`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto#L122)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -175,7 +175,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### MerchantsChangedSinceResponse
 
-[`identity/v1/identity.proto:127`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto#L127)
+[`identity/v1/identity.proto:127`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto#L127)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -188,7 +188,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### PrincipalKind
 
-[`identity/v1/identity.proto:17`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto#L17)
+[`identity/v1/identity.proto:17`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto#L17)
 
 | Nama | Nomor |
 | --- | --- |
@@ -201,7 +201,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### MerchantStatus
 
-[`identity/v1/identity.proto:89`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/identity/v1/identity.proto#L89)
+[`identity/v1/identity.proto:89`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/identity/v1/identity.proto#L89)
 
 | Nama | Nomor |
 | --- | --- |

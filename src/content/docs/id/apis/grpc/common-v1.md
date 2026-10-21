@@ -1,19 +1,19 @@
 ---
 title: "common.v1"
-description: "Paket gRPC common.v1 di kinetix-contracts 1.5.0: service, message, dan enum-nya."
+description: "Paket gRPC common.v1 di kinetix-contracts 1.7.0: service, message, dan enum-nya."
 editUrl: false
-sourceHash: "466d2c4fd64a"
+sourceHash: "9fafec51edd3"
 ---
 
 <div class="grpc-reference">
 
-Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v/1.5.0) kinetix-contracts: [`common/v1/common.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/common/v1/common.proto). Server dan pemanggil diambil dari [peta sistem](/id/architecture/system-map/); tanda pisah berarti peta tidak mencatat apa pun.
+Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v/1.7.0) kinetix-contracts: [`common/v1/common.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/common/v1/common.proto). Server dan pemanggil diambil dari [peta sistem](/id/architecture/system-map/); tanda pisah berarti peta tidak mencatat apa pun.
 
 ## Message
 
 ### Money
 
-[`common/v1/common.proto:5`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/common/v1/common.proto#L5)
+[`common/v1/common.proto:5`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/common/v1/common.proto#L5)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -22,7 +22,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### GeoPoint
 
-[`common/v1/common.proto:46`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/common/v1/common.proto#L46)
+[`common/v1/common.proto:46`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/common/v1/common.proto#L46)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -31,7 +31,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### Address
 
-[`common/v1/common.proto:51`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/common/v1/common.proto#L51)
+[`common/v1/common.proto:51`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/common/v1/common.proto#L51)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -44,7 +44,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### OrderItem
 
-[`common/v1/common.proto:60`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/common/v1/common.proto#L60)
+[`common/v1/common.proto:60`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/common/v1/common.proto#L60)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -56,7 +56,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ErrorDetail
 
-[`common/v1/common.proto:68`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/common/v1/common.proto#L68)
+[`common/v1/common.proto:68`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/common/v1/common.proto#L68)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -66,7 +66,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### IdempotencyKey
 
-[`common/v1/common.proto:74`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/common/v1/common.proto#L74)
+[`common/v1/common.proto:74`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/common/v1/common.proto#L74)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -74,7 +74,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### LogCursor
 
-[`common/v1/common.proto:78`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/common/v1/common.proto#L78)
+[`common/v1/common.proto:78`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/common/v1/common.proto#L78)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -85,7 +85,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### OrderStatus
 
-[`common/v1/common.proto:10`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/common/v1/common.proto#L10)
+[`common/v1/common.proto:10`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/common/v1/common.proto#L10)
 
 | Nama | Nomor |
 | --- | --- |
@@ -105,7 +105,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### CourierStatus
 
-[`common/v1/common.proto:26`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/common/v1/common.proto#L26)
+[`common/v1/common.proto:26`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/common/v1/common.proto#L26)
 
 | Nama | Nomor |
 | --- | --- |
@@ -119,7 +119,7 @@ Dibuat otomatis dari rilis [1.5.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ReturnStatus
 
-[`common/v1/common.proto:36`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/common/v1/common.proto#L36)
+[`common/v1/common.proto:36`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/common/v1/common.proto#L36)
 
 | Nama | Nomor |
 | --- | --- |

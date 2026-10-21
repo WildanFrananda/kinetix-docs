@@ -132,8 +132,8 @@ overview, in English and Indonesian. Each Indonesian page is stamped with the ha
 
 - **Servers and callers** come from the architecture map: the nodes' `serves` and the gRPC edges. The map,
   the service pages and the reference therefore cannot disagree. The generator refuses any operation on the
-  map that the contract does not define. A dash means the map records none. Today that includes payment's
-  liability RPCs and the notary's watch, because the notary is not on the map yet.
+  map that the contract does not define. A dash means the map records none. Today that is the notary's watch,
+  `ApproveEpoch`, whose only caller is the notary itself: traffic inside one service is not an edge.
 - **Source links** point at `.proto` lines in the pinned commit. The line numbers come from the package's own
   `.proto` files (`scripts/lib/declaration_lines.ts`). The parser expects `buf format` layout and refuses a
   declaration it cannot find.
@@ -151,7 +151,9 @@ overview, in English and Indonesian. Each Indonesian page is stamped with the ha
   4. Run `bun run generate:grpc`.
 
   1.3.0 was checked this way on 2026-10-17: all 21 files were identical to `edc6c26`. 1.5.0 was checked on
-  2026-10-19: all 21 identical to `2617561`.
+  2026-10-19: all 21 identical to `2617561`. 1.7.0 was checked on 2026-10-21: all 21 identical to `26984a9`.
+  1.6.0 added `ConfidentialProposal` to the watch's `EpochProposal`, and 1.7.0 added
+  `TEMPLATE_LIABILITY_STATEMENT = 7`.
 
 ## Interactive diagrams
 
@@ -223,6 +225,13 @@ disagree; this repository writes no verification logic of its own.
   owners' logs are linked at
   the tags production runs: order v1.2.0 (`0c3698e`), matching v1.3.0 (`f2f99d9`) and review v1.1.1 (`d259ba5`),
   moved on 2026-10-19; matching's upload signing now lives in `storage/s3.ex`, since MinIO left the estate.
+  The notary service page and the map's notary edges are the exception: they moved to v1.7.0 (`9eaeb1c`) on 2026-10-21
+  with the statement loop (step 6b), by the same script. Of 100 links, 88 were byte-identical, 6 moved, 6 changed
+  (three ranges, in both languages) and were re-read by hand. v1.7.0 changed nothing on the verification path, but its
+  `notary-verify.wasm` is not v1.6.1's (`82f224f9…`, 135 KB larger): `cmd/notary-verify` imports `internal/wiring`, so
+  the daemon's new gRPC client is linked into the browser build too. The pin therefore stays at v1.6.1. A notary
+  release changes the verifier's bytes whether or not it changes the verifier: read the diff of the verification
+  packages, not the hash, before moving the pin.
 
 ## Design system
 

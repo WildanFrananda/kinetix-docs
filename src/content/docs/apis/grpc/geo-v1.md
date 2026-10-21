@@ -1,29 +1,29 @@
 ---
 title: "geo.v1"
-description: "The geo.v1 gRPC package in kinetix-contracts 1.5.0: its services, messages and enums."
+description: "The geo.v1 gRPC package in kinetix-contracts 1.7.0: its services, messages and enums."
 editUrl: false
 ---
 
 <div class="grpc-reference">
 
-Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v/1.5.0) of kinetix-contracts: [`geo/v1/geo.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/geo/v1/geo.proto). Servers and callers are those on the [system map](/architecture/system-map/); a dash means the map records none.
+Generated from release [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v/1.7.0) of kinetix-contracts: [`geo/v1/geo.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/geo/v1/geo.proto). Servers and callers are those on the [system map](/architecture/system-map/); a dash means the map records none.
 
 ## Services
 
 ### GeocodingService
 
-[`geo/v1/geo.proto:7`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/geo/v1/geo.proto#L7)
+[`geo/v1/geo.proto:7`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/geo/v1/geo.proto#L7)
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`GeocodeAddress`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/geo/v1/geo.proto#L8) | [`GeocodeAddressRequest`](#geocodeaddressrequest) → [`GeocodeAddressResponse`](#geocodeaddressresponse) | [identity](/services/identity/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/IdentityAddressGeocoder.cs#L23) |
-| [`GeocodeAddresses`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/geo/v1/geo.proto#L9) | [`GeocodeAddressesRequest`](#geocodeaddressesrequest) → [`GeocodeAddressesResponse`](#geocodeaddressesresponse) | [identity](/services/identity/) | — |
+| [`GeocodeAddress`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/geo/v1/geo.proto#L8) | [`GeocodeAddressRequest`](#geocodeaddressrequest) → [`GeocodeAddressResponse`](#geocodeaddressresponse) | [identity](/services/identity/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/IdentityAddressGeocoder.cs#L23) |
+| [`GeocodeAddresses`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/geo/v1/geo.proto#L9) | [`GeocodeAddressesRequest`](#geocodeaddressesrequest) → [`GeocodeAddressesResponse`](#geocodeaddressesresponse) | [identity](/services/identity/) | — |
 
 ## Messages
 
 ### GeocodeAddressRequest
 
-[`geo/v1/geo.proto:21`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/geo/v1/geo.proto#L21)
+[`geo/v1/geo.proto:21`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/geo/v1/geo.proto#L21)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -31,7 +31,7 @@ Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### GeocodeAddressResponse
 
-[`geo/v1/geo.proto:25`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/geo/v1/geo.proto#L25)
+[`geo/v1/geo.proto:25`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/geo/v1/geo.proto#L25)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -43,7 +43,7 @@ Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### GeocodeAddressesRequest
 
-[`geo/v1/geo.proto:41`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/geo/v1/geo.proto#L41)
+[`geo/v1/geo.proto:41`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/geo/v1/geo.proto#L41)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -51,7 +51,7 @@ Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### GeocodeAddressesResponse
 
-[`geo/v1/geo.proto:45`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/geo/v1/geo.proto#L45)
+[`geo/v1/geo.proto:45`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/geo/v1/geo.proto#L45)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -61,7 +61,7 @@ Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### GeocodeFailure
 
-[`geo/v1/geo.proto:12`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/geo/v1/geo.proto#L12)
+[`geo/v1/geo.proto:12`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/geo/v1/geo.proto#L12)
 
 | Name | Number |
 | --- | --- |
@@ -74,7 +74,7 @@ Generated from release [1.5.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### GeocodePrecision
 
-[`geo/v1/geo.proto:33`](https://github.com/WildanFrananda/kinetix-contracts/blob/261756184a30a73cfaa9daf5b0206262fa4896ef/proto/geo/v1/geo.proto#L33)
+[`geo/v1/geo.proto:33`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/geo/v1/geo.proto#L33)
 
 | Name | Number |
 | --- | --- |
