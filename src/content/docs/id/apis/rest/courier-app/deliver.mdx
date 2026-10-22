@@ -3,7 +3,7 @@ title: Mulai bertugas dan mengantar
 description: Kurir membuka driver socket milik matching, mulai bertugas dan melaporkan posisi, menerima job yang ditugaskan matching, mengambil paketnya, meng-upload foto bukti ke storage, dan melaporkan pengantaran.
 sidebar:
   order: 4
-sourceHash: "756db20ea152"
+sourceHash: "dcd8d1a67ef3"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -25,7 +25,7 @@ menggantikan `<token>`:
 
 ```http
 GET /ws/v1/matching/driver?vsn=2.0.0 HTTP/1.1
-Host: api.kinetix.example
+Host: api.wildanfrananda.my.id
 Upgrade: websocket
 Connection: Upgrade
 Sec-WebSocket-Protocol: phoenix, base64url.bearer.phx.<token>
@@ -245,12 +245,12 @@ yang akan dimiliki foto itu
 
 ```json
 {
-  "upload_url": "https://storage.kinetix.example/example-bucket/pod/4812/bb3b2962c01de34b467fc7ea8ba66d2a142f992f03a6d51c78c690eb883cf18c.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=…&X-Amz-Date=20261022T025950Z&X-Amz-Expires=600&X-Amz-SignedHeaders=host%3Bif-none-match%3Bx-amz-checksum-sha256&X-Amz-Signature=…",
+  "upload_url": "https://storage.wildanfrananda.my.id/example-bucket/pod/4812/bb3b2962c01de34b467fc7ea8ba66d2a142f992f03a6d51c78c690eb883cf18c.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=…&X-Amz-Date=20261022T025950Z&X-Amz-Expires=600&X-Amz-SignedHeaders=host%3Bif-none-match%3Bx-amz-checksum-sha256&X-Amz-Signature=…",
   "upload_headers": {
     "if-none-match": "*",
     "x-amz-checksum-sha256": "uzspYsAd40tGf8fqi6ZtKhQvmS8DptUceMaQ64g88Yw="
   },
-  "photo_url": "https://storage.kinetix.example/example-bucket/pod/4812/bb3b2962c01de34b467fc7ea8ba66d2a142f992f03a6d51c78c690eb883cf18c.jpg"
+  "photo_url": "https://storage.wildanfrananda.my.id/example-bucket/pod/4812/bb3b2962c01de34b467fc7ea8ba66d2a142f992f03a6d51c78c690eb883cf18c.jpg"
 }
 ```
 
@@ -278,7 +278,7 @@ Push `delivered` dengan `id` milik job, `photo_url` dari langkah 9 sebagai `pod_
 penerima sebagai PNG di dalam URI `data:`. Foto dan tanda tangan sama-sama wajib:
 
 ```json
-["1", "8", "driver:17", "delivered", {"order_id": 4812, "pod_photo_url": "https://storage.kinetix.example/example-bucket/pod/4812/bb3b2962c01de34b467fc7ea8ba66d2a142f992f03a6d51c78c690eb883cf18c.jpg", "pod_signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA…"}]
+["1", "8", "driver:17", "delivered", {"order_id": 4812, "pod_photo_url": "https://storage.wildanfrananda.my.id/example-bucket/pod/4812/bb3b2962c01de34b467fc7ea8ba66d2a142f992f03a6d51c78c690eb883cf18c.jpg", "pod_signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA…"}]
 ```
 
 Sebelum menerima, matching membaca foto yang tersimpan: foto itu harus ada di folder job ini, membawa checksum

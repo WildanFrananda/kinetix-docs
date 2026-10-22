@@ -26,18 +26,19 @@ belong to any single endpoint.
 
 ## Address and transport
 
-Every endpoint is served by one host over HTTPS. The examples use `api.kinetix.example`, a placeholder:
+Every endpoint is served by one host over HTTPS, `api.wildanfrananda.my.id`:
 
 ```http
 POST /api/v1/auth/login HTTP/1.1
-Host: api.kinetix.example
+Host: api.wildanfrananda.my.id
 Content-Type: application/json
 ```
 
 The gateway has no plain-HTTP listener at all, so a token never travels unencrypted
 ([Dockerfile](https://github.com/WildanFrananda/kinetix-api-gateway/blob/2b38bcc9a795dac8a6a3088b6d67f297fcfa9f5c/Dockerfile#L58-L66)).
 Every path starts with `/api/v1/`. The one exception is a file upload: the client sends the file to a separate
-storage host, at a URL the service signed for it. The examples show that host as `storage.kinetix.example`.
+storage host, `storage.wildanfrananda.my.id`, at a URL the service signed for it. The bucket in those URLs is
+written `example-bucket` in the examples.
 
 ## Tokens
 

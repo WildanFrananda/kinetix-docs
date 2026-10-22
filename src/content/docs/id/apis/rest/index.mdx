@@ -4,7 +4,7 @@ description: Setiap endpoint HTTP yang dipanggil aplikasi Kinetix, dikelompokkan
 sidebar:
   label: Ikhtisar
   order: 0
-sourceHash: "94733e6caff8"
+sourceHash: "edbe6d060bdb"
 ---
 
 import RestEndpoint from "../../../../../components/RestEndpoint.astro";
@@ -27,20 +27,19 @@ satu endpoint tertentu.
 
 ## Alamat dan transport
 
-Semua endpoint dilayani oleh satu host lewat HTTPS. Contoh-contohnya memakai `api.kinetix.example`, sebuah
-placeholder:
+Semua endpoint dilayani oleh satu host lewat HTTPS, `api.wildanfrananda.my.id`:
 
 ```http
 POST /api/v1/auth/login HTTP/1.1
-Host: api.kinetix.example
+Host: api.wildanfrananda.my.id
 Content-Type: application/json
 ```
 
 Gateway sama sekali tidak punya listener HTTP biasa, jadi token tidak pernah lewat tanpa enkripsi
 ([Dockerfile](https://github.com/WildanFrananda/kinetix-api-gateway/blob/2b38bcc9a795dac8a6a3088b6d67f297fcfa9f5c/Dockerfile#L58-L66)).
 Setiap path diawali `/api/v1/`. Satu-satunya pengecualian adalah upload file: client mengirim file ke host
-storage tersendiri, di URL yang sudah ditandatangani service untuknya. Contoh-contohnya menulis host itu sebagai
-`storage.kinetix.example`.
+storage tersendiri, `storage.wildanfrananda.my.id`, di URL yang sudah ditandatangani service untuknya. Bucket di
+URL itu ditulis `example-bucket` dalam contoh-contohnya.
 
 ## Token
 

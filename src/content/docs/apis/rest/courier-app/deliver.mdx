@@ -24,7 +24,7 @@ of `<token>`:
 
 ```http
 GET /ws/v1/matching/driver?vsn=2.0.0 HTTP/1.1
-Host: api.kinetix.example
+Host: api.wildanfrananda.my.id
 Upgrade: websocket
 Connection: Upgrade
 Sec-WebSocket-Protocol: phoenix, base64url.bearer.phx.<token>
@@ -240,12 +240,12 @@ the address the photo will have
 
 ```json
 {
-  "upload_url": "https://storage.kinetix.example/example-bucket/pod/4812/bb3b2962c01de34b467fc7ea8ba66d2a142f992f03a6d51c78c690eb883cf18c.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=…&X-Amz-Date=20261022T025950Z&X-Amz-Expires=600&X-Amz-SignedHeaders=host%3Bif-none-match%3Bx-amz-checksum-sha256&X-Amz-Signature=…",
+  "upload_url": "https://storage.wildanfrananda.my.id/example-bucket/pod/4812/bb3b2962c01de34b467fc7ea8ba66d2a142f992f03a6d51c78c690eb883cf18c.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=…&X-Amz-Date=20261022T025950Z&X-Amz-Expires=600&X-Amz-SignedHeaders=host%3Bif-none-match%3Bx-amz-checksum-sha256&X-Amz-Signature=…",
   "upload_headers": {
     "if-none-match": "*",
     "x-amz-checksum-sha256": "uzspYsAd40tGf8fqi6ZtKhQvmS8DptUceMaQ64g88Yw="
   },
-  "photo_url": "https://storage.kinetix.example/example-bucket/pod/4812/bb3b2962c01de34b467fc7ea8ba66d2a142f992f03a6d51c78c690eb883cf18c.jpg"
+  "photo_url": "https://storage.wildanfrananda.my.id/example-bucket/pod/4812/bb3b2962c01de34b467fc7ea8ba66d2a142f992f03a6d51c78c690eb883cf18c.jpg"
 }
 ```
 
@@ -273,7 +273,7 @@ Push `delivered` with the job's `id`, `photo_url` from step 9 as `pod_photo_url`
 as a PNG in a `data:` URI. Both the photo and the signature are required:
 
 ```json
-["1", "8", "driver:17", "delivered", {"order_id": 4812, "pod_photo_url": "https://storage.kinetix.example/example-bucket/pod/4812/bb3b2962c01de34b467fc7ea8ba66d2a142f992f03a6d51c78c690eb883cf18c.jpg", "pod_signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA…"}]
+["1", "8", "driver:17", "delivered", {"order_id": 4812, "pod_photo_url": "https://storage.wildanfrananda.my.id/example-bucket/pod/4812/bb3b2962c01de34b467fc7ea8ba66d2a142f992f03a6d51c78c690eb883cf18c.jpg", "pod_signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA…"}]
 ```
 
 Before it accepts, matching reads the stored photo: it must be in this job's folder, carry the checksum its name

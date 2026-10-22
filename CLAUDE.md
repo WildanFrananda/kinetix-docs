@@ -16,6 +16,13 @@ link to internal ones, because every reader of this site would get a dead link.
   paths, CI variable names.
 - Key material of any kind, SOPS/age or PKI operating detail, real costs, runbooks.
 
+One argued exception to hostnames, ruled by the user on 2026-10-22: the two public addresses clients connect to,
+the API host `api.wildanfrananda.my.id` and the storage host `storage.wildanfrananda.my.id`, may appear, and the REST
+reference uses them as its base URLs. They are public anyway (DNS, Certificate Transparency, the courier app's build
+configuration), so hiding them protects nothing. Everything behind them stays out: machine names, IPs, container
+names, ports, bucket names. If `DOCS_DENYLIST` lists the domain, the CI `leaks` job turns red until those two
+addresses are allowed there.
+
 `bun run check:leaks` enforces what a pattern can catch; concrete values are kept in the
 `DOCS_DENYLIST` secret so that the list is not itself published. A red `leaks` job is fixed by moving
 the content to the internal repository, never by loosening a rule. The one argued exception: a dotted
@@ -191,8 +198,8 @@ each feature as the calls in the order the application makes them, with every re
 - **No open defect.** Writing the inventory for this section in session 32 found about 130 defects; the
   section waited until they were fixed and deployed (2026-10-22). A case that is wrong is never written as
   behaviour: it goes to the internal register, is fixed, and is documented once deployed.
-- **Examples** use `api.kinetix.example` and `storage.kinetix.example`, `example.com` addresses and invented
-  ids. Tokens are written `eyJ…<claims>.<signature>`. A value after a key-like word (`Idempotency-Key`, `secret`,
+- **Examples** use the real public hosts, `api.wildanfrananda.my.id` and `storage.wildanfrananda.my.id` (see "What
+  may never appear here"), `example.com` addresses, invented ids and the bucket placeholder `example-bucket`. Tokens are written `eyJ…<claims>.<signature>`. A value after a key-like word (`Idempotency-Key`, `secret`,
   `token`, `password`) is a visibly fake, low-entropy placeholder such as `11111111-2222-4333-8444-555555555555` or
   `0x5e5e…`: CI's gitleaks (`generic-api-key`) flags a random-looking one, and the fix is the example, never an
   allow list. Check with `gitleaks dir src` before pushing.

@@ -505,7 +505,7 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
             inserted_at: "2026-10-22T02:31:39.874006Z",
             proof_of_delivery: {
               photo_url:
-                `https://storage.kinetix.example/example-bucket/pod/4812/${photoSha256}.jpg` +
+                `https://storage.wildanfrananda.my.id/example-bucket/pod/4812/${photoSha256}.jpg` +
                 "?X-Amz-Algorithm=AWS4-HMAC-SHA256" +
                 "&X-Amz-Credential=<access-key>%2F20261022%2F<region>%2Fs3%2Faws4_request" +
                 "&X-Amz-Date=20261022T031500Z&X-Amz-Expires=900&X-Amz-SignedHeaders=host" +

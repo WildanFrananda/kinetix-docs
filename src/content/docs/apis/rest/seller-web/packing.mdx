@@ -73,7 +73,7 @@ With the task's `id`, once its `tracking_number` is set. `awb_number` is the tra
 ## 8. Follow the courier on the merchant socket
 
 Matching pushes the seller's courier jobs over a WebSocket. The client opens
-`wss://api.kinetix.example/ws/v1/matching/merchant?vsn=2.0.0`
+`wss://api.wildanfrananda.my.id/ws/v1/matching/merchant?vsn=2.0.0`
 ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/2b38bcc9a795dac8a6a3088b6d67f297fcfa9f5c/config/gateway.pkl#L168-L179))
 and sends the access token in the `Sec-WebSocket-Protocol` header, base64-encoded without `=` padding, after
 Phoenix's prefix

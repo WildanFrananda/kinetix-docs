@@ -3,7 +3,7 @@ title: Mengemas pesanan
 description: Cara penjual mengerjakan antrean pengemasan di warehouse, dari pesanan yang dibayar sampai label pengiriman tercetak, dan mengikuti job kurir lewat socket merchant milik matching.
 sidebar:
   order: 6
-sourceHash: "f9da340c4479"
+sourceHash: "2073c805a76f"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -79,7 +79,7 @@ label.
 ## 8. Mengikuti kurir lewat socket merchant
 
 Matching mengirim push berisi job kurir milik penjual lewat WebSocket. Client membuka
-`wss://api.kinetix.example/ws/v1/matching/merchant?vsn=2.0.0`
+`wss://api.wildanfrananda.my.id/ws/v1/matching/merchant?vsn=2.0.0`
 ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/2b38bcc9a795dac8a6a3088b6d67f297fcfa9f5c/config/gateway.pkl#L168-L179))
 dan mengirim access token di header `Sec-WebSocket-Protocol`, di-encode base64 tanpa padding `=`, setelah
 prefiks milik Phoenix
