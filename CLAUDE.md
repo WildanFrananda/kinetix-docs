@@ -197,6 +197,15 @@ each feature as the calls in the order the application makes them, with every re
   `0x5e5e…`: CI's gitleaks (`generic-api-key`) flags a random-looking one, and the fix is the example, never an
   allow list. Check with `gitleaks dir src` before pushing.
 
+## Vulnerability reports
+
+`reference/report-a-vulnerability` is the disclosure policy, ruled by the user on 2026-10-22: reports go to GitHub's
+private vulnerability reporting on this repository (one channel for every Kinetix repository, so no email address is
+published), a good-faith safe harbor, acknowledgement within three business days, no bounty. `/.well-known/security.txt`
+(RFC 9116) is generated at build time by `src/pages/.well-known/security.txt.ts` from `src/site/security_contact.ts`
+and the site's URL, so no hostname is written in the source. `tests/security_txt.test.ts` turns red 30 days before
+`Expires`: move it forward (at most a year) and nothing else. A change to the commitments is the user's to make.
+
 ## Interactive diagrams
 
 Interactive, animated diagrams are the reason this site is built on Starlight. They are Svelte 5
