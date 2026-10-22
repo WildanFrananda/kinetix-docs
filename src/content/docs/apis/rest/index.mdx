@@ -1,0 +1,160 @@
+---
+title: REST
+description: Every HTTP endpoint the Kinetix applications call, grouped by application and feature, with each request and every answer, verified against the releases production runs.
+sidebar:
+  label: Overview
+  order: 0
+---
+
+import RestEndpoint from "../../../../components/RestEndpoint.astro";
+import RestReleases from "../../../../components/RestReleases.astro";
+import RestServiceAnswers from "../../../../components/RestServiceAnswers.astro";
+
+Clients reach Kinetix over HTTP through one gateway, Kong. This reference lists every endpoint behind it,
+grouped by the application that calls it — the buyer app, the seller web app, the courier app and the
+backoffice — and, inside each application, by feature, in the order the application makes the calls. Each
+endpoint shows its request, its fields and every answer it can give, each answer linked to the lines that
+produce it.
+
+Everything here was read from the code of the releases production runs:
+
+<RestReleases />
+
+The services talk to one another over gRPC, which has [its own reference](/apis/grpc/). This page covers
+what every endpoint shares: the address, tokens, request ids, browsers, limits, and the answers that do not
+belong to any single endpoint.
+
+## Address and transport
+
+Every endpoint is served by one host over HTTPS. The examples use `api.kinetix.example`, a placeholder:
+
+```http
+POST /api/v1/auth/login HTTP/1.1
+Host: api.kinetix.example
+Content-Type: application/json
+```
+
+The gateway has no plain-HTTP listener at all, so a token never travels unencrypted
+([Dockerfile](https://github.com/WildanFrananda/kinetix-api-gateway/blob/2b38bcc9a795dac8a6a3088b6d67f297fcfa9f5c/Dockerfile#L58-L66)).
+Every path starts with `/api/v1/`. The one exception is a file upload: the client sends the file to a separate
+storage host, at a URL the service signed for it. The examples show that host as `storage.kinetix.example`.
+
+## Tokens
+
+identity issues every token. Signing in, registering, or completing a two-factor challenge returns a pair:
+an access token to send with each request, and a refresh token to exchange for a new pair when the access
+token expires. Both are JWTs signed with RS256. An endpoint that needs the access token takes it in one
+header:
+
+```http
+Authorization: Bearer <access token>
+```
+
+The token is checked in one of two places:
+
+- **By Kong, then by the service.** On the routes of identity's accounts (`/api/v1/auth`, `/api/v1/users`,
+  `/api/v1/sellers`, `/api/v1/couriers`), matching, payment, the notary's proofs and notification's devices,
+  Kong checks the signature and the expiry before the request reaches the service. A token it refuses gets one
+  of [Kong's answers](#kongs-answers). The service then checks the rest: the audience, the kind of token, the
+  role and the owner.
+- **By the service alone.** Kong passes requests to catalog, search, pricing, order, review and warehouse
+  without looking at the token. Each of them verifies the token itself wherever one is needed, and serves its
+  public endpoints without one.
+
+Each endpoint's **Access** line says which of the two applies to it, and who may call it.
+
+The public keys that verify every token are published by identity. No application needs them; a service or a
+third party that checks identity's tokens itself reads them here:
+
+<RestEndpoint id="identity.jwks" />
+
+## Request ids
+
+Kong gives every request an `X-Request-Id` header: the client's own, when it sends one, or a new UUID. The
+service receives it, and Kong returns it in the response
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/2b38bcc9a795dac8a6a3088b6d67f297fcfa9f5c/config/gateway.pkl#L374-L381)).
+Send your own id when you want to find a request in the logs later. Several services repeat it in their error
+bodies, for example identity's `traceId`. Kong's own error bodies carry a different value, `request_id`, which
+is Kong's internal id for the request. The gateway's access log records both, and records the path without its
+query string
+([access_log.conf](https://github.com/WildanFrananda/kinetix-api-gateway/blob/2b38bcc9a795dac8a6a3088b6d67f297fcfa9f5c/config/access_log.conf#L1-L8)).
+
+## Browsers
+
+Kong answers browsers' CORS preflight requests itself, for the origins configured in production, without
+checking a token. It allows the methods `GET`, `POST`, `PUT`, `PATCH`, `DELETE` and `OPTIONS`; the request
+headers `Accept`, `Authorization`, `Content-Type`, `Idempotency-Key`, `X-Request-Id` and `X-Requested-With`;
+and it exposes the response headers `X-Request-Id`, `Allow`, `Idempotent-Replayed`, `Location` and
+`Retry-After` to scripts. Browsers may cache a preflight for an hour. Kong does not allow credentialed requests, so a
+browser sends no cookies; authentication is the bearer token alone
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/2b38bcc9a795dac8a6a3088b6d67f297fcfa9f5c/config/gateway.pkl#L360-L373)).
+
+## Limits
+
+- **100 requests a minute** from one client address, across every route. The Midtrans notification route has
+  its own limit of 600 a minute. Past the limit, Kong answers `429` with `Retry-After`.
+- **16 MB** for a file upload to the storage host.
+- Some endpoints have a tighter limit of their own, set by their service, such as five sign-in attempts a
+  minute. It is listed on the endpoint.
+
+## Kong's answers
+
+Kong answers these itself, before or instead of a service. They can come from any endpoint, so the endpoints do
+not repeat them. The `401`s come only from the routes where Kong checks the token, and the `413` only from the
+storage host.
+
+<RestServiceAnswers service="gateway" />
+
+Kong also answers one endpoint of its own, which no application needs. It is listed for completeness:
+
+<RestEndpoint id="gateway.health" />
+
+## Answers any request to a service can get
+
+Every service has answers that do not depend on the endpoint: a failure it did not expect, a database it
+cannot reach, a body it cannot parse, a token it refuses. They are listed once per service here, and each
+endpoint links to its service's list.
+
+### identity
+
+<RestServiceAnswers service="identity" />
+
+### catalog
+
+<RestServiceAnswers service="catalog" />
+
+### search
+
+<RestServiceAnswers service="search" />
+
+### pricing
+
+<RestServiceAnswers service="pricing" />
+
+### order
+
+<RestServiceAnswers service="order" />
+
+### review
+
+<RestServiceAnswers service="review" />
+
+### warehouse
+
+<RestServiceAnswers service="warehouse" />
+
+### matching
+
+<RestServiceAnswers service="matching" />
+
+### payment
+
+<RestServiceAnswers service="payment" />
+
+### notary
+
+<RestServiceAnswers service="notary" />
+
+### notification
+
+<RestServiceAnswers service="notification" />

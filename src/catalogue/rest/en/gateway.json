@@ -1,0 +1,20 @@
+{
+  "rest.gateway.answers.noToken": "A route Kong verifies, and the request carries no token. Send the access token as `Authorization: Bearer <token>`.",
+  "rest.gateway.answers.multipleTokens": "A route Kong verifies, and the request carries two different tokens. Kong reads the `Authorization` header and also a `jwt` query parameter; send the token in `Authorization` only.",
+  "rest.gateway.answers.badToken": "A route Kong verifies, and the token is not a JWT it can decode: its parts are not base64url JSON (`invalid JSON`), its `alg` is missing or unknown (`invalid alg`), or its claims or signature are missing.",
+  "rest.gateway.answers.noIssuer": "A route Kong verifies, and the token has no `iss` claim. With an empty `iss` the message is `Invalid 'iss' in claims`.",
+  "rest.gateway.answers.unknownIssuer": "A route Kong verifies, and the token's `iss` is not identity's issuer: the token was not issued by Kinetix.",
+  "rest.gateway.answers.algorithm": "A route Kong verifies, and the token is not signed with `RS256`, the only algorithm identity uses.",
+  "rest.gateway.answers.signature": "A route Kong verifies, and the signature does not match identity's public key: the token was altered, or signed by another key.",
+  "rest.gateway.answers.expired": "A route Kong verifies, and the token's `exp` has passed. Refresh the token pair and send the request again with the new access token.",
+  "rest.gateway.answers.noExpiry": "A route Kong verifies, and the token has no numeric `exp` claim.",
+  "rest.gateway.answers.noRoute": "Any request whose path matches no route, or whose method a method-restricted route does not allow. The service is never reached.",
+  "rest.gateway.answers.tooLarge": "An upload to the storage host whose body is larger than 16 MB. With `Expect: 100-continue` the status is `417` and the message the same.",
+  "rest.gateway.answers.rateLimited": "More than 100 requests within one minute from one client address, counted across every route. The Midtrans notification route has its own limit of 600 a minute. `Retry-After` is the number of seconds until the window resets.",
+  "rest.gateway.answers.badUpstream": "The service refused the connection or sent a response Kong could not read. The format follows the request's `Accept` header, then its `Content-Type`; with neither, the body is plain text as shown, and with `Accept: application/json` it is Kong's JSON error.",
+  "rest.gateway.answers.serviceDown": "The service is not running, so its name does not resolve. Nothing reached the service; the request can be sent again later.",
+  "rest.gateway.answers.timeout": "The service did not answer in time. The request may still have taken effect: read the current state before sending a request that changes something again. The body's format is chosen as for `502`.",
+  "rest.gateway.health.summary": "Answers that the gateway is up. Kong answers it itself; no service is called.",
+  "rest.gateway.health.who": "Anyone.",
+  "rest.gateway.health.case.up": "Always, while Kong is running. It says nothing about the services behind it."
+}

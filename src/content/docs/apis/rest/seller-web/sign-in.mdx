@@ -1,0 +1,61 @@
+---
+title: Sign in and stay signed in
+description: How the seller web application signs a seller in, answers a two-factor challenge, keeps the session alive and signs out, all with identity.
+sidebar:
+  label: Sign in
+  order: 1
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+The seller web application signs a seller in with identity and keeps the token pair that every other feature
+sends. It runs in a browser, so each call is a CORS request: Kong answers the preflight, and the access token
+travels in the `Authorization` header, never in a cookie ([Browsers](/apis/rest/#browsers)). The calls are a
+sign-in, the answer to a two-factor challenge when the account has one, a read of the session when the
+application starts, a refresh each time the access token expires, and a sign-out.
+
+## 1. Sign in with email and password
+
+The seller types an email and a password. A `200` with a token pair is a session: keep `accessToken`,
+`refreshToken` and `expiresIn`, and from `user` keep `id`, `principalId` and `role`. A `200` carrying
+`mfaRequired` is not a session yet; its `challengeToken` goes to step 2. `user.role` is `seller` only once an
+admin has approved the account's application to sell
+([seller_onboarding_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/seller_onboarding_usecase.service.ts#L181-L184)),
+so an account that is still a `customer` goes to [Become a seller](/apis/rest/seller-web/become-a-seller/)
+first. `user.id` names the account in that application; `user.principalId` names the seller on matching's
+merchant socket and in review.
+
+<RestEndpoint id="identity.login" />
+
+## 2. Answer the two-factor challenge
+
+Only after a `200` carrying `mfaRequired`. Send its `challengeToken` with the six digits the seller's
+authenticator app shows, before the challenge's `expiresIn` seconds have passed. The `200` is a token pair like
+step 1's and is kept the same way. On a `401`, the seller signs in again from step 1.
+
+<RestEndpoint id="identity.verifyTwoFactor" />
+
+## 3. Read the session when the application starts
+
+When the application opens with a stored access token, this call shows whether the token is still accepted and
+what it states: `principalId`, `userId`, `role` and `expiresAt`. Kong checks the token on this route first, so
+an expired one gets Kong's `401` ([Kong's answers](/apis/rest/#kongs-answers)); the application then refreshes
+the pair (step 4) and reads the session again.
+
+<RestEndpoint id="identity.me" />
+
+## 4. Refresh the token pair
+
+Exchange the stored `refreshToken` once `expiresIn` seconds have passed, or when a request is refused because
+the access token has expired. Replace both stored tokens with the new pair at once. Browser tabs that share one
+stored pair let a single tab refresh it while the others wait for the new pair: the same refresh token sent
+twice, even at the same moment, ends the session. After any other `401`, the seller signs in again.
+
+<RestEndpoint id="identity.refresh" />
+
+## 5. Sign out
+
+Send the current access token and, in the body, the stored `refreshToken`, so that only the session of this
+browser ends. Without `refreshToken`, every session of the account ends, on every device.
+
+<RestEndpoint id="identity.logout" />

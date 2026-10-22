@@ -1,0 +1,58 @@
+---
+title: Daftar dan masuk
+description: Membuat akun pembeli atau masuk ke akun yang ada, menjawab faktor kedua bila aktif, dan memeriksa sesi yang tersimpan, semuanya di identity.
+sidebar:
+  order: 1
+sourceHash: "3b90c6cc4dfd"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Pembeli mendapat sesi dari identity dengan salah satu dari dua cara: akun baru (langkah 1), atau masuk ke akun
+yang sudah ada (langkah 2), diikuti challenge dua faktor bila akun itu mengaktifkannya (langkah 3). Setiap akun
+yang dibuat di sini ber-role `customer`, role yang diwajibkan endpoint wallet. Aplikasi pembeli yang menyimpan
+token dari jalannya sebelumnya memeriksa token itu dengan langkah 4 alih-alih meminta pembeli masuk lagi.
+Menjaga sesi tetap hidup dan mengakhirinya ada di [Tetap masuk dan keluar](/id/apis/rest/buyer-app/stay-signed-in/).
+
+## 1. Membuat akun
+
+Pembeli mengetik email dan password. `201` adalah sebuah sesi, sama seperti hasil masuk: aplikasi menyimpan
+`accessToken` dan `refreshToken`, mencatat kapan `expiresIn` detik akan lewat, dan menyimpan dua id dari
+`user`. `user.id` adalah id akun yang dipakai path milik identity sendiri, seperti endpoint
+[profil](/id/apis/rest/buyer-app/profile/) dan [dua faktor](/id/apis/rest/buyer-app/two-factor/).
+`user.principalId` adalah `sub` dari setiap token yang diterbitkan identity
+([token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/token.service.ts#L74-L87)),
+id yang dipakai service lain untuk mengenali pembeli. `409` berarti email itu sudah punya akun: masuk lewat
+langkah 2.
+
+<RestEndpoint id="identity.register" />
+
+## 2. Masuk
+
+Pembeli mengetik email dan password akun yang sudah ada. Kedua jawaban `200` berstatus sama, dan field
+`mfaRequired` yang membedakannya
+([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/auth_usecase.service.ts#L36-L49)).
+Tanpa field itu, jawabannya sebuah sesi: simpan seperti di langkah 1. Dengan `mfaRequired: true` belum ada
+sesi; simpan `challengeToken` beserta `expiresIn`-nya untuk langkah 3.
+
+<RestEndpoint id="identity.login" />
+
+## 3. Menjawab challenge dua faktor
+
+Hanya setelah masuk yang dijawab dengan `mfaRequired`. Aplikasi mengirim `challengeToken` dari langkah 2 dan
+enam digit yang dibaca pembeli dari aplikasi authenticator, sebelum `expiresIn` detik milik challenge itu
+lewat. `200` adalah sebuah sesi: simpan seperti di langkah 1. Untuk jawaban lain apa pun, aplikasi mulai lagi
+dari langkah 2, yang menerbitkan challenge baru; setelah `429`, aplikasi menunggu `Retry-After` detik dulu.
+
+<RestEndpoint id="identity.verifyTwoFactor" />
+
+## 4. Memeriksa sesi yang tersimpan
+
+Saat dibuka lagi, aplikasi pembeli yang menyimpan token mengirim access token ke sini sebelum memakainya.
+`200` berarti token itu masih diterima, dan mengulang apa yang dibutuhkan aplikasi darinya: `principalId`,
+`userId` (yaitu `user.id` dari langkah 1), `role` dan `expiresAt`. Bila token sudah kedaluwarsa, Kong
+menolaknya dengan `401` ([jawaban Kong](/id/apis/rest/#jawaban-kong)): aplikasi menukar refresh token-nya
+seperti di [Tetap masuk](/id/apis/rest/buyer-app/stay-signed-in/), dan meminta pembeli masuk lagi bila itu
+juga ditolak.
+
+<RestEndpoint id="identity.me" />

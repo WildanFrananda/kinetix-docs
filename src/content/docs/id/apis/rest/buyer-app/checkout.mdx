@@ -1,0 +1,64 @@
+---
+title: Checkout
+description: Mengubah keranjang menjadi order yang sudah dibayar di order, yang menghitung ulang harga, meminta tarif pengiriman dan mendebit wallet pembeli dalam request yang sama.
+sidebar:
+  order: 9
+sourceHash: "cf637f02a3ff"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Checkout mengubah keranjang menjadi order dan membayarnya dari wallet pembeli dalam satu request: `201` adalah
+order yang sudah `PAID`. Dua hal harus terpenuhi sebelumnya. Keranjang memegang produk dari satu merchant
+([Keranjang](/id/apis/rest/buyer-app/cart/)). Wallet memegang total order, barang dan ongkos kirim setelah
+diskon, yang dihitung checkout sendiri: saga mendebit total itu dari wallet
+([EscrowService.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/9bb08c58f0dd13d8ee3fe2a00e17239632286096/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L420-L423)),
+dan saldo yang kurang dari total itu mengakhiri checkout dengan `409 CHECKOUT_ROLLED_BACK` dan `reason` yang
+diawali `escrow:`
+([CheckoutSagaRunner.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a9473a17c546faa7e41be843343b0bd882435964/Application/Checkout/CheckoutSagaRunner.cs#L237-L260)).
+Jadi [Top-up wallet](/id/apis/rest/buyer-app/wallet-top-up/) didahulukan. Aplikasi membaca keranjang
+(langkah 1), membuat order (langkah 2) dan membacanya (langkah 3).
+
+## 1. Membaca keranjang
+
+Aplikasi menampilkan apa yang akan dibeli. `merchantPrincipalId` di setiap baris harus sama, atau langkah 2
+menjawab `400 CART_SPANS_TWO_MERCHANTS`. `appliedVoucherCode` adalah kode yang ditawarkan checkout ke pricing
+kecuali langkah 2 menyebut kode lain.
+
+<RestEndpoint id="order.getCart" />
+
+## 2. Membuat order
+
+Body-nya menyebut pengirimannya: `shippingAddress`, `recipientName` dan `recipientPhone`, yang bisa diisi
+aplikasi pembeli dari [profil](/id/apis/rest/buyer-app/profile/). `shippingServiceTier` boleh dikosongkan, dan
+order lalu mengambil tier termurah yang bisa membawa paketnya; tier yang ditolaknya dijawab dengan
+`availableTiers` untuk dipilih. Dari `201`, aplikasi menyimpan `id`, untuk membaca order, dan `orderNumber`,
+yang dipakai [proof](/id/apis/rest/buyer-app/proofs/).
+
+Aplikasi membuat `Idempotency-Key` baru untuk setiap checkout dan menyimpannya sampai mendapat jawaban final.
+order mencatat key itu di baris order, yang baru ditulisnya setelah semua pemeriksaan sebelum saga lolos
+([OrderService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a9473a17c546faa7e41be843343b0bd882435964/Application/Services/OrderService.cs#L139-L185)),
+dan menjawab request yang key-nya sudah tercatat dari order itu, bukan menjalankannya lagi
+([OrderService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a9473a17c546faa7e41be843343b0bd882435964/Application/Services/OrderService.cs#L246-L278)).
+Jadi jawabannya terbagi empat kelompok:
+
+- `201`, `409 CHECKOUT_ROLLED_BACK`, `409 CHECKOUT_ROLLBACK_PENDING` dan `503 CHECKOUT_DEPENDENCY_UNAVAILABLE`
+  menghabiskan key. Key itu kini menamai order tersebut: request yang sama dikirim lagi mendapat hasil yang
+  sama (`201`, atau `409` dengan `replayed: true`), dan percobaan berikutnya butuh key baru.
+- `409 CHECKOUT_IN_PROGRESS`, `500`, `502` atau `504` dari Kong, atau tidak ada jawaban sama sekali, membuat
+  hasilnya belum diketahui. Aplikasi mengulang request yang sama dengan key yang sama: order menjawab dari
+  order percobaan pertama bila order itu sempat ditulis, dan menjalankan checkout bila belum, jadi tidak ada
+  yang tertagih dua kali.
+- `422 IDEMPOTENCY_KEY_REUSED` berarti key itu milik checkout sebelumnya dengan body lain. Aplikasi mengulang
+  request itu persis, atau memakai key baru.
+- Semua jawaban lain datang sebelum baris order ditulis, jadi key-nya belum terpakai. Aplikasi mengirimnya
+  lagi setelah penyebabnya diperbaiki, dan mengulang `503` tanpa perubahan setelah menunggu sebentar.
+
+<RestEndpoint id="order.checkout" />
+
+## 3. Membaca order
+
+`{orderId}` adalah `id` dari `201`, yang juga dibawa header `Location`-nya. Order-nya sudah `PAID`; dari sini
+aplikasi mengikuti `status`-nya, seperti di [Order saya](/id/apis/rest/buyer-app/orders/).
+
+<RestEndpoint id="order.getOrder" />

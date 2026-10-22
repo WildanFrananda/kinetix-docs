@@ -1,0 +1,85 @@
+---
+title: Keranjang
+description: Menyimpan keranjang pembeli yang sedang masuk di order, serta memeriksa dan memasang voucher dengan pricing sebelum checkout.
+sidebar:
+  order: 8
+sourceHash: "b1e1582e0d8f"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+order menyimpan satu keranjang per pembeli yang sedang masuk, di bawah `sub` milik access token; keranjang
+butuh sesi dari [Daftar dan masuk](/id/apis/rest/buyer-app/sign-up-and-sign-in/). Setiap baris memegang harga
+catalog pada saat baris itu ditambahkan, sebuah perkiraan yang diganti [checkout](/id/apis/rest/buyer-app/checkout/)
+dengan hitungan harganya sendiri. Aplikasi membaca keranjang (langkah 1) dan mengubah baris-barisnya (langkah 2
+sampai 4). Kode voucher dibaca dan diperiksa di pricing (langkah 5 dan 6), lalu dipasang di keranjang atau
+dilepas darinya (langkah 7 dan 8). Langkah 9 mengosongkan keranjang.
+
+## 1. Membaca keranjang
+
+Keranjang sebagaimana tersimpan: baris-barisnya, kode voucher yang terpasang di `appliedVoucherCode`, dan
+`subtotal`. Pembeli yang belum punya keranjang mendapat keranjang kosong, `items: []`.
+
+<RestEndpoint id="order.getCart" />
+
+## 2. Menambah produk
+
+`productId` adalah SKU produk: `sku` dari [catalog](/id/apis/rest/buyer-app/browse/#3-membaca-satu-produk) atau
+`id` sebuah hit pencarian. `quantity` ditambahkan ke jumlah yang sudah dipegang baris itu. Jawabannya adalah
+seluruh keranjang, yang ditampilkan aplikasi tanpa membacanya lagi.
+
+<RestEndpoint id="order.addCartItem" />
+
+## 3. Mengubah jumlah
+
+`{productId}` adalah `productId` sebuah baris di keranjang. `quantity` adalah jumlah baru baris itu, dan `0`
+menghapus barisnya.
+
+<RestEndpoint id="order.updateCartItem" />
+
+## 4. Menghapus baris
+
+`{productId}` adalah `productId` sebuah baris di keranjang.
+
+<RestEndpoint id="order.removeCartItem" />
+
+## 5. Membaca ketentuan voucher
+
+Ketika pembeli mengetik sebuah kode, aplikasi bisa menampilkan ketentuannya: `value`, `min_spend`,
+`max_discount` dan `expires_at`. `200` hanya menyatakan bahwa kode itu masih bisa dipakai; cocok tidaknya
+dengan keranjang ini adalah urusan langkah 6.
+
+<RestEndpoint id="pricing.getVoucher" />
+
+## 6. Memeriksa voucher terhadap keranjang
+
+Sebuah pratinjau: `code` seperti yang diketik pembeli, `cart_subtotal`, dan `merchant_principal_id` dari
+`merchantPrincipalId` di baris-baris keranjang. `subtotal` keranjang memakai harga catalog
+([CustomerCart.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a9473a17c546faa7e41be843343b0bd882435964/Domain/Entities/CustomerCart.cs#L7)),
+sedangkan checkout membandingkan `min_spend` dengan subtotal setelah flash sale dan diskon
+([pricing_service.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/d3020a29ca7ac6fcc2d5a7e472a6b234cc783d0d/src/services/pricing_service.rs#L151-L219)).
+Bila dikirim dengan `subtotal` keranjang, pratinjau bisa menerima kode yang tidak akan diberikan checkout;
+`appliedVoucher` di order menyatakan apa yang diberikan checkout.
+
+<RestEndpoint id="pricing.applyVoucher" />
+
+## 7. Memasang voucher di keranjang
+
+Kode disimpan di keranjang persis seperti dikirim, dan checkout menawarkannya ke pricing kecuali request
+checkout menyebut kode lain. `subtotal` tidak berubah: diskonnya, bila diberikan pricing, hanya muncul di
+order.
+
+<RestEndpoint id="order.applyCartVoucher" />
+
+## 8. Melepas voucher
+
+`appliedVoucherCode` di keranjang menjadi `null`.
+
+<RestEndpoint id="order.removeCartVoucher" />
+
+## 9. Mengosongkan keranjang
+
+Hanya untuk aksi "kosongkan keranjang" yang eksplisit. Order yang berhasil dibuat mengosongkan keranjang
+dengan sendirinya, jadi setelah checkout aplikasi membaca keranjang lagi alih-alih mengosongkannya.
+
+<RestEndpoint id="order.clearCart" />

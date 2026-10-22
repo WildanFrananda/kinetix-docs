@@ -1,0 +1,41 @@
+---
+title: Autentikasi dua faktor
+description: Mengaktifkan faktor kedua untuk akun pembeli sendiri dengan aplikasi authenticator, dan mematikannya lagi, di identity.
+sidebar:
+  order: 3
+sourceHash: "587ee66b478a"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Pembeli yang sedang masuk mengaktifkan autentikasi dua faktor untuk akunnya sendiri dengan dua panggilan,
+secret baru (langkah 1) dan kode yang membuktikan aplikasi authenticator memegangnya (langkah 2), dan bisa
+mematikannya nanti (langkah 3). `{id}` di setiap path adalah id akun pembeli: `user.id` dari jawaban
+[masuk](/id/apis/rest/buyer-app/sign-up-and-sign-in/), atau `userId` dari `GET /api/v1/auth/me`. Begitu aktif,
+setiap kali masuk identity menjawab dengan challenge lebih dulu, yang dijawab aplikasi seperti di
+[langkah 3 Daftar dan masuk](/id/apis/rest/buyer-app/sign-up-and-sign-in/#3-menjawab-challenge-dua-faktor).
+
+## 1. Mengambil secret baru
+
+`qrCodeUrl` di jawabannya adalah URI `otpauth://`: aplikasi menampilkannya sebagai kode QR untuk dipindai
+aplikasi authenticator, dan menampilkan `twoFactorSecret` bagi pembeli yang mengetiknya sendiri. Belum ada
+yang berlaku. Meminta lagi sebelum langkah 2 mengganti secret-nya, jadi authenticator harus memegang yang
+terbaru.
+
+<RestEndpoint id="identity.setupTwoFactor" />
+
+## 2. Mengonfirmasi dengan kode
+
+Pembeli mengetik enam digit yang sedang ditampilkan aplikasi authenticator. `200` dengan `enabled: true`
+memberlakukan faktor kedua untuk setiap kali masuk berikutnya. Sesi ini tetap memegang token-nya; semua sesi
+lain dari akun itu berakhir, dan perangkat-perangkat itu harus masuk lagi.
+
+<RestEndpoint id="identity.enableTwoFactor" />
+
+## 3. Mematikannya
+
+Pembeli mengetik kode terkini dari aplikasi authenticator yang sama. `200` dengan `enabled: false` menghapus
+secret-nya, dan masuk berikutnya langsung menjawab dengan sesi. Seperti di langkah 2, semua sesi lain dari
+akun itu berakhir.
+
+<RestEndpoint id="identity.disableTwoFactor" />

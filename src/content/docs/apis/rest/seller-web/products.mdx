@@ -1,0 +1,52 @@
+---
+title: Products
+description: How a seller puts products on sale in catalog, reads them as buyers see them, changes them and withdraws them.
+sidebar:
+  order: 4
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+A seller's products live in catalog. The seller picks a category, creates the product, reads it as buyers see
+it, changes it and withdraws it. Every write asks identity whether the account's merchant may trade, so the
+account must have been approved ([Become a seller](/apis/rest/seller-web/become-a-seller/)). The API has no list
+of a seller's own products: the product list has no merchant filter and leaves withdrawn products out. The
+client therefore keeps the `id` of every product it creates, the only way to change or withdraw the product
+later. Stock is not set here; it arrives through the backoffice's
+[stock intake](/apis/rest/backoffice/stock-intake/).
+
+## 1. Choose a category
+
+Every product belongs to one category. Send the chosen category's `id` as `category_id` in step 2. Its `slug`
+is what a category discount names ([Promotions](/apis/rest/seller-web/promotions/), step 1).
+
+<RestEndpoint id="catalog.listCategories" />
+
+## 2. Create the product
+
+The seller chooses the `sku` and enters the rest; `category_id` comes from step 1. Keep `id` from the `201`.
+The create takes no idempotency key: when its answer is lost, reading the product by its SKU (step 3) shows
+whether it exists, whose it is (`merchant_principal_id`) and its `id`.
+
+<RestEndpoint id="catalog.createProduct" />
+
+## 3. Read the product as buyers see it
+
+By the `sku` from step 2. `warehouse_stock` reads `out_of_stock` until stock for the SKU has been received
+through the backoffice's stock intake.
+
+<RestEndpoint id="catalog.getProduct" />
+
+## 4. Change the product
+
+Send only the fields that change, with the `id` kept from step 2. `is_active` `false` withdraws the product as
+step 5 does, and `true` puts a withdrawn product back on sale.
+
+<RestEndpoint id="catalog.updateProduct" />
+
+## 5. Withdraw the product
+
+With the same `id`. The product stays in catalog with its SKU, and step 4 with `is_active` `true` puts it back
+on sale.
+
+<RestEndpoint id="catalog.deleteProduct" />

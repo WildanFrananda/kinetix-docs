@@ -1,0 +1,54 @@
+---
+title: Produk
+description: Cara penjual menjual produk di catalog, membacanya seperti yang dilihat pembeli, mengubahnya dan menariknya dari penjualan.
+sidebar:
+  order: 4
+sourceHash: "25e086e28804"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Produk milik penjual ada di catalog. Penjual memilih kategori, membuat produk, membacanya seperti yang dilihat
+pembeli, mengubahnya dan menariknya dari penjualan. Setiap penulisan menanyakan ke identity apakah merchant milik
+akun itu boleh berdagang, jadi akunnya harus sudah disetujui
+([Menjadi penjual](/id/apis/rest/seller-web/become-a-seller/)). API ini tidak punya daftar produk milik seorang
+penjual: daftar produk tidak punya filter merchant dan tidak memuat produk yang sudah ditarik. Karena itu client
+menyimpan `id` setiap produk yang dibuatnya, satu-satunya cara untuk mengubah atau menarik produk itu nanti.
+Stok tidak diatur di sini; stok masuk lewat [penerimaan stok](/id/apis/rest/backoffice/stock-intake/) di
+backoffice.
+
+## 1. Memilih kategori
+
+Setiap produk masuk ke satu kategori. Kirim `id` kategori yang dipilih sebagai `category_id` di langkah 2.
+`slug`-nya adalah yang disebut oleh diskon kategori ([Promosi](/id/apis/rest/seller-web/promotions/), langkah 1).
+
+<RestEndpoint id="catalog.listCategories" />
+
+## 2. Membuat produk
+
+Penjual memilih `sku` dan mengisi sisanya; `category_id` berasal dari langkah 1. Simpan `id` dari jawaban `201`.
+Pembuatan produk tidak menerima idempotency key: bila jawabannya hilang, membaca produk lewat SKU-nya (langkah 3)
+menunjukkan apakah produk itu ada, milik siapa (`merchant_principal_id`) dan berapa `id`-nya.
+
+<RestEndpoint id="catalog.createProduct" />
+
+## 3. Membaca produk seperti yang dilihat pembeli
+
+Lewat `sku` dari langkah 2. `warehouse_stock` bernilai `out_of_stock` sampai stok untuk SKU itu diterima lewat
+penerimaan stok di backoffice.
+
+<RestEndpoint id="catalog.getProduct" />
+
+## 4. Mengubah produk
+
+Kirim hanya field yang berubah, dengan `id` yang disimpan dari langkah 2. `is_active` `false` menarik produk
+dari penjualan seperti langkah 5, dan `true` menjual kembali produk yang sudah ditarik.
+
+<RestEndpoint id="catalog.updateProduct" />
+
+## 5. Menarik produk dari penjualan
+
+Dengan `id` yang sama. Produk tetap ada di catalog bersama SKU-nya, dan langkah 4 dengan `is_active` `true`
+menjualnya kembali.
+
+<RestEndpoint id="catalog.deleteProduct" />

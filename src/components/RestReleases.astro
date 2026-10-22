@@ -1,0 +1,57 @@
+---
+import { localeOf } from "../diagrams/engine/locale_of";
+import { kongRelease } from "../site/rest/kong_release";
+import { releaseTree } from "../site/rest/release_tree";
+import { restCatalogueFor } from "../site/rest/rest_catalogue";
+import { restReleases } from "../site/rest/rest_releases";
+import { servicePage } from "../site/rest/service_page";
+import type { RestService } from "../site/types/rest_service.type";
+
+const locale = localeOf(Astro.locals.starlightRoute.entryMeta.lang);
+const text = restCatalogueFor(locale);
+const prefix = locale === "en" ? "" : `/${locale}`;
+const services = Object.keys(restReleases) as RestService[];
+---
+
+<table class="rest-releases">
+  <thead>
+    <tr>
+      <th>{text["rest.common.releases.service"]}</th>
+      <th>{text["rest.common.releases.release"]}</th>
+      <th>{text["rest.common.releases.commit"]}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {
+      services.map((service) => (
+        <tr>
+          <td>
+            <a href={`${prefix}${servicePage(service)}`}>{service}</a>
+          </td>
+          <td>{restReleases[service].tag}</td>
+          <td>
+            <a href={releaseTree(service)}>
+              <code>{restReleases[service].commit.slice(0, 7)}</code>
+            </a>
+          </td>
+        </tr>
+      ))
+    }
+    <tr>
+      <td>Kong</td>
+      <td>{kongRelease.version}</td>
+      <td>
+        <a href={`https://github.com/Kong/kong/tree/${kongRelease.commit}`}>
+          <code>{kongRelease.commit.slice(0, 7)}</code>
+        </a>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<style>
+  .rest-releases {
+    display: table;
+    width: 100%;
+  }
+</style>

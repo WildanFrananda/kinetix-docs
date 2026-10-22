@@ -1,0 +1,139 @@
+---
+title: Mengemas pesanan
+description: Cara penjual mengerjakan antrean pengemasan di warehouse, dari pesanan yang dibayar sampai label pengiriman tercetak, dan mengikuti job kurir lewat socket merchant milik matching.
+sidebar:
+  order: 6
+sourceHash: "f9da340c4479"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Setiap pesanan yang sudah dibayar atas barang seorang penjual menjadi sebuah task fulfillment di warehouse.
+Penjual mengerjakan antreannya: mulai mengemas task, memindai barangnya, menandai paket sudah dikemas, menunggu
+sampai order memesan kurir dan mencatat nomor resi paket, lalu mencetak labelnya. Socket merchant milik matching
+menampilkan job kurir selama job itu berjalan. Panggilan ke warehouse memerlukan access token dengan role
+`seller` ([Menjadi penjual](/id/apis/rest/seller-web/become-a-seller/), langkah 5).
+
+## 1. Pesanan yang dibayar menjadi task
+
+Task tidak dibuat lewat REST. Saga checkout milik order membuatnya lewat gRPC begitu pembayaran pembeli ditahan di
+escrow, dengan nomor pesanan dan baris-barisnya, masing-masing sebuah SKU dan jumlahnya
+([CheckoutSagaRunner.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a9473a17c546faa7e41be843343b0bd882435964/Application/Checkout/CheckoutSagaRunner.cs#L237-L277)).
+Batas waktunya, `same_day_cutoff_at`, mengikuti jam batas merchant
+([Pengaturan toko](/id/apis/rest/seller-web/store-setup/)).
+
+## 2. Membaca antrean
+
+Antrean adalah pekerjaan penjual: task yang masih harus dikemas, dan paket yang sudah dikemas tetapi labelnya
+belum dicetak. Simpan `id` setiap task, yang dipakai setiap langkah berikutnya, dan `lines`-nya, yang menyebutkan
+apa yang masuk ke paket dan dari bin mana.
+
+<RestEndpoint id="warehouse.taskQueue" />
+
+## 3. Mulai mengemas
+
+Pindahkan task `received` ke `packing`, dengan `id`-nya dari langkah 2. Endpoint yang sama menerima `packed` di
+langkah 5.
+
+<RestEndpoint id="warehouse.setTaskStatus" />
+
+## 4. Memindai barang
+
+Kirim setiap kode yang dipindai pengemas, dengan `id` task-nya. Kode yang cocok dengan task memajukannya satu
+langkah, persis seperti langkah 3: pindaian atas task `received` memulai pengemasannya, pindaian atas task
+`packing` menandainya sudah dikemas (langkah 5), dan pindaian atas task `packed` mengirim ulang laporan langkah 5
+ke order. Kode yang tidak cocok tidak memajukan apa pun.
+
+<RestEndpoint id="warehouse.verifyScan" />
+
+## 5. Menandai paket sudah dikemas
+
+Setelah paket ditutup, kirim `{"status": "packed"}` ke endpoint langkah 3, kecuali sebuah pindaian di langkah 4
+sudah menandai task itu sudah dikemas. Mencapai `packed` memberi tahu order bahwa paket siap, dan order memesan
+kurir
+([advance_task_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/a0eafe367f060d4f99aec06a07017d86b8bd046f/app/services/fulfillment/advance_task_service.rb#L63-L102)).
+Di jawabannya, `order_notified` `false` dengan order yang tidak terjangkau berarti belum ada kurir yang dipesan:
+kirim `packed` lagi. Order menyimpan satu pemesanan kurir per pesanan, jadi laporan yang dikirim ulang tidak
+memesan kurir kedua
+([FulfillmentPackedHandler.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a9473a17c546faa7e41be843343b0bd882435964/Application/Fulfillment/FulfillmentPackedHandler.cs#L62-L81)).
+
+## 6. Menunggu nomor resi
+
+Order meminta kurir untuk paket itu ke matching dan menerima nomor resi (AWB) paketnya
+([CourierDispatcher.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a9473a17c546faa7e41be843343b0bd882435964/Application/Fulfillment/CourierDispatcher.cs#L72-L108)),
+lalu mencatatnya di warehouse lewat gRPC
+([CourierDispatcher.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a9473a17c546faa7e41be843343b0bd882435964/Application/Fulfillment/CourierDispatcher.cs#L122-L151),
+[fulfillment_task_service_handler.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/a0eafe367f060d4f99aec06a07017d86b8bd046f/app/rpc/fulfillment_task_service_handler.rb#L74-L99)).
+Sejak saat itu, kartu task di antrean membawanya sebagai `tracking_number`
+([task_queue_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/a0eafe367f060d4f99aec06a07017d86b8bd046f/app/services/fulfillment/task_queue_service.rb#L60)).
+Sebelum itu `tracking_number` bernilai `null` dan label belum bisa dicetak: baca antrean lagi (langkah 2) sampai
+nilainya terisi.
+
+## 7. Mencetak label
+
+Dengan `id` task-nya, setelah `tracking_number`-nya terisi. `awb_number` adalah nomor resi yang tercetak di
+label.
+
+<RestEndpoint id="warehouse.printLabel" />
+
+## 8. Mengikuti kurir lewat socket merchant
+
+Matching mengirim push berisi job kurir milik penjual lewat WebSocket. Client membuka
+`wss://api.kinetix.example/ws/v1/matching/merchant?vsn=2.0.0`
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/2b38bcc9a795dac8a6a3088b6d67f297fcfa9f5c/config/gateway.pkl#L168-L179))
+dan mengirim access token di header `Sec-WebSocket-Protocol`, di-encode base64 tanpa padding `=`, setelah
+prefiks milik Phoenix
+([endpoint.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/endpoint.ex#L17-L24),
+[websocket.ex milik Phoenix](https://github.com/phoenixframework/phoenix/blob/a27a0320ec8bcc874a8ae93a85f15dfdd5e91e25/lib/phoenix/transports/websocket.ex#L99-L112)):
+
+```http
+Sec-WebSocket-Protocol: phoenix, base64url.bearer.phx.<access token, base64-encoded>
+```
+
+Token itu harus access token dengan role `seller`. Handshake yang ditolak matching mendapat `403` dengan body
+kosong, atau `503` bila matching tidak bisa mengambil key milik identity untuk memeriksa token-nya
+([merchant_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/merchant_socket.ex#L24-L45)).
+Access token yang kedaluwarsa juga ditolak: refresh token itu ([Masuk](/id/apis/rest/seller-web/sign-in/),
+langkah 4) lalu sambungkan lagi.
+
+Dengan `vsn=2.0.0` di alamatnya, setiap frame adalah array JSON Phoenix versi 2,
+`[join_ref, ref, topic, event, payload]`
+([socket.ex milik Phoenix](https://github.com/phoenixframework/phoenix/blob/a27a0320ec8bcc874a8ae93a85f15dfdd5e91e25/lib/phoenix/socket.ex#L499)).
+Client bergabung ke topic `merchant:<principalId>` dengan `user.principalId` miliknya sendiri; principal lain
+ditolak dengan `forbidden`
+([merchant_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/merchant_channel.ex#L32-L81)):
+
+```json
+["1", "1", "merchant:3f6c1a2e-8b4d-4e7f-9a1c-5d2e7b8f0a14", "phx_join", {}]
+```
+
+Setelah bergabung, matching mengirim push `active_orders` sekali, `{"orders": [job, …]}` berisi job penjual yang
+berstatus `pending`, `assigned` atau `picked_up`, yang terlama lebih dulu, lalu `order_updated` berisi job itu
+setiap kali salah satunya berubah
+([merchant_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/merchant_channel.ex#L45-L59),
+[dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L188-L195)).
+`status` sebuah job adalah `pending`, `assigned`, `picked_up`, `delivered` atau `cancelled`, dan `order_number`-nya
+adalah `order_number` task di antrean
+([merchant_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/merchant_channel.ex#L84-L98)):
+
+```json
+["1", null, "merchant:3f6c1a2e-8b4d-4e7f-9a1c-5d2e7b8f0a14", "order_updated", {
+  "id": 2731,
+  "order_number": "ORD-20261022-7F3A9C1B",
+  "awb_number": "KNX-20261022-JBSWY3DPEHPK3",
+  "status": "assigned",
+  "merchant_principal_id": "3f6c1a2e-8b4d-4e7f-9a1c-5d2e7b8f0a14",
+  "driver_id": 58,
+  "weight_kg": 1,
+  "pickup": {"latitude": -6.1912, "longitude": 106.8389},
+  "dropoff": {"latitude": -6.2297, "longitude": 106.8295},
+  "assigned_at": "2026-10-22T03:31:07.204118Z",
+  "delivered_at": null
+}]
+```
+
+Phoenix menutup koneksi 60 detik setelah terakhir menerima data dari client, jadi client mengirim `heartbeat`
+milik Phoenix di topic `phoenix` lebih sering dari itu
+([websocket.ex milik Phoenix](https://github.com/phoenixframework/phoenix/blob/a27a0320ec8bcc874a8ae93a85f15dfdd5e91e25/lib/phoenix/transports/websocket.ex#L26-L34),
+[socket.ex milik Phoenix](https://github.com/phoenixframework/phoenix/blob/a27a0320ec8bcc874a8ae93a85f15dfdd5e91e25/lib/phoenix/socket.ex#L705-L714)).
+Selain bergabung dan heartbeat, client tidak mengirim pesan apa pun di socket ini.

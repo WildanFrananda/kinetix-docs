@@ -1,0 +1,55 @@
+---
+title: Penerimaan stok
+description: Cara staf mencari merchant pemilik sebuah kiriman di catalog, lalu membuat bin dan membukukan barang masuk dan keluar bin itu di warehouse.
+sidebar:
+  order: 6
+sourceHash: "a7c281e1d1db"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Barang tiba di gudang atas nama sebuah merchant, dan staf membukukannya ke rak. Merchant itu menjual produknya di
+catalog, dan catalog baru mengizinkannya setelah admin menyetujui penjualnya
+([Pengajuan penjual](/id/apis/rest/backoffice/seller-applications/)). Setelah masuk seperti di
+[Masuk](/id/apis/rest/backoffice/sign-in/), admin mencari pemilik setiap SKU di catalog, membuat bin tempat barang
+disimpan, membukukan kiriman, dan kemudian menyesuaikan jumlahnya untuk barang rusak, hilang atau salah hitung. Ketiga
+endpoint warehouse butuh access token admin, yang diperiksa warehouse sendiri.
+
+## 1. Cari pemilik barang
+
+Baca produk dengan `sku` yang tertera di kiriman dan simpan `merchant_principal_id`-nya, yaitu principal identity milik
+merchant yang menjualnya, yang dikirim di langkah 3 dan 4. Harus merchant itu: warehouse menyimpan stok per merchant
+dan SKU
+([bin_stock_service_handler.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/a0eafe367f060d4f99aec06a07017d86b8bd046f/app/rpc/bin_stock_service_handler.rb#L32-L44)),
+dan catalog menanyakan stok milik merchant produk itu sendiri
+([product_service.py](https://github.com/WildanFrananda/kinetix-catalog-service/blob/95cabdb917607026a290b7d24e91b7121a0631d3/core/application/services/product_service.py#L92-L98)).
+Jawaban `404` berarti tidak ada produk dengan SKU itu yang sedang dijual.
+
+<RestEndpoint id="catalog.getProduct" />
+
+## 2. Buat bin
+
+Barang dibukukan ke sebuah bin lewat `bin_code`-nya, jadi bin itu harus ada lebih dulu. Bin dibuat sekali, bukan per
+kiriman: request yang sama dengan `bin_code` yang sudah ada justru memperbarui zona dan tingkat rak bin itu.
+
+<RestEndpoint id="warehouse.upsertBin" />
+
+## 3. Bukukan kiriman
+
+Kirim `bin_code` dari langkah 2, `sku`, jumlah unit yang dihitung sebagai `quantity`, `merchant_principal_id` dari
+langkah 1, dan `idempotency_key` yang dibuat client untuk kiriman yang satu ini dan disimpan sampai mendapat jawaban
+akhir. Key itu ada di body; endpoint ini tidak membaca header `Idempotency-Key`. Setelah timeout, `500` atau `503`,
+kirim body yang sama dengan key yang sama: kiriman yang sudah dibukukan menjawab `200` dengan `replayed: true` dan
+tidak dibukukan dua kali.
+
+<RestEndpoint id="warehouse.receiveStock" />
+
+## 4. Sesuaikan stok
+
+Ketika barang belakangan ditemukan rusak, hilang, salah hitung, dikembalikan ke pemasok atau kedaluwarsa, kirim
+perubahannya sebagai `quantity_delta` dengan `reason` yang sesuai, untuk `bin_code`, `sku` dan `merchant_principal_id`
+tempat stok itu dibukukan. Setiap penyesuaian memakai `idempotency_key` baru, dengan retry seperti di langkah 3.
+Pengurangan yang akan memakan unit yang sudah dicadangkan untuk pesanan menjawab `409` dengan `max_reduction`,
+pengurangan terbesar yang mungkin saat ini; pengurangan yang lebih kecil adalah penyesuaian baru dengan key baru.
+
+<RestEndpoint id="warehouse.adjustStock" />

@@ -115,6 +115,74 @@ export default defineConfig({
           },
           items: [
             {
+              label: "REST",
+              items: [
+                {
+                  slug: "apis/rest",
+                  label: "Overview",
+                  translations: {
+                    id: "Ikhtisar"
+                  }
+                },
+                {
+                  label: "Buyer app",
+                  translations: {
+                    id: "Aplikasi pembeli"
+                  },
+                  collapsed: true,
+                  items: [
+                    {
+                      autogenerate: {
+                        directory: "apis/rest/buyer-app"
+                      }
+                    }
+                  ]
+                },
+                {
+                  label: "Seller web",
+                  translations: {
+                    id: "Web penjual"
+                  },
+                  collapsed: true,
+                  items: [
+                    {
+                      autogenerate: {
+                        directory: "apis/rest/seller-web"
+                      }
+                    }
+                  ]
+                },
+                {
+                  label: "Courier app",
+                  translations: {
+                    id: "Aplikasi kurir"
+                  },
+                  collapsed: true,
+                  items: [
+                    {
+                      autogenerate: {
+                        directory: "apis/rest/courier-app"
+                      }
+                    }
+                  ]
+                },
+                {
+                  label: "Backoffice",
+                  translations: {
+                    id: "Backoffice"
+                  },
+                  collapsed: true,
+                  items: [
+                    {
+                      autogenerate: {
+                        directory: "apis/rest/backoffice"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
               label: "gRPC",
               items: [
                 {

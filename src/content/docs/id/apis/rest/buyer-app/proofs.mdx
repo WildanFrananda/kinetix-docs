@@ -1,0 +1,78 @@
+---
+title: Proof atas utang Kinetix
+description: Mengambil proof milik pembeli dari notary, atas saldo wallet yang terutang Kinetix dan atas riwayat sebuah order atau ulasan, serta mendaftarkan alamat wallet untuk statement di chain.
+sidebar:
+  order: 12
+sourceHash: "094ae242617d"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Notary membuat komitmen di chain atas apa yang terutang Kinetix kepada pemegang akunnya dan atas catatan
+order, pengantaran dan ulasan. Aplikasi pembeli mengambil proof milik pembeli sendiri dan menyerahkannya ke
+verifier, yang memeriksanya terhadap chain tanpa bertanya kepada Kinetix
+([Verifikasi](/id/verify/proof-of-liabilities/)). Bagi pembeli, akun yang terutang adalah saldo wallet-nya.
+Aplikasi mengambil proof saldo (langkah 1), bisa mendaftarkan alamat wallet untuk statement di chain
+(langkah 2 sampai 4), dan mengambil evidence sebuah order (langkah 5) atau sebuah ulasan (langkah 6).
+
+## 1. Mengambil proof saldo
+
+`{epoch}` adalah `latest`, atau nomor epoch sebelumnya. Setiap dokumen di `proofs` utuh sebagaimana adanya:
+aplikasi menyimpannya atau meneruskannya tanpa diubah ke verifier, seperti yang ada di
+[Memverifikasi proof of liabilities](/id/verify/proof-of-liabilities/). `proofs` yang kosong berarti Kinetix
+tidak berutang apa pun kepada pembeli pada epoch itu.
+
+<RestEndpoint id="notary.liabilityProofs" />
+
+## 2. Mengambil template registrasi
+
+Alamat wallet yang terdaftar bisa meminta statement atas akun pembeli kepada withholding court di chain
+([kegunaannya](/id/verify/what-the-proof-proves/#ketika-notary-berbohong-atau-diam)). Template-nya adalah
+typed data EIP-712 yang ditandatangani: `types`-nya, `domain` milik court, dan `message.principal`, principal
+pembeli.
+
+<RestEndpoint id="notary.registrationTemplate" />
+
+## 3. Menandatangani template di wallet
+
+Langkah ini terjadi di wallet Ethereum milik pembeli, bukan lewat API. Aplikasi menambahkan dua field ke
+`message` template, `holder` (alamat wallet itu sendiri) dan `issuedAt` (waktu Unix saat ini dalam detik), lalu
+meminta wallet menandatangani hasilnya sebagai typed data, dengan `eth_signTypedData_v4`:
+
+```json
+{
+  "holder": "0x657cb2e1d417fd966d350cdf7007bb5e30b04b02",
+  "principal": "0f8b6c1e-5a2d-4c3b-9e7f-1a2b3c4d5e6f",
+  "issuedAt": "1792638900"
+}
+```
+
+Notary menyusun ulang message itu dengan principal dari access token, memeriksa bahwa `issuedAt` masih baru,
+dan memulihkan penandatangannya, yang harus `holder`
+([registrations.go](https://github.com/WildanFrananda/kinetix-notary-service/blob/9fd693869d307376552916d84443899272f1d775/internal/httpapi/registrations.go#L64-L81),
+[registrar.go](https://github.com/WildanFrananda/kinetix-notary-service/blob/9fd693869d307376552916d84443899272f1d775/internal/registering/registrar.go#L209-L247)).
+
+## 4. Mendaftarkan alamat
+
+Dalam 5 menit sejak `issuedAt`, aplikasi mengirim `holder`, `issuedAt` sebagai string desimal, dan
+`signature` dari wallet. Aplikasi menyimpan setiap registrasi di jawabannya secara utuh: wallet menunjukkan
+`digest` dan `signature`-nya kepada court di chain.
+
+<RestEndpoint id="notary.register" />
+
+## 5. Mengambil evidence order
+
+`{order}` adalah `orderNumber` order itu, dari [checkout](/id/apis/rest/buyer-app/checkout/) atau
+[Order saya](/id/apis/rest/buyer-app/orders/), bukan `id`-nya. Selama `pending` di atas 0, sebagian catatan
+belum masuk batch final, dan aplikasi bertanya lagi nanti. Dokumen-dokumen di `proofs` diserahkan ke verifier
+di [Memverifikasi evidence](/id/verify/evidence/).
+
+<RestEndpoint id="notary.orderEvidence" />
+
+## 6. Mengambil evidence ulasan
+
+`{review}` adalah `id` yang dijawab review ketika pembeli menulis ulasan atau rating-nya
+([Mengulas order](/id/apis/rest/buyer-app/reviews/)). `pending` bernilai `1` sampai catatannya masuk batch
+final. Dokumennya diserahkan ke verifier yang sama seperti di langkah 5.
+
+<RestEndpoint id="notary.reviewEvidence" />

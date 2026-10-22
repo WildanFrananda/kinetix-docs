@@ -1,0 +1,163 @@
+---
+title: REST
+description: Setiap endpoint HTTP yang dipanggil aplikasi Kinetix, dikelompokkan per aplikasi dan per fitur, lengkap dengan request dan semua jawabannya, diverifikasi terhadap rilis yang berjalan di produksi.
+sidebar:
+  label: Ikhtisar
+  order: 0
+sourceHash: "94733e6caff8"
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+import RestReleases from "../../../../../components/RestReleases.astro";
+import RestServiceAnswers from "../../../../../components/RestServiceAnswers.astro";
+
+Client menjangkau Kinetix lewat HTTP melalui satu gateway, Kong. Referensi ini mendaftar setiap endpoint di
+belakangnya, dikelompokkan menurut aplikasi yang memanggilnya — aplikasi pembeli, web penjual, aplikasi kurir
+dan backoffice — lalu, di dalam tiap aplikasi, menurut fitur, sesuai urutan aplikasi itu melakukan panggilan.
+Setiap endpoint menampilkan request-nya, field-nya dan semua jawaban yang bisa diberikannya, masing-masing
+tertaut ke baris kode yang menghasilkannya.
+
+Semua yang ada di sini dibaca dari kode rilis yang berjalan di produksi:
+
+<RestReleases />
+
+Antarservice saling bicara lewat gRPC, yang punya [referensinya sendiri](/id/apis/grpc/). Halaman ini membahas
+hal yang sama untuk semua endpoint: alamat, token, request id, browser, batas, dan jawaban yang bukan milik
+satu endpoint tertentu.
+
+## Alamat dan transport
+
+Semua endpoint dilayani oleh satu host lewat HTTPS. Contoh-contohnya memakai `api.kinetix.example`, sebuah
+placeholder:
+
+```http
+POST /api/v1/auth/login HTTP/1.1
+Host: api.kinetix.example
+Content-Type: application/json
+```
+
+Gateway sama sekali tidak punya listener HTTP biasa, jadi token tidak pernah lewat tanpa enkripsi
+([Dockerfile](https://github.com/WildanFrananda/kinetix-api-gateway/blob/2b38bcc9a795dac8a6a3088b6d67f297fcfa9f5c/Dockerfile#L58-L66)).
+Setiap path diawali `/api/v1/`. Satu-satunya pengecualian adalah upload file: client mengirim file ke host
+storage tersendiri, di URL yang sudah ditandatangani service untuknya. Contoh-contohnya menulis host itu sebagai
+`storage.kinetix.example`.
+
+## Token
+
+Semua token diterbitkan identity. Masuk, registrasi, atau menyelesaikan challenge dua faktor menghasilkan
+sepasang token: access token yang dikirim bersama setiap request, dan refresh token yang ditukar dengan
+pasangan baru ketika access token kedaluwarsa. Keduanya JWT yang ditandatangani dengan RS256. Endpoint yang
+butuh access token menerimanya di satu header:
+
+```http
+Authorization: Bearer <access token>
+```
+
+Token diperiksa di salah satu dari dua tempat:
+
+- **Oleh Kong, lalu oleh service.** Pada route akun milik identity (`/api/v1/auth`, `/api/v1/users`,
+  `/api/v1/sellers`, `/api/v1/couriers`), matching, payment, proof milik notary dan device milik notification,
+  Kong memeriksa tanda tangan dan masa berlakunya sebelum request sampai ke service. Token yang ditolaknya
+  mendapat salah satu [jawaban Kong](#jawaban-kong). Service lalu memeriksa sisanya: audience, jenis token,
+  role dan pemiliknya.
+- **Oleh service saja.** Kong meneruskan request ke catalog, search, pricing, order, review dan warehouse tanpa
+  melihat token. Masing-masing memverifikasi token sendiri di mana pun token diperlukan, dan melayani endpoint
+  publiknya tanpa token.
+
+Baris **Akses** di setiap endpoint menyebutkan mana yang berlaku, dan siapa yang boleh memanggilnya.
+
+Public key yang memverifikasi setiap token diterbitkan oleh identity. Tidak ada aplikasi yang membutuhkannya;
+service atau pihak ketiga yang memeriksa sendiri token identity membacanya di sini:
+
+<RestEndpoint id="identity.jwks" />
+
+## Request id
+
+Kong memberi setiap request header `X-Request-Id`: milik client sendiri bila client mengirimnya, atau UUID
+baru. Service menerimanya, dan Kong mengembalikannya di response
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/2b38bcc9a795dac8a6a3088b6d67f297fcfa9f5c/config/gateway.pkl#L374-L381)).
+Kirim id sendiri bila nanti ingin mencari request itu di log. Beberapa service mengulangnya di body error,
+misalnya `traceId` milik identity. Body error milik Kong sendiri membawa nilai lain, `request_id`, yaitu id
+internal Kong untuk request itu. Access log gateway mencatat keduanya, dan mencatat path tanpa query string-nya
+([access_log.conf](https://github.com/WildanFrananda/kinetix-api-gateway/blob/2b38bcc9a795dac8a6a3088b6d67f297fcfa9f5c/config/access_log.conf#L1-L8)).
+
+## Browser
+
+Kong menjawab sendiri request preflight CORS dari browser, untuk origin yang dikonfigurasi di produksi, tanpa
+memeriksa token. Kong mengizinkan method `GET`, `POST`, `PUT`, `PATCH`, `DELETE` dan `OPTIONS`; header request
+`Accept`, `Authorization`, `Content-Type`, `Idempotency-Key`, `X-Request-Id` dan `X-Requested-With`; dan
+membuka header response `X-Request-Id`, `Allow`, `Idempotent-Replayed`, `Location` dan `Retry-After` untuk
+dibaca script. Browser boleh menyimpan hasil preflight selama satu jam. Kong tidak mengizinkan request
+ber-credential, jadi browser tidak mengirim cookie; autentikasinya hanya bearer token
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/2b38bcc9a795dac8a6a3088b6d67f297fcfa9f5c/config/gateway.pkl#L360-L373)).
+
+## Batas
+
+- **100 request per menit** dari satu alamat client, dihitung di semua route. Route notifikasi Midtrans punya
+  batas sendiri, 600 per menit. Lewat dari batas itu, Kong menjawab `429` dengan `Retry-After`.
+- **16 MB** untuk upload file ke host storage.
+- Beberapa endpoint punya batas sendiri yang lebih ketat, ditetapkan oleh service-nya, misalnya lima percobaan
+  masuk per menit. Batas itu tertulis di endpoint-nya.
+
+## Jawaban Kong
+
+Kong menjawab hal-hal ini sendiri, sebelum atau sebagai ganti sebuah service. Jawaban ini bisa datang dari
+endpoint mana pun, jadi endpoint tidak mengulangnya. Jawaban `401` hanya datang dari route yang token-nya
+diperiksa Kong, dan `413` hanya dari host storage.
+
+<RestServiceAnswers service="gateway" />
+
+Kong juga menjawab satu endpoint miliknya sendiri, yang tidak dibutuhkan aplikasi mana pun. Endpoint itu
+dicantumkan agar daftarnya lengkap:
+
+<RestEndpoint id="gateway.health" />
+
+## Jawaban yang bisa diterima request apa pun ke sebuah service
+
+Setiap service punya jawaban yang tidak bergantung pada endpoint: kegagalan yang tidak diduganya, database
+yang tidak bisa dijangkaunya, body yang tidak bisa di-parse-nya, token yang ditolaknya. Jawaban-jawaban itu
+didaftar sekali per service di sini, dan setiap endpoint menautkan ke daftar milik service-nya.
+
+### identity
+
+<RestServiceAnswers service="identity" />
+
+### catalog
+
+<RestServiceAnswers service="catalog" />
+
+### search
+
+<RestServiceAnswers service="search" />
+
+### pricing
+
+<RestServiceAnswers service="pricing" />
+
+### order
+
+<RestServiceAnswers service="order" />
+
+### review
+
+<RestServiceAnswers service="review" />
+
+### warehouse
+
+<RestServiceAnswers service="warehouse" />
+
+### matching
+
+<RestServiceAnswers service="matching" />
+
+### payment
+
+<RestServiceAnswers service="payment" />
+
+### notary
+
+<RestServiceAnswers service="notary" />
+
+### notification
+
+<RestServiceAnswers service="notification" />

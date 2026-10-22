@@ -1,0 +1,76 @@
+---
+title: Menjelajah katalog
+description: Menampilkan kategori, produk, flash sale dan diskon sebuah produk, serta ulasan produk dan merchant-nya, dari catalog, pricing dan review.
+sidebar:
+  order: 5
+sourceHash: "04fb4871bc91"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Halaman produk di aplikasi pembeli membaca catalog, pricing dan review, dan tidak satu pun panggilan ini butuh
+token, jadi semuanya bisa dipakai sebelum pembeli masuk. Aplikasi mendaftar kategori (langkah 1) dan produk di
+salah satunya (langkah 2), membuka sebuah produk (langkah 3), menambahkan flash sale-nya dan diskon yang
+berlaku (langkah 4 dan 5), lalu menampilkan ulasan produk itu dan ulasan merchant-nya (langkah 6 dan 7).
+Setiap harga yang ditampilkan di sini hanya perkiraan: [checkout](/id/apis/rest/buyer-app/checkout/)
+menghitung ulang harga keranjang.
+
+## 1. Mendaftar kategori
+
+Satu jawaban memuat semua kategori. Aplikasi menampilkan setiap `name`, dan menyimpan `slug`-nya: slug itu
+memfilter produk di langkah 2, dan `category` milik search menerima nilai yang sama.
+
+<RestEndpoint id="catalog.listCategories" />
+
+## 2. Mendaftar produk
+
+`category` adalah sebuah `slug` dari langkah 1; tanpanya daftar mencakup semua produk yang dijual. Aplikasi
+meminta `page` berikutnya selama `page` × `page_size` masih di bawah `count`. `sku` di setiap hasil membuka
+produknya di langkah 3.
+
+<RestEndpoint id="catalog.listProducts" />
+
+## 3. Membaca satu produk
+
+`{sku}` berasal dari langkah 2, atau dari `id` sebuah hit pencarian ([Pencarian](/id/apis/rest/buyer-app/search/)).
+Jawabannya menambahkan deskripsi dan stok yang dipegang warehouse untuk produk itu. Aplikasi menyimpan `sku`
+untuk langkah 4 dan 6 serta untuk [keranjang](/id/apis/rest/buyer-app/cart/), dan `merchant_principal_id`
+untuk langkah 7.
+
+<RestEndpoint id="catalog.getProduct" />
+
+## 4. Membaca flash sale produk
+
+`sku` yang sama dengan langkah 3. Body `null` berarti tidak ada sale yang sedang buka untuk produk itu.
+Checkout memakai harga flash hanya bila harganya di bawah harga produk, dan unit itu lalu tidak mendapat
+diskon
+([pricing_service.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/d3020a29ca7ac6fcc2d5a7e472a6b234cc783d0d/src/services/pricing_service.rs#L157-L191)).
+
+<RestEndpoint id="pricing.getFlashSale" />
+
+## 5. Mendaftar diskon yang berlaku
+
+Satu daftar tanpa halaman berisi semua diskon yang berlaku, yang dicocokkan aplikasi sendiri ke produk.
+Sebuah diskon berlaku untuk sebuah produk bila `target_product_id`-nya adalah `sku` produk itu,
+`target_category_id`-nya adalah `category_slug` produk itu, atau diskon itu tidak menyebut keduanya
+([default_discount_evaluator.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/d3020a29ca7ac6fcc2d5a7e472a6b234cc783d0d/src/traits/default_discount_evaluator.rs#L10-L25),
+[CatalogProductDirectory.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a9473a17c546faa7e41be843343b0bd882435964/Infrastructure/Grpc/CatalogProductDirectory.cs#L55-L64)),
+dan `merchant_principal_id`-nya `null` atau merchant produk itu
+([pricing_service.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/d3020a29ca7ac6fcc2d5a7e472a6b234cc783d0d/src/services/pricing_service.rs#L137-L146)).
+
+<RestEndpoint id="pricing.listDiscounts" />
+
+## 6. Membaca ulasan produk
+
+`{productId}` adalah `sku` produk, bukan `id` numerik milik catalog: review menyimpan ulasannya berdasarkan
+SKU, dan key yang tidak dikenalnya dijawab dengan daftar kosong, bukan error. Aplikasi meminta `page`
+berikutnya sampai `last_page`.
+
+<RestEndpoint id="review.listProductReviews" />
+
+## 7. Membaca ulasan merchant
+
+`{merchantPrincipalId}` adalah `merchant_principal_id` dari langkah 3. Jawabannya mencakup semua produk
+merchant itu, dengan halaman seperti di langkah 6.
+
+<RestEndpoint id="review.listMerchantReviews" />

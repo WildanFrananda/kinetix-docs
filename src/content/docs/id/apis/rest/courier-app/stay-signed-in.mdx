@@ -1,0 +1,75 @@
+---
+title: Tetap masuk dan keluar
+description: Sesi kurir dijaga dengan menukar refresh token di identity, dan diakhiri dengan berhenti bertugas di driver socket milik matching, menutupnya, lalu keluar di identity.
+sidebar:
+  order: 3
+sourceHash: "a0d093b440ac"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Access token berlaku selama `expiresIn` detik sejak jawaban yang menerbitkannya. Kurir yang sudah masuk menjaga
+sesinya dengan menukar refresh token dengan pasangan baru, dan mengakhirinya dengan berhenti bertugas, menutup
+driver socket, lalu keluar di identity. Urutan panggilannya: refresh setiap kali dibutuhkan, lalu, untuk
+mengakhiri sesi, `status` `offline` di socket, menutup socket, dan keluar. Sesinya berasal dari
+[masuk](/id/apis/rest/courier-app/sign-in/) atau [registrasi](/id/apis/rest/courier-app/register/).
+
+## 1. Refresh pasangan token
+
+Kirim refresh token dari pasangan terakhir. Aplikasi kurir melakukan refresh ketika sebuah token dibutuhkan dan
+sudah kedaluwarsa atau ditolak, tidak pernah dengan timer:
+
+- sebelum membuka driver socket, bila waktu kedaluwarsa yang tersimpan, yaitu waktu jawaban ditambah
+  `expiresIn`, sudah lewat
+  ([session_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/session_repository_impl.dart#L30-L43));
+- saat aplikasi dibuka, bila `GET /api/v1/matching/driver/me` menolak access token-nya
+  ([#L45-L67](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/session_repository_impl.dart#L45-L67));
+- ketika driver socket menolak access token-nya, lalu tersambung lagi dengan token yang baru
+  ([connection_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/connection_repository_impl.dart#L88-L124));
+- ketika permintaan keluar di langkah 3 dijawab `401`.
+
+Driver socket membaca access token saat dibuka
+([driver_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_socket.ex#L27-L36)),
+jadi setiap koneksi butuh token yang masih berlaku. Aplikasi kurir mengirim satu refresh pada satu waktu untuk
+seluruh aplikasi, dan menyimpan pasangan baru dalam satu kali tulis sebelum apa pun memakainya
+([session_renewer.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/services/auth/session_renewer.dart#L18-L46)).
+Jawaban `400` atau `401` mengakhiri sesi: aplikasi menghapus pasangan yang tersimpan, dan kurir masuk lagi
+([#L47-L55](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/services/auth/session_renewer.dart#L47-L55)).
+
+<RestEndpoint id="identity.refresh" />
+
+## 2. Berhenti bertugas dan tutup socket
+
+Bukan panggilan HTTP. Selama driver socket tersambung, push `status` dengan `offline` di channel kurir:
+
+```json
+["1", "9", "driver:17", "status", {"status": "offline"}]
+```
+
+matching menjawab dengan status yang berlaku, dan berhenti menawarkan job kepada kurir itu, karena dispatch
+otomatis hanya mengambil kurir yang `online`
+([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_channel.ex#L96-L105),
+[driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/tracking/driver_state.ex#L221-L223),
+[dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L529-L537)):
+
+```json
+["1", "9", "driver:17", "phx_reply", {"status": "ok", "response": {"status": "offline"}}]
+```
+
+Lalu tutup socket-nya. Menutupnya juga membuat kurir berhenti bertugas: ketika channel berakhir, matching
+mengubah status kurir menjadi `offline`
+([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/tracking/driver_state.ex#L258-L261),
+[#L290-L293](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/tracking/driver_state.ex#L290-L293)).
+Aplikasi kurir melakukan push `status` `offline` bila sedang tersambung, lalu menutup socket
+([tracking_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/viewmodels/tracking_view_model.dart#L91-L96),
+[duty_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/duty_repository_impl.dart#L104-L116)).
+
+## 3. Keluar
+
+Kirim access token di `Authorization` dan refresh token dari pasangan saat ini di body, supaya hanya sesi ini
+yang berakhir. Aplikasi kurir menunggu jawaban paling lama lima detik dan menghapus token yang tersimpan apa pun
+jawabannya; bila dijawab `401`, aplikasi melakukan refresh sekali (langkah 1) lalu keluar lagi dengan pasangan
+yang baru
+([session_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/session_repository_impl.dart#L179-L227)).
+
+<RestEndpoint id="identity.logout" />

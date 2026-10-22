@@ -1,0 +1,40 @@
+---
+title: Review an order
+description: Review each product of a delivered order and rate the courier who delivered it, at review, which reads the order from order.
+sidebar:
+  order: 11
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+Once an order is delivered, its buyer reviews each product in it and rates the courier who delivered it.
+review reads the order from order itself, so a request names only the order and the product; the merchant
+and the courier come from the order
+([GrpcOrderClient.php](https://github.com/WildanFrananda/kinetix-review-service/blob/173ec20a938bc56ec4df193f5e763dae9901d0a9/app/Clients/GrpcOrderClient.php#L144-L158)).
+A buyer app reads the order (step 1), reviews its products (step 2) and rates the courier (step 3). Steps 2
+and 3 do not depend on each other.
+
+## 1. Read the order
+
+The app offers reviews only when `status` is `DELIVERED` or `COMPLETED`, the two statuses review accepts
+([GrpcOrderClient.php](https://github.com/WildanFrananda/kinetix-review-service/blob/173ec20a938bc56ec4df193f5e763dae9901d0a9/app/Clients/GrpcOrderClient.php#L32-L35),
+[ProductReviewService.php](https://github.com/WildanFrananda/kinetix-review-service/blob/173ec20a938bc56ec4df193f5e763dae9901d0a9/app/Services/ProductReviewService.php#L33-L35)).
+It keeps the order's `id`, each line's `productId`, and `driverPrincipalId`.
+
+<RestEndpoint id="order.getOrder" />
+
+## 2. Review each product
+
+One request per line of the order: `order_id` is the order's `id` (not its `orderNumber`), and `product_id`
+the line's `productId`. A `409` means the line already has a review, so the app shows it as done. From the
+`201` the app keeps the review's `id`, which its [proof](/apis/rest/buyer-app/proofs/#6-fetch-a-reviews-evidence)
+takes.
+
+<RestEndpoint id="review.createProductReview" />
+
+## 3. Rate the courier
+
+One request per order, and only when step 1 showed a `driverPrincipalId`: `order_id` is the order's `id`. A
+`409` means the rating is already done. The app keeps the rating's `id` from the `201`, as in step 2.
+
+<RestEndpoint id="review.createDriverRating" />

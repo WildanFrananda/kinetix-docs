@@ -1,0 +1,55 @@
+---
+title: Become a seller
+description: How an account applies to sell, waits for an admin's decision and gets the seller role, all with identity.
+sidebar:
+  order: 2
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+Nobody signs up as a seller. An account registers as a `customer`, files an application to sell, and an admin
+approves it in the backoffice; only then is the account a `seller`. The calls are a registration, the
+application, reads of its status until the decision, and a refresh that brings the `seller` role into the
+access token. An account that already buys on Kinetix skips step 1 and signs in instead
+([Sign in](/apis/rest/seller-web/sign-in/)).
+
+## 1. Create an account
+
+A new seller registers with an email and a password. The answer is a session, as a sign-in's is: keep the token
+pair, and `user.id`, which steps 2 and 3 take as `id`. `user.role` is `customer`.
+
+<RestEndpoint id="identity.register" />
+
+## 2. File the application
+
+Send the store's name, its business registration number, its tax id and its address as the seller enters them,
+with `id` set to `user.id`. The application then waits as `pending` for an admin.
+
+<RestEndpoint id="identity.onboardSeller" />
+
+## 3. Follow the application
+
+Read the application with the same `id` until `status` is no longer `pending`: `verified` goes on to step 5,
+`rejected` to the end of step 4.
+
+<RestEndpoint id="identity.getSellerApplication" />
+
+## 4. An admin decides
+
+An admin reviews the pending applications in the backoffice and approves or rejects each one
+([Seller applications](/apis/rest/backoffice/seller-applications/)). Approval makes the account's merchant
+`verified`, sets the account's role to `seller` and marks the application `verified`; rejection only marks the
+application `rejected`
+([seller_onboarding_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/seller_onboarding_usecase.service.ts#L127-L195)).
+After a rejection, the seller corrects the application and files it again with step 2, which puts it back to
+`pending`, and step 3 follows it again.
+
+## 5. Refresh the session
+
+The access token the account holds still says `customer`: a token carries the role the account had when it was
+issued
+([token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/token.service.ts#L74-L90)).
+A refresh reads the role from the account, so the new pair carries `seller`, and the seller endpoints of
+warehouse, pricing and payment accept it. [Store set-up](/apis/rest/seller-web/store-setup/) comes next.
+
+<RestEndpoint id="identity.refresh" />

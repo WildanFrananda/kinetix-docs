@@ -1,0 +1,29 @@
+---
+title: Pendapatan dan ulasan
+description: Cara penjual membaca dompet merchant-nya di payment dan ulasan yang ditinggalkan pembeli untuk produknya di review.
+sidebar:
+  order: 8
+sourceHash: "1e88c0295652"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Penjual membaca hasil penjualannya dari payment dan pendapat pembeli tentang produknya dari review. Dompetnya
+ditemukan lewat access token, yang harus ber-role `seller`; ulasannya ditemukan lewat `user.principalId` milik
+penjual dari [Masuk](/id/apis/rest/seller-web/sign-in/), dan tidak memerlukan token.
+
+## 1. Membaca dompet
+
+Dengan access token penjual. Payment menahan bagian penjual dari setiap pesanan yang dibayar dan melepaskannya
+saat pesanan itu selesai; jawabannya menampilkan kedua jumlah itu. Saldo adalah satu-satunya yang ditampilkan
+API REST payment kepada penjual: tidak ada endpoint yang mendaftar pembayaran di baliknya
+([WalletController.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/9bb08c58f0dd13d8ee3fe2a00e17239632286096/modules/api/src/main/java/com/kinetix/payment/api/controller/WalletController.java#L21-L84)).
+
+<RestEndpoint id="payment.merchantBalance" />
+
+## 2. Membaca ulasan toko
+
+`merchantPrincipalId` adalah `user.principalId` milik penjual. Minta `page` berikutnya selama nilainya masih di
+bawah `last_page`.
+
+<RestEndpoint id="review.listMerchantReviews" />

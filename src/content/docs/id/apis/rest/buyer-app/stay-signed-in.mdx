@@ -1,0 +1,49 @@
+---
+title: Tetap masuk dan keluar
+description: Menukar refresh token dengan pasangan baru ketika access token kedaluwarsa, dan mengakhiri sesi di identity ketika pembeli keluar.
+sidebar:
+  order: 2
+sourceHash: "a1fa7c4acf1b"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Access token kedaluwarsa `expiresIn` detik setelah identity menerbitkannya. Aplikasi pembeli yang memegang
+sesi dari [Daftar dan masuk](/id/apis/rest/buyer-app/sign-up-and-sign-in/) menjaganya tetap hidup dengan
+menukar refresh token-nya (langkah 1) setiap kali access token habis. Ketika pembeli keluar, aplikasi lebih
+dulu menghentikan push notification ke ponselnya (langkah 2), lalu mengakhiri sesi di identity (langkah 3).
+Kedua token dijelaskan di [ikhtisar](/id/apis/rest/#token).
+
+## 1. Refresh pasangan token
+
+Aplikasi melakukan refresh begitu `expiresIn` detik sudah lewat, atau ketika sebuah request ditolak dengan
+`401` karena access token kedaluwarsa, lalu mengulang request itu dengan access token yang baru. Pada `200`,
+aplikasi mengganti kedua token yang tersimpan sekaligus. Refresh token berotasi: setiap penukaran menghabiskan
+token yang dikirim, dan token yang sudah terpakai bila dikirim lagi dianggap dicuri, sehingga seluruh sesi
+berakhir
+([token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/token.service.ts#L185-L231)).
+Karena itu aplikasi tidak pernah mengirim refresh token dua kali, dan tidak pernah dalam dua request
+sekaligus: request yang mendapati access token kedaluwarsa selagi refresh sedang berjalan menunggu refresh
+itu, bukan memulai refresh sendiri. `401` di sini berarti sesi sudah berakhir: pembeli masuk lagi.
+
+<RestEndpoint id="identity.refresh" />
+
+## 2. Melupakan ponsel untuk push
+
+Bila aplikasi pernah mendaftarkan ponsel untuk push notification, aplikasi melupakan ponsel itu sekarang,
+selagi masih memegang access token yang dibutuhkan panggilan itu: langkah 5 di
+[Push notification](/id/apis/rest/buyer-app/push-notifications/#5-melupakan-ponsel). Aplikasi yang tidak
+pernah mendaftarkan ponselnya langsung ke langkah 3.
+
+## 3. Keluar
+
+Aplikasi mengirim access token-nya dan, di body, `refreshToken` milik sesi ini. identity lalu mencabut access
+token itu dan mengakhiri sesi ini saja. Tanpa `refreshToken`, identity mengakhiri semua sesi akun itu, di
+semua perangkat tempat pembeli masuk
+([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/auth_usecase.service.ts#L130-L141),
+[token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/token.service.ts#L233-L240)).
+Kong memeriksa access token di route ini, jadi token yang kedaluwarsa ditolak sebelum sampai ke identity:
+aplikasi melakukan refresh (langkah 1) lalu keluar dengan pasangan yang baru. Setelah `204`, aplikasi membuang
+kedua token.
+
+<RestEndpoint id="identity.logout" />

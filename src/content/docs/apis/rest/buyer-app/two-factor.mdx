@@ -1,0 +1,38 @@
+---
+title: Two-factor authentication
+description: Turn on a second factor for the buyer's own account with an authenticator app, and turn it off again, at identity.
+sidebar:
+  order: 3
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+A signed-in buyer turns on two-factor authentication for its own account in two calls, a new secret
+(step 1) and a code that proves the authenticator app holds it (step 2), and can turn it off later (step 3).
+`{id}` in every path is the buyer's account id: `user.id` from the
+[sign-in](/apis/rest/buyer-app/sign-up-and-sign-in/) answer, or `userId` from `GET /api/v1/auth/me`. Once it is
+on, every sign-in answers a challenge first, which the app answers as in
+[step 3 of Sign up and sign in](/apis/rest/buyer-app/sign-up-and-sign-in/#3-answer-the-two-factor-challenge).
+
+## 1. Get a new secret
+
+The answer's `qrCodeUrl` is an `otpauth://` URI: the app shows it as a QR code for the authenticator app to
+scan, and shows `twoFactorSecret` for a buyer who types it in instead. Nothing is in force yet. Asking again
+before step 2 replaces the secret, so the authenticator must hold the latest one.
+
+<RestEndpoint id="identity.setupTwoFactor" />
+
+## 2. Confirm with a code
+
+The buyer types the six digits the authenticator app shows now. A `200` with `enabled: true` puts the second
+factor in force for every later sign-in. This session keeps its tokens; every other session of the account
+ends, and those devices sign in again.
+
+<RestEndpoint id="identity.enableTwoFactor" />
+
+## 3. Turn it off
+
+The buyer types a current code from the same authenticator app. A `200` with `enabled: false` deletes the
+secret, and later sign-ins answer a session at once. As in step 2, every other session of the account ends.
+
+<RestEndpoint id="identity.disableTwoFactor" />

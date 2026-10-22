@@ -1,0 +1,25 @@
+---
+import { restAnswers } from "../site/rest/rest_answers";
+import type { RestServiceAnswersProps } from "../site/types/rest_service_answers_props.type";
+import RestCaseBlock from "./RestCaseBlock.astro";
+
+type Props = RestServiceAnswersProps;
+
+const { service } = Astro.props;
+const answers = restAnswers[service];
+
+if (answers.length === 0) {
+  throw new Error(`no common answers recorded for ${service}`);
+}
+---
+
+<div class="rest-answers not-content" id={`${service}-answers`}>
+  {answers.map((entry) => <RestCaseBlock entry={entry} />)}
+</div>
+
+<style>
+  .rest-answers {
+    margin: 1rem 0 1.5rem;
+    border-bottom: 1px solid var(--kx-rule);
+  }
+</style>

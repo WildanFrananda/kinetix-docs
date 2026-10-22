@@ -1,0 +1,31 @@
+---
+title: Earnings and ratings
+description: A courier reads the driver wallet from payment, where delivery fees are held and released, and the ratings buyers gave from review; the courier app does not call either yet.
+sidebar:
+  order: 5
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+Two reads a courier client makes about the courier's own account: the driver wallet in payment, where delivery
+fees are held and then released to the courier, and the ratings buyers gave the courier in review. Neither
+depends on the other, and both follow [signing in](/apis/rest/courier-app/sign-in/). The courier app at commit
+`86dd282` calls neither: its only HTTP requests to Kinetix are the identity and matching calls of its API client
+([driver_api.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/services/auth/driver_api.dart#L8-L36))
+and the photo upload of [Go on duty and deliver](/apis/rest/courier-app/deliver/).
+
+## 1. Read the driver wallet
+
+Send an access token whose role is `courier`. A token issued before the admin approved the courier still says
+`customer` and gets `403`; [refresh](/apis/rest/courier-app/register/) once after approval. The wallet is always
+the caller's own, so the path names no one.
+
+<RestEndpoint id="payment.driverBalance" />
+
+## 2. List the courier's ratings
+
+The path takes the courier's principal id: `user.principalId` in the answer to signing in, to registration or
+to a refresh. The listing is public and needs no token. Ask for the next page with `page` while it is below
+`last_page`.
+
+<RestEndpoint id="review.listDriverRatings" />

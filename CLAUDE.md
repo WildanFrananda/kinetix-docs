@@ -155,6 +155,39 @@ overview, in English and Indonesian. Each Indonesian page is stamped with the ha
   1.6.0 added `ConfidentialProposal` to the watch's `EpochProposal`, and 1.7.0 added
   `TEMPLATE_LIABILITY_STATEMENT = 7`.
 
+## REST reference
+
+`apis/rest/` lists every HTTP endpoint behind the gateway, written by hand from the code of the releases
+production runs (since 2026-10-22, at the user's request: one section per application, each split by feature,
+each feature as the calls in the order the application makes them, with every request and response case).
+
+- **Data, written once.** Each service's endpoints are typed data in `src/site/rest/endpoints/<service>.ts`
+  (`RestEndpoint`, types in `src/site/types/rest_*.type.ts`): method, public path, access, request fields, an
+  example request, and every case — status, condition, exact body — each with a permalink to the lines that
+  produce it. The same file exports `<service>Answers`, the answers any request to that service can get
+  (unhandled failure, database down, the service's own token refusals), which the overview lists once.
+  Kong's own answers are `gatewayAnswers` in `endpoints/gateway.ts`, linked to Kong's source at the version
+  the gateway image runs (`src/site/rest/kong_release.ts`).
+- **Text in its own catalogue.** Endpoint prose lives in `src/catalogue/rest/{en,id}/<service>.json`, keys
+  `rest.<service>.*`; component labels in `common.json`. It is apart from the main catalogue because it is
+  several times its size. `tests/rest_catalogue.test.ts` refuses a key missing in either language, a blank
+  entry, a key outside its file's prefix, an unused key, and an Indonesian text whose code spans differ from
+  the English.
+- **Pages carry the order, data carries the facts.** A feature page is MDX: one `##` per step, the prose that
+  says why the step comes there and which values it takes from earlier answers, and
+  `<RestEndpoint id="…" />`. An endpoint used by several applications (sign-in is in all four) is rendered
+  from the same data on each page. `tests/rest_pages.test.ts` refuses an unknown id, an endpoint on no page,
+  and an Indonesian page whose endpoints differ from its English twin's.
+- **Pinned.** `src/site/rest/rest_releases.ts` holds each service's production tag and commit, read from the
+  deploy pins. `tests/rest_endpoints.test.ts` refuses a link to any other commit, a path that no gateway
+  route serves, an example request that does not match its path, and cases out of status order. Moving a
+  service to a new release means re-reading every case of its endpoints at the new commit, then the pin.
+- **No open defect.** Writing the inventory for this section in session 32 found about 130 defects; the
+  section waited until they were fixed and deployed (2026-10-22). A case that is wrong is never written as
+  behaviour: it goes to the internal register, is fixed, and is documented once deployed.
+- **Examples** use `api.kinetix.example` and `storage.kinetix.example`, `example.com` addresses and invented
+  ids. Tokens are written `eyJ…<claims>.<signature>`.
+
 ## Interactive diagrams
 
 Interactive, animated diagrams are the reason this site is built on Starlight. They are Svelte 5

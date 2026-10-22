@@ -1,0 +1,65 @@
+---
+title: Promosi
+description: Cara penjual membuat diskon, voucher dan flash sale di pricing lalu membacanya kembali.
+sidebar:
+  order: 5
+sourceHash: "ddc607879ca5"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Promosi milik penjual ada di pricing: diskon atas harga satuan, voucher yang diketik pembeli saat checkout, dan
+flash sale untuk satu produk. Masing-masing dibuat, lalu dibaca kembali; setelah dibuat, promosi tidak bisa
+diubah atau diakhiri lebih awal. Setiap pembuatan memerlukan access token dengan role `seller`, untuk merchant
+yang diizinkan identity berdagang, dan header `Idempotency-Key` dengan key baru untuk setiap promosi. Setelah
+timeout, `500` atau `503`, client mengirim body yang sama lagi dengan key yang sama: pricing mencatat key itu
+dalam transaksi yang sama dengan promosinya, jadi satu key membuat paling banyak satu promosi
+([discount_repository.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/d3020a29ca7ac6fcc2d5a7e472a6b234cc783d0d/src/repositories/discount_repository.rs#L45-L98),
+[promotion_creation_ledger.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/d3020a29ca7ac6fcc2d5a7e472a6b234cc783d0d/src/repositories/promotion_creation_ledger.rs#L21-L62)).
+Browser boleh mengirim `Idempotency-Key` dan membaca `Idempotent-Replayed` ([Browser](/id/apis/rest/#browser)).
+
+## 1. Membuat diskon
+
+Diskon memotong persentase atau jumlah tetap dari harga satuan di antara `start_time` dan `end_time`. Sasarannya
+satu produk milik penjual lewat SKU-nya di `target_product_id`
+([Produk](/id/apis/rest/seller-web/products/), langkah 2), satu kategori lewat `slug`-nya di
+`target_category_id` (Produk, langkah 1), atau, tanpa keduanya, semua produk milik penjual. Simpan `id`.
+
+<RestEndpoint id="pricing.createDiscount" />
+
+## 2. Membaca diskon yang berlaku
+
+Daftarnya memuat setiap diskon yang berlaku: milik platform dan milik setiap merchant. Diskon milik penjual
+sendiri membawa `user.principalId`-nya di `merchant_principal_id`
+([identity_grpc.controller.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/adapters/controllers/identity_grpc.controller.ts#L240-L242)).
+Diskon hanya tercantum di antara `start_time` dan `end_time`-nya, jadi diskon yang baru mulai nanti belum
+tercantum.
+
+<RestEndpoint id="pricing.listDiscounts" />
+
+## 3. Membuat voucher
+
+Penjual memilih `code` yang akan diketik pembeli dan syarat voucher-nya. Voucher itu hanya berlaku untuk
+keranjang berisi barang milik penjual. Simpan `code` seperti yang diberikan jawabannya, dalam huruf besar.
+
+<RestEndpoint id="pricing.createVoucher" />
+
+## 4. Membaca voucher
+
+Lewat `code` dari langkah 3, dengan access token penjual, supaya jawabannya memuat `quota` dan `used_count`.
+
+<RestEndpoint id="pricing.getVoucher" />
+
+## 5. Membuat flash sale
+
+Flash sale menjual sejumlah terbatas unit dari satu produk milik penjual dengan harga `flash_price`.
+`product_id` adalah SKU produk itu (Produk, langkah 2). Simpan `id`.
+
+<RestEndpoint id="pricing.createFlashSale" />
+
+## 6. Membaca flash sale
+
+Lewat SKU produk: flash sale yang didapat pembeli produk itu sekarang, dan sisa unit dengan harganya. Flash sale
+yang belum mencapai `start_time`-nya belum ditampilkan.
+
+<RestEndpoint id="pricing.getFlashSale" />

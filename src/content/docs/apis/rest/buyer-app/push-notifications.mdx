@@ -1,0 +1,68 @@
+---
+title: Push notifications
+description: Register the handset's FCM token with the notification service so pushes for the signed-in buyer reach it, prove the handset holds the token when asked, and forget it at sign-out.
+sidebar:
+  order: 13
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+The notification service sends pushes for a principal to the handsets registered for it
+([DeviceRegistryRecipientDirectory.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/8060ed676dcd025f8e7da38dfac8d1a8bbe67cac/src/main/scala/com/kinetix/notification/infrastructure/grpc/DeviceRegistryRecipientDirectory.scala#L11-L14)),
+through Firebase Cloud Messaging (FCM). A buyer app gets the handset's FCM token (step 1) and registers it
+with the buyer's access token (step 2). Some registrations are answered `202`: the handset then receives a
+code by push (step 3) and sends it back (step 4). At sign-out the app forgets the handset (step 5).
+`platform` takes only `ANDROID` or `IOS`, so these calls are for a mobile app.
+
+## 1. Get the FCM token
+
+The Firebase SDK on the handset issues the token; this is not an API call. The notification service
+addresses each push to that token, as an FCM message with a title and a body
+([HttpPushSender.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/8060ed676dcd025f8e7da38dfac8d1a8bbe67cac/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L33-L43),
+[the message](https://github.com/WildanFrananda/kinetix-notification-service/blob/8060ed676dcd025f8e7da38dfac8d1a8bbe67cac/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L73-L82)).
+When the SDK replaces the token, the app registers the new one (step 2) and forgets the old one (step 5).
+
+## 2. Register the handset
+
+`device_token` is the token from step 1, and `platform` the handset's system. The app registers at every
+start and whenever the token changes; registering a token the buyer already holds only refreshes it. A `200`
+is done. A `202` means the handset must first prove that it receives pushes sent to this token: the app waits
+for step 3.
+
+<RestEndpoint id="notification.registerDevice" />
+
+## 3. Receive the verification message
+
+After a `202`, the handset receives an FCM data message rather than a visible notification: on Android a
+high-priority data message, on iOS a background push. Its data carries three fields
+([HttpPushSender.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/8060ed676dcd025f8e7da38dfac8d1a8bbe67cac/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L84-L111)):
+
+```json
+{
+  "kind": "DEVICE_VERIFICATION",
+  "nonce": "Vq3tX8mK2pL7wR9cN4bY6hJ1sD5fG0aZ-eU_iO3kQ7w",
+  "expires_at": "2026-10-22T03:25:00.481236Z"
+}
+```
+
+The app's FCM message handler picks out `kind` `DEVICE_VERIFICATION` and passes `nonce` to step 4 before
+`expires_at`. Registering again sends a new nonce, and only the latest one is accepted
+([RegisterDevice.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/8060ed676dcd025f8e7da38dfac8d1a8bbe67cac/src/main/scala/com/kinetix/notification/application/RegisterDevice.scala#L42-L58)).
+
+## 4. Prove the handset holds the token
+
+The app sends the same `device_token` and the `nonce` exactly as received, with an access token of the same
+buyer that registered in step 2. A `200` completes the registration. On `422 VERIFICATION_NOT_PENDING` the
+app registers again (step 2) and waits for a new message.
+
+<RestEndpoint id="notification.verifyDevice" />
+
+## 5. Forget the handset
+
+When the buyer signs out, the app forgets the handset first, while it still holds the access token this call
+needs, and then signs out at identity
+([Stay signed in and sign out](/apis/rest/buyer-app/stay-signed-in/#3-sign-out)). The same call forgets an old
+token after the SDK has replaced it. The answer is the same whatever the token's state, so it is safe to
+repeat.
+
+<RestEndpoint id="notification.forgetDevice" />

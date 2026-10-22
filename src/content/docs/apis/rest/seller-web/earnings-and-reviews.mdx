@@ -1,0 +1,28 @@
+---
+title: Earnings and reviews
+description: How a seller reads its merchant wallet in payment and the reviews buyers left for its products in review.
+sidebar:
+  order: 8
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+A seller reads what its sales have earned from payment and what buyers think of its products from review. The
+wallet is found by the access token, which must have the role `seller`; the reviews are found by the seller's
+`user.principalId` from [Sign in](/apis/rest/seller-web/sign-in/), and need no token.
+
+## 1. Read the wallet
+
+With the seller's access token. Payment holds the seller's share of each paid order and releases it when the
+order is completed; the answer shows both amounts. The balance is all that payment's REST API shows a seller:
+no endpoint lists the payments behind it
+([WalletController.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/9bb08c58f0dd13d8ee3fe2a00e17239632286096/modules/api/src/main/java/com/kinetix/payment/api/controller/WalletController.java#L21-L84)).
+
+<RestEndpoint id="payment.merchantBalance" />
+
+## 2. Read the store's reviews
+
+`merchantPrincipalId` is the seller's `user.principalId`. Ask for the next `page` while it is below
+`last_page`.
+
+<RestEndpoint id="review.listMerchantReviews" />

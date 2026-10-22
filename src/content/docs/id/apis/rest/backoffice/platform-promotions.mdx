@@ -1,0 +1,53 @@
+---
+title: Promosi platform
+description: Cara admin membuat diskon, voucher dan flash sale milik platform sendiri di pricing, dan membaca kembali pemakaian sebuah voucher.
+sidebar:
+  order: 5
+sourceHash: "2c30c9b062dd"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Promosi yang dibuat admin adalah milik platform, bukan milik satu merchant: `merchant_principal_id`-nya `null`, dan
+promosi itu berlaku untuk setiap keranjang. Admin yang sudah masuk seperti di
+[Masuk](/id/apis/rest/backoffice/sign-in/) membuat diskon, voucher atau flash sale, dan membaca kembali sebuah voucher
+untuk mengikuti pemakaiannya. Pricing memeriksa token admin sendiri. Tidak ada endpoint yang mengubah atau mengakhiri
+promosi setelah dibuat, jadi sebuah pembuatan tidak bisa dikoreksi sesudahnya.
+
+Setiap pembuatan menerima header `Idempotency-Key`. Buat key baru untuk setiap promosi dan simpan bersama request-nya
+sampai request itu mendapat jawaban akhir; setelah timeout, `500` atau `503`, kirim body yang sama dengan key yang
+sama, dan promosi yang sudah dibuat percobaan pertama dikembalikan dengan `Idempotent-Replayed: true`, bukan dibuat
+dua kali. Kong mengizinkan browser mengirim `Idempotency-Key` dan membaca `Idempotent-Replayed`
+([Browser](/id/apis/rest/#browser)).
+
+## 1. Buat diskon
+
+Diskon memotong persentase atau nominal tertentu dari harga satuan di antara dua waktu. Arahkan ke satu produk dengan
+`target_product_id`, yaitu `sku` produk itu di catalog; ke sebuah kategori dengan `target_category_id`, yaitu `slug`
+dari daftar di [Kategori](/id/apis/rest/backoffice/categories/); atau ke semua produk dengan menghilangkan keduanya.
+Simpan `id` dari jawabannya.
+
+<RestEndpoint id="pricing.createDiscount" />
+
+## 2. Buat voucher
+
+Voucher adalah kode yang dimasukkan pembeli, dengan belanja minimum, batas potongan opsional, kuota pesanan dan masa
+berlaku. Kodenya unik di antara voucher semua merchant dan disimpan dalam huruf besar; simpan `code` dari jawabannya
+untuk langkah 3.
+
+<RestEndpoint id="pricing.createVoucher" />
+
+## 3. Baca pemakaian voucher
+
+Baca voucher dengan `code`-nya memakai token admin, yang menampilkan `quota` dan `used_count` selain syarat yang
+dilihat pembeli. Voucher hanya ditemukan selama masih bisa dipakai: begitu kedaluwarsa atau kuotanya habis, jawabannya
+`404`.
+
+<RestEndpoint id="pricing.getVoucher" />
+
+## 4. Buat flash sale
+
+Flash sale menjual sejumlah terbatas unit satu produk dengan harga tetap di antara dua waktu. `product_id` adalah `sku`
+produk itu di catalog, yang diperiksa pricing ke catalog untuk admin juga. Simpan `id` dari jawabannya.
+
+<RestEndpoint id="pricing.createFlashSale" />

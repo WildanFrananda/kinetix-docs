@@ -1,0 +1,40 @@
+---
+title: Search
+description: Suggest product titles while the buyer types and answer ranked results with category counts, from the search service, then open a product from catalog.
+sidebar:
+  order: 6
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+Search answers from its own index of catalog's products, which a sync keeps current, and reads no token. A
+buyer app suggests titles while the buyer types (step 1), answers the query with ranked results (step 2), and
+opens a chosen hit from catalog (step 3). The paths sit under `/api/v1/products/`, but Kong sends them to the
+search service, not to catalog
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/2b38bcc9a795dac8a6a3088b6d67f297fcfa9f5c/config/gateway.pkl#L94-L107)).
+
+## 1. Suggest titles as the buyer types
+
+The app sends what the buyer has typed so far as `q`, with a small `limit`. A blank `q` answers an empty list
+without reaching the search engine. A suggestion the buyer picks becomes the `q` of step 2.
+
+<RestEndpoint id="search.suggestProducts" />
+
+## 2. Search
+
+`q` is the buyer's text or a picked suggestion. `facets.categories` counts the matches by category slug: the
+app offers those values as filters, with names from
+[catalog's categories](/apis/rest/buyer-app/browse/#1-list-the-categories), and sends each one chosen as
+`category`. The next page has `offset` plus `limit` as its `offset`, while that is below `total`. When
+`index.stale` is `true`, the app shows the hits and says they may be out of date.
+
+<RestEndpoint id="search.searchProducts" />
+
+## 3. Open a product
+
+A hit's `id` is the product's SKU, the key search indexed it under
+([convert.go](https://github.com/WildanFrananda/kinetix-search-service/blob/bb71585106395dbdcaf4dbf8dfabc62c2266498a/internal/catalogclient/convert.go#L64-L95)).
+The product page reads it from catalog with `GET /api/v1/products/{sku}`, as in
+[step 3 of Browse the catalogue](/apis/rest/buyer-app/browse/#3-read-one-product), which answers the
+current price and stock; the rest of that page (flash sale, discounts, reviews) follows from there. A hit's
+`price_minor` orders results only, and the price the buyer pays is set at checkout.

@@ -1,0 +1,56 @@
+---
+title: Top up the wallet
+description: Read the buyer's wallet balance at payment and top it up through Midtrans by bank virtual account or QRIS, the money checkout spends.
+sidebar:
+  order: 7
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+[Checkout](/apis/rest/buyer-app/checkout/) pays from the buyer's Kinetix wallet, which payment keeps, so a
+buyer tops the wallet up first. The wallet endpoints accept only a `customer`. The app reads the balance
+(step 1) and starts a top-up (step 2); the buyer pays outside Kinetix (step 3); Midtrans tells payment
+(step 4); the app reads the top-up's outcome (step 5).
+
+## 1. Read the balance
+
+`availableBalance` is what checkout can debit. A wallet that money has never reached answers `exists: false`
+at zero rather than an error.
+
+<RestEndpoint id="payment.customerBalance" />
+
+## 2. Start a top-up
+
+The app makes a new `Idempotency-Key` for each top-up the buyer starts, stores it before sending, and sends
+it again with the same body when a request gets no answer: payment answers from the top-up that key started,
+if there is one, so nothing is charged twice. From the `202` the app keeps `referenceNumber` for step 5 and
+shows `instructions` to the buyer.
+
+<RestEndpoint id="payment.customerTopUp" />
+
+## 3. The buyer pays
+
+This happens outside the API. The buyer transfers the amount from a bank to the virtual account in
+`instructions.virtualAccountNumber`, or scans the QR code at `instructions.qrCodeUrl` with a payment app
+that takes QRIS, before `instructions.expiresAt`. Midtrans issued these details when payment created the
+charge, with the top-up's `referenceNumber` as Midtrans' `order_id`
+([MidtransPaymentGatewayAdapter.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/9bb08c58f0dd13d8ee3fe2a00e17239632286096/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/gateway/MidtransPaymentGatewayAdapter.java#L190-L224),
+[instructions](https://github.com/WildanFrananda/kinetix-payment-service/blob/9bb08c58f0dd13d8ee3fe2a00e17239632286096/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/gateway/MidtransPaymentGatewayAdapter.java#L325-L349)).
+
+## 4. Midtrans notifies payment
+
+Midtrans sends this request to payment; the app never calls it. Its `order_id` is the top-up's
+`referenceNumber`. payment checks the signature, asks Midtrans for the transaction's status and credits the
+wallet once it has settled
+([MidtransNotificationController.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/9bb08c58f0dd13d8ee3fe2a00e17239632286096/modules/api/src/main/java/com/kinetix/payment/api/controller/MidtransNotificationController.java#L30-L55)).
+It is listed here because it is what moves the top-up out of `PENDING`.
+
+<RestEndpoint id="payment.midtransNotification" />
+
+## 5. Read the top-up's outcome
+
+`{referenceNumber}` is the one from step 2. This reads payment's own record, so the app reads it again until
+`status` is no longer `PENDING`. On `SUCCESS` the amount is in the wallet, and the app reads the balance again
+as in step 1.
+
+<RestEndpoint id="payment.customerTopUpStatus" />

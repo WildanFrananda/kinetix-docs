@@ -1,0 +1,36 @@
+---
+title: Pengaturan toko
+description: Cara penjual membaca catatan merchant-nya di warehouse dan mengatur jam yang menentukan kapan paketnya jatuh tempo.
+sidebar:
+  order: 3
+sourceHash: "82c9dd27c633"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Warehouse menyimpan satu catatan per merchant, berisi jam batas (cutoff) yang menentukan apakah paket dari
+pesanan baru jatuh tempo hari itu juga atau keesokan harinya. Penjual membaca catatan itu, lalu mengatur jamnya.
+Kedua panggilan memerlukan access token dengan role `seller`, yang dimiliki penjual yang sudah disetujui setelah
+me-refresh sesinya ([Menjadi penjual](/id/apis/rest/seller-web/become-a-seller/), langkah 5).
+
+## 1. Membaca catatan merchant
+
+Simpan `id`, yang dipakai langkah 2 dan 3. Selama `may_sell` bernilai `false`, identity tidak mengizinkan
+merchant itu berdagang, dan jamnya tidak bisa diubah.
+
+<RestEndpoint id="warehouse.merchantMe" />
+
+## 2. Mengatur jam batas
+
+Kirim jam yang dipilih penjual, dengan `id` dari langkah 1. Jam itu berlaku untuk task yang dibuat sejak saat
+itu; batas waktu setiap task tampil di antrean pengemasan sebagai `same_day_cutoff_at`
+([Mengemas pesanan](/id/apis/rest/seller-web/packing/), langkah 2).
+
+<RestEndpoint id="warehouse.setCutoffHour" />
+
+## 3. Atau mengaturnya dengan `PUT`
+
+`PUT` pada path yang sama menjalankan aksi yang sama dengan langkah 2. Client memakai salah satu dari kedua
+method itu.
+
+<RestEndpoint id="warehouse.replaceCutoffHour" />

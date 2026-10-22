@@ -1,0 +1,42 @@
+---
+title: Pencarian
+description: Menyarankan judul produk selagi pembeli mengetik dan menjawab hasil berperingkat dengan hitungan per kategori, dari service search, lalu membuka produk dari catalog.
+sidebar:
+  order: 6
+sourceHash: "5734292f20c4"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Search menjawab dari indeksnya sendiri atas produk-produk catalog, yang dijaga tetap terkini oleh sebuah
+sync, dan tidak membaca token. Aplikasi pembeli menyarankan judul selagi pembeli mengetik (langkah 1),
+menjawab kueri dengan hasil berperingkat (langkah 2), dan membuka hit yang dipilih dari catalog (langkah 3).
+Path-nya berada di bawah `/api/v1/products/`, tetapi Kong mengirimnya ke service search, bukan ke catalog
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/2b38bcc9a795dac8a6a3088b6d67f297fcfa9f5c/config/gateway.pkl#L94-L107)).
+
+## 1. Menyarankan judul saat pembeli mengetik
+
+Aplikasi mengirim apa yang sudah diketik pembeli sebagai `q`, dengan `limit` kecil. `q` yang kosong dijawab
+dengan daftar kosong tanpa sampai ke mesin pencari. Saran yang dipilih pembeli menjadi `q` di langkah 2.
+
+<RestEndpoint id="search.suggestProducts" />
+
+## 2. Mencari
+
+`q` adalah teks pembeli atau saran yang dipilih. `facets.categories` menghitung hasil per slug kategori:
+aplikasi menawarkan nilai-nilai itu sebagai filter, dengan nama dari
+[kategori catalog](/id/apis/rest/buyer-app/browse/#1-mendaftar-kategori), dan mengirim setiap yang dipilih
+sebagai `category`. Halaman berikutnya memakai `offset` ditambah `limit` sebagai `offset`-nya, selama hasilnya
+masih di bawah `total`. Bila `index.stale` bernilai `true`, aplikasi menampilkan hit-nya dan menyebut bahwa
+hit itu mungkin sudah tidak terkini.
+
+<RestEndpoint id="search.searchProducts" />
+
+## 3. Membuka produk
+
+`id` sebuah hit adalah SKU produk, key yang dipakai search saat mengindeksnya
+([convert.go](https://github.com/WildanFrananda/kinetix-search-service/blob/bb71585106395dbdcaf4dbf8dfabc62c2266498a/internal/catalogclient/convert.go#L64-L95)).
+Halaman produk membacanya dari catalog dengan `GET /api/v1/products/{sku}`, seperti di
+[langkah 3 Menjelajah katalog](/id/apis/rest/buyer-app/browse/#3-membaca-satu-produk), yang menjawab harga
+dan stok terkini; sisa halaman itu (flash sale, diskon, ulasan) berlanjut dari sana. `price_minor` sebuah hit
+hanya untuk mengurutkan hasil, dan harga yang dibayar pembeli ditetapkan saat checkout.

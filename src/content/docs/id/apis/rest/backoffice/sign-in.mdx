@@ -1,0 +1,60 @@
+---
+title: Masuk
+description: Cara backoffice memasukkan seorang staf, menjawab challenge dua faktor, menjaga pasangan token tetap segar dan keluar, semuanya ke identity.
+sidebar:
+  order: 1
+sourceHash: "9cbce26e5d90"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Backoffice adalah aplikasi web yang diharapkan API untuk dipakai staf Kinetix. Aplikasi ini untuk akun yang `role`-nya
+`admin`: endpoint staf di halaman-halaman berikutnya menjawab `403` untuk role lain. Staf masuk dengan email dan
+password, menjawab challenge dua faktor bila akunnya mengaktifkan autentikasi dua faktor, lalu aplikasi menjaga
+pasangan token tetap segar sampai staf itu keluar. Karena berjalan di browser, backoffice tunduk pada CORS dan
+mengautentikasi diri hanya dengan bearer token, tidak pernah dengan cookie; lihat [Browser](/id/apis/rest/#browser).
+
+## 1. Masuk dengan email dan password
+
+Email dan password yang diketik staf dikirim ke identity dalam satu request. Jawaban `200` yang membawa `accessToken`
+memulai sesi: simpan `accessToken`, `refreshToken` dan `expiresIn`, lalu baca `user.role`, karena akun yang role-nya
+bukan `admin` bisa masuk di sini tetapi ditolak oleh setiap endpoint staf. Jawaban `200` yang membawa `mfaRequired`
+belum memulai sesi apa pun: simpan `challengeToken` dan lanjut ke langkah 2.
+
+<RestEndpoint id="identity.login" />
+
+## 2. Jawab challenge dua faktor
+
+Hanya akun yang mengaktifkan autentikasi dua faktor yang sampai di sini. Akun mana pun, termasuk akun admin,
+mengaktifkannya dengan panggilan di halaman [Autentikasi dua faktor](/id/apis/rest/buyer-app/two-factor/) milik
+aplikasi pembeli. Kirim `challengeToken` dari langkah 1 dan enam digit yang ditampilkan aplikasi autentikator staf,
+dalam `expiresIn` detik milik challenge itu. Jawaban `200` adalah pasangan token yang sama seperti di langkah 1 dan
+disimpan dengan cara yang sama; jawaban `401` mengembalikan staf ke langkah 1.
+
+<RestEndpoint id="identity.verifyTwoFactor" />
+
+## 3. Pulihkan sesi dari token yang tersimpan
+
+Ketika aplikasi dimuat ulang dengan access token yang tersimpan, panggilan ini menyebutkan milik siapa token itu,
+dengan `role` apa, dan kapan kedaluwarsa (`expiresAt`), tanpa meminta password. Field-nya berasal dari token itu
+sendiri. Jawaban `401`, dari Kong maupun dari identity, berarti access token itu tidak bisa dipakai lagi: langkah 4
+menukar refresh token dengan pasangan baru.
+
+<RestEndpoint id="identity.me" />
+
+## 4. Perbarui pasangan token
+
+Setelah `expiresIn` detik berlalu, atau setelah `401` karena access token kedaluwarsa, tukar `refreshToken` dengan
+pasangan baru dan ganti kedua token yang tersimpan sekaligus. Refresh token yang dikirim langsung terpakai, dan
+mengirimnya untuk kedua kali mengakhiri sesi, jadi backoffice yang terbuka di beberapa tab browser harus memastikan
+hanya satu tab yang melakukan refresh pada satu waktu dan membagikan pasangan barunya ke tab lain. Jawaban `401` apa
+pun di sini berarti masuk lagi dari langkah 1.
+
+<RestEndpoint id="identity.refresh" />
+
+## 5. Keluar
+
+Kirim access token di `Authorization` dan `refreshToken` milik sesi itu di body; hilangkan `refreshToken` untuk
+mengakhiri semua sesi akun itu. Buang kedua token yang tersimpan setelah jawaban `204`.
+
+<RestEndpoint id="identity.logout" />

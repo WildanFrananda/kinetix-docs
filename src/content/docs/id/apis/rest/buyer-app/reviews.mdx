@@ -1,0 +1,43 @@
+---
+title: Mengulas order
+description: Mengulas setiap produk dari order yang sudah terkirim dan memberi rating kurir yang mengantarnya, di review, yang membaca order dari order.
+sidebar:
+  order: 11
+sourceHash: "729e10b4184d"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Begitu sebuah order terkirim, pembelinya mengulas setiap produk di dalamnya dan memberi rating kurir yang
+mengantarnya. review membaca order itu sendiri dari order, jadi request hanya menyebut order dan produknya;
+merchant dan kurir diambil dari order
+([GrpcOrderClient.php](https://github.com/WildanFrananda/kinetix-review-service/blob/173ec20a938bc56ec4df193f5e763dae9901d0a9/app/Clients/GrpcOrderClient.php#L144-L158)).
+Aplikasi pembeli membaca order (langkah 1), mengulas produk-produknya (langkah 2) dan memberi rating kurir
+(langkah 3). Langkah 2 dan 3 tidak saling bergantung.
+
+## 1. Membaca order
+
+Aplikasi menawarkan ulasan hanya bila `status` bernilai `DELIVERED` atau `COMPLETED`, dua status yang diterima
+review
+([GrpcOrderClient.php](https://github.com/WildanFrananda/kinetix-review-service/blob/173ec20a938bc56ec4df193f5e763dae9901d0a9/app/Clients/GrpcOrderClient.php#L32-L35),
+[ProductReviewService.php](https://github.com/WildanFrananda/kinetix-review-service/blob/173ec20a938bc56ec4df193f5e763dae9901d0a9/app/Services/ProductReviewService.php#L33-L35)).
+Aplikasi menyimpan `id` order, `productId` setiap baris, dan `driverPrincipalId`.
+
+<RestEndpoint id="order.getOrder" />
+
+## 2. Mengulas setiap produk
+
+Satu request per baris order: `order_id` adalah `id` order (bukan `orderNumber`-nya), dan `product_id` adalah
+`productId` baris itu. `409` berarti baris itu sudah punya ulasan, jadi aplikasi menampilkannya sebagai selesai.
+Dari `201`, aplikasi menyimpan `id` ulasan, yang dipakai
+[proof-nya](/id/apis/rest/buyer-app/proofs/#6-mengambil-evidence-ulasan).
+
+<RestEndpoint id="review.createProductReview" />
+
+## 3. Memberi rating kurir
+
+Satu request per order, dan hanya bila langkah 1 menunjukkan `driverPrincipalId`: `order_id` adalah `id`
+order. `409` berarti rating-nya sudah diberikan. Aplikasi menyimpan `id` rating dari `201`, seperti di
+langkah 2.
+
+<RestEndpoint id="review.createDriverRating" />

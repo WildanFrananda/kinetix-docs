@@ -1,0 +1,45 @@
+---
+title: Stay signed in and sign out
+description: Exchange the refresh token for a new pair when the access token expires, and end the session at identity when the buyer signs out.
+sidebar:
+  order: 2
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+An access token expires `expiresIn` seconds after identity issued it. A buyer app that
+holds a session from [Sign up and sign in](/apis/rest/buyer-app/sign-up-and-sign-in/) keeps it alive by
+exchanging its refresh token (step 1) whenever the access token runs out. When the buyer signs out, the app
+first stops push notifications to the handset (step 2), then ends the session at identity (step 3). Both
+tokens are described on the [overview](/apis/rest/#tokens).
+
+## 1. Refresh the token pair
+
+The app refreshes once `expiresIn` seconds have passed, or when a request is refused with a `401` because the
+access token expired, then repeats that request with the new access token. On `200` it replaces both stored
+tokens at once. Refresh tokens rotate: each exchange spends the token sent, and a spent token sent again is
+taken as stolen, which ends the whole session
+([token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/token.service.ts#L185-L231)).
+So the app never sends a refresh token twice, and never in two requests at the same time: requests that
+find the access token expired while a refresh is under way wait for that refresh instead of starting their
+own. A `401` here means the session is over: the buyer signs in again.
+
+<RestEndpoint id="identity.refresh" />
+
+## 2. Forget the handset for push
+
+If the app registered the handset for push notifications, it forgets the handset now, while it still holds
+the access token that call needs: step 5 of [Push notifications](/apis/rest/buyer-app/push-notifications/#5-forget-the-handset).
+An app that never registered the handset goes straight to step 3.
+
+## 3. Sign out
+
+The app sends its access token and, in the body, the `refreshToken` of this session. identity then revokes
+that access token and ends this session alone. Without `refreshToken`, it ends every session of the account,
+on every device the buyer is signed in on
+([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/auth_usecase.service.ts#L130-L141),
+[token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/token.service.ts#L233-L240)).
+Kong checks the access token on this route, so an expired one is refused before identity sees it: the app
+refreshes (step 1) and signs out with the new pair. After the `204` it discards both tokens.
+
+<RestEndpoint id="identity.logout" />

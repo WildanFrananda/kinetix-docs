@@ -1,0 +1,76 @@
+---
+title: Proofs of what Kinetix owes
+description: Fetch the buyer's proofs from the notary, of the wallet balance Kinetix owes and of an order's or a review's history, and register a wallet address for statements on chain.
+sidebar:
+  order: 12
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+The notary commits on chain to what Kinetix owes its account holders and to the records of orders,
+deliveries and reviews. A buyer app fetches the buyer's own proofs and hands them to a verifier, which checks
+them against the chain without asking Kinetix ([Verify](/verify/proof-of-liabilities/)). For a buyer, the
+account owed is the wallet balance. The app fetches the balance proofs (step 1), can register a wallet address
+for statements on chain (steps 2 to 4), and fetches the evidence of an order (step 5) or of a review (step 6).
+
+## 1. Fetch the balance proofs
+
+`{epoch}` is `latest`, or the number of an earlier epoch. Each document in `proofs` is whole as it comes: the
+app saves it or passes it unchanged to a verifier, such as the one on
+[Verify a proof of liabilities](/verify/proof-of-liabilities/). An empty `proofs` means Kinetix owed the
+buyer nothing at that epoch.
+
+<RestEndpoint id="notary.liabilityProofs" />
+
+## 2. Fetch the registration template
+
+A registered wallet address can ask the withholding court on chain for a statement of the buyer's account
+([what that is for](/verify/what-the-proof-proves/#when-the-notary-lies-or-stays-silent)). The template is
+the EIP-712 typed data to sign: its `types`, the court's `domain`, and `message.principal`, the buyer's
+principal.
+
+<RestEndpoint id="notary.registrationTemplate" />
+
+## 3. Sign the template in the wallet
+
+This happens in the buyer's Ethereum wallet, not through the API. The app adds two fields to the template's
+`message`, `holder` (the wallet's own address) and `issuedAt` (the current Unix time in seconds), and asks
+the wallet to sign the result as typed data, with `eth_signTypedData_v4`:
+
+```json
+{
+  "holder": "0x657cb2e1d417fd966d350cdf7007bb5e30b04b02",
+  "principal": "0f8b6c1e-5a2d-4c3b-9e7f-1a2b3c4d5e6f",
+  "issuedAt": "1792638900"
+}
+```
+
+The notary rebuilds that message with the principal of the access token, checks that `issuedAt` is recent,
+and recovers the signer, which must be `holder`
+([registrations.go](https://github.com/WildanFrananda/kinetix-notary-service/blob/9fd693869d307376552916d84443899272f1d775/internal/httpapi/registrations.go#L64-L81),
+[registrar.go](https://github.com/WildanFrananda/kinetix-notary-service/blob/9fd693869d307376552916d84443899272f1d775/internal/registering/registrar.go#L209-L247)).
+
+## 4. Register the address
+
+Within 5 minutes of `issuedAt`, the app sends `holder`, `issuedAt` as a decimal string and the wallet's
+`signature`. It keeps every registration of the answer whole: the wallet presents its `digest` and
+`signature` to the court on chain.
+
+<RestEndpoint id="notary.register" />
+
+## 5. Fetch an order's evidence
+
+`{order}` is the order's `orderNumber`, from [checkout](/apis/rest/buyer-app/checkout/) or
+[My orders](/apis/rest/buyer-app/orders/), not its `id`. While `pending` is above 0, some records are not in a
+final batch yet, and the app asks again later. The documents in `proofs` go to the verifier on
+[Verify the evidence](/verify/evidence/).
+
+<RestEndpoint id="notary.orderEvidence" />
+
+## 6. Fetch a review's evidence
+
+`{review}` is the `id` that review answered when the buyer wrote the review or the rating
+([Review an order](/apis/rest/buyer-app/reviews/)). `pending` is `1` until the record is in a final batch.
+The document goes to the same verifier as in step 5.
+
+<RestEndpoint id="notary.reviewEvidence" />

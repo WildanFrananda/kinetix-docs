@@ -1,0 +1,33 @@
+---
+title: Profil pengiriman
+description: Menyimpan nama, nomor telepon dan alamat pembeli di identity, yang menempatkan alamat itu di peta.
+sidebar:
+  order: 4
+sourceHash: "ad9f551f89ba"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+identity menyimpan satu profil per akun: nama, nomor telepon dan alamat. Akun baru belum punya profil, jadi
+aplikasi pembeli menulisnya lebih dulu (langkah 1) dan membacanya saat dibuka berikutnya (langkah 2). `{id}`
+adalah id akun pembeli, `user.id` dari jawaban [masuk](/id/apis/rest/buyer-app/sign-up-and-sign-in/). Checkout
+tidak membaca profil: alamat, nama penerima dan nomor telepon dikirim di setiap request checkout
+([CheckoutRecipient.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a9473a17c546faa7e41be843343b0bd882435964/Application/Checkout/CheckoutRecipient.cs#L7-L19),
+[OrderService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a9473a17c546faa7e41be843343b0bd882435964/Application/Services/OrderService.cs#L332-L347)),
+jadi profil adalah tempat aplikasi pembeli menyimpan data itu untuk mengisi
+[request tersebut](/id/apis/rest/buyer-app/checkout/).
+
+## 1. Membuat atau mengubah profil
+
+`PUT` pertama membuat profil; yang berikutnya hanya mengubah field yang dikirimnya. Ketika alamat berubah,
+identity menempatkannya di peta sebelum menjawab, yang bisa memakan beberapa detik. `200` membawa profil
+lengkap, jadi aplikasi menampilkannya tanpa membacanya lagi.
+
+<RestEndpoint id="identity.updateProfile" />
+
+## 2. Membaca profil
+
+Saat dibuka berikutnya, aplikasi membaca profil untuk mengisi formulirnya. `404` berarti profil belum pernah
+ditulis: aplikasi meminta datanya kepada pembeli dan menulisnya dengan langkah 1.
+
+<RestEndpoint id="identity.getProfile" />

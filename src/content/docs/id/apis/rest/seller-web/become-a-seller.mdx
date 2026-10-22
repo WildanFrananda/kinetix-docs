@@ -1,0 +1,57 @@
+---
+title: Menjadi penjual
+description: Cara sebuah akun mengajukan diri untuk berjualan, menunggu keputusan admin dan mendapat role penjual, semuanya lewat identity.
+sidebar:
+  order: 2
+sourceHash: "df34d8695d77"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Tidak ada yang mendaftar langsung sebagai penjual. Sebuah akun mendaftar sebagai `customer`, mengajukan
+permohonan untuk berjualan, dan admin menyetujuinya di backoffice; baru setelah itu akun tersebut menjadi
+`seller`. Panggilannya adalah registrasi, pengajuan, pembacaan statusnya sampai ada keputusan, dan refresh yang
+membawa role `seller` ke dalam access token. Akun yang sudah berbelanja di Kinetix melewati langkah 1 dan
+langsung masuk ([Masuk](/id/apis/rest/seller-web/sign-in/)).
+
+## 1. Membuat akun
+
+Penjual baru mendaftar dengan email dan password. Jawabannya adalah sebuah sesi, sama seperti jawaban masuk:
+simpan pasangan token, dan `user.id`, yang dipakai langkah 2 dan 3 sebagai `id`. `user.role` bernilai
+`customer`.
+
+<RestEndpoint id="identity.register" />
+
+## 2. Mengajukan permohonan
+
+Kirim nama toko, nomor registrasi usaha, nomor pajak dan alamatnya sebagaimana diisi penjual, dengan `id` berisi
+`user.id`. Pengajuan itu lalu menunggu admin dengan status `pending`.
+
+<RestEndpoint id="identity.onboardSeller" />
+
+## 3. Mengikuti pengajuan
+
+Baca pengajuan dengan `id` yang sama sampai `status` tidak lagi `pending`: `verified` berlanjut ke langkah 5,
+`rejected` ke bagian akhir langkah 4.
+
+<RestEndpoint id="identity.getSellerApplication" />
+
+## 4. Admin memutuskan
+
+Admin meninjau pengajuan yang menunggu di backoffice dan menyetujui atau menolak masing-masing
+([Pengajuan penjual](/id/apis/rest/backoffice/seller-applications/)). Persetujuan membuat merchant milik akun
+itu `verified`, mengubah role akun menjadi `seller` dan menandai pengajuan `verified`; penolakan hanya menandai
+pengajuan `rejected`
+([seller_onboarding_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/seller_onboarding_usecase.service.ts#L127-L195)).
+Setelah ditolak, penjual memperbaiki pengajuannya dan mengajukannya lagi lewat langkah 2, yang mengembalikannya
+ke `pending`, lalu langkah 3 mengikutinya lagi.
+
+## 5. Me-refresh sesi
+
+Access token yang dipegang akun itu masih menyatakan `customer`: sebuah token membawa role yang dimiliki akun
+saat token itu diterbitkan
+([token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/token.service.ts#L74-L90)).
+Refresh membaca role dari akun, jadi pasangan baru membawa `seller`, dan endpoint penjual milik warehouse,
+pricing dan payment menerimanya. Berikutnya adalah [Pengaturan toko](/id/apis/rest/seller-web/store-setup/).
+
+<RestEndpoint id="identity.refresh" />

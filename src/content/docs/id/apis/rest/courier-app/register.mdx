@@ -1,0 +1,57 @@
+---
+title: Mendaftar sebagai kurir
+description: Kurir membuat akun dan mendaftarkan kendaraan di identity, menunggu matching mengizinkannya bekerja setelah admin menyetujui, lalu me-refresh sesinya untuk mendapatkan role kurir.
+sidebar:
+  order: 1
+sourceHash: "8cc14337207b"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Kurir mendaftar dari aplikasi kurir dengan satu panggilan ke identity, yang membuat akun, mendaftarkan
+kendaraannya ke matching, dan membuat kurir langsung masuk. Akunnya tetap `customer`, dan matching belum
+mengizinkan kurir bekerja, sampai admin menyetujui kurir itu di [backoffice](/id/apis/rest/backoffice/courier-applications/).
+Urutan panggilannya: mendaftar di identity, menanyakan ke matching apakah kurir boleh bekerja, dan, setelah
+disetujui, me-refresh sesi untuk mendapatkan role `courier`. Tidak ada yang harus terjadi sebelumnya: email baru
+membuat akun, dan akun customer yang sudah ada dipakai ulang dengan password-nya sendiri. Sejak disetujui, kurir
+[masuk](/id/apis/rest/courier-app/sign-in/) seperti biasa.
+
+## 1. Daftarkan akun dan kendaraan
+
+Setiap field berasal dari isian kurir. Aplikasi kurir memeriksanya dengan aturan yang sama sebelum mengirim, dan
+mengirim nomor telepon tanpa spasi, tanda hubung, titik atau tanda kurung
+([register_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/viewmodels/register_view_model.dart#L43-L48),
+[#L94-L140](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/viewmodels/register_view_model.dart#L94-L140)).
+Simpan kedua token dan `driverId` dari jawaban `201`: token itu adalah sesi yang sudah masuk untuk langkah
+berikutnya, dan `driverId` adalah id kurir di matching, topic dari [driver socket](/id/apis/rest/courier-app/deliver/).
+Aplikasi kurir menyimpan ketiganya bersama-sama
+([session_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/session_repository_impl.dart#L143-L177)).
+Jawaban yang membawa `accountExists` berarti akunnya sudah ada; masing-masing menyebutkan apa yang harus dikirim
+lagi.
+
+<RestEndpoint id="identity.registerCourier" />
+
+## 2. Tanyakan apakah kurir boleh bekerja
+
+Kirim access token dari langkah 1. Sampai admin menyetujui kurir itu, matching menjawab `403` dengan
+`pending_approval`, dan driver socket-nya juga menolak kurir itu. Setelah disetujui, jawabannya `200`. Selama
+ada sesi tersimpan, aplikasi kurir bertanya setiap kali dibuka dan menampilkan layar tunggu selama jawabannya
+`pending_approval`
+([splash_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/viewmodels/splash_view_model.dart#L31-L36)).
+
+<RestEndpoint id="matching.driverMe" />
+
+## 3. Refresh setelah disetujui
+
+Persetujuan menjadikan akun itu `courier` di identity
+([courier_onboarding_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/courier_onboarding_usecase.service.ts#L63-L74)),
+tetapi token tetap membawa role saat ia diterbitkan, jadi token dari langkah 1 masih menyebut `customer`. Driver
+socket hanya menerima role `courier` dan `admin`
+([driver_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_socket.ex#L46-L49))
+dan menolak access token lama dengan `403`. Refresh membaca role dari akun
+([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/auth_usecase.service.ts#L108-L128)):
+tukarkan refresh token dari langkah 1 dan pakai pasangan baru sejak itu. Aplikasi kurir melakukan refresh ketika
+driver socket menolak token-nya, lalu tersambung lagi dengan access token yang baru
+([connection_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/connection_repository_impl.dart#L88-L124)).
+
+<RestEndpoint id="identity.refresh" />

@@ -1,0 +1,70 @@
+---
+title: Push notification
+description: Mendaftarkan token FCM ponsel ke service notification supaya push untuk pembeli yang sedang masuk sampai ke ponsel itu, membuktikan ponsel memegang token itu bila diminta, dan melupakannya saat keluar.
+sidebar:
+  order: 13
+sourceHash: "7d92f8a78ec2"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Service notification mengirim push untuk sebuah principal ke ponsel-ponsel yang terdaftar untuknya
+([DeviceRegistryRecipientDirectory.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/8060ed676dcd025f8e7da38dfac8d1a8bbe67cac/src/main/scala/com/kinetix/notification/infrastructure/grpc/DeviceRegistryRecipientDirectory.scala#L11-L14)),
+lewat Firebase Cloud Messaging (FCM). Aplikasi pembeli mengambil token FCM ponsel (langkah 1) dan
+mendaftarkannya dengan access token pembeli (langkah 2). Sebagian pendaftaran dijawab `202`: ponsel lalu
+menerima sebuah kode lewat push (langkah 3) dan mengirimnya kembali (langkah 4). Saat keluar, aplikasi
+melupakan ponsel itu (langkah 5). `platform` hanya menerima `ANDROID` atau `IOS`, jadi panggilan-panggilan ini
+untuk aplikasi mobile.
+
+## 1. Mengambil token FCM
+
+Firebase SDK di ponsel menerbitkan token-nya; ini bukan panggilan API. Service notification mengalamatkan
+setiap push ke token itu, sebagai pesan FCM dengan judul dan isi
+([HttpPushSender.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/8060ed676dcd025f8e7da38dfac8d1a8bbe67cac/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L33-L43),
+[pesannya](https://github.com/WildanFrananda/kinetix-notification-service/blob/8060ed676dcd025f8e7da38dfac8d1a8bbe67cac/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L73-L82)).
+Ketika SDK mengganti token-nya, aplikasi mendaftarkan yang baru (langkah 2) dan melupakan yang lama
+(langkah 5).
+
+## 2. Mendaftarkan ponsel
+
+`device_token` adalah token dari langkah 1, dan `platform` sistem operasi ponsel itu. Aplikasi mendaftar setiap
+kali dibuka dan setiap kali token-nya berubah; mendaftarkan token yang sudah dipegang pembeli hanya
+memperbaruinya. `200` berarti selesai. `202` berarti ponsel harus lebih dulu membuktikan bahwa ia menerima push
+yang dikirim ke token ini: aplikasi menunggu langkah 3.
+
+<RestEndpoint id="notification.registerDevice" />
+
+## 3. Menerima pesan verifikasi
+
+Setelah `202`, ponsel menerima data message FCM, bukan notifikasi yang terlihat: di Android berupa data
+message berprioritas tinggi, di iOS berupa background push. Data-nya membawa tiga field
+([HttpPushSender.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/8060ed676dcd025f8e7da38dfac8d1a8bbe67cac/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L84-L111)):
+
+```json
+{
+  "kind": "DEVICE_VERIFICATION",
+  "nonce": "Vq3tX8mK2pL7wR9cN4bY6hJ1sD5fG0aZ-eU_iO3kQ7w",
+  "expires_at": "2026-10-22T03:25:00.481236Z"
+}
+```
+
+Handler pesan FCM di aplikasi memilih `kind` `DEVICE_VERIFICATION` dan meneruskan `nonce` ke langkah 4
+sebelum `expires_at`. Mendaftar lagi mengirim nonce baru, dan hanya yang terbaru yang diterima
+([RegisterDevice.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/8060ed676dcd025f8e7da38dfac8d1a8bbe67cac/src/main/scala/com/kinetix/notification/application/RegisterDevice.scala#L42-L58)).
+
+## 4. Membuktikan ponsel memegang token
+
+Aplikasi mengirim `device_token` yang sama dan `nonce` persis seperti diterima, dengan access token milik
+pembeli yang sama yang mendaftar di langkah 2. `200` menuntaskan pendaftarannya. Pada
+`422 VERIFICATION_NOT_PENDING`, aplikasi mendaftar lagi (langkah 2) dan menunggu pesan baru.
+
+<RestEndpoint id="notification.verifyDevice" />
+
+## 5. Melupakan ponsel
+
+Ketika pembeli keluar, aplikasi melupakan ponsel itu lebih dulu, selagi masih memegang access token yang
+dibutuhkan panggilan ini, lalu keluar di identity
+([Tetap masuk dan keluar](/id/apis/rest/buyer-app/stay-signed-in/#3-keluar)). Panggilan yang sama melupakan
+token lama setelah SDK menggantinya. Jawabannya sama apa pun keadaan token-nya, jadi aman diulang.
+
+<RestEndpoint id="notification.forgetDevice" />

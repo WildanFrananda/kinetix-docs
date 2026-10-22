@@ -1,0 +1,62 @@
+---
+title: Check out
+description: Turn the cart into a paid order at order, which prices it again, quotes shipping and debits the buyer's wallet in the same request.
+sidebar:
+  order: 9
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+Checkout turns the cart into an order and pays for it from the buyer's wallet in one request: a `201` is an
+order that is already `PAID`. Two things must hold before it. The cart holds the products of one merchant
+([Cart](/apis/rest/buyer-app/cart/)). The wallet holds the order's total, goods and shipping after
+discounts, which checkout works out itself: the saga debits that total from the wallet
+([EscrowService.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/9bb08c58f0dd13d8ee3fe2a00e17239632286096/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L420-L423)),
+and a balance short of it ends the checkout with `409 CHECKOUT_ROLLED_BACK` and a `reason` that starts
+`escrow:`
+([CheckoutSagaRunner.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a9473a17c546faa7e41be843343b0bd882435964/Application/Checkout/CheckoutSagaRunner.cs#L237-L260)).
+So [Top up the wallet](/apis/rest/buyer-app/wallet-top-up/) comes first. The app reads the cart (step 1),
+places the order (step 2) and reads it (step 3).
+
+## 1. Read the cart
+
+The app shows what will be bought. Every line's `merchantPrincipalId` must be the same, or step 2 answers
+`400 CART_SPANS_TWO_MERCHANTS`. `appliedVoucherCode` is the code checkout offers to pricing unless step 2
+names another.
+
+<RestEndpoint id="order.getCart" />
+
+## 2. Place the order
+
+The body names the delivery: `shippingAddress`, `recipientName` and `recipientPhone`, which a buyer app can
+fill from the [profile](/apis/rest/buyer-app/profile/). `shippingServiceTier` may be left out, and order then
+takes the cheapest tier that can carry the parcel; a tier it refuses comes back with `availableTiers` to
+choose from. From the `201` the app keeps `id`, to read the order, and `orderNumber`, which the
+[proofs](/apis/rest/buyer-app/proofs/) take.
+
+The app makes a new `Idempotency-Key` for each checkout and keeps it until it has a final answer. order
+records the key on the order row, which it writes only after every check that comes before the saga
+([OrderService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a9473a17c546faa7e41be843343b0bd882435964/Application/Services/OrderService.cs#L139-L185)),
+and answers a request whose key it has recorded from that order instead of running it again
+([OrderService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a9473a17c546faa7e41be843343b0bd882435964/Application/Services/OrderService.cs#L246-L278)).
+So the answers fall into four groups:
+
+- `201`, `409 CHECKOUT_ROLLED_BACK`, `409 CHECKOUT_ROLLBACK_PENDING` and `503 CHECKOUT_DEPENDENCY_UNAVAILABLE`
+  spend the key. It names that order now: the same request again gets the same outcome (a `201`, or the `409`
+  with `replayed: true`), and another attempt needs a new key.
+- `409 CHECKOUT_IN_PROGRESS`, a `500`, Kong's `502` or `504`, or no answer at all leave the outcome unknown.
+  The app repeats the same request with the same key: order answers from the first attempt's order if it
+  wrote one, and runs the checkout otherwise, so nothing is charged twice.
+- `422 IDEMPOTENCY_KEY_REUSED` means the key belongs to an earlier checkout with another body. The app
+  repeats that request exactly, or uses a new key.
+- Every other answer came before the order row, so the key is still unused. The app sends it again once the
+  cause is fixed, and repeats a `503` unchanged after a short wait.
+
+<RestEndpoint id="order.checkout" />
+
+## 3. Read the order
+
+`{orderId}` is `id` from the `201`, which its `Location` header also carries. The order is `PAID`; the app
+follows its `status` from here on, as on [My orders](/apis/rest/buyer-app/orders/).
+
+<RestEndpoint id="order.getOrder" />

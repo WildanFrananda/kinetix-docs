@@ -1,0 +1,40 @@
+---
+title: Courier applications
+description: How an admin lists the couriers waiting for approval in identity and approves each one, which also activates the courier's driver in matching's fleet.
+sidebar:
+  order: 3
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+A courier signs up from the courier app with `POST /api/v1/couriers/register`
+([Register as a courier](/apis/rest/courier-app/register/)). Identity files the vehicle with
+matching's fleet, then records the application as `pending`
+([courier_registration_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/courier_registration_usecase.service.ts#L47-L53),
+[typeorm_courier_application_repository.adapter.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/infrastructure/persistence/adapters/typeorm_courier_application_repository.adapter.ts#L23-L45)).
+The account stays a `customer` until an admin, signed in as on [Sign in](/apis/rest/backoffice/sign-in/), lists the
+pending applications and approves one.
+
+## 1. List the pending applications
+
+Ask for `status=pending`, and page with `after` set to `nextAfterId` while it is a number. Keep each application's
+`principalId`, which step 2 takes. `driverId` is the driver id matching gave the courier when the vehicle was filed
+([fleet_registry_server.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/servers/fleet_registry_server.ex#L20-L38),
+[fleet_registry_grpc.adapter.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L44-L58)):
+the courier's `id` on the [Fleet and dispatch](/apis/rest/backoffice/fleet-and-dispatch/) page.
+
+<RestEndpoint id="identity.listCourierApplications" />
+
+## 2. Approve the courier
+
+Approve with the `principalId` from step 1. Identity makes the account a courier, asks matching to activate its
+driver, and marks the application `approved` only once matching has done so
+([courier_onboarding_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/courier_onboarding_usecase.service.ts#L69-L91)).
+After a `503`, the account is a courier but the application still reads `pending`: approve it again once the fleet
+answers. For an account that is already a courier, identity changes no role; it asks matching to activate the driver
+again and then records the approval
+([courier_onboarding_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/courier_onboarding_usecase.service.ts#L58-L61)),
+and matching leaves a driver that is already active as it is
+([tracking.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/tracking.ex#L180-L197)).
+
+<RestEndpoint id="identity.approveCourier" />

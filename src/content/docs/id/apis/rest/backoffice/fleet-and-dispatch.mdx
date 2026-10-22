@@ -1,0 +1,117 @@
+---
+title: Armada dan dispatch
+description: Cara admin memantau kurir dan papan dispatch milik matching, lalu turun tangan untuk meng-assign, melepas atau membatalkan sebuah pekerjaan armada.
+sidebar:
+  order: 7
+sourceHash: "6e80d2798d1a"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Matching melacak kurir yang aplikasinya terhubung ke matching dan memberikan setiap pekerjaan, dengan sendirinya,
+kepada kurir yang tersedia di dekat titik jemput. Backoffice memantau armada dan papan dispatch, dan admin turun tangan:
+memberikan pekerjaan yang menunggu kepada kurir pilihan, melepas pekerjaan dari kurirnya, atau membatalkan pekerjaan
+yang tidak ditunggu pesanan mana pun. Kurir masuk ke armada lewat
+[Pengajuan kurir](/id/apis/rest/backoffice/courier-applications/); setelah masuk seperti di
+[Masuk](/id/apis/rest/backoffice/sign-in/), admin membaca armada, angka-angka papan, daftar pekerjaan dan satu
+pekerjaan, mencari kurir di dekat titik jemput, meng-assign, melepas atau membatalkan, dan mendaftar pekerjaan satu
+kurir. Kong memeriksa token di setiap endpoint di sini, dan matching memeriksa role-nya.
+
+Aplikasi kurir memegang socket ke matching pada topic `driver:<driver_id>`, dan channel-nya berlangganan event dispatch
+milik kurir itu saat join
+([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_channel.ex#L49-L56)).
+Lewat situlah langkah 7, 8 dan 9 sampai ke aplikasi kurir.
+
+## 1. Daftar armada
+
+Kurir yang sedang dilacak matching, dengan `status` dan posisi terakhir masing-masing. Setiap `id` adalah id driver,
+angka yang dipakai langkah 2, 7 dan 10; pekerjaan menyebut kurirnya dengan angka yang sama di `driver_id`.
+
+<RestEndpoint id="matching.listDrivers" />
+
+## 2. Baca satu kurir
+
+Baca satu kurir dengan `id` dari langkah 1, atau dengan `driver_id` sebuah pekerjaan.
+
+<RestEndpoint id="matching.getDriver" />
+
+## 3. Baca angka-angka papan
+
+Angka untuk bagian atas papan dispatch: pekerjaan yang menunggu kurir, pekerjaan yang belum selesai, dan pekerjaan yang
+terkirim hari ini.
+
+<RestEndpoint id="matching.dispatchSummary" />
+
+## 4. Daftar pekerjaan
+
+Pekerjaan datang dari yang terbaru, disaring menurut `status` bila diberikan; `status=pending` mendaftar pekerjaan yang
+belum dipegang kurir mana pun. Untuk halaman berikutnya, kirim `next_cursor` dari jawaban sebagai `before`, sampai
+nilainya `null`.
+
+<RestEndpoint id="matching.listDispatches" />
+
+## 5. Baca satu pekerjaan
+
+Baca sebuah pekerjaan dengan `id` dari langkah 4. Simpan `pickup`-nya untuk langkah 6; pekerjaan yang sudah terkirim
+juga membawa bukti pengirimannya.
+
+<RestEndpoint id="matching.getDispatch" />
+
+## 6. Cari kurir di dekat titik jemput
+
+Kirim `pickup.latitude` dan `pickup.longitude` pekerjaan itu dari langkah 5 sebagai `latitude` dan `longitude`.
+Jawabannya mendaftar kurir yang dilacak, dari yang terdekat, apa pun status tugasnya; hanya kurir yang `status`-nya
+`online` yang bisa menerima pekerjaan di langkah 7.
+
+<RestEndpoint id="matching.nearbyDrivers" />
+
+## 7. Berikan pekerjaan yang menunggu kepada seorang kurir
+
+Kirim `id` kurir pilihan dari langkah 6 sebagai `driver_id`, dengan `id` pekerjaan di path. Bila berhasil, matching
+melakukan push `order_assigned` ke socket kurir itu
+([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L579-L585),
+[driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_channel.ex#L144-L147)),
+yang membawa pekerjaan itu dalam bentuk ini
+([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_channel.ex#L237-L247)):
+
+```json
+{
+  "id": 4813,
+  "status": "assigned",
+  "weight_kg": 2,
+  "pickup": { "latitude": -6.1754, "longitude": 106.8272 },
+  "dropoff": { "latitude": -6.2297, "longitude": 106.8295 },
+  "assigned_at": "2026-10-22T03:15:02.187430Z"
+}
+```
+
+<RestEndpoint id="matching.assignDispatch" />
+
+## 8. Lepas pekerjaan dari kurirnya
+
+Lepas pekerjaan yang `status`-nya `assigned`, dengan `id`-nya di path. Matching melakukan push `order_unassigned`
+berisi `id` pekerjaan itu ke kurir yang memegangnya, lalu `active_order`, yaitu pekerjaan kurir itu yang masih terbuka
+atau `null`
+([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L373-L386),
+[driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_channel.ex#L154-L158)).
+Pekerjaan itu kembali `pending`, untuk ditawarkan matching kepada kurir lain atau untuk langkah 7.
+
+<RestEndpoint id="matching.unassignDispatch" />
+
+## 9. Batalkan pekerjaan
+
+Hanya pekerjaan tanpa `order_number` yang bisa dibatalkan: pekerjaan yang membawanya, seperti setiap pekerjaan yang
+dibuat oleh order, menjawab `409` `bound_to_order` apa pun statusnya. Bila pekerjaan yang dibatalkan itu `assigned`,
+matching melakukan push `order_updated` berisi pekerjaan itu, dengan `status` `cancelled`, ke kurir yang memegangnya
+([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L637-L648),
+[dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L678-L683),
+[driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_channel.ex#L149-L152));
+pekerjaan `pending` tidak punya kurir untuk diberi tahu.
+
+<RestEndpoint id="matching.cancelDispatch" />
+
+## 10. Daftar pekerjaan satu kurir
+
+Pekerjaan yang sedang dipegang seorang kurir, berdasarkan id driver dari langkah 1 atau `driver_id` sebuah pekerjaan.
+
+<RestEndpoint id="matching.driverDispatches" />

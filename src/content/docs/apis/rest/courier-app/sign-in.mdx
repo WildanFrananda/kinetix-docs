@@ -1,0 +1,45 @@
+---
+title: Sign in
+description: A courier signs in with identity, completes two-factor authentication when the account has it on, and reads from matching the driver id the driver socket needs.
+sidebar:
+  order: 2
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+A courier whose account an admin has approved signs in with an email and a password. identity answers a token
+pair, or a challenge when the account has two-factor authentication on; the courier app then asks matching for
+the courier's record, whose `id` the [driver socket](/apis/rest/courier-app/deliver/) needs. The calls, in
+order: sign in, complete the second factor when identity asks for it, read the courier record. The account comes
+from [registration](/apis/rest/courier-app/register/).
+
+## 1. Sign in with email and password
+
+The courier app sends the email without surrounding spaces and the password as typed
+([login_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/viewmodels/login_view_model.dart#L32-L46),
+[session_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/session_repository_impl.dart#L69-L118)).
+A `200` carrying `mfaRequired` goes to step 2 with its `challengeToken`; a `200` carrying the token pair goes
+to step 3. For an approved courier, `user.role` is `courier`.
+
+<RestEndpoint id="identity.login" />
+
+## 2. Complete two-factor authentication
+
+Only when step 1 answered `mfaRequired`. Send `challengeToken` from that answer and the six digits the courier's
+authenticator app shows, within `expiresIn` seconds of step 1. The courier app notes that deadline when the
+challenge arrives, and once it has passed asks the courier to sign in again instead of sending the code
+([login_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/viewmodels/login_view_model.dart#L65-L79),
+[#L110-L118](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/viewmodels/login_view_model.dart#L110-L118)).
+The `200` carries the same token pair as a sign-in without a second factor; go on to step 3.
+
+<RestEndpoint id="identity.verifyTwoFactor" />
+
+## 3. Read the courier record
+
+Send the access token from step 1 or step 2. `data.id` is the driver id: the courier's channel on the driver
+socket is `driver:<data.id>`. The courier app keeps it with the token pair, then opens the socket
+([session_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/session_repository_impl.dart#L229-L238)).
+A `403` with `pending_approval` means an admin has not approved the courier yet, and a `404` means the account
+has filed no vehicle; [registration](/apis/rest/courier-app/register/) covers both.
+
+<RestEndpoint id="matching.driverMe" />

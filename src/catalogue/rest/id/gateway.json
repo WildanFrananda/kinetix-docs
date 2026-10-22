@@ -1,0 +1,20 @@
+{
+  "rest.gateway.answers.noToken": "Route yang diverifikasi Kong, dan request tidak membawa token. Kirim access token sebagai `Authorization: Bearer <token>`.",
+  "rest.gateway.answers.multipleTokens": "Route yang diverifikasi Kong, dan request membawa dua token yang berbeda. Kong membaca header `Authorization` dan juga query parameter `jwt`; kirim token hanya di `Authorization`.",
+  "rest.gateway.answers.badToken": "Route yang diverifikasi Kong, dan token-nya bukan JWT yang bisa didekode: bagian-bagiannya bukan JSON base64url (`invalid JSON`), `alg`-nya tidak ada atau tidak dikenal (`invalid alg`), atau claims maupun tanda tangannya tidak ada.",
+  "rest.gateway.answers.noIssuer": "Route yang diverifikasi Kong, dan token tidak punya claim `iss`. Bila `iss` kosong, pesannya `Invalid 'iss' in claims`.",
+  "rest.gateway.answers.unknownIssuer": "Route yang diverifikasi Kong, dan `iss` token bukan issuer milik identity: token itu tidak diterbitkan oleh Kinetix.",
+  "rest.gateway.answers.algorithm": "Route yang diverifikasi Kong, dan token tidak ditandatangani dengan `RS256`, satu-satunya algoritma yang dipakai identity.",
+  "rest.gateway.answers.signature": "Route yang diverifikasi Kong, dan tanda tangannya tidak cocok dengan public key identity: token sudah diubah, atau ditandatangani key lain.",
+  "rest.gateway.answers.expired": "Route yang diverifikasi Kong, dan `exp` token sudah lewat. Refresh pasangan token lalu kirim ulang request dengan access token yang baru.",
+  "rest.gateway.answers.noExpiry": "Route yang diverifikasi Kong, dan token tidak punya claim `exp` berupa angka.",
+  "rest.gateway.answers.noRoute": "Request apa pun yang path-nya tidak cocok dengan route mana pun, atau yang method-nya tidak diizinkan oleh route yang membatasi method. Service tidak pernah dicapai.",
+  "rest.gateway.answers.tooLarge": "Upload ke host storage yang body-nya lebih besar dari 16 MB. Dengan `Expect: 100-continue` status-nya `417` dan pesannya sama.",
+  "rest.gateway.answers.rateLimited": "Lebih dari 100 request dalam satu menit dari satu alamat client, dihitung di semua route. Route notifikasi Midtrans punya batas sendiri, 600 per menit. `Retry-After` adalah jumlah detik sampai jendela waktunya di-reset.",
+  "rest.gateway.answers.badUpstream": "Service menolak koneksi atau mengirim response yang tidak bisa dibaca Kong. Formatnya mengikuti header `Accept` milik request, lalu `Content-Type`-nya; bila keduanya tidak ada, body-nya plain text seperti contoh, dan dengan `Accept: application/json` body-nya error JSON Kong.",
+  "rest.gateway.answers.serviceDown": "Service tidak berjalan, jadi namanya tidak bisa di-resolve. Tidak ada yang sampai ke service; request bisa dikirim lagi nanti.",
+  "rest.gateway.answers.timeout": "Service tidak menjawab tepat waktu. Request itu mungkin saja sudah berefek: baca state terkini sebelum mengirim lagi request yang mengubah sesuatu. Format body-nya dipilih seperti pada `502`.",
+  "rest.gateway.health.summary": "Menjawab bahwa gateway hidup. Kong menjawabnya sendiri; tidak ada service yang dipanggil.",
+  "rest.gateway.health.who": "Siapa saja.",
+  "rest.gateway.health.case.up": "Selalu, selama Kong berjalan. Jawaban ini tidak mengatakan apa pun tentang service di belakangnya."
+}

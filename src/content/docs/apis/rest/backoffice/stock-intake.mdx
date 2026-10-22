@@ -1,0 +1,52 @@
+---
+title: Stock intake
+description: How staff find the merchant who owns a delivery in catalog, then create bins and book goods in and out of them in warehouse.
+sidebar:
+  order: 6
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+Goods reach the warehouse on a merchant's behalf, and staff book them onto a shelf. The merchant sells the product in
+catalog, which catalog allows only once an admin has approved the seller
+([Seller applications](/apis/rest/backoffice/seller-applications/)). Signed in as on
+[Sign in](/apis/rest/backoffice/sign-in/), an admin finds the owner of each SKU in catalog, creates the bin the goods
+go into, books the delivery, and later adjusts the count for damage, loss or miscounts. The three warehouse endpoints
+need the admin's access token, which warehouse checks itself.
+
+## 1. Find the owner of the goods
+
+Read the product by the `sku` on the delivery and keep its `merchant_principal_id`, the identity principal of the
+merchant who sells it, which steps 3 and 4 send. It must be that merchant: warehouse keeps stock per merchant and SKU
+([bin_stock_service_handler.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/a0eafe367f060d4f99aec06a07017d86b8bd046f/app/rpc/bin_stock_service_handler.rb#L32-L44)),
+and catalog asks it for the stock of the product's own merchant
+([product_service.py](https://github.com/WildanFrananda/kinetix-catalog-service/blob/95cabdb917607026a290b7d24e91b7121a0631d3/core/application/services/product_service.py#L92-L98)).
+A `404` means no product with this SKU is on sale.
+
+<RestEndpoint id="catalog.getProduct" />
+
+## 2. Create the bin
+
+Goods are booked into a bin by its `bin_code`, so the bin must exist first. A bin is created once, not per delivery:
+the same request with a `bin_code` that exists updates that bin's zone and shelf level instead.
+
+<RestEndpoint id="warehouse.upsertBin" />
+
+## 3. Book the delivery
+
+Send the `bin_code` from step 2, the `sku`, the units counted as `quantity`, the `merchant_principal_id` from step 1,
+and an `idempotency_key` the client makes up for this one delivery and keeps until it has a final answer. The key goes
+in the body; this endpoint reads no `Idempotency-Key` header. After a timeout, a `500` or a `503`, send the same body
+with the same key: a delivery already booked answers `200` with `replayed: true` and is not booked twice.
+
+<RestEndpoint id="warehouse.receiveStock" />
+
+## 4. Adjust the stock
+
+When goods are later found damaged, missing, miscounted, sent back to the supplier or expired, send the change as
+`quantity_delta` with the matching `reason`, for the `bin_code`, `sku` and `merchant_principal_id` the stock was booked
+under. Each adjustment takes a new `idempotency_key`, retried as in step 3. A removal that would cut into units
+reserved for orders answers `409` with `max_reduction`, the largest removal possible now; a smaller removal is a new
+adjustment with a new key.
+
+<RestEndpoint id="warehouse.adjustStock" />

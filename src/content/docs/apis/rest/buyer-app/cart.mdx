@@ -1,0 +1,82 @@
+---
+title: Cart
+description: Keep the signed-in buyer's cart at order, and check and attach a voucher with pricing before checkout.
+sidebar:
+  order: 8
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+order keeps one cart per signed-in buyer, under the access token's `sub`; it needs a session from
+[Sign up and sign in](/apis/rest/buyer-app/sign-up-and-sign-in/). Each line holds the catalog price of the
+moment it was added, an indication that [checkout](/apis/rest/buyer-app/checkout/) replaces with its own
+pricing. The app reads the cart (step 1) and changes its lines (steps 2 to 4). A voucher code is read and
+checked at pricing (steps 5 and 6), then set on the cart or taken off it (steps 7 and 8). Step 9 empties the
+cart.
+
+## 1. Read the cart
+
+The cart as stored: its lines, the voucher code set on it in `appliedVoucherCode`, and `subtotal`. A buyer
+with no cart gets an empty one, `items: []`.
+
+<RestEndpoint id="order.getCart" />
+
+## 2. Add a product
+
+`productId` is the product's SKU: `sku` from [catalog](/apis/rest/buyer-app/browse/#3-read-one-product) or a
+search hit's `id`. `quantity` is added to what the line already holds. The answer is the whole cart, which
+the app shows without reading it again.
+
+<RestEndpoint id="order.addCartItem" />
+
+## 3. Change a quantity
+
+`{productId}` is a line's `productId` from the cart. `quantity` is the line's new quantity, and `0` removes the
+line.
+
+<RestEndpoint id="order.updateCartItem" />
+
+## 4. Remove a line
+
+`{productId}` is a line's `productId` from the cart.
+
+<RestEndpoint id="order.removeCartItem" />
+
+## 5. Read a voucher's terms
+
+When the buyer types a code, the app can show its terms: `value`, `min_spend`, `max_discount` and
+`expires_at`. A `200` says only that the code can still be used; whether it fits this cart is step 6.
+
+<RestEndpoint id="pricing.getVoucher" />
+
+## 6. Check the voucher against the cart
+
+A preview: `code` as the buyer typed it, `cart_subtotal`, and `merchant_principal_id` from the cart lines'
+`merchantPrincipalId`. The cart's `subtotal` is at catalog prices
+([CustomerCart.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a9473a17c546faa7e41be843343b0bd882435964/Domain/Entities/CustomerCart.cs#L7)),
+while checkout compares `min_spend` with the subtotal after flash sales and discounts
+([pricing_service.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/d3020a29ca7ac6fcc2d5a7e472a6b234cc783d0d/src/services/pricing_service.rs#L151-L219)).
+Sent with the cart's `subtotal`, the preview can accept a code that checkout will not grant; the order's
+`appliedVoucher` says what checkout granted.
+
+<RestEndpoint id="pricing.applyVoucher" />
+
+## 7. Set the voucher on the cart
+
+The code is stored on the cart as sent, and checkout offers it to pricing unless the checkout request names
+another. `subtotal` does not change: the discount, if pricing grants it, appears only on the order.
+
+<RestEndpoint id="order.applyCartVoucher" />
+
+## 8. Take the voucher off
+
+The cart's `appliedVoucherCode` becomes `null`.
+
+<RestEndpoint id="order.removeCartVoucher" />
+
+## 9. Empty the cart
+
+For an explicit "empty the cart" action only. A placed order empties the cart by itself, so the app reads
+the cart again after checkout instead of clearing it.
+
+<RestEndpoint id="order.clearCart" />

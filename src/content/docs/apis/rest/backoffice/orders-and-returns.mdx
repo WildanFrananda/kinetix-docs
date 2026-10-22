@@ -1,0 +1,65 @@
+---
+title: Orders and returns
+description: How an admin follows the checkout sagas and returns that wait on a person in order, rejects a return, completes an order early, and reads an order.
+sidebar:
+  order: 8
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+Order runs each checkout as a saga across pricing, warehouse and payment, and keeps a delivered order open until its
+return window closes, when it completes and pays the merchant. A few cases wait on a person: a saga that could not
+unwind on its own, a return a merchant opened, an order staff decide to complete early. Signed in as on
+[Sign in](/apis/rest/backoffice/sign-in/), the admin counts and lists the sagas, lists the returns, rejects a return
+or completes an order, and reads an order. Order checks the token itself on every endpoint here.
+
+## 1. Count the sagas that need attention
+
+A bare number, for a badge in the backoffice; step 2 lists the sagas behind it.
+
+<RestEndpoint id="order.countSagasNeedingAttention" />
+
+## 2. List the sagas that need attention
+
+Each saga names its order by `orderNumber`, and each entry of its `unreleasedSteps` carries a `remedy` naming the gRPC
+operation that gives the step back ([SagaAdminController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a9473a17c546faa7e41be843343b0bd882435964/Controllers/SagaAdminController.cs#L95-L111);
+the operations are in the [gRPC reference](/apis/grpc/)). Order's REST API only reads sagas: this controller serves
+these two `GET`s and nothing else
+([SagaAdminController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a9473a17c546faa7e41be843343b0bd882435964/Controllers/SagaAdminController.cs#L11-L80)).
+
+<RestEndpoint id="order.listSagasNeedingAttention" />
+
+## 3. List the returns that need attention
+
+The returns still `OPEN`, and those whose goods came back but whose refund stopped. Keep each one's `returnNumber` for
+step 4 and its `orderNumber` for step 5.
+
+<RestEndpoint id="order.listReturnsNeedingAttention" />
+
+## 4. Reject a return
+
+Only an `OPEN` return whose goods have not come back can be rejected, with its `returnNumber` from step 3 in the path
+and a `reason` in the body. The buyer then gets no refund, and the order completes when its return window closes, or
+earlier through step 5.
+
+<RestEndpoint id="order.rejectReturn" />
+
+## 5. Complete an order early
+
+Complete a `DELIVERED` order by its `orderNumber`, from step 3 or elsewhere, instead of waiting for its return window
+to close. A return against the order that is `OPEN` or `GOODS_RECEIVED` blocks this with `409` `RETURN_UNRESOLVED`;
+an `OPEN` one can be rejected in step 4 first, if that is the decision. A `200` means the order is `COMPLETED`,
+whether or not `escrowReleased` is `true`, so the call is not repeated.
+
+<RestEndpoint id="order.completeOrder" />
+
+## 6. Read an order
+
+An admin reads any order, but only by its `id`, the UUID that the buyer's checkout answer and order list carry. The
+lists above name orders by `orderNumber` alone, and no endpoint looks an order up by its number: the path takes only a
+UUID
+([OrderController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a9473a17c546faa7e41be843343b0bd882435964/Controllers/OrderController.cs#L337-L345)),
+and `GET /api/v1/orders/my-orders` lists the caller's own purchases
+([OrderController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a9473a17c546faa7e41be843343b0bd882435964/Controllers/OrderController.cs#L290-L334)).
+
+<RestEndpoint id="order.getOrder" />

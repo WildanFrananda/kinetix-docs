@@ -1,0 +1,70 @@
+---
+title: Browse the catalogue
+description: Show categories, products, a product's flash sale and discounts, and the reviews of a product and its merchant, from catalog, pricing and review.
+sidebar:
+  order: 5
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+The product pages of a buyer app read catalog, pricing and review, and none of these calls needs a token,
+so they work before the buyer signs in. The app lists the categories (step 1) and the products of one
+(step 2), opens a product (step 3), adds its flash sale and the discounts in force (steps 4 and 5), and shows
+the reviews of the product and of its merchant (steps 6 and 7). Every price shown here is an indication:
+[checkout](/apis/rest/buyer-app/checkout/) prices the cart again.
+
+## 1. List the categories
+
+One answer holds every category. The app shows each `name`, and keeps its `slug`: it filters products in
+step 2, and search's `category` takes the same value.
+
+<RestEndpoint id="catalog.listCategories" />
+
+## 2. List the products
+
+`category` is a `slug` from step 1; without it the list covers every product on sale. The app asks for the
+next `page` while `page` × `page_size` is below `count`. Each result's `sku` opens the product in step 3.
+
+<RestEndpoint id="catalog.listProducts" />
+
+## 3. Read one product
+
+`{sku}` comes from step 2, or from a search hit's `id` ([Search](/apis/rest/buyer-app/search/)). The answer
+adds the description and the stock warehouse holds for it. The app keeps `sku` for steps 4 and 6 and for the
+[cart](/apis/rest/buyer-app/cart/), and `merchant_principal_id` for step 7.
+
+<RestEndpoint id="catalog.getProduct" />
+
+## 4. Read the product's flash sale
+
+The same `sku` as step 3. A `null` body means no sale is open for it now. Checkout uses the flash price only
+when it is below the product's price, and then gives that unit no discount
+([pricing_service.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/d3020a29ca7ac6fcc2d5a7e472a6b234cc783d0d/src/services/pricing_service.rs#L157-L191)).
+
+<RestEndpoint id="pricing.getFlashSale" />
+
+## 5. List the discounts in force
+
+One unpaged list of every discount in force, which the app matches to products itself. A discount concerns a
+product when its `target_product_id` is the product's `sku`, its `target_category_id` is the product's
+`category_slug`, or it names neither
+([default_discount_evaluator.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/d3020a29ca7ac6fcc2d5a7e472a6b234cc783d0d/src/traits/default_discount_evaluator.rs#L10-L25),
+[CatalogProductDirectory.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a9473a17c546faa7e41be843343b0bd882435964/Infrastructure/Grpc/CatalogProductDirectory.cs#L55-L64)),
+and its `merchant_principal_id` is `null` or the product's merchant
+([pricing_service.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/d3020a29ca7ac6fcc2d5a7e472a6b234cc783d0d/src/services/pricing_service.rs#L137-L146)).
+
+<RestEndpoint id="pricing.listDiscounts" />
+
+## 6. Read the product's reviews
+
+`{productId}` is the product's `sku`, not catalog's numeric `id`: review keys its reviews by SKU, and a key it
+does not know answers an empty list rather than an error. The app asks for the next `page` up to `last_page`.
+
+<RestEndpoint id="review.listProductReviews" />
+
+## 7. Read the merchant's reviews
+
+`{merchantPrincipalId}` is the `merchant_principal_id` from step 3. The answer covers every product of that
+merchant, paged as in step 6.
+
+<RestEndpoint id="review.listMerchantReviews" />

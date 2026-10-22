@@ -1,0 +1,31 @@
+---
+title: Returns
+description: How a seller opens a return for a delivered order and reports the goods when they come back, through the warehouse, which passes both to order.
+sidebar:
+  order: 7
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+The seller opens a return for a delivered order while its return window is open, then reports the goods when
+they are back; order records both and works out the buyer's refund. Order learns of a delivery from matching,
+which reports each one when the courier completes it
+([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L671-L676)),
+and the merchant socket shows the job `delivered` ([Pack orders](/apis/rest/seller-web/packing/), step 8). Both
+calls take an access token whose role is `seller`.
+
+## 1. Open a return
+
+`fulfillment_task_id` is the task's `id`, which the queue lists while the task is on it
+([Pack orders](/apis/rest/seller-web/packing/), step 2). `reason` is the seller's account of why the goods are
+coming back. Keep `return_number` from the answer.
+
+<RestEndpoint id="warehouse.openReturn" />
+
+## 2. Report the goods back
+
+When the parcel arrives, send the `return_number` from step 1, the SKUs and quantities that came back, which are
+among the task's `lines`, and the `bin_code` where they were put. The goods are not added to stock: units fit
+to sell again are booked through the backoffice's [stock intake](/apis/rest/backoffice/stock-intake/).
+
+<RestEndpoint id="warehouse.receiveReturnedGoods" />

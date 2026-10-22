@@ -1,0 +1,27 @@
+---
+title: My orders
+description: List the orders the buyer placed and read one of them, at order.
+sidebar:
+  order: 10
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+order answers the orders whose buyer is the access token's `sub`. A buyer app lists them (step 1) and opens
+one (step 2). The order that [checkout](/apis/rest/buyer-app/checkout/) placed is read the same way.
+
+## 1. List the orders
+
+Newest first. `status` narrows the list to one status. The app asks for the next `page` while `page` ×
+`pageSize` is below `totalCount`. Each item's `id` opens the order in step 2.
+
+<RestEndpoint id="order.listMyOrders" />
+
+## 2. Read one order
+
+`{orderId}` is an item's `id` from step 1, or `id` from checkout's answer; the `orderNumber` is not accepted
+here. The answer shows the order's `status`, its lines and its amounts, and `driverPrincipalId` once a
+courier has delivered it. A delivered order can be [reviewed](/apis/rest/buyer-app/reviews/), and its
+history [proven](/apis/rest/buyer-app/proofs/#5-fetch-an-orders-evidence).
+
+<RestEndpoint id="order.getOrder" />

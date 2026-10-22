@@ -1,0 +1,55 @@
+---
+title: Register as a courier
+description: A courier creates an account and files a vehicle with identity, waits for matching to admit the courier after an admin's approval, and refreshes the session to get the courier role.
+sidebar:
+  order: 1
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+A courier signs up from the courier app in one call to identity, which creates the account, files the vehicle
+with matching and signs the courier in. The account stays a `customer`, and matching does not let the courier
+work, until an admin approves the courier in the [backoffice](/apis/rest/backoffice/courier-applications/). The
+calls, in order: register with identity, ask matching whether the courier may work, and, once approved, refresh
+the session to get the role `courier`. Nothing has to happen before: a new email creates the account, and an
+existing customer account is reused with its own password. An approved courier [signs in](/apis/rest/courier-app/sign-in/)
+from then on.
+
+## 1. Register the account and the vehicle
+
+Every field comes from the courier's input. The courier app checks them against the same rules before sending,
+and sends the phone number without spaces, dashes, dots or brackets
+([register_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/viewmodels/register_view_model.dart#L43-L48),
+[#L94-L140](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/viewmodels/register_view_model.dart#L94-L140)).
+Keep both tokens and `driverId` from the `201`: the tokens are a signed-in session for the next steps, and
+`driverId` is the courier's id in matching, the topic of the [driver socket](/apis/rest/courier-app/deliver/).
+The courier app stores the three together
+([session_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/session_repository_impl.dart#L143-L177)).
+The answers that carry `accountExists` mean the account exists already; each says what to send again.
+
+<RestEndpoint id="identity.registerCourier" />
+
+## 2. Ask whether the courier may work
+
+Send the access token from step 1. Until an admin approves the courier, matching answers `403` with
+`pending_approval`, and its driver socket refuses the courier as well. After approval it answers `200`. With a
+stored session, the courier app asks at every start and shows a waiting screen while the answer is
+`pending_approval`
+([splash_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/viewmodels/splash_view_model.dart#L31-L36)).
+
+<RestEndpoint id="matching.driverMe" />
+
+## 3. Refresh after approval
+
+Approval makes the account a `courier` in identity
+([courier_onboarding_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/courier_onboarding_usecase.service.ts#L63-L74)),
+but a token keeps the role it was issued with, so the tokens from step 1 still say `customer`. The driver socket
+admits only the roles `courier` and `admin`
+([driver_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_socket.ex#L46-L49))
+and refuses the old access token with `403`. A refresh reads the role from the account
+([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/auth_usecase.service.ts#L108-L128)):
+exchange the refresh token from step 1 and use the new pair from then on. The courier app refreshes when the
+driver socket refuses its token, then connects again with the new access token
+([connection_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/connection_repository_impl.dart#L88-L124)).
+
+<RestEndpoint id="identity.refresh" />

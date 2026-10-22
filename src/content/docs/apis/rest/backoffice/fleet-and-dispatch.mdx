@@ -1,0 +1,112 @@
+---
+title: Fleet and dispatch
+description: How an admin watches matching's couriers and dispatch board, and steps in by hand to assign, unassign or cancel a fleet job.
+sidebar:
+  order: 7
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+Matching tracks the couriers whose apps connect to it and gives each job, on its own, to an available courier near
+the pickup. The backoffice watches the fleet and the dispatch board, and an admin steps in by hand: gives a waiting
+job to a chosen courier, takes a job off its courier, or cancels a job no order is waiting for. Couriers join the
+fleet through [Courier applications](/apis/rest/backoffice/courier-applications/); signed in as on
+[Sign in](/apis/rest/backoffice/sign-in/), the admin reads the fleet, the board's counts, the jobs and one job, finds
+couriers near a pickup, assigns, unassigns or cancels, and lists one courier's jobs. Kong checks the token on every
+endpoint here, and matching checks the role.
+
+The courier's app holds a socket to matching on the topic `driver:<driver_id>`, and the channel subscribes to that
+courier's dispatch events when it joins
+([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_channel.ex#L49-L56)).
+That is how steps 7, 8 and 9 reach the courier's app.
+
+## 1. List the fleet
+
+The couriers matching tracks right now, with each one's `status` and last position. Each `id` is a driver id, the
+number steps 2, 7 and 10 take; jobs name their courier by the same number in `driver_id`.
+
+<RestEndpoint id="matching.listDrivers" />
+
+## 2. Read one courier
+
+Read one courier by the `id` from step 1, or by a job's `driver_id`.
+
+<RestEndpoint id="matching.getDriver" />
+
+## 3. Read the board's counts
+
+The counts for the head of the dispatch board: jobs waiting for a courier, jobs not yet finished, and jobs delivered
+today.
+
+<RestEndpoint id="matching.dispatchSummary" />
+
+## 4. List the jobs
+
+Jobs come newest first, filtered by `status` when one is given; `status=pending` lists the jobs no courier holds. For
+the next page, send the answer's `next_cursor` as `before`, until it is `null`.
+
+<RestEndpoint id="matching.listDispatches" />
+
+## 5. Read one job
+
+Read a job by its `id` from step 4. Keep its `pickup` for step 6; a delivered job also carries its proof of delivery.
+
+<RestEndpoint id="matching.getDispatch" />
+
+## 6. Find couriers near the pickup
+
+Send the job's `pickup.latitude` and `pickup.longitude` from step 5 as `latitude` and `longitude`. The answer lists
+tracked couriers nearest first, whatever their duty status; only one whose `status` is `online` can take a job in
+step 7.
+
+<RestEndpoint id="matching.nearbyDrivers" />
+
+## 7. Give a waiting job to a courier
+
+Send the chosen courier's `id` from step 6 as `driver_id`, with the job's `id` in the path. On success matching pushes
+`order_assigned` to that courier's socket
+([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L579-L585),
+[driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_channel.ex#L144-L147)),
+carrying the job in this shape
+([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_channel.ex#L237-L247)):
+
+```json
+{
+  "id": 4813,
+  "status": "assigned",
+  "weight_kg": 2,
+  "pickup": { "latitude": -6.1754, "longitude": 106.8272 },
+  "dropoff": { "latitude": -6.2297, "longitude": 106.8295 },
+  "assigned_at": "2026-10-22T03:15:02.187430Z"
+}
+```
+
+<RestEndpoint id="matching.assignDispatch" />
+
+## 8. Take a job off its courier
+
+Unassign a job whose `status` is `assigned`, with its `id` in the path. Matching pushes `order_unassigned` with the
+job's `id` to the courier who held it, then `active_order`, that courier's open job or `null`
+([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L373-L386),
+[driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_channel.ex#L154-L158)).
+The job is `pending` again, for matching to offer to another courier or for step 7.
+
+<RestEndpoint id="matching.unassignDispatch" />
+
+## 9. Cancel a job
+
+Only a job with no `order_number` can be cancelled: a job that carries one, as every job order books does, answers
+`409` `bound_to_order` whatever its status. When the cancelled job was `assigned`, matching pushes `order_updated`
+with the job, `status` `cancelled`, to the courier who held it
+([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L637-L648),
+[dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L678-L683),
+[driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_channel.ex#L149-L152));
+a `pending` job has no courier to tell.
+
+<RestEndpoint id="matching.cancelDispatch" />
+
+## 10. List one courier's jobs
+
+The jobs a courier holds now, by the driver id from step 1 or a job's `driver_id`.
+
+<RestEndpoint id="matching.driverDispatches" />

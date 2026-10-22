@@ -1,0 +1,30 @@
+---
+title: Order saya
+description: Mendaftar order yang dibuat pembeli dan membaca salah satunya, di order.
+sidebar:
+  order: 10
+sourceHash: "dc49446459e4"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+order menjawab order-order yang pembelinya adalah `sub` milik access token. Aplikasi pembeli mendaftarnya
+(langkah 1) dan membuka salah satunya (langkah 2). Order yang dibuat [checkout](/id/apis/rest/buyer-app/checkout/)
+dibaca dengan cara yang sama.
+
+## 1. Mendaftar order
+
+Terbaru lebih dulu. `status` menyempitkan daftar ke satu status. Aplikasi meminta `page` berikutnya selama
+`page` × `pageSize` masih di bawah `totalCount`. `id` setiap item membuka order-nya di langkah 2.
+
+<RestEndpoint id="order.listMyOrders" />
+
+## 2. Membaca satu order
+
+`{orderId}` adalah `id` sebuah item dari langkah 1, atau `id` dari jawaban checkout; `orderNumber` tidak
+diterima di sini. Jawabannya menunjukkan `status` order, baris-barisnya dan jumlah uangnya, serta
+`driverPrincipalId` begitu seorang kurir sudah mengantarnya. Order yang sudah terkirim bisa
+[diulas](/id/apis/rest/buyer-app/reviews/), dan riwayatnya
+[dibuktikan](/id/apis/rest/buyer-app/proofs/#5-mengambil-evidence-order).
+
+<RestEndpoint id="order.getOrder" />

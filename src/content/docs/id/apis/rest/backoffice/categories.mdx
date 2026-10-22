@@ -1,0 +1,51 @@
+---
+title: Kategori
+description: Cara admin mendaftar, membaca, membuat, mengganti nama dan menghapus kategori catalog tempat penjual menaruh produknya.
+sidebar:
+  order: 4
+sourceHash: "2a8c890fca5d"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Catalog menyimpan kategori produk platform, dan hanya admin yang mengubahnya: penjual menaruh setiap produk di bawah
+`id` sebuah kategori, dan diskon kategori milik pricing menyebut `slug` sebuah kategori
+([Promosi platform](/id/apis/rest/backoffice/platform-promotions/)). Admin yang sudah masuk seperti di
+[Masuk](/id/apis/rest/backoffice/sign-in/) mendaftar kategori, membaca salah satunya, lalu membuat, mengganti nama atau
+menghapusnya. Kedua pembacaan bersifat publik; ketiga penulisan butuh access token admin, yang diperiksa catalog
+sendiri.
+
+## 1. Daftar kategori
+
+Semua kategori datang dalam satu jawaban, tanpa paging. `id` masing-masing adalah nilai yang dipakai langkah
+berikutnya di path.
+
+<RestEndpoint id="catalog.listCategories" />
+
+## 2. Baca satu kategori
+
+Baca sebuah kategori dengan `id` dari langkah 1, misalnya untuk menampilkannya sebelum diubah.
+
+<RestEndpoint id="catalog.getCategory" />
+
+## 3. Buat kategori
+
+Kirim `name` dan `slug`; keduanya tidak boleh sudah dipakai kategori lain. Simpan `id` dari jawabannya: nilai itulah
+yang dikirim penjual sebagai `category_id` saat membuat produk.
+
+<RestEndpoint id="catalog.createCategory" />
+
+## 4. Ganti nama kategori
+
+Update mengganti kedua nilai, jadi kirim `name` dan `slug` bersamaan, yang tidak berubah dikirim apa adanya, dengan
+`id` dari langkah 1 atau 3 di path.
+
+<RestEndpoint id="catalog.updateCategory" />
+
+## 5. Hapus kategori
+
+Sebuah kategori hanya bisa dihapus selama tidak ada produk di bawahnya, termasuk produk yang sudah ditarik. Jawaban
+`409` memberi jumlahnya di `product_count`; merchant pemilik produk-produk itu harus memindahkannya ke kategori lain
+sebelum admin bisa menghapusnya.
+
+<RestEndpoint id="catalog.deleteCategory" />

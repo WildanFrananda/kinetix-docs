@@ -1,0 +1,60 @@
+---
+title: Pengajuan penjual
+description: Cara admin meninjau pengajuan untuk berjualan di identity, membaca detail pemohon, lalu menyetujui atau menolak setiap pengajuan.
+sidebar:
+  order: 2
+sourceHash: "0886bdf54ecc"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Sebuah akun mengajukan diri untuk berjualan dari aplikasi web penjual dengan `POST /api/v1/sellers/{id}/onboard`, dan
+pengajuannya menunggu di identity sebagai `pending` sampai admin memutuskannya. Keputusan itulah yang membuat penjual
+bisa berdagang: catalog dan pricing menanyakan merchant milik penjual ke identity sebelum menerima produk atau promosi
+([product_service.py](https://github.com/WildanFrananda/kinetix-catalog-service/blob/95cabdb917607026a290b7d24e91b7121a0631d3/core/application/services/product_service.py#L127-L138),
+[promotion_service.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/d3020a29ca7ac6fcc2d5a7e472a6b234cc783d0d/src/services/promotion_service.rs#L43-L51)),
+dan identity baru mengizinkan sebuah merchant berdagang setelah tokonya `verified` atau `active`
+([merchant_standing.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/domain/merchant_standing.ts#L1-L5),
+[identity_grpc.controller.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/adapters/controllers/identity_grpc.controller.ts#L237-L258)).
+Admin yang sudah masuk seperti di [Masuk](/id/apis/rest/backoffice/sign-in/) mendaftar pengajuan yang menunggu,
+membaca salah satunya dan, bila perlu, profil pemohonnya, lalu menyetujui atau menolaknya.
+
+## 1. Daftar pengajuan yang menunggu
+
+Minta `status=pending` untuk melihat pengajuan yang menunggu keputusan; hilangkan `status` untuk melihat semuanya,
+termasuk yang sudah diputuskan. Setiap pengajuan menyebut pemohonnya dengan `userId`, yang dipakai setiap langkah
+berikutnya sebagai `id`. Pengajuan datang dari yang paling lama, satu halaman setiap kali: selama `nextAfterId` berupa
+angka, minta lagi dengan `after` diisi nilai itu.
+
+<RestEndpoint id="identity.listSellerApplications" />
+
+## 2. Baca satu pengajuan
+
+Baca pengajuan satu pemohon, dengan `id` diisi `userId` dari langkah 1, untuk melihat keadaannya sekarang, bukan
+seperti yang ditampilkan daftar tadi. Langkah 4 dan 5 hanya menerima pengajuan yang `status`-nya masih `pending`.
+
+<RestEndpoint id="identity.getSellerApplication" />
+
+## 3. Baca profil pemohon
+
+Langkah ini opsional. Pengajuan memuat detail toko; nama dan nomor telepon pemohon sendiri ada di profil akunnya, yang
+boleh dibaca admin untuk akun mana pun, lagi-lagi dengan `id` diisi `userId`. Untuk pemohon yang belum pernah
+menyimpan profil, jawabannya `404`, dan itu tidak mengatakan apa pun tentang pengajuannya.
+
+<RestEndpoint id="identity.getProfile" />
+
+## 4. Setujui pengajuan
+
+Menyetujui, dengan `id` diisi `userId`, menjadikan akun itu penjual dan tokonya `verified`, dan sejak saat itu
+merchant-nya boleh berdagang. Token penjual baru membawa role barunya setelah refresh atau masuk berikutnya. Jawaban
+`409` yang menyebutkan bahwa request lain menulis toko itu pada saat yang sama tidak mengubah apa pun; kirim
+persetujuannya lagi.
+
+<RestEndpoint id="identity.verifySeller" />
+
+## 5. Tolak pengajuan
+
+Menolak, sebagai ganti menyetujui, dengan `id` yang sama, menandai pengajuan itu `rejected`. Akun itu tetap dengan
+role-nya dan boleh mengajukan versi yang sudah diperbaiki dari aplikasi web penjual.
+
+<RestEndpoint id="identity.rejectSeller" />

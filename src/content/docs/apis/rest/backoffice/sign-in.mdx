@@ -1,0 +1,58 @@
+---
+title: Sign in
+description: How the backoffice signs a staff member in, answers a two-factor challenge, keeps the token pair fresh and signs out, all against identity.
+sidebar:
+  order: 1
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+The backoffice is the web application the API expects Kinetix staff to use. It is for accounts whose `role` is
+`admin`: the staff endpoints on the following pages answer `403` to any other role. A staff member signs in with an
+email and a password, answers a two-factor challenge when the account has two-factor authentication on, and the
+application then keeps the token pair fresh until the staff member signs out. Being a browser application, the
+backoffice is subject to CORS and authenticates with the bearer token alone, never a cookie; see
+[Browsers](/apis/rest/#browsers).
+
+## 1. Sign in with email and password
+
+The email and the password the staff member types go to identity in one request. A `200` carrying `accessToken`
+starts the session: keep `accessToken`, `refreshToken` and `expiresIn`, and read `user.role`, since an account whose
+role is not `admin` signs in here but is refused by every staff endpoint. A `200` carrying `mfaRequired` has started
+no session yet: keep `challengeToken` and go to step 2.
+
+<RestEndpoint id="identity.login" />
+
+## 2. Answer the two-factor challenge
+
+Only an account with two-factor authentication on gets here. Any account, an admin's included, turns it on with the
+calls on the buyer app's [Two-factor authentication](/apis/rest/buyer-app/two-factor/) page. Send `challengeToken`
+from step 1 and the six digits the staff member's authenticator shows, within the challenge's `expiresIn` seconds. A
+`200` is the same token pair as step 1's, kept the same way; a `401` sends the staff member back to step 1.
+
+<RestEndpoint id="identity.verifyTwoFactor" />
+
+## 3. Restore the session from a stored token
+
+When the application loads again with a stored access token, this call says whose token it is, with what `role`, and
+when it expires (`expiresAt`), without asking for the password. Its fields come from the token itself. A `401`, from
+Kong or from identity, means the access token can no longer be used: step 4 exchanges the refresh token for a new
+pair.
+
+<RestEndpoint id="identity.me" />
+
+## 4. Refresh the token pair
+
+Once `expiresIn` seconds have passed, or after a `401` for an expired access token, exchange `refreshToken` for a
+new pair and replace both stored tokens at once. The refresh token sent is spent, and sending it a second time ends
+the session, so a backoffice open in several browser tabs must let only one of them refresh at a time and share the
+new pair with the others. Any `401` here means signing in again at step 1.
+
+<RestEndpoint id="identity.refresh" />
+
+## 5. Sign out
+
+Send the access token in `Authorization` and the session's `refreshToken` in the body; leave `refreshToken` out to
+end every session of the account instead. Discard both stored tokens after the `204`.
+
+<RestEndpoint id="identity.logout" />
