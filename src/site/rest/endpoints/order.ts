@@ -751,7 +751,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           rule: "rest.order.checkout.field.voucherCode"
         }
       ],
-      headers: ["Idempotency-Key: 7d4b1f0e-3c1a-4c55-9a7b-0f8e2b1d9c11"],
+      headers: ["Idempotency-Key: 33333333-4444-4555-8666-777777777777"],
       json: {
         shippingAddress,
         recipientName: "Siti Rahmawati",

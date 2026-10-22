@@ -331,7 +331,7 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
           rule: "rest.payment.customerTopUp.field.bank"
         }
       ],
-      headers: ["Idempotency-Key: topup-7f3a9c2e-1b4d-4e6f-8a0b-5c9d2e1f3a7b"],
+      headers: ["Idempotency-Key: topup-22222222-3333-4444-8555-666666666666"],
       json: {
         amount: 150000,
         paymentMethod: "MIDTRANS_VA",

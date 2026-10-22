@@ -5,7 +5,7 @@ import { restSource } from "../rest_source";
 
 const traceId: string = "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b";
 const merchant: string = "3f6c1a2e-9b4d-4e7a-8c5f-2d1e0b9a8c7d";
-const idempotencyKey: string = "Idempotency-Key: 1f3e5d7c-9b2a-4c6e-8f0d-2a4b6c8e0f1a";
+const idempotencyKey: string = "Idempotency-Key: 11111111-2222-4333-8444-555555555555";
 const replayed: string = "Idempotent-Replayed: true";
 const createdAt: string = "2026-10-22T03:15:00.482913Z";
 

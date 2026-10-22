@@ -136,7 +136,7 @@ export const notaryEndpoints: readonly RestEndpoint[] = [
                 holder: "0f8b6c1e-5a2d-4c3b-9e7f-1a2b3c4d5e6f",
                 kind: "customer_balance",
                 salt: "0xc47d19bdbd6e911347887259063a4534cdc7fbe2556bf0180d1833ccf24ddd5e",
-                secret: "0xf4907ea3b915850df1a7e03097dcfaba17112c839e947c9da60eac7ef61db38a"
+                secret: "0x5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e"
               },
               statement: {
                 court: "0x2222222222222222222222222222222222222222",
