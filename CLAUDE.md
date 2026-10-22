@@ -173,6 +173,12 @@ each feature as the calls in the order the application makes them, with every re
   several times its size. `tests/rest_catalogue.test.ts` refuses a key missing in either language, a blank
   entry, a key outside its file's prefix, an unused key, and an Indonesian text whose code spans differ from
   the English.
+- **Rendering** (the user's request, 2026-10-22): a request is three separate blocks — Endpoint (method and full
+  URL), Headers, Body — and each answer two, Headers and Body, each a Starlight `Code` block so Expressive Code
+  highlights it like every other code block (`http` for the endpoint and headers, `json` or plain text for bodies,
+  chosen in `message_payload.ts`). Methods and statuses are coloured text by tone (`method_tone.ts`,
+  `status_tone.ts`: blue, green, orange, red from the lane, accent and Starlight red tokens), never a pill. The grid
+  holding the blocks uses `minmax(0, 1fr)`, or a long line widens the column over the sidebar.
 - **Pages carry the order, data carries the facts.** A feature page is MDX: one `##` per step, the prose that
   says why the step comes there and which values it takes from earlier answers, and
   `<RestEndpoint id="…" />`. An endpoint used by several applications (sign-in is in all four) is rendered

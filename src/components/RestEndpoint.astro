@@ -1,14 +1,17 @@
 ---
+import { Code } from "@astrojs/starlight/components";
 import { localeOf } from "../diagrams/engine/locale_of";
+import { messagePayload } from "../site/rest/message_payload";
+import { methodTone } from "../site/rest/method_tone";
 import { releaseTree } from "../site/rest/release_tree";
-import { requestMessage } from "../site/rest/request_message";
+import { requestHeaders } from "../site/rest/request_headers";
+import { requestLine } from "../site/rest/request_line";
 import { restCatalogueFor } from "../site/rest/rest_catalogue";
 import { restEndpoint } from "../site/rest/rest_endpoints";
 import { restReleases } from "../site/rest/rest_releases";
 import { servicePage } from "../site/rest/service_page";
 import type { RestEndpointProps } from "../site/types/rest_endpoint_props.type";
 import RestCaseBlock from "./RestCaseBlock.astro";
-import RestMessage from "./RestMessage.astro";
 import RestText from "./RestText.astro";
 
 type Props = RestEndpointProps;
@@ -19,6 +22,8 @@ const text = restCatalogueFor(locale);
 const prefix = locale === "en" ? "" : `/${locale}`;
 const endpoint = restEndpoint(id);
 const release = restReleases[endpoint.service];
+const headers = requestHeaders(endpoint);
+const payload = messagePayload(endpoint.request);
 const token = text[`rest.common.token.${endpoint.access.token}`];
 const gateway =
   endpoint.access.token === "none"
@@ -30,7 +35,7 @@ const gateway =
 
 <section class="rest-endpoint not-content">
   <p class="rest-line">
-    <span class="rest-method">{endpoint.method}</span>
+    <span class={`rest-method rest-tone-${methodTone(endpoint.method)}`}>{endpoint.method}</span>
     <code class="rest-path">{endpoint.path.split("/").map((part, index) => (<>{index > 0 && <>/<wbr /></>}{part}</>))}</code>
   </p>
   <p class="rest-summary"><RestText text={text[endpoint.summary]} /></p>
@@ -71,7 +76,11 @@ const gateway =
       </ul>
     )
   }
-  <RestMessage text={requestMessage(endpoint)} />
+  <div class="rest-parts">
+    <Code code={requestLine(endpoint)} lang="http" title={text["rest.common.part.endpoint"]} />
+    {headers.length > 0 && <Code code={headers.join("\n")} lang="http" title={text["rest.common.part.headers"]} />}
+    {payload !== undefined && <Code code={payload.code} lang={payload.lang} title={text["rest.common.part.body"]} />}
+  </div>
   <p class="rest-label">{text["rest.common.responses"]}</p>
   {endpoint.cases.map((entry) => <RestCaseBlock entry={entry} />)}
   <p class="rest-also">
@@ -118,7 +127,30 @@ const gateway =
     font-size: var(--sl-text-sm);
     font-weight: 600;
     letter-spacing: 0.04em;
+  }
+
+  .rest-tone-green {
+    color: var(--kx-lane-b);
+  }
+
+  .rest-tone-blue {
+    color: var(--kx-lane-a);
+  }
+
+  .rest-tone-orange {
     color: var(--sl-color-accent);
+  }
+
+  .rest-tone-red {
+    color: var(--sl-color-red);
+  }
+
+  .rest-parts {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.625rem;
+    margin-top: 0.625rem;
+    min-width: 0;
   }
 
   .rest-path {

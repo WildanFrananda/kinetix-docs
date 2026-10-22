@@ -1,25 +1,43 @@
 ---
+import { Code } from "@astrojs/starlight/components";
 import { localeOf } from "../diagrams/engine/locale_of";
-import { responseMessage } from "../site/rest/response_message";
+import { messageHeaders } from "../site/rest/message_headers";
+import { messagePayload } from "../site/rest/message_payload";
 import { restCatalogueFor } from "../site/rest/rest_catalogue";
 import { statusReasons } from "../site/rest/status_reasons";
+import { statusTone } from "../site/rest/status_tone";
 import type { RestCaseProps } from "../site/types/rest_case_props.type";
-import RestMessage from "./RestMessage.astro";
 import RestText from "./RestText.astro";
 
 type Props = RestCaseProps;
 
 const { entry } = Astro.props;
 const text = restCatalogueFor(localeOf(Astro.locals.starlightRoute.entryMeta.lang));
+const reason = statusReasons[entry.status];
+const headers = messageHeaders(entry);
+const payload = messagePayload(entry);
+
+if (reason === undefined) {
+  throw new Error(`no reason phrase for status ${entry.status}`);
+}
 ---
 
 <div class="rest-case">
   <p class="rest-case-head">
-    <span class="rest-status">{entry.status} {statusReasons[entry.status]}</span>
+    <span class={`rest-status rest-tone-${statusTone(entry.status)}`}>{entry.status} {reason}</span>
     <a class="rest-source" href={entry.source.href}>{entry.source.label}</a>
   </p>
   <p class="rest-when"><RestText text={text[entry.when]} /></p>
-  <RestMessage text={responseMessage(entry)} />
+  <div class="rest-parts">
+    {headers.length > 0 && <Code code={headers.join("\n")} lang="http" title={text["rest.common.part.headers"]} />}
+    {
+      payload === undefined ? (
+        <p class="rest-none">{text["rest.common.noBody"]}</p>
+      ) : (
+        <Code code={payload.code} lang={payload.lang} title={text["rest.common.part.body"]} />
+      )
+    }
+  </div>
 </div>
 
 <style>
@@ -53,7 +71,22 @@ const text = restCatalogueFor(localeOf(Astro.locals.starlightRoute.entryMeta.lan
     font-family: var(--sl-font-mono);
     font-size: var(--sl-text-sm);
     font-weight: 600;
-    color: var(--sl-color-white);
+  }
+
+  .rest-tone-green {
+    color: var(--kx-lane-b);
+  }
+
+  .rest-tone-blue {
+    color: var(--kx-lane-a);
+  }
+
+  .rest-tone-orange {
+    color: var(--sl-color-accent);
+  }
+
+  .rest-tone-red {
+    color: var(--sl-color-red);
   }
 
   .rest-source {
@@ -65,5 +98,19 @@ const text = restCatalogueFor(localeOf(Astro.locals.starlightRoute.entryMeta.lan
   .rest-when {
     margin: 0.375rem 0 0;
     color: var(--sl-color-gray-2);
+  }
+
+  .rest-parts {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.625rem;
+    margin-top: 0.625rem;
+    min-width: 0;
+  }
+
+  .rest-none {
+    margin: 0;
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
   }
 </style>

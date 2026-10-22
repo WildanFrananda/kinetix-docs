@@ -20,5 +20,9 @@
   "rest.common.also.gateway": "jawaban Kong",
   "rest.common.releases.service": "Service",
   "rest.common.releases.release": "Rilis",
-  "rest.common.releases.commit": "Commit"
+  "rest.common.releases.commit": "Commit",
+  "rest.common.part.endpoint": "Endpoint",
+  "rest.common.part.headers": "Header",
+  "rest.common.part.body": "Body",
+  "rest.common.noBody": "Tanpa body."
 }

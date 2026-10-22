@@ -20,5 +20,9 @@
   "rest.common.also.gateway": "Kong's answers",
   "rest.common.releases.service": "Service",
   "rest.common.releases.release": "Release",
-  "rest.common.releases.commit": "Commit"
+  "rest.common.releases.commit": "Commit",
+  "rest.common.part.endpoint": "Endpoint",
+  "rest.common.part.headers": "Headers",
+  "rest.common.part.body": "Body",
+  "rest.common.noBody": "No body."
 }
