@@ -134,7 +134,6 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       who: "rest.identity.login.who"
     },
     request: {
-      target: "/api/v1/auth/login",
       fields: [
         {
           name: "email",
@@ -234,7 +233,6 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       who: "rest.identity.register.who"
     },
     request: {
-      target: "/api/v1/auth/register",
       fields: [
         {
           name: "email",
@@ -323,7 +321,6 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       who: "rest.identity.refresh.who"
     },
     request: {
-      target: "/api/v1/auth/refresh",
       fields: [
         {
           name: "refreshToken",
@@ -459,7 +456,6 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       who: "rest.identity.verifyTwoFactor.who"
     },
     request: {
-      target: "/api/v1/auth/2fa/verify",
       fields: [
         {
           name: "challengeToken",
@@ -614,7 +610,6 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       who: "rest.identity.logout.who"
     },
     request: {
-      target: "/api/v1/auth/logout",
       fields: [
         {
           name: "refreshToken",
@@ -705,7 +700,6 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       who: "rest.identity.me.who"
     },
     request: {
-      target: "/api/v1/auth/me",
       fields: []
     },
     cases: [
@@ -748,7 +742,6 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       who: "rest.identity.setupTwoFactor.who"
     },
     request: {
-      target: "/api/v1/auth/2fa/setup/42",
       fields: [
         {
           name: "id",
@@ -831,7 +824,6 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       who: "rest.identity.enableTwoFactor.who"
     },
     request: {
-      target: "/api/v1/auth/2fa/enable/42",
       fields: [
         {
           name: "id",
@@ -954,7 +946,6 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       who: "rest.identity.disableTwoFactor.who"
     },
     request: {
-      target: "/api/v1/auth/2fa/disable/42",
       fields: [
         {
           name: "id",
@@ -1077,7 +1068,6 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       who: "rest.identity.getProfile.who"
     },
     request: {
-      target: "/api/v1/users/42/profile",
       fields: [
         {
           name: "id",
@@ -1155,7 +1145,6 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       who: "rest.identity.updateProfile.who"
     },
     request: {
-      target: "/api/v1/users/42/profile",
       fields: [
         {
           name: "id",
@@ -1315,7 +1304,6 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       who: "rest.identity.listSellerApplications.who"
     },
     request: {
-      target: "/api/v1/sellers/applications?status=pending&limit=50",
       fields: [
         {
           name: "status",
@@ -1406,7 +1394,6 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       who: "rest.identity.getSellerApplication.who"
     },
     request: {
-      target: "/api/v1/sellers/57/application",
       fields: [
         {
           name: "id",
@@ -1483,7 +1470,6 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       who: "rest.identity.onboardSeller.who"
     },
     request: {
-      target: "/api/v1/sellers/57/onboard",
       fields: [
         {
           name: "id",
@@ -1659,7 +1645,6 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       who: "rest.identity.verifySeller.who"
     },
     request: {
-      target: "/api/v1/sellers/57/verify",
       fields: [
         {
           name: "id",
@@ -1779,7 +1764,6 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       who: "rest.identity.rejectSeller.who"
     },
     request: {
-      target: "/api/v1/sellers/57/reject",
       fields: [
         {
           name: "id",
@@ -1867,7 +1851,6 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       who: "rest.identity.registerCourier.who"
     },
     request: {
-      target: "/api/v1/couriers/register",
       fields: [
         {
           name: "email",
@@ -2058,7 +2041,6 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       who: "rest.identity.listCourierApplications.who"
     },
     request: {
-      target: "/api/v1/couriers/applications?status=pending",
       fields: [
         {
           name: "status",
@@ -2158,7 +2140,6 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       who: "rest.identity.approveCourier.who"
     },
     request: {
-      target: "/api/v1/couriers/3c9e2a41-7b5d-4f08-9a1c-2d6e8f0b4c17/approve",
       fields: [
         {
           name: "principalId",
@@ -2287,7 +2268,6 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       who: "rest.identity.jwks.who"
     },
     request: {
-      target: "/.well-known/jwks.json",
       fields: []
     },
     cases: [

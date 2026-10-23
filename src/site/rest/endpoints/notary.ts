@@ -85,7 +85,6 @@ export const notaryEndpoints: readonly RestEndpoint[] = [
       who: "rest.notary.liabilityProofs.who"
     },
     request: {
-      target: "/api/v1/proofs/liabilities/latest",
       fields: [
         {
           name: "epoch",
@@ -250,7 +249,6 @@ export const notaryEndpoints: readonly RestEndpoint[] = [
       who: "rest.notary.registrationTemplate.who"
     },
     request: {
-      target: "/api/v1/proofs/registrations",
       fields: []
     },
     cases: [
@@ -320,7 +318,6 @@ export const notaryEndpoints: readonly RestEndpoint[] = [
       who: "rest.notary.register.who"
     },
     request: {
-      target: "/api/v1/proofs/registrations",
       fields: [
         {
           name: "holder",
@@ -499,7 +496,6 @@ export const notaryEndpoints: readonly RestEndpoint[] = [
       who: "rest.notary.orderEvidence.who"
     },
     request: {
-      target: "/api/v1/proofs/evidence/orders/ORD-20261021-3F9A1C7B",
       fields: [
         {
           name: "order",
@@ -647,7 +643,6 @@ export const notaryEndpoints: readonly RestEndpoint[] = [
       who: "rest.notary.reviewEvidence.who"
     },
     request: {
-      target: "/api/v1/proofs/evidence/reviews/5e8a2c4f-1b7d-4e9a-8c3f-2d6b9a0e1f47",
       fields: [
         {
           name: "review",

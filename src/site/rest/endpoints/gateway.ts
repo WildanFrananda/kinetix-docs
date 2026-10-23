@@ -150,7 +150,6 @@ export const gatewayEndpoints: readonly RestEndpoint[] = [
       who: "rest.gateway.health.who"
     },
     request: {
-      target: "/health",
       fields: []
     },
     cases: [

@@ -122,7 +122,6 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
       who: "rest.catalog.listProducts.who"
     },
     request: {
-      target: "/api/v1/products?q=kaos&page=1&page_size=2",
       fields: [
         {
           name: "category",
@@ -265,7 +264,6 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
       who: "rest.catalog.getProduct.who"
     },
     request: {
-      target: "/api/v1/products/KAOS-HITAM-M",
       fields: [
         {
           name: "sku",
@@ -352,7 +350,6 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
       who: "rest.catalog.createProduct.who"
     },
     request: {
-      target: "/api/v1/products/create",
       fields: [
         {
           name: "sku",
@@ -521,7 +518,6 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
       who: "rest.catalog.updateProduct.who"
     },
     request: {
-      target: "/api/v1/products/manage/42",
       fields: [
         {
           name: "id",
@@ -719,7 +715,6 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
       who: "rest.catalog.deleteProduct.who"
     },
     request: {
-      target: "/api/v1/products/manage/42",
       fields: [
         {
           name: "id",
@@ -802,7 +797,6 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
       who: "rest.catalog.listCategories.who"
     },
     request: {
-      target: "/api/v1/categories",
       fields: []
     },
     cases: [
@@ -838,7 +832,6 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
       who: "rest.catalog.getCategory.who"
     },
     request: {
-      target: "/api/v1/categories/3",
       fields: [
         {
           name: "id",
@@ -885,7 +878,6 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
       who: "rest.catalog.createCategory.who"
     },
     request: {
-      target: "/api/v1/categories",
       fields: [
         {
           name: "name",
@@ -964,7 +956,6 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
       who: "rest.catalog.updateCategory.who"
     },
     request: {
-      target: "/api/v1/categories/3",
       fields: [
         {
           name: "id",
@@ -1060,7 +1051,6 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
       who: "rest.catalog.deleteCategory.who"
     },
     request: {
-      target: "/api/v1/categories/4",
       fields: [
         {
           name: "id",

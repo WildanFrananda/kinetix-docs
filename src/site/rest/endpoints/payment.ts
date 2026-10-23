@@ -239,7 +239,6 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
       who: "rest.payment.customerBalance.who"
     },
     request: {
-      target: "/api/v1/payment/wallet/customer/balance",
       fields: []
     },
     cases: [
@@ -300,7 +299,6 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
       who: "rest.payment.customerTopUp.who"
     },
     request: {
-      target: "/api/v1/payment/wallet/customer/topup",
       fields: [
         {
           name: "Idempotency-Key",
@@ -523,7 +521,6 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
       who: "rest.payment.customerTopUpStatus.who"
     },
     request: {
-      target: "/api/v1/payment/wallet/customer/topup/TOPUP-3c1f9a2e-7b4d-4e8a-9f60-2d5b8c7a1e43",
       fields: [
         {
           name: "referenceNumber",
@@ -605,7 +602,6 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
       who: "rest.payment.merchantBalance.who"
     },
     request: {
-      target: "/api/v1/payment/wallet/merchant/balance",
       fields: []
     },
     cases: [
@@ -666,7 +662,6 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
       who: "rest.payment.driverBalance.who"
     },
     request: {
-      target: "/api/v1/payment/wallet/driver/balance",
       fields: []
     },
     cases: [
@@ -727,7 +722,6 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
       who: "rest.payment.midtransNotification.who"
     },
     request: {
-      target: "/api/v1/payment/gateway/midtrans/notifications",
       fields: [
         {
           name: "order_id",

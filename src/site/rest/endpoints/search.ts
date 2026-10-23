@@ -41,7 +41,6 @@ export const searchEndpoints: readonly RestEndpoint[] = [
       who: "rest.search.searchProducts.who"
     },
     request: {
-      target: "/api/v1/products/search?q=kaos%20hitam&category=pakaian&sort=price_asc&limit=24&offset=0",
       fields: [
         {
           name: "q",
@@ -305,7 +304,6 @@ export const searchEndpoints: readonly RestEndpoint[] = [
       who: "rest.search.suggestProducts.who"
     },
     request: {
-      target: "/api/v1/products/suggest?q=kaos%20hi&limit=5",
       fields: [
         {
           name: "q",

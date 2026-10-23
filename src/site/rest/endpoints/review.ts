@@ -138,7 +138,6 @@ export const reviewEndpoints: readonly RestEndpoint[] = [
       who: "rest.review.createProductReview.who"
     },
     request: {
-      target: "/api/v1/reviews/products",
       fields: [
         {
           name: "order_id",
@@ -280,7 +279,6 @@ export const reviewEndpoints: readonly RestEndpoint[] = [
       who: "rest.review.createDriverRating.who"
     },
     request: {
-      target: "/api/v1/reviews/drivers",
       fields: [
         {
           name: "order_id",
@@ -413,7 +411,6 @@ export const reviewEndpoints: readonly RestEndpoint[] = [
       who: "rest.review.listProductReviews.who"
     },
     request: {
-      target: "/api/v1/reviews/products/KOPI-GAYO-250G?page=1",
       fields: [
         {
           name: "productId",
@@ -492,7 +489,6 @@ export const reviewEndpoints: readonly RestEndpoint[] = [
       who: "rest.review.listMerchantReviews.who"
     },
     request: {
-      target: "/api/v1/reviews/merchants/5b2e8c1d-7a4f-4e6b-8c9d-1f3a5b7c9e2d?page=1",
       fields: [
         {
           name: "merchantPrincipalId",
@@ -580,7 +576,6 @@ export const reviewEndpoints: readonly RestEndpoint[] = [
       who: "rest.review.listDriverRatings.who"
     },
     request: {
-      target: "/api/v1/reviews/drivers/a3c5e7f9-2b4d-4f6a-8c1e-3d5f7a9b1c2e?page=1",
       fields: [
         {
           name: "driverPrincipalId",

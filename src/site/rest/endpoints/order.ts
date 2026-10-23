@@ -247,7 +247,6 @@ export const orderEndpoints: readonly RestEndpoint[] = [
       who: "rest.order.getCart.who"
     },
     request: {
-      target: "/api/v1/cart",
       fields: []
     },
     cases: [
@@ -290,7 +289,6 @@ export const orderEndpoints: readonly RestEndpoint[] = [
       who: "rest.order.addCartItem.who"
     },
     request: {
-      target: "/api/v1/cart/items",
       fields: [
         {
           name: "productId",
@@ -437,7 +435,6 @@ export const orderEndpoints: readonly RestEndpoint[] = [
       who: "rest.order.updateCartItem.who"
     },
     request: {
-      target: "/api/v1/cart/items/KOPI-ARABIKA-250",
       fields: [
         {
           name: "productId",
@@ -517,7 +514,6 @@ export const orderEndpoints: readonly RestEndpoint[] = [
       who: "rest.order.removeCartItem.who"
     },
     request: {
-      target: "/api/v1/cart/items/GULA-AREN-500",
       fields: [
         {
           name: "productId",
@@ -567,7 +563,6 @@ export const orderEndpoints: readonly RestEndpoint[] = [
       who: "rest.order.applyCartVoucher.who"
     },
     request: {
-      target: "/api/v1/cart/voucher",
       fields: [
         {
           name: "voucherCode",
@@ -635,7 +630,6 @@ export const orderEndpoints: readonly RestEndpoint[] = [
       who: "rest.order.removeCartVoucher.who"
     },
     request: {
-      target: "/api/v1/cart/voucher",
       fields: []
     },
     cases: [
@@ -676,7 +670,6 @@ export const orderEndpoints: readonly RestEndpoint[] = [
       who: "rest.order.clearCart.who"
     },
     request: {
-      target: "/api/v1/cart",
       fields: []
     },
     cases: [
@@ -706,7 +699,6 @@ export const orderEndpoints: readonly RestEndpoint[] = [
       who: "rest.order.checkout.who"
     },
     request: {
-      target: "/api/v1/orders/checkout",
       fields: [
         {
           name: "Idempotency-Key",
@@ -1165,7 +1157,6 @@ export const orderEndpoints: readonly RestEndpoint[] = [
       who: "rest.order.listMyOrders.who"
     },
     request: {
-      target: "/api/v1/orders/my-orders?status=DELIVERED&page=1&pageSize=10",
       fields: [
         {
           name: "status",
@@ -1253,7 +1244,6 @@ export const orderEndpoints: readonly RestEndpoint[] = [
       who: "rest.order.getOrder.who"
     },
     request: {
-      target: `/api/v1/orders/${orderId}`,
       fields: [
         {
           name: "orderId",
@@ -1295,7 +1285,6 @@ export const orderEndpoints: readonly RestEndpoint[] = [
       who: "rest.order.completeOrder.who"
     },
     request: {
-      target: `/api/v1/orders/${orderNumber}/complete`,
       fields: [
         {
           name: "orderNumber",
@@ -1383,7 +1372,6 @@ export const orderEndpoints: readonly RestEndpoint[] = [
       who: "rest.order.listReturnsNeedingAttention.who"
     },
     request: {
-      target: "/api/v1/orders/returns/needs-attention?limit=50",
       fields: [
         {
           name: "limit",
@@ -1451,7 +1439,6 @@ export const orderEndpoints: readonly RestEndpoint[] = [
       who: "rest.order.rejectReturn.who"
     },
     request: {
-      target: "/api/v1/orders/returns/RMA-20261019-4B8D2E6A/reject",
       fields: [
         {
           name: "returnNumber",
@@ -1534,7 +1521,6 @@ export const orderEndpoints: readonly RestEndpoint[] = [
       who: "rest.order.listSagasNeedingAttention.who"
     },
     request: {
-      target: "/api/v1/orders/sagas/needs-attention?limit=50",
       fields: [
         {
           name: "limit",
@@ -1610,7 +1596,6 @@ export const orderEndpoints: readonly RestEndpoint[] = [
       who: "rest.order.countSagasNeedingAttention.who"
     },
     request: {
-      target: "/api/v1/orders/sagas/needs-attention/count",
       fields: []
     },
     cases: [

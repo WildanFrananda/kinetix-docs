@@ -89,7 +89,6 @@ export const notificationEndpoints: readonly RestEndpoint[] = [
       who: "rest.notification.registerDevice.who"
     },
     request: {
-      target: "/api/v1/notifications/devices",
       fields: [
         {
           name: "device_token",
@@ -173,7 +172,6 @@ export const notificationEndpoints: readonly RestEndpoint[] = [
       who: "rest.notification.verifyDevice.who"
     },
     request: {
-      target: "/api/v1/notifications/devices/verify",
       fields: [
         {
           name: "device_token",
@@ -256,7 +254,6 @@ export const notificationEndpoints: readonly RestEndpoint[] = [
       who: "rest.notification.forgetDevice.who"
     },
     request: {
-      target: "/api/v1/notifications/devices",
       fields: [
         {
           name: "device_token",

@@ -169,9 +169,9 @@ production runs (since 2026-10-22, at the user's request: one section per applic
 each feature as the calls in the order the application makes them, with every request and response case).
 
 - **Data, written once.** Each service's endpoints are typed data in `src/site/rest/endpoints/<service>.ts`
-  (`RestEndpoint`, types in `src/site/types/rest_*.type.ts`): method, public path, access, request fields, an
-  example request, and every case — status, condition, exact body — each with a permalink to the lines that
-  produce it. The same file exports `<service>Answers`, the answers any request to that service can get
+  (`RestEndpoint`, types in `src/site/types/rest_*.type.ts`): method, public path, access, request fields, the
+  example request's headers and body, and every case — status, condition, exact body — each with a permalink to
+  the lines that produce it. The same file exports `<service>Answers`, the answers any request to that service can get
   (unhandled failure, database down, the service's own token refusals), which the overview lists once.
   Kong's own answers are `gatewayAnswers` in `endpoints/gateway.ts`, linked to Kong's source at the version
   the gateway image runs (`src/site/rest/kong_release.ts`).
@@ -181,11 +181,13 @@ each feature as the calls in the order the application makes them, with every re
   entry, a key outside its file's prefix, an unused key, and an Indonesian text whose code spans differ from
   the English.
 - **Rendering** (the user's request, 2026-10-22): a request is three separate blocks — Endpoint (method and full
-  URL), Headers, Body — and each answer two, Headers and Body, each a Starlight `Code` block so Expressive Code
-  highlights it like every other code block (`http` for the endpoint and headers, `json` or plain text for bodies,
-  chosen in `message_payload.ts`). Methods and statuses are coloured text by tone (`method_tone.ts`,
-  `status_tone.ts`: blue, green, orange, red from the lane, accent and Starlight red tokens), never a pill. The grid
-  holding the blocks uses `minmax(0, 1fr)`, or a long line widens the column over the sidebar.
+  URL, with path values as `{name}` like `/api/v1/orders/{orderId}` because front-end developers expect it, and
+  no query string: query parameters are fields), Headers, Body — and each answer two, Headers and Body, each a
+  Starlight `Code` block so Expressive Code highlights it like every other code block (`http` for the endpoint
+  and headers, `json` or plain text for bodies, chosen in `message_payload.ts`). Methods and statuses are
+  coloured text by tone (`method_tone.ts`, `status_tone.ts`: blue, green, orange, red from the lane, accent and
+  Starlight red tokens), never a pill. The grid holding the blocks uses `minmax(0, 1fr)`, or a long line widens
+  the column over the sidebar.
 - **Pages carry the order, data carries the facts.** A feature page is MDX: one `##` per step, the prose that
   says why the step comes there and which values it takes from earlier answers, and
   `<RestEndpoint id="…" />`. An endpoint used by several applications (sign-in is in all four) is rendered
@@ -193,13 +195,15 @@ each feature as the calls in the order the application makes them, with every re
   and an Indonesian page whose endpoints differ from its English twin's.
 - **Pinned.** `src/site/rest/rest_releases.ts` holds each service's production tag and commit, read from the
   deploy pins. `tests/rest_endpoints.test.ts` refuses a link to any other commit, a path that no gateway
-  route serves, an example request that does not match its path, and cases out of status order. Moving a
-  service to a new release means re-reading every case of its endpoints at the new commit, then the pin.
+  route serves, a `{name}` in the path that is not a path field (or the reverse), and cases out of status
+  order. Moving a service to a new release means re-reading every case of its endpoints at the new commit, then
+  the pin.
 - **No open defect.** Writing the inventory for this section in session 32 found about 130 defects; the
   section waited until they were fixed and deployed (2026-10-22). A case that is wrong is never written as
   behaviour: it goes to the internal register, is fixed, and is documented once deployed.
 - **Examples** use the real public hosts, `api.wildanfrananda.my.id` and `storage.wildanfrananda.my.id` (see "What
-  may never appear here"), `example.com` addresses, invented ids and the bucket placeholder `example-bucket`. Tokens are written `eyJ…<claims>.<signature>`. A value after a key-like word (`Idempotency-Key`, `secret`,
+  may never appear here"), `example.com` addresses, invented ids and the bucket placeholder `example-bucket`.
+  Tokens are written `eyJ…<claims>.<signature>`. A value after a key-like word (`Idempotency-Key`, `secret`,
   `token`, `password`) is a visibly fake, low-entropy placeholder such as `11111111-2222-4333-8444-555555555555` or
   `0x5e5e…`: CI's gitleaks (`generic-api-key`) flags a random-looking one, and the fix is the example, never an
   allow list. Check with `gitleaks dir src` before pushing.

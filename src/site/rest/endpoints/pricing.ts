@@ -190,7 +190,6 @@ export const pricingEndpoints: readonly RestEndpoint[] = [
       who: "rest.pricing.createDiscount.who"
     },
     request: {
-      target: "/api/v1/pricing/discounts",
       fields: [
         {
           name: "Idempotency-Key",
@@ -351,7 +350,6 @@ export const pricingEndpoints: readonly RestEndpoint[] = [
       who: "rest.pricing.listDiscounts.who"
     },
     request: {
-      target: "/api/v1/pricing/discounts",
       fields: []
     },
     cases: [
@@ -405,7 +403,6 @@ export const pricingEndpoints: readonly RestEndpoint[] = [
       who: "rest.pricing.createVoucher.who"
     },
     request: {
-      target: "/api/v1/pricing/vouchers",
       fields: [
         {
           name: "Idempotency-Key",
@@ -568,7 +565,6 @@ export const pricingEndpoints: readonly RestEndpoint[] = [
       who: "rest.pricing.applyVoucher.who"
     },
     request: {
-      target: "/api/v1/pricing/vouchers/apply",
       fields: [
         {
           name: "code",
@@ -647,7 +643,6 @@ export const pricingEndpoints: readonly RestEndpoint[] = [
       who: "rest.pricing.getVoucher.who"
     },
     request: {
-      target: "/api/v1/pricing/vouchers/HARBOLNAS25",
       fields: [
         {
           name: "code",
@@ -692,7 +687,6 @@ export const pricingEndpoints: readonly RestEndpoint[] = [
       who: "rest.pricing.createFlashSale.who"
     },
     request: {
-      target: "/api/v1/pricing/flash-sales",
       fields: [
         {
           name: "Idempotency-Key",
@@ -846,7 +840,6 @@ export const pricingEndpoints: readonly RestEndpoint[] = [
       who: "rest.pricing.getFlashSale.who"
     },
     request: {
-      target: "/api/v1/pricing/flash-sales/SHOES-RUN-42",
       fields: [
         {
           name: "product_id",

@@ -4,7 +4,7 @@ description: Setiap endpoint HTTP yang dipanggil aplikasi Kinetix, dikelompokkan
 sidebar:
   label: Ikhtisar
   order: 0
-sourceHash: "edbe6d060bdb"
+sourceHash: "6c09ad532cd1"
 ---
 
 import RestEndpoint from "../../../../../components/RestEndpoint.astro";
@@ -40,6 +40,10 @@ Gateway sama sekali tidak punya listener HTTP biasa, jadi token tidak pernah lew
 Setiap path diawali `/api/v1/`. Satu-satunya pengecualian adalah upload file: client mengirim file ke host
 storage tersendiri, `storage.wildanfrananda.my.id`, di URL yang sudah ditandatangani service untuknya. Bucket di
 URL itu ditulis `example-bucket` dalam contoh-contohnya.
+
+Bagian path yang ditulis dalam kurung kurawal, seperti `{orderId}` di `/api/v1/orders/{orderId}`, adalah nilai
+yang diisi client. Parameter query tidak ditulis di path: setiap endpoint mendaftarnya bersama field lainnya,
+ditandai `query`.
 
 ## Token
 

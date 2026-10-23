@@ -156,7 +156,6 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
       who: "rest.warehouse.taskQueue.who"
     },
     request: {
-      target: "/api/v1/warehouse/fulfillment_tasks/queue",
       fields: []
     },
     cases: [
@@ -214,7 +213,6 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
       who: "rest.warehouse.setTaskStatus.who"
     },
     request: {
-      target: "/api/v1/warehouse/fulfillment_tasks/418/status",
       fields: [
         {
           name: "id",
@@ -340,7 +338,6 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
       who: "rest.warehouse.printLabel.who"
     },
     request: {
-      target: "/api/v1/warehouse/fulfillment_tasks/418/label",
       fields: [
         {
           name: "id",
@@ -403,7 +400,6 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
       who: "rest.warehouse.verifyScan.who"
     },
     request: {
-      target: "/api/v1/warehouse/fulfillment_tasks/418/verify_scan",
       fields: [
         {
           name: "id",
@@ -495,7 +491,6 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
       who: "rest.warehouse.openReturn.who"
     },
     request: {
-      target: "/api/v1/warehouse/fulfillment_tasks/418/returns",
       fields: [
         {
           name: "fulfillment_task_id",
@@ -577,7 +572,6 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
       who: "rest.warehouse.receiveReturnedGoods.who"
     },
     request: {
-      target: `/api/v1/warehouse/returns/${returnNumber}/received`,
       fields: [
         {
           name: "return_number",
@@ -684,7 +678,6 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
       who: "rest.warehouse.merchantMe.who"
     },
     request: {
-      target: "/api/v1/warehouse/merchants/me",
       fields: []
     },
     cases: [
@@ -714,7 +707,6 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
       who: "rest.warehouse.setCutoffHour.who"
     },
     request: {
-      target: "/api/v1/warehouse/merchants/12",
       fields: [
         {
           name: "id",
@@ -785,7 +777,6 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
       who: "rest.warehouse.setCutoffHour.who"
     },
     request: {
-      target: "/api/v1/warehouse/merchants/12",
       fields: [
         {
           name: "id",
@@ -856,7 +847,6 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
       who: "rest.warehouse.upsertBin.who"
     },
     request: {
-      target: "/api/v1/warehouse/bins",
       fields: [
         {
           name: "bin_code",
@@ -932,7 +922,6 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
       who: "rest.warehouse.receiveStock.who"
     },
     request: {
-      target: "/api/v1/warehouse/stock_receipts",
       fields: [
         {
           name: "bin_code",
@@ -1094,7 +1083,6 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
       who: "rest.warehouse.adjustStock.who"
     },
     request: {
-      target: "/api/v1/warehouse/stock_adjustments",
       fields: [
         {
           name: "bin_code",

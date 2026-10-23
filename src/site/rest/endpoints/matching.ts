@@ -176,7 +176,6 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
       who: "rest.matching.driverMe.who"
     },
     request: {
-      target: "/api/v1/matching/driver/me",
       fields: []
     },
     cases: [
@@ -227,7 +226,6 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
       who: "rest.matching.listDrivers.who"
     },
     request: {
-      target: "/api/v1/matching/drivers",
       fields: []
     },
     cases: [
@@ -254,7 +252,6 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
       who: "rest.matching.nearbyDrivers.who"
     },
     request: {
-      target: "/api/v1/matching/drivers/nearby?latitude=-6.1754&longitude=106.8272&radius_km=5",
       fields: [
         {
           name: "latitude",
@@ -330,7 +327,6 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
       who: "rest.matching.getDriver.who"
     },
     request: {
-      target: "/api/v1/matching/drivers/17",
       fields: [
         {
           name: "id",
@@ -375,7 +371,6 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
       who: "rest.matching.listDispatches.who"
     },
     request: {
-      target: "/api/v1/matching/backoffice/dispatches?status=all&limit=2",
       fields: [
         {
           name: "status",
@@ -443,7 +438,6 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
       who: "rest.matching.dispatchSummary.who"
     },
     request: {
-      target: "/api/v1/matching/backoffice/dispatches/summary",
       fields: []
     },
     cases: [
@@ -474,7 +468,6 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
       who: "rest.matching.getDispatch.who"
     },
     request: {
-      target: "/api/v1/matching/backoffice/dispatches/4812",
       fields: [
         {
           name: "id",
@@ -545,7 +538,6 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
       who: "rest.matching.assignDispatch.who"
     },
     request: {
-      target: "/api/v1/matching/backoffice/dispatches/4813/assign",
       fields: [
         {
           name: "id",
@@ -630,7 +622,6 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
       who: "rest.matching.unassignDispatch.who"
     },
     request: {
-      target: "/api/v1/matching/backoffice/dispatches/4813/unassign",
       fields: [
         {
           name: "id",
@@ -687,7 +678,6 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
       who: "rest.matching.cancelDispatch.who"
     },
     request: {
-      target: "/api/v1/matching/backoffice/dispatches/3920/cancel",
       fields: [
         {
           name: "id",
@@ -759,7 +749,6 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
       who: "rest.matching.driverDispatches.who"
     },
     request: {
-      target: "/api/v1/matching/backoffice/drivers/17/dispatches",
       fields: [
         {
           name: "driver_id",
@@ -799,13 +788,6 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
       who: "rest.matching.uploadProofPhoto.who"
     },
     request: {
-      target:
-        `/example-bucket/pod/4812/${photoSha256}.jpg` +
-        "?X-Amz-Algorithm=AWS4-HMAC-SHA256" +
-        "&X-Amz-Credential=<access-key>%2F20261022%2F<region>%2Fs3%2Faws4_request" +
-        "&X-Amz-Date=20261022T025950Z&X-Amz-Expires=600" +
-        "&X-Amz-SignedHeaders=host%3Bif-none-match%3Bx-amz-checksum-sha256" +
-        "&X-Amz-Signature=<signature>",
       fields: [
         {
           name: "bucket",

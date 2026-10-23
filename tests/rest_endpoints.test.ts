@@ -3,6 +3,8 @@ import { restAnswers } from "../src/site/rest/rest_answers";
 import { restEndpoints } from "../src/site/rest/rest_endpoints";
 import { restReleases } from "../src/site/rest/rest_releases";
 import { statusReasons } from "../src/site/rest/status_reasons";
+import type { RestEndpoint } from "../src/site/types/rest_endpoint.type";
+import type { RestFieldLocation } from "../src/site/types/rest_field_location.type";
 import type { RestService } from "../src/site/types/rest_service.type";
 
 const kong = "https://github.com/Kong/kong/blob/";
@@ -34,10 +36,8 @@ function releasePrefix(service: RestService): string {
   return `https://github.com/WildanFrananda/${release.repository}/blob/${release.commit}/`;
 }
 
-function pattern(path: string): RegExp {
-  const escaped = path.replace(/[.*+?^$()|[\]\\]/g, "\\$&").replace(/\{[^}]+\}/g, "[^/?]+");
-
-  return new RegExp(`^${escaped}$`);
+function fieldNames(endpoint: RestEndpoint, location: RestFieldLocation): string[] {
+  return endpoint.request.fields.filter((field) => field.in === location).map((field) => field.name);
 }
 
 describe("REST endpoints", () => {
@@ -77,8 +77,11 @@ describe("REST endpoints", () => {
         ).toBe(true);
       });
 
-      test("the example request matches the path", () => {
-        expect(endpoint.request.target.split("?")[0]).toMatch(pattern(endpoint.path));
+      test("every value in braces in the path is a path field, and only those", () => {
+        const placeholders = [...endpoint.path.matchAll(/\{([^}]+)\}/g)].map((match) => match[1]);
+
+        expect(endpoint.path).not.toContain("?");
+        expect(fieldNames(endpoint, "path").sort()).toEqual(placeholders.sort());
       });
 
       test("cases are in order of status, and every status has a reason phrase", () => {

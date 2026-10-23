@@ -40,6 +40,10 @@ Every path starts with `/api/v1/`. The one exception is a file upload: the clien
 storage host, `storage.wildanfrananda.my.id`, at a URL the service signed for it. The bucket in those URLs is
 written `example-bucket` in the examples.
 
+A part of a path written in braces, such as `{orderId}` in `/api/v1/orders/{orderId}`, is a value the client
+puts there. Query parameters are not written in the path: each endpoint lists them with its other fields, marked
+`query`.
+
 ## Tokens
 
 identity issues every token. Signing in, registering, or completing a two-factor challenge returns a pair:
