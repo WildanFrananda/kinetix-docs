@@ -1,0 +1,36 @@
+version: 2
+updates:
+  - package-ecosystem: bun
+    directories:
+      - "/"
+    target-branch: main
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:00"
+      timezone: Asia/Jakarta
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    commit-message:
+      prefix: "deps"
+  - package-ecosystem: github-actions
+    directories:
+      - "/"
+    target-branch: main
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:00"
+      timezone: Asia/Jakarta
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    commit-message:
+      prefix: "deps(actions)"
