@@ -1,7 +1,7 @@
 ---
 title: order
 description: Keranjang, checkout, order, dan retur — service yang mengubah keranjang menjadi order yang sudah dibayar dengan bertanya ke catalog, pricing, matching, warehouse, dan payment, tanpa memiliki satu pun fakta mereka.
-sourceHash: "a52c5c90ebca"
+sourceHash: "15bc40c66470"
 ---
 
 import ServiceCalls from "../../../../components/ServiceCalls.astro";
@@ -16,7 +16,7 @@ jadi sebagian besar keberhasilan order ada pada mengetahui fakta mana yang bukan
 Tabel di halaman ini dibangkitkan dari data terverifikasi yang sama dengan
 [peta sistem](/id/architecture/system-map/), pada commit yang ditautkan dari setiap baris. Teksnya
 dicek terhadap order
-[v1.2.0](https://github.com/WildanFrananda/kinetix-order-service/tree/0c3698ed729ac161bef54c469f46cebf89acb6c6),
+[v1.5.1](https://github.com/WildanFrananda/kinetix-order-service/tree/1395062e2b803ead17d09bc8f50622367c7fd2ab),
 versi yang berjalan di production.
 
 ## Sekilas
@@ -27,19 +27,19 @@ versi yang berjalan di production.
 
 Service lain memberi tahu order apa yang terjadi pada sebuah order — dikemas, terkirim, diretur — dan
 membaca order kembali,
-[lengkap dengan merchant yang menjualnya dan kurir yang mengantarnya](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/OrderGrpcServerService.cs#L81-L88)
+[lengkap dengan merchant yang menjualnya dan kurir yang mengantarnya](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Grpc/OrderGrpcServerService.cs#L88-L95)
 — dari situlah review tahu siapa yang diulas. Setiap baris menyebut siapa yang memanggilnya, ditautkan ke baris kode yang
 memanggil.
 
-Order juga menyajikan [lifecycle log-nya](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/OrderLifecycleGrpcService.cs#L19-L49),
+Order juga menyajikan [lifecycle log-nya](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Grpc/OrderLifecycleGrpcService.cs#L19-L49),
 setiap perubahan pada setiap order, halaman demi halaman, ke [notary](/id/services/notary/), yang
 meng-anchor-nya di chain. Setiap status yang dicapai sebuah order atau retur
-[ditulis ke log dalam transaksi yang sama dengan perubahannya](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Lifecycle/LifecycleLog.cs#L13-L29),
+[ditulis ke log dalam transaksi yang sama dengan perubahannya](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Lifecycle/LifecycleLog.cs#L13-L29),
 beserta siapa pelakunya: pembeli, merchant, kurir, admin, atau order sendiri.
 
 Search mengikuti order lewat change feed yang cursor-nya adalah transaksi database, bukan waktu. Cursor yang
 membawa transaksi
-[dilayani dalam urutan yang aman terhadap commit](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Services/OrderService.cs#L598-L644): hanya
+[dilayani dalam urutan yang aman terhadap commit](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/OrderService.cs#L694-L740): hanya
 order yang ditulis oleh transaksi yang lebih tua dari setiap transaksi yang masih berjalan. Order yang
 transaksinya commit terlambat dilayani terlambat, dan tidak pernah terlewat.
 
@@ -56,68 +56,83 @@ saga yang memegang apa yang sudah disepakati:
 
 1. **Keranjang** dibaca dari Redis. Harga di dalamnya tidak dipercaya: order bertanya lagi ke catalog
    untuk setiap produk, karena keranjang bisa berumur empat belas hari — lihat
-   [Jangan percaya angka yang bisa diketik client](/id/learn/trust-boundaries/).
+   [Jangan percaya angka yang bisa diketik client](/id/learn/trust-boundaries/). Keranjang yang berisi
+   produk yang dijual pembeli itu sendiri
+   [ditolak dengan `422`](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/OrderService.cs#L308-L316):
+   penjual tidak bisa membeli dari dirinya sendiri.
 2. **Merchant** yang disebut catalog untuk keranjang itu harus masih diizinkan berjualan: order
-   [bertanya ke identity](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Services/OrderService.cs#L74-L76)
+   [bertanya ke identity](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/OrderService.cs#L71-L73)
    di setiap checkout, dan menolak dengan `409` kalau tidak boleh dan `503` kalau identity tidak bisa menjawab.
 3. **Ongkir** dikutip untuk paketnya, pada rute yang dilaluinya.
-   [Berat paket](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Services/OrderService.cs#L211-L223) adalah berat dari catalog untuk setiap
-   produk dikali jumlahnya. [Rutenya](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Services/OrderService.cs#L225-L240) berjalan dari titik
+   [Berat paket](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/OrderService.cs#L318-L330) adalah berat dari catalog untuk setiap
+   produk dikali jumlahnya. [Rutenya](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/OrderService.cs#L332-L347) berjalan dari titik
    yang dipegang identity untuk toko merchant ke alamat yang diketik pembeli, yang ditempatkan oleh geocoder
-   identity. [Matching menawarkan pilihan kurir untuk rute dan berat itu, dan pricing menghargainya](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Services/OrderService.cs#L404-L512).
+   identity. [Matching menawarkan pilihan kurir untuk rute dan berat itu, dan pricing menghargainya](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/OrderService.cs#L499-L607).
    Produk tanpa berat, toko tanpa titik di peta, atau alamat yang tidak bisa ditempatkan cukup tepat
-   [menolak checkout dengan `422`](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Controllers/OrderController.cs#L125-L152), dan geocoder yang tidak bisa
+   [menolak checkout dengan `422`](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Controllers/OrderController.cs#L187-L214), dan geocoder yang tidak bisa
    menjawab menolaknya dengan `503`. Order menyimpan titik antar dan beratnya.
 4. **Totalnya** datang dari pricing. Kalau pricing tidak bisa ditanya, checkout ditolak dengan `503` alih-alih ditagih dengan harga yang
    diingat — lihat [Tidak tahu bukan berarti tidak](/id/learn/unknown-is-not-no/). Voucher yang dicatat order
-   adalah [voucher yang diterapkan pricing](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Services/OrderService.cs#L101), bukan kode yang diketik pembeli, sehingga voucher yang
+   adalah [voucher yang diterapkan pricing](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/OrderService.cs#L101), bukan kode yang diketik pembeli, sehingga voucher yang
    ditolak pricing tidak pernah ditukarkan. Setiap item dicatat dengan
-   [harga yang ditagihkan pricing untuk baris itu](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Services/OrderService.cs#L273-L310),
+   [harga yang ditagihkan pricing untuk baris itu](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/OrderService.cs#L369-L406),
    termasuk flash sale, dan checkout ditolak kalau pricing melewatkan satu baris atau baris-barisnya tidak
    berjumlah sama dengan subtotalnya — retur di-refund dari jumlah ini, jadi jumlahnya harus yang memang dibayar.
-5. **Saga** kemudian me-reserve stok, menukarkan voucher, mengalokasikan stok flash sale, dan menahan uang
-   di escrow, mencatat setiap langkah sebelum memanggil dan mengompensasi dari yang terbaru ketika salah
-   satunya ditolak — lihat [Saga checkout](/id/learn/checkout-saga/).
+   Totalnya juga
+   [harus terbagi tepat](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/OrderService.cs#L408-L438)
+   menjadi bagian merchant dan ongkir, dalam sen bulat, karena begitulah payment menahannya, dan
+   [total nol ditolak](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/OrderService.cs#L135-L137):
+   tidak ada yang bisa ditahan.
+5. **Saga** kemudian menukarkan voucher, mengalokasikan stok flash sale, me-reserve stok, menahan uang di
+   escrow, dan meminta fulfillment task ke warehouse, mencatat setiap langkah sebelum memanggil dan
+   mengompensasi dari yang terbaru ketika salah satunya ditolak — lihat [Saga checkout](/id/learn/checkout-saga/).
 
 Header `Idempotency-Key` membuat checkout yang di-retry mengembalikan order pertama alih-alih membuat
-order kedua — lihat [Request yang sama, dua kali](/id/learn/idempotency/).
+order kedua — lihat [Request yang sama, dua kali](/id/learn/idempotency/). Key itu milik pembeli, dan
+[pengulangan dibandingkan dengan request pertama](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/OrderService.cs#L246-L278):
+key yang sama pada checkout yang berbeda ditolak dengan `422`, dan pengulangan yang tiba saat yang pertama
+masih berjalan mendapat `409` dan diminta datang lagi.
 
 ## Kapan merchant dibayar
 
 Uang pembeli tetap di escrow milik payment sampai order menyatakan order itu selesai. Sebuah order
-[diselesaikan](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Completion/OrderCompletion.cs#L93-L141)
-setelah terkirim, masa returnya sudah tutup — tujuh hari sejak waktu kurir melaporkan pengiriman, diatur
-oleh `KINETIX_RETURN_WINDOW_DAYS` — dan tidak ada retur atasnya yang masih terbuka atau menunggu refund.
+[diselesaikan](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Completion/OrderCompletion.cs#L100-L148)
+setelah terkirim, masa returnya sudah tutup — tujuh hari sejak waktu kurir melaporkan pengiriman, panjang
+yang tanpanya order tidak mau berjalan — dan tidak ada retur atasnya yang masih terbuka atau menunggu refund.
 Baru setelah itu order meminta payment melepas escrow ke merchant.
 
 Menyelesaikan order dan membuka retur sama-sama
-[mengunci row order itu](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Completion/OrderCompletion.cs#L34)
+[mengunci row order itu](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Completion/OrderCompletion.cs#L41)
 sebelum membacanya, sehingga retur tidak bisa dibuka atas order yang uangnya sedang dibayarkan, dan
 penyelesaian yang menunggu di belakang retur baru akan melihatnya. Order menjadi `COMPLETED` lebih dulu,
 lalu pelepasan escrow menjadi utang: kalau payment tidak bisa dijangkau, pelepasan itu
-[di-retry dengan backoff](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Completion/OrderCompletion.cs#L143-L165),
-dan kalau payment menolak, ia berhenti dan menunggu orang alih-alih di-retry tanpa akhir.
+[di-retry dengan backoff](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Completion/OrderCompletion.cs#L150-L173),
+dan kalau payment menolak, ia berhenti dan menunggu orang alih-alih di-retry tanpa akhir. Yang dicatat order
+tentang percobaan yang gagal adalah
+[alasan yang tetap](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Faults/FailureReason.cs#L10-L17)
+— service mana, dan apakah ia menolak, tidak terjangkau, kehabisan waktu, atau gagal — atau kata-kata service
+yang menolak itu sendiri; error-nya sendiri masuk ke log.
 
 ## Retur
 
 Retur dibuka oleh merchant lewat warehouse, dan hanya atas order yang sudah terkirim; masa retur order
 yang sudah selesai sudah tutup. Saat barang kembali, setiap baris harus
-[menyebut item order itu dan tidak lebih dari yang dibeli](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Returns/ReturnsHandler.cs#L222-L238).
+[menyebut item order itu dan tidak lebih dari yang dibeli](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Returns/ReturnsHandler.cs#L222-L238).
 Pembeli di-refund
-[bagian uang merchant senilai barang tersebut](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Returns/ReturnsHandler.cs#L202-L220)
+[bagian uang merchant senilai barang tersebut](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Returns/ReturnsHandler.cs#L202-L220)
 — total order dikurangi ongkirnya, dikali nilai barang yang kembali dibagi nilai semua yang dibeli,
 dibulatkan ke bawah ke sen — sehingga voucher ikut terbagi, retur penuh me-refund seluruh bagian merchant,
 dan kurir tetap memegang ongkir untuk pengiriman yang memang terjadi. Refund dibayar dari escrow dengan key
-[`return:{nomor retur}`](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Returns/ReturnRefunds.cs#L23),
+[`return:{return number}`](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Returns/ReturnRefunds.cs#L24),
 sehingga retry tidak bisa membayarnya dua kali.
 
 ## Mengirim kurir
 
 Ketika warehouse melaporkan sebuah order sudah dikemas, order
-[mencatat bahwa order itu berhak atas kurir](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Fulfillment/FulfillmentPackedHandler.cs#L62-L81)
+[mencatat bahwa order itu berhak atas kurir](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Fulfillment/FulfillmentPackedHandler.cs#L62-L81)
 sebelum bertanya ke siapa pun, lalu
-[mencobanya](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Fulfillment/CourierDispatcher.cs#L28-L47): bertanya ke identity di mana
-tokonya, [meminta kurir ke matching](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Fulfillment/CourierDispatcher.cs#L49-L87) ke titik antar
+[mencobanya](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Fulfillment/CourierDispatcher.cs#L28-L47): bertanya ke identity di mana
+tokonya, [meminta kurir ke matching](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Fulfillment/CourierDispatcher.cs#L49-L105) ke titik antar
 dan untuk berat yang disimpan saat checkout, dan memberi warehouse nomor resi yang diterbitkan matching.
 Order yang dibuat sebelum 2026-10-18 tidak menyimpan titik antar; kurirnya pergi ke titik di profil pembeli.
 Apa pun yang belum berhasil di-retry, dengan jeda yang memanjang sampai satu jam — identity atau fleet tidak
@@ -131,8 +146,8 @@ menunggu orang hanya ketika matching menyatakan job-nya sudah selesai atau wareh
 | --- | --- |
 | `Controllers/` | permukaan HTTP: keranjang, checkout, order, administrasi saga, health |
 | `Application/` | saga checkout, service order dan keranjang, pengiriman, penyelesaian order, dan retur |
-| `Application/Ports/` | interface yang dibutuhkan aplikasi — [satu per kolaborator](https://github.com/WildanFrananda/kinetix-order-service/tree/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Ports), seperti `IPricingClient` dan `IStockClient` |
-| `Infrastructure/` | yang mengimplementasikan port tersebut: client gRPC dan server gRPC, persistence EF Core, worker latar belakang, observability |
+| `Application/Ports/` | interface yang dibutuhkan aplikasi — [satu per kolaborator](https://github.com/WildanFrananda/kinetix-order-service/tree/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Ports), seperti `IPricingClient` dan `IStockClient` |
+| `Infrastructure/` | yang mengimplementasikan port tersebut: client gRPC dan server gRPC, persistence EF Core, penyimpanan keranjang di Redis, worker latar belakang, pengaturan, observability |
 | `Domain/` | entity dan enum, tanpa kode framework |
 | `Security/` | identitas service di mesh, daftar izin pemanggil, validasi token |
 
@@ -145,37 +160,50 @@ kolaborator adalah service jarak jauh.
 PostgreSQL, lewat EF Core, menyimpan
 [order dan item-nya, saga checkout dan langkah-langkahnya, percobaan kompensasi, ongkir yang menjadi hak
 kurir, kurir yang menjadi hak order yang sudah dikemas, pelepasan escrow yang menjadi hak merchant, retur,
-dan lifecycle log](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Persistence/OrderDbContext.cs#L9-L19). Log itu
-[menolak `UPDATE`, `DELETE`, dan `TRUNCATE`](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Migrations/20261016134224_OrdersKeepALifecycleLog.cs#L62-L74),
-dan [status yang ditulis tanpa event-nya gagal di-commit](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Migrations/20261016134224_OrdersKeepALifecycleLog.cs#L76-L127).
+dan lifecycle log](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Persistence/OrderDbContext.cs#L13-L23). Log itu
+[menolak `UPDATE`, `DELETE`, dan `TRUNCATE`](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Migrations/20261016134224_OrdersKeepALifecycleLog.cs#L62-L74),
+dan [status yang ditulis tanpa event-nya gagal di-commit](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Migrations/20261016134224_OrdersKeepALifecycleLog.cs#L76-L127).
 
 Redis menyimpan keranjang, satu per pelanggan di bawah
-[`cart:principal:{principal id}`](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Services/CartService.cs#L12-L14),
-yang kedaluwarsa empat belas hari setelah perubahan terakhir. Keranjang adalah satu-satunya yang disimpan
-order di luar database-nya, dan tidak ada isinya yang dipercaya saat checkout.
+[`KinetixOrder:cart:principal:{principal id}`](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Redis/RedisCartStore.cs#L11),
+[yang kedaluwarsa empat belas hari setelah perubahan terakhir](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/CartService.cs#L12).
+Keranjang membawa versi, dan perubahan
+[hanya ditulis kalau versinya masih yang tadi dibaca](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Redis/RedisCartStore.cs#L16-L24),
+sehingga dua suntingan bersamaan tidak bisa menghilangkan salah satunya. Checkout yang sudah dibayar
+[hanya mengeluarkan dari keranjang apa yang dibelinya](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/CartService.cs#L115-L152):
+baris yang ditambahkan selama checkout berjalan tetap ada. Keranjang adalah satu-satunya yang disimpan order di
+luar database-nya, dan tidak ada isinya yang dipercaya saat checkout.
 
 ## Siapa boleh melakukan apa
 
 - **Pelanggan** menjangkau keranjang dan order lewat gateway dengan access token — hanya access token,
   tidak pernah refresh token atau token dua faktor yang ditandatangani kunci yang sama; lihat
-  [Token yang bisa ditarik kembali](/id/learn/tokens-that-can-be-taken-back/).
+  [Token yang bisa ditarik kembali](/id/learn/tokens-that-can-be-taken-back/). Siapa pun boleh membeli,
+  kecuali
+  [produknya sendiri](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/CartService.cs#L25-L28),
+  yang tidak bisa dimasukkan ke keranjang.
 - **Sebuah order dibaca oleh pemiliknya atau oleh staf.**
-  [Siapa pun yang lain mendapat `404` yang sama](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Controllers/OrderController.cs#L206-L216)
+  [Siapa pun yang lain mendapat `404` yang sama](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Controllers/OrderController.cs#L359-L371)
   seperti untuk order yang tidak ada, sehingga jawabannya tidak membocorkan bahwa order itu ada.
-- **Staf** — peran `admin` — juga membaca saga dan retur yang butuh perhatian.
+- **Staf** — peran `admin` — juga membaca saga dan retur yang butuh perhatian. Gateway hanya menerima
+  route-route itu dari jaringan staf Kinetix; lihat [gateway](/id/architecture/gateway/).
 - **Admin** boleh
-  [menyelesaikan order yang sudah terkirim lebih awal](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Controllers/OrderCompletionController.cs#L17-L34),
+  [menyelesaikan order yang sudah terkirim lebih awal](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Controllers/OrderCompletionController.cs#L19-L57),
   dengan aturan yang sama kecuali masa retur, dan boleh
-  [menolak retur yang barangnya tidak pernah kembali](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Returns/ReturnRejection.cs#L18-L62),
+  [menolak retur yang barangnya tidak pernah kembali](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Returns/ReturnRejection.cs#L18-L62),
   dengan alasan. Keduanya ditulis ke lifecycle log atas nama principal admin itu, dan token yang tidak
   menyebut principal ditolak. Retur tidak gugur karena waktu: merchant yang membukanya sekaligus mencatat barang yang
   kembali, sehingga timer akan membayar merchant karena tidak pernah mencatatnya. Retur yang barangnya
   sudah kembali tidak bisa ditolak — pembeli berhak atas refund.
+- **Setiap tindakan admin diaudit.** Menyelesaikan order, menolak retur, membaca antrean, dan membaca order
+  milik orang lain masing-masing
+  [dicatat di log dengan principal admin, targetnya, dan hasilnya](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Observability/AdminAudit.cs#L30-L42),
+  dan dihitung.
 - **Laporan warehouse bahwa paket sudah dikemas** hanya diterima untuk order yang sudah dibayar dari
   merchant yang sama; order yang sudah dibatalkan atau di-refund tidak dihidupkan lagi dan tidak dikirimi kurir.
 - **Service lain** menjangkau port gRPC hanya dengan sertifikat dari CA Kinetix yang menyebut service di
   daftar izin order, dan
-  [masing-masing hanya boleh melakukan panggilan yang memang ia buat](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Security/PeerAllowList.cs#L57-L71):
+  [masing-masing hanya boleh melakukan panggilan yang memang ia buat](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Security/PeerAllowList.cs#L57-L71):
   review membaca order, matching melaporkan pengantaran, search mengikuti change feed, notary membaca
   lifecycle log, dan warehouse melaporkan paket yang sudah dikemas dan retur — sehingga tidak ada pemanggil yang bisa melaporkan
   pengantaran atau barang retur kecuali itu memang tugasnya. Sebaliknya order mengecek identitas setiap
@@ -185,23 +213,30 @@ order di luar database-nya, dan tidak ada isinya yang dipercaya saat checkout.
 
 | Worker | Tugas |
 | --- | --- |
-| `StuckSagaSweeper` | [mengurai checkout yang berhenti di tengah jalan](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Background/StuckSagaSweeper.cs#L45-L82) — melepas apa yang sudah ditahan dan tidak pernah mendorong checkout maju — dalam putaran yang dibatasi; lihat [Saga checkout](/id/learn/checkout-saga/) |
-| `OrderCompletionSweeper` | setiap menit, [me-retry refund retur yang terutang, menyelesaikan order yang masa returnya sudah tutup, dan me-retry pelepasan escrow yang menjadi hak merchant](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Background/OrderCompletionSweeper.cs#L49-L53), dua puluh sekaligus |
-| `CourierDispatchSweeper` | setiap menit, [me-retry kurir yang menjadi hak order yang sudah dikemas](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Background/CourierDispatchSweeper.cs#L45-L84), dua puluh sekaligus, dengan jeda yang memanjang sampai satu jam |
-| `ShippingSettlementSweeper` | setiap menit, [menyelesaikan ongkir yang menjadi hak kurir](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Background/ShippingSettlementSweeper.cs#L12-L16) yang belum dikonfirmasi payment, dua puluh sekaligus, dengan jeda yang memanjang sampai satu jam |
+| `StuckSagaSweeper` | setiap menit, [membereskan checkout yang berhenti di tengah jalan](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Background/StuckSagaSweeper.cs#L43-L84), dalam putaran yang dibatasi: saga yang sudah menyelesaikan setiap langkah tetapi order-nya tidak pernah ditandai dibayar [ditandai dibayar](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Checkout/CompletedCheckoutFinisher.cs#L93-L131), order yang checkout-nya berhenti sebelum saga dimulai [dibatalkan setelah lima belas menit](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Checkout/SagalessCheckoutCanceller.cs#L44-L90), dan saga lain yang belum selesai diurai — melepas apa yang sudah ditahan dan tidak pernah mendorong checkout yang setengah jadi maju; lihat [Saga checkout](/id/learn/checkout-saga/) |
+| `OrderCompletionSweeper` | setiap menit, [me-retry refund retur yang terutang, menyelesaikan order yang masa returnya sudah tutup, dan me-retry pelepasan escrow yang menjadi hak merchant](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Background/OrderCompletionSweeper.cs#L45-L49), satu batch terbatas sekaligus |
+| `CourierDispatchSweeper` | setiap menit, [me-retry kurir yang menjadi hak order yang sudah dikemas](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Background/CourierDispatchSweeper.cs#L41-L80), satu batch terbatas sekaligus, dengan jeda yang memanjang sampai satu jam |
+| `ShippingSettlementSweeper` | setiap menit, [menyelesaikan ongkir yang menjadi hak kurir](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Background/ShippingSettlementSweeper.cs#L43-L95) yang belum dikonfirmasi payment, satu batch terbatas sekaligus, dengan jeda yang memanjang sampai satu jam |
 
 ## Mengoperasikannya
 
 - `/health` menjawab ketika prosesnya hidup; `/health/ready`
-  [menjalankan query sungguhan](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Controllers/HealthController.cs#L19-L30)
+  [menjalankan query sungguhan](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Controllers/HealthController.cs#L19-L38)
   dan berubah menjadi `503` selama instance melakukan drain setelah `SIGTERM`, sehingga trafik berhenti
   sebelum prosesnya berhenti.
 - `/metrics` menyajikan teks Prometheus dengan nama-nama yang diberikan kontrak platform untuk order.
+- Database yang tidak bisa dijangkau order
+  [dijawab `503`](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Http/UnhandledExceptionHandler.cs#L30-L52),
+  dan [`UNAVAILABLE` lewat gRPC](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Grpc/DatabaseOutageInterceptor.cs#L17-L22),
+  tidak pernah sebagai penolakan. Error yang tidak terduga adalah `500` dengan trace id dan tanpa teks internal.
 - Token yang ditandatangani kunci yang tidak dipegang order membuatnya
-  [mengambil ulang key set identity paling sering sekali tiap sepuluh detik](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Security/JwksKeyProvider.cs#L77-L97),
+  [mengambil ulang key set identity paling sering sekali tiap sepuluh detik](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Security/JwksKeyProvider.cs#L82-L102),
   satu fetch pada satu waktu, sehingga token dengan key id karangan tidak bisa membuat identity menjawab
-  sekali per request.
+  sekali per request. Kalau fetch itu gagal, request-nya
+  [dijawab `503 IDENTITY_UNAVAILABLE`](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Security/AccessTokenValidation.cs#L51-L70),
+  tidak pernah "token tidak valid".
 - Setiap panggilan gRPC keluar
-  [punya deadline](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Program.cs#L110-L114),
-  lima detik kecuali `KINETIX_GRPC_DEADLINE_SECONDS` menentukan lain, sehingga dependency yang hang menjadi
-  sebuah jawaban, bukan request yang macet.
+  [punya deadline](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Http/GrpcDeadlineInterceptor.cs#L14-L23),
+  [pengaturan yang tanpanya order tidak mau berjalan](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Configuration/OrderSettings.cs#L30)
+  — lima detik sebagaimana Kinetix menjalankannya — dan menempatkan alamat di peta punya deadline sendiri yang
+  lebih panjang, sehingga dependency yang hang menjadi sebuah jawaban, bukan request yang macet.

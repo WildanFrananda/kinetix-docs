@@ -3,7 +3,7 @@ title: Retur
 description: Cara penjual menemukan task milik pesanan yang sudah terkirim, membuka retur untuknya dan melaporkan barang yang kembali, lewat warehouse, yang meneruskan keduanya ke order.
 sidebar:
   order: 8
-sourceHash: "8f402988c748"
+sourceHash: "f42cdfae2125"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -11,15 +11,16 @@ import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
 Penjual membuka retur untuk pesanan yang sudah terkirim selama jangka waktu returnya masih terbuka, lalu
 melaporkan barangnya saat sudah kembali; order mencatat keduanya dan menghitung refund untuk pembeli. Order
 mengetahui sebuah pengiriman dari matching, yang melaporkan setiap pengiriman saat kurir menyelesaikannya
-([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/dispatch.ex#L686-L691)),
+([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L686-L691)),
 dan membuka retur hanya untuk pesanan yang diketahuinya sudah terkirim. Panggilan-panggilan ini memerlukan session
-dengan role `seller`.
+dengan role `seller`. `503` `DATABASE_UNAVAILABLE` ([jawaban warehouse](/id/apis/rest/#warehouse)) datang sebelum
+warehouse menanyakan apa pun ke order, jadi client mengirim request yang sama lagi setelah `Retry-After`.
 
 ## 1. Menemukan task
 
 Retur dibuka atas task fulfillment milik pesanan itu, dan saat sebuah pesanan sudah terkirim task-nya biasanya
 sudah keluar dari antrean, yang mengeluarkan task begitu labelnya dicetak
-([Mengemas pesanan](/id/apis/rest/seller-web/packing/), langkah 7). Penjual mengetik atau memilih nomor pesanan,
+([Mengemas pesanan](/id/apis/rest/seller-web/packing/), langkah 9). Penjual mengetik atau memilih nomor pesanan,
 dan jawabannya memuat task milik penjual untuk pesanan itu, dalam status apa pun. Simpan `id`-nya. Daftar kosong
 berarti penjual tidak punya task untuk nomor itu.
 
@@ -28,16 +29,22 @@ berarti penjual tidak punya task untuk nomor itu.
 ## 2. Membuka retur
 
 `fulfillment_task_id` adalah `id` task dari langkah 1. `reason` adalah penjelasan penjual tentang alasan barang
-dikembalikan. Simpan `return_number` dari jawabannya. Jawaban `502` membawa penolakan order di `message`, untuk
-pesanan yang belum terkirim atau yang jangka waktu returnya sudah tertutup; request yang sama mendapat jawaban yang
-sama.
+dikembalikan. Simpan `return_number` dari jawabannya. Jawaban `502` `RETURN_NOT_RECORDED` membawa penolakan order
+di `message`, untuk pesanan yang belum terkirim atau yang jangka waktu returnya sudah tertutup; request yang sama
+mendapat jawaban yang sama. Setelah `502` `ORDER_FAILED`, `503` `ORDER_TIMEOUT` atau `503` `ORDER_UNAVAILABLE`,
+client mengirim request yang sama lagi, setelah `Retry-After` untuk `503`: order membuka paling banyak satu retur per
+pesanan, jadi bila request pertama ternyata sudah membukanya, pengulangan itu menjawab `already_open: true` dengan
+`return_number`-nya.
 
 <RestEndpoint id="warehouse.openReturn" via="seller-web" />
 
 ## 3. Melaporkan barang yang kembali
 
-Saat paketnya tiba, kirim `return_number` dari langkah 2, SKU dan jumlah yang kembali, yang termasuk di antara
-`lines` task itu, dan `bin_code` tempat barang itu diletakkan. Barangnya tidak ditambahkan ke stok: unit yang
-layak dijual lagi dicatat lewat [penerimaan stok](/id/apis/rest/backoffice/stock-intake/) di backoffice.
+Saat paketnya tiba, kirim `return_number` persis seperti yang dijawab langkah 2, serta SKU dan jumlah yang kembali,
+yang termasuk di antara `lines` task itu. `bin_code`, tempat barang itu diletakkan, boleh tidak dikirim: hilangkan
+bila tidak ada bin yang disebut, karena nilai kosong ditolak. Tiga jawaban order yang sama seperti di langkah 2
+ditangani dengan cara yang sama: order mencatat barang sebuah retur sekali saja, jadi bila request pertama ternyata
+sudah mencatatnya, pengulangan itu menjawab `already_recorded: true`. Barangnya tidak ditambahkan ke stok: unit
+yang layak dijual lagi dicatat lewat [penerimaan stok](/id/apis/rest/backoffice/stock-intake/) di backoffice.
 
 <RestEndpoint id="warehouse.receiveReturnedGoods" via="seller-web" />

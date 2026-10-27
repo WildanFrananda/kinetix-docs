@@ -39,7 +39,7 @@ send as `category_id` when they create a product.
 The update replaces both values, so send `name` and `slug` together, the unchanged one as it is, with `id` from step 1
 or 3 in the path. Catalog's own product filter uses a new slug at once. Search follows at its next sync: a change of
 name or slug marks every product filed under the category, in the same transaction, to be sent to search again
-([0010_category_changes_stamp_their_products.py](https://github.com/WildanFrananda/kinetix-catalog-service/blob/1348c6ea4f80448bba710e83b20c5551d10fa3e0/core/migrations/0010_category_changes_stamp_their_products.py#L13-L28)).
+([0010_category_changes_stamp_their_products.py](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/migrations/0010_category_changes_stamp_their_products.py#L13-L28)).
 Nothing more is asked of the client.
 
 <RestEndpoint id="catalog.updateCategory" via="backoffice" />

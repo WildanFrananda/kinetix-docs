@@ -19,6 +19,13 @@ box to trace it.
 talk only to Kong. Select the gateway to see which services it exposes and on which paths; notification's
 only public route is a handset registering itself, and communication has none at all.
 
+**The web apps go through the edge.** The seller web app and the backoffice call only `/bff/` on their own
+hosts, which Kong sends to the edge. The edge keeps their sessions, calls identity directly to sign up, to sign
+in and to renew tokens, and sends every other call back to the gateway, to a listener inside Kinetix's network.
+The seller web's socket to matching takes the same way back, through
+[a twin of the merchant socket's route](/architecture/gateway/#the-merchant-sockets-twin); see
+[edge](/services/edge/).
+
 **order is the busiest caller.** Checkout is a saga that order coordinates: prices and vouchers from
 pricing, stock from warehouse, an escrow hold from payment, shipping options and a courier from
 matching. Two of those conversations run both ways — warehouse reports a packed parcel back with

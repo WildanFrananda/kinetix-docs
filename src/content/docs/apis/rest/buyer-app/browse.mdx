@@ -49,7 +49,7 @@ One unpaged list of every discount in force, which the app matches to products i
 product when its `target_product_id` is the product's `sku`, its `target_category_id` is the product's
 `category_slug`, or it names neither
 ([default_discount_evaluator.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0ed7db4cd6fb8d40375cab26dd7ac56ebce16a8a/src/traits/default_discount_evaluator.rs#L10-L25),
-[CatalogProductDirectory.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Infrastructure/Grpc/CatalogProductDirectory.cs#L55-L64)),
+[CatalogProductDirectory.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Grpc/CatalogProductDirectory.cs#L55-L64)),
 and its `merchant_principal_id` is `null` or the product's merchant
 ([pricing_service.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0ed7db4cd6fb8d40375cab26dd7ac56ebce16a8a/src/services/pricing_service.rs#L137-L146)).
 
@@ -58,7 +58,9 @@ and its `merchant_principal_id` is `null` or the product's merchant
 ## 6. Read the product's reviews
 
 `{productId}` is the product's `sku`, not catalog's numeric `id`: review keys its reviews by SKU, and a key it
-does not know answers an empty list rather than an error. The app asks for the next `page` up to `last_page`.
+does not know answers an empty list rather than an error. For the first page the app sends `page` 1 or leaves
+it out, and asks for the next `page` up to `last_page`; review refuses a `page` below 1 rather than reading it
+as the first.
 
 <RestEndpoint id="review.listProductReviews" />
 

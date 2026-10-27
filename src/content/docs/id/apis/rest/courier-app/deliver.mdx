@@ -3,7 +3,7 @@ title: Mulai bertugas dan mengantar
 description: Kurir membuka driver socket milik matching, mulai bertugas dan melaporkan posisi, menerima job yang ditugaskan matching, mengambil paketnya, meng-upload foto bukti ke storage, dan melaporkan pengantaran.
 sidebar:
   order: 4
-sourceHash: "f3941843bab6"
+sourceHash: "4c97a156385a"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -26,7 +26,7 @@ dengan access token menggantikan placeholder-nya; header upgrade ditambahkan ole
 meneruskan path ini, dan path yang sama berakhiran `/websocket`, yang dipakai client JavaScript milik Phoenix, ke
 matching tanpa memeriksa token-nya, dan menghitung setiap koneksi terhadap
 [batas per alamat](/id/apis/rest/#batas) milik route itu
-([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/6747ebc0ae2b8d5203539aab21f428f4b03784f7/config/gateway.pkl#L421-L434)).
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L426-L439)).
 
 <RestSocket id="matching.driverSocket" />
 
@@ -84,7 +84,7 @@ Jawaban untuk frame di topic yang belum di-join, dan diamnya Phoenix terhadap fr
 dari file yang sama
 ([#L803-L842](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/socket.ex#L803-L842)).
 Event yang tidak dikenal channel dijawab `unknown_event`, dan channel tetap ter-join
-([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse_web/channels/driver_channel.ex#L133-L135)).
+([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/driver_channel.ex#L133-L135)).
 
 ## 3. Jaga socket tetap hidup
 
@@ -106,8 +106,8 @@ lalu join, dan menyatakan status bertugas lagi seperti dijelaskan langkah 4.
 
 Push `status` dengan `online`. Ketika channel berakhir, karena socket ditutup atau terputus, matching mengubah
 status kurir menjadi `offline`
-([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/tracking/driver_state.ex#L258-L261),
-[#L290-L293](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/tracking/driver_state.ex#L290-L293)),
+([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/tracking/driver_state.ex#L258-L261),
+[#L290-L293](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/tracking/driver_state.ex#L290-L293)),
 jadi kurir yang sedang bertugas mengirimnya lagi setelah setiap join baru:
 
 <RestSocketMessage id="matching.driverSocket.status" />
@@ -119,8 +119,8 @@ Aplikasi kurir melakukannya; pertama kali, aplikasi meminta izin lokasi dan meny
 ## 5. Kirim posisi live
 
 Dispatch otomatis hanya mempertimbangkan kurir yang posisinya tiba setelah mereka mulai bertugas
-([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/tracking/driver_state.ex#L137-L145),
-[dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/dispatch.ex#L529-L537)),
+([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/tracking/driver_state.ex#L137-L145),
+[dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L529-L537)),
 jadi `ping` pertama langsung menyusul langkah 4:
 
 <RestSocketMessage id="matching.driverSocket.ping" />
@@ -164,8 +164,8 @@ menit
 
 Tidak ada tawaran untuk diterima atau ditolak. matching menugaskan job, secara otomatis kepada kurir `online`
 terdekat yang kendaraannya sanggup membawanya, atau atas pilihan admin, lalu memberi tahu kurir di channel
-([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/dispatch.ex#L521-L537),
-[#L594-L600](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/dispatch.ex#L594-L600)).
+([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L521-L537),
+[#L594-L600](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L594-L600)).
 Selain `active_order` dari langkah 2, tiga push menyangkut job kurir, kapan saja setelah join:
 
 <RestSocketMessage id="matching.driverSocket.orderAssigned" />
@@ -237,7 +237,7 @@ ini; aplikasi melupakannya bila job-nya dibatalkan, dicabut dari kurir, atau tid
 
 Di akhir shift, push `status` dengan `offline`, pesan yang sama dengan langkah 4. matching lalu tidak lagi
 menawarkan job kepada kurir itu, karena matching hanya menugaskan job kepada kurir yang `online`
-([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/tracking/driver_state.ex#L207-L223)).
+([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/tracking/driver_state.ex#L207-L223)).
 Aplikasi kurir melakukan push ini ketika kurir mematikan status bertugas selagi tersambung
 ([duty_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L113-L125)).
 [Keluar](/id/apis/rest/courier-app/stay-signed-in/) juga menutup socket-nya.

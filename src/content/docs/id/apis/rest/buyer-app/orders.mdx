@@ -3,7 +3,7 @@ title: Order saya
 description: Mendaftar order yang dibuat pembeli dan membaca salah satunya, di order.
 sidebar:
   order: 10
-sourceHash: "023a2ece37af"
+sourceHash: "936682923a97"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -14,9 +14,14 @@ dibaca dengan cara yang sama.
 
 ## 1. Mendaftar order
 
-Terbaru lebih dulu. `status` menyempitkan daftar ke satu status. Aplikasi meminta `page` berikutnya selama
-`page` × `pageSize` masih di bawah `totalCount`, sampai `page` 10.000, halaman terakhir yang dilayani order
-(`maxPage`). `id` setiap item membuka order-nya di langkah 2.
+Terbaru lebih dulu, dan order yang dibuat pada saat yang sama diurutkan menurut `id`, jadi setiap order punya
+satu tempat di daftar
+([OrderService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/OrderService.cs#L637-L642)).
+`status` menyempitkan daftar ke satu status. Aplikasi meminta `page` berikutnya selama `page` × `pageSize` masih
+di bawah `totalCount`, sampai `page` 10.000, halaman terakhir yang dilayani order (`maxPage`). Halaman dipotong
+menurut posisi, jadi order yang dibuat selagi aplikasi berpindah halaman membuat halaman berikutnya mengulang
+order yang sudah ditampilkan: aplikasi membuang yang berulang menurut `id`, dan membaca halaman 1 lagi untuk
+menampilkan order yang dibuat sejak itu. `id` setiap item membuka order-nya di langkah 2.
 
 <RestEndpoint id="order.listMyOrders" />
 

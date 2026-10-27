@@ -3,7 +3,7 @@ title: Daftar dan masuk
 description: Membuat akun pembeli atau masuk ke akun yang ada, menjawab faktor kedua bila aktif, dan memeriksa session yang tersimpan, semuanya di identity.
 sidebar:
   order: 1
-sourceHash: "8370d2e6280b"
+sourceHash: "5cd8226ea852"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -24,7 +24,7 @@ Pembeli mengetik email dan password. `201` adalah sebuah session, sama seperti h
 `user`. `user.id` adalah id akun yang dipakai path milik identity sendiri, seperti endpoint
 [profil](/id/apis/rest/buyer-app/profile/) dan [dua faktor](/id/apis/rest/buyer-app/two-factor/).
 `user.principalId` adalah `sub` dari setiap token yang diterbitkan identity
-([token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/application/services/token.service.ts#L90-L125)),
+([token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/token.service.ts#L90-L125)),
 id yang dipakai service lain untuk mengenali pembeli. `409` berarti email itu sudah punya akun: masuk lewat
 langkah 2.
 
@@ -34,7 +34,7 @@ langkah 2.
 
 Pembeli mengetik email dan password akun yang sudah ada. `200` adalah salah satu dari tiga jawaban, yang
 dibedakan oleh field-field-nya
-([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/application/services/auth_usecase.service.ts#L48-L68)).
+([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/auth_usecase.service.ts#L48-L68)).
 Tanpa `mfaRequired`, jawabannya sebuah session: simpan seperti di langkah 1. Dengan `mfaRequired: true` belum
 ada session; simpan `challengeToken` beserta `expiresIn`-nya untuk langkah 3. Jawaban ketiga, dengan
 `mfaEnrolmentRequired`, hanya diberikan kepada akun `admin` yang belum menyiapkan autentikasi dua faktor, dan
@@ -44,7 +44,7 @@ Dua jawaban membuat pembeli menunggu, keduanya `429` dengan `Retry-After`: yang 
 alamat client, yang lain, `SIGN_IN_DELAYED`, menghitung pemeriksaan password dan kode akun ini dari semua
 perangkat. Setelah lima pemeriksaan berturut-turut, waktu tunggu akun itu bertambah dari 1 detik sampai paling
 lama 60, dan akun itu tidak pernah dikunci
-([sign_in_attempt_policy.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/domain/sign_in_attempt_policy.ts#L3-L35)).
+([sign_in_attempt_policy.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/domain/sign_in_attempt_policy.ts#L3-L35)).
 Aplikasi menampilkan waktu tunggunya dan membiarkan pembeli mencoba lagi begitu `Retry-After` detik sudah
 lewat.
 
@@ -55,11 +55,19 @@ lewat.
 Hanya setelah masuk yang dijawab dengan `mfaRequired`. Aplikasi mengirim `challengeToken` dari langkah 2 dan
 enam digit yang dibaca pembeli dari aplikasi authenticator. `200` adalah sebuah session: simpan seperti di
 langkah 1. Sebuah challenge berlaku selama `expiresIn` detik miliknya dan menerima paling banyak lima kode.
-Kode yang salah membiarkannya tetap terbuka: pembeli mengetik kode yang sedang ditampilkan authenticator, dan
-aplikasi mengirimnya dengan `challengeToken` yang sama. Setelah `429`, aplikasi menunggu `Retry-After` detik,
-lalu mengirim kodenya lagi dengan challenge yang sama selama challenge itu masih berlaku. `401` lainnya
-berarti challenge itu tidak bisa dijawab lagi: sudah kedaluwarsa, sudah menerima lima kodenya, atau sudah
-terpakai. Aplikasi lalu mulai lagi dari langkah 2, yang meminta password dan menerbitkan challenge baru.
+Setiap penolakan atas challenge atau kodenya berupa `401` yang `error`-nya memberi tahu aplikasi apa yang
+dilakukan selanjutnya
+([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/auth_usecase.service.ts#L86-L137)):
+
+- `WRONG_CODE` membiarkan challenge tetap terbuka: pembeli mengetik kode yang sedang ditampilkan
+  authenticator, dan aplikasi mengirimnya dengan `challengeToken` yang sama.
+- `CHALLENGE_EXHAUSTED` (lima kode sudah diterima), `CHALLENGE_SPENT` (sudah terpakai) dan `CHALLENGE_INVALID`
+  (kedaluwarsa, atau tidak bisa dijawab lagi) berarti challenge itu tidak akan pernah berhasil, kode apa pun
+  yang dikirim. Aplikasi tidak meminta kode lain dan mulai lagi dari langkah 2, yang meminta password dan
+  menerbitkan challenge baru.
+
+Setelah `429`, aplikasi menunggu `Retry-After` detik, lalu mengirim kodenya lagi dengan challenge yang sama
+selama challenge itu masih berlaku.
 
 <RestEndpoint id="identity.verifyTwoFactor" />
 

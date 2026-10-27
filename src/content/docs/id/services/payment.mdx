@@ -1,7 +1,7 @@
 ---
 title: payment
 description: Wallet, top-up, dan escrow — service yang menahan uang checkout sampai order menyebut ke mana uang itu pergi, mengkreditkan top-up hanya setelah Midtrans memastikan pembayarannya, dan memberi tahu notary persis apa yang ia utangkan.
-sourceHash: "6ec64e72217d"
+sourceHash: "cc1f5dda1837"
 ---
 
 import ServiceCalls from "../../../../components/ServiceCalls.astro";
@@ -17,7 +17,7 @@ uang persis sebanyak itu, sekali saja, dan menolak apa pun yang tidak klop.
 Tabel di halaman ini dibangkitkan dari data terverifikasi yang sama dengan
 [peta sistem](/id/architecture/system-map/), pada commit yang ditautkan dari setiap baris. Teksnya
 dicek terhadap payment
-[v1.1.0](https://github.com/WildanFrananda/kinetix-payment-service/tree/436aade1629ee50fe3271b2f4702c2e6c0267b94),
+[v1.3.0](https://github.com/WildanFrananda/kinetix-payment-service/tree/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27),
 versi yang berjalan di production.
 
 ## Sekilas
@@ -44,47 +44,47 @@ sudah dibayar.
 ## Bagaimana uang checkout bergerak
 
 1. **Ditahan saat checkout.** `CreateEscrowHold`
-   [mendebit wallet pelanggan sebesar total order](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L379-L454)
+   [mendebit wallet pelanggan sebesar total order](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L380-L455)
    — atau menolak dengan `INSUFFICIENT_BALANCE` — dan menambahkan bagian merchant ke saldo pending
    merchant. Ongkir menjadi pending untuk kurir; saat checkout belum ada kurir yang dikirim, jadi ongkir
    menunggu di akun penampung ongkir kurir yang belum ditentukan. Sebuah hold
-   [harus seimbang](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/domain/src/main/java/com/kinetix/payment/domain/entity/EscrowHold.java#L49-L82):
+   [harus seimbang](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/domain/src/main/java/com/kinetix/payment/domain/entity/EscrowHold.java#L50-L83):
    total sama dengan bagian merchant ditambah ongkir, atau tidak ada yang ditahan.
 2. **Kurir dibayar saat pengantaran.** Ketika matching melaporkan pengantaran, order memanggil
    `SettleShippingFee` dengan menyebut kurir yang mengantar, dan
-   [ongkir pindah ke wallet kurir itu](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L160-L248)
+   [ongkir pindah ke wallet kurir itu](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L161-L249)
    dari mana pun ongkir itu ditahan. Ongkir yang sudah dibayar tidak bisa dialihkan ke kurir kedua, dan
    order yang sudah di-refund tidak punya ongkir lagi untuk dibayar. Kalau merchant sudah dibayar sebelum
    laporan kurir tiba, ongkirnya menunggu di akun penampung, dan
-   [hanya ongkir yang memang ditaruh order di sana](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L250-L262)
+   [hanya ongkir yang memang ditaruh order di sana](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L251-L263)
    yang dibayarkan darinya — akun itu menampung ongkir semua order bersama-sama, dan membayar ongkir yang
    tidak pernah ditaruh di sana berarti memakai ongkir milik kurir lain.
 3. **Barang yang diretur di-refund dari bagian merchant.** `RefundGoods`
-   [mengurangi saldo pending merchant dan mengkredit pelanggan](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L324-L373),
+   [mengurangi saldo pending merchant dan mengkredit pelanggan](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L325-L374),
    hanya selama uangnya masih ditahan, dan
-   [tidak pernah lebih dari yang masih menjadi hak merchant](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/domain/src/main/java/com/kinetix/payment/domain/entity/EscrowHold.java#L92-L125).
+   [tidak pernah lebih dari yang masih menjadi hak merchant](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/domain/src/main/java/com/kinetix/payment/domain/entity/EscrowHold.java#L93-L126).
    Ongkir tidak pernah ikut di dalamnya. Berapa nilai sebuah retur dihitung oleh order — lihat
    [retur di order](/id/services/order/#retur).
 4. **Merchant dibayar saat order selesai.** `ReleaseEscrow`
-   [memindahkan sisa bagian merchant ke saldo yang bisa dipakai](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L546-L620),
+   [memindahkan sisa bagian merchant ke saldo yang bisa dipakai](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L547-L621),
    dan ongkir yang belum diklaim kurir mana pun menjadi saldo tersedia di akun penampung. payment tidak
    punya timer sendiri: order meminta pelepasan setelah masa retur ditutup — lihat
    [Kapan merchant dibayar](/id/services/order/#kapan-merchant-dibayar).
 5. **Order yang dibatalkan di-refund utuh.** `RefundEscrow`
-   [mengembalikan ke pelanggan apa yang masih ditahan](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L702-L703)
+   [mengembalikan ke pelanggan apa yang masih ditahan](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L703-L704)
    — total dikurangi barang yang sudah di-refund — dan membatalkan jumlah pending merchant dan kurir.
    Refund ini ditolak setelah merchant dibayar, dan
-   [setelah kurir dibayar](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L684-L691)
+   [setelah kurir dibayar](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L685-L692)
    untuk pengantaran yang sudah terjadi: me-refund ongkir saat itu berarti mengambilnya dari akun yang
    tidak ada.
 
 Wallet tidak pernah dibiarkan turun di bawah nol supaya sebuah pergerakan muat. Memindahkan uang dari
 saldo yang tidak memilikinya
-[melempar exception](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/domain/src/main/java/com/kinetix/payment/domain/entity/EscrowAmount.java#L16-L25)
+[melempar exception](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/domain/src/main/java/com/kinetix/payment/domain/entity/EscrowAmount.java#L17-L26)
 alih-alih dipotong ke nol, karena pemotongan mengubah kesalahan pembukuan menjadi uang yang diam-diam
 lenyap. Setiap pergerakan juga menulis baris ledger dengan
-[referensi yang menamainya](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L795-L816)
-— `escrow:hold:{order}`, `escrow:release:{order}`, `escrow:goods:{order}:{total refund sejauh ini}`,
+[referensi yang menamainya](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L798-L819)
+— `escrow:hold:{order}`, `escrow:release:{order}`, `escrow:goods:{order}:{refunded so far}`,
 dan seterusnya — dan referensinya unik, sehingga satu pergerakan tidak bisa tercatat dua kali.
 
 ## Memindahkan uang tepat sekali
@@ -93,25 +93,25 @@ Setiap panggilan escrow bisa di-retry, jadi setiap panggilan bersifat idempoten:
 
 - **Sebuah key dan sebuah fingerprint.** order mengirim idempotency key di setiap panggilan; panggilan
   yang datang tanpa key
-  [diberi key dari nomor order-nya](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L883-L895).
+  [diberi key dari nomor order-nya](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L886-L898).
   payment mencatat fingerprint request bersama key-nya, dan pengulangan dengan fingerprint yang sama
   menjawab `already_applied` tanpa memindahkan apa pun. Key yang sama dengan request berbeda
-  [ditolak](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L818-L838)
+  [ditolak](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L821-L841)
   sebagai `IDEMPOTENCY_KEY_REUSED` — lihat [Request yang sama, dua kali](/id/learn/idempotency/).
 - **Pembayaran ongkir tidak butuh key.** Hold ingat kurir mana yang sudah dibayar, jadi pengulangan
   untuk kurir yang sama tidak berbuat apa-apa dan permintaan untuk kurir lain ditolak.
 - **Refund yang mendahului hold-nya tidak hilang.** Kalau `RefundEscrow` datang sebelum hold yang ingin
   ia batalkan, refund itu diingat: hold yang commit sesudahnya dibatalkan oleh retry refund tersebut, dan
   hold yang datang lebih belakang lagi
-  [ditolak](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L395-L400).
+  [ditolak](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L396-L401).
   Inilah kasus yang dihasilkan [saga checkout](/id/learn/checkout-saga/) ketika sebuah kompensasi balapan
   dengan langkah yang ia kompensasi.
 - **Satu order dalam satu waktu.** Semua pekerjaan untuk satu order berjalan dalam transaksi yang lebih
   dulu mengambil
-  [advisory lock PostgreSQL pada nomor order](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L75-L80),
+  [advisory lock PostgreSQL pada nomor order](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L76-L81),
   sehingga dua panggilan untuk order yang sama tidak pernah bersilangan. Wallet yang disentuhnya lalu
   dikunci per pemilik
-  [dalam urutan yang tetap](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L875-L881),
+  [dalam urutan yang tetap](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L878-L884),
   sehingga dua order yang berbagi merchant tidak bisa saling deadlock.
 
 ## Top-up
@@ -119,52 +119,62 @@ Setiap panggilan escrow bisa di-retry, jadi setiap panggilan bersifat idempoten:
 Pelanggan membayar checkout dari wallet-nya, dan mengisinya lewat Midtrans:
 
 1. **Request-nya** menyebut jumlah —
-   [rupiah bulat, minimal Rp1.000](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java#L338-L378)
+   [rupiah bulat, minimal Rp1.000 dan paling banyak sebesar batas](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java#L473-L491)
    — dan metode: virtual account bank, yang butuh nama bank, atau QRIS, yang tidak. Header
    `Idempotency-Key` wajib ada.
-2. **Top-up dicatat sebagai `PENDING` sebelum Midtrans dipanggil**, atas nama pelanggan dan key-nya,
+2. **Wallet-nya harus masih muat.** Sebelum apa pun dicatat, payment
+   [menjumlahkan saldo wallet, setiap top-up yang masih menunggu pembayaran, dan top-up ini](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java#L436-L449),
+   di bawah lock pada wallet itu, dan menolak dengan `422` kalau hasilnya melewati saldo terbesar yang boleh
+   dipegang wallet pelanggan. Kedua batas itu Rp2.000.000 sebagaimana Kinetix menjalankannya; wallet
+   merchant dan kurir tidak punya batas. Batas itu dicek saat top-up dimulai dan tidak di tempat lain: top-up
+   yang sudah dibayar selalu dikredit penuh, begitu juga refund, meski melewatinya.
+3. **Top-up dicatat sebagai `PENDING` sebelum Midtrans dipanggil**, atas nama pelanggan dan key-nya,
    sehingga
-   [retry mengembalikan top-up yang sama](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java#L65-L98)
+   [retry mengembalikan top-up yang sama](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java#L75-L120)
    beserta instruksi pembayarannya, bukan menagih dua kali. Kalau Midtrans tidak memberi jawaban pasti,
    top-up tetap pending: tagihannya mungkin sudah ada, jadi client diminta menanyakan statusnya, bukan
    memulai top-up lain.
-3. **Notifikasi Midtrans adalah pemicu, bukan fakta.** Tanda tangannya
-   [dicek dalam waktu konstan](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/gateway/MidtransPaymentGatewayAdapter.java#L147-L167),
+4. **Notifikasi Midtrans adalah pemicu, bukan fakta.** Tanda tangannya
+   [dicek dalam waktu konstan](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/gateway/MidtransPaymentGatewayAdapter.java#L148-L168),
    dan notifikasi yang sah pun hanya
-   [membuat payment bertanya ke API status Midtrans](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java#L150-L216).
+   [membuat payment bertanya ke API status Midtrans](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java#L175-L238).
    Wallet dikredit hanya ketika Midtrans menyatakan tagihan itu lunas
-   [persis sebesar jumlah yang ditagih](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java#L218-L247);
+   [persis sebesar jumlah yang ditagih](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java#L276-L299);
    jumlah lain tidak mengkredit apa pun dan diserahkan ke manusia. Lihat
    [Jangan percaya angka yang bisa diketik client](/id/learn/trust-boundaries/).
-4. **Notifikasi yang tak pernah datang** tidak membuat uangnya menggantung. Setiap lima menit,
-   [top-up yang pending lebih dari sepuluh menit ditanyakan](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/api/src/main/java/com/kinetix/payment/api/scheduling/ReconciliationScheduler.java#L50-L67),
+5. **Notifikasi yang tak pernah datang** tidak membuat uangnya menggantung. Setiap lima menit,
+   [top-up yang pending lebih dari sepuluh menit ditanyakan](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/api/src/main/resources/application.yml#L86-L94),
    seratus sekaligus. Kalau Midtrans tidak bisa dijangkau, tidak ada yang diputuskan dan top-up itu
-   ditanyakan lagi — lihat [Tidak tahu bukan berarti tidak](/id/learn/unknown-is-not-no/).
+   ditanyakan lagi — lihat [Tidak tahu bukan berarti tidak](/id/learn/unknown-is-not-no/). Tagihan yang
+   satu jam setelah dibuat masih tidak tercatat di Midtrans
+   [diakhiri](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java#L240-L274):
+   sebagai gagal kalau Midtrans tidak pernah menjawab saat tagihan dibuat, dan disisihkan untuk manusia
+   kalau Midtrans sempat menerimanya.
 
 ## Apa yang diutangkan payment
 
 [Notary](/id/services/notary/) berkomitmen di chain atas apa yang diutangkan payment, dan memintanya lewat
 `StreamLiabilitySnapshot`: setiap saldo wallet dalam satu mata uang, sebagai
-[tujuh jenis akun](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/proto/payment/v1/liability.proto#L12-L21) — saldo pelanggan, saldo tersedia dan
+[tujuh jenis akun](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/liability.proto#L12-L21) — saldo pelanggan, saldo tersedia dan
 tertunda milik merchant dan kurir, serta dua saldo akun penampung. Saldo nol ikut dimasukkan, dan
-[saldo negatif menghentikan snapshot](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/domain/src/main/java/com/kinetix/payment/domain/entity/LiabilityAccount.java#L20-L24):
+[saldo negatif menghentikan snapshot](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/domain/src/main/java/com/kinetix/payment/domain/entity/LiabilityAccount.java#L21-L25):
 liability tidak pernah negatif.
 
 Saldo-saldo itu dibaca
-[dalam satu transaction baca-saja pada repeatable read](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/persistence/PostgresLiabilitySnapshot.java#L57-L60),
+[dalam satu transaction baca-saja pada repeatable read](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/persistence/PostgresLiabilitySnapshot.java#L57-L60),
 dan snapshot-nya
-[menolak berjalan di bawah isolasi yang lebih lemah](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/persistence/PostgresLiabilitySnapshot.java#L87-L102),
+[menolak berjalan di bawah isolasi yang lebih lemah](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/persistence/PostgresLiabilitySnapshot.java#L87-L102),
 sehingga ia melihat satu titik waktu: uang yang sedang berpindah antar-wallet tidak pernah terhitung dua
 kali atau terlewat. Snapshot dialirkan sebagai header, batch akun, dan trailer berisi jumlah akun, total, dan
 digest SHA-256. Sebelum mengirim trailer, payment
-[mencatat snapshot itu](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/src/main/java/com/kinetix/payment/application/LiabilitySnapshotService.java#L39-L49) — id, waktu, mata uang, jumlah, total,
+[mencatat snapshot itu](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/LiabilitySnapshotService.java#L42-L52) — id, waktu, mata uang, jumlah, total,
 dan digest — di tabel yang hanya pernah ia tambahi baris. Snapshot yang catatannya gagal ditulis tidak
 mendapat trailer, dan tanpa trailer ia bukan snapshot.
 
 `GetLiabilitySnapshotRecord` menjawab catatan itu berdasarkan id. Proses kedua notary memakainya untuk
 mengecek snapshot yang diterima proses pertama terhadap catatan payment sendiri sebelum menyetujui sebuah
 epoch. Ledger yang tidak bisa dibaca dijawab
-[`UNAVAILABLE`, dan data yang tidak cocok dijawab `FAILED_PRECONDITION`](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/grpc/LiabilityGrpcServerService.java#L85-L96);
+[`UNAVAILABLE`, dan data yang tidak cocok dijawab `FAILED_PRECONDITION`](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/grpc/LiabilityGrpcServerService.java#L93-L104);
 snapshot kosong tidak pernah menjadi jawaban atas gangguan.
 
 ## Bagaimana kodenya disusun
@@ -184,24 +194,24 @@ unique constraint, row lock, dan advisory lock berperilaku seperti di production
 PostgreSQL, lewat JPA, menyimpan wallet pelanggan, merchant, dan kurir, akun penampung ongkir kurir yang
 belum ditentukan, escrow hold, idempotency key dan fingerprint panggilan escrow, satu ledger transaksi —
 top-up dan setiap pergerakan escrow — serta catatan setiap snapshot liability. Skemanya adalah
-[changelog Liquibase](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/api/src/main/resources/db/changelog/db.changelog-master.yaml)
+[changelog Liquibase](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/api/src/main/resources/db/changelog/db.changelog-master.yaml)
 yang dibangkitkan dari entity JPA, diterapkan oleh image yang sama dengan
-[profil `migrate`](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/api/src/main/resources/application-migrate.yml)
+[profil `migrate`](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/api/src/main/resources/application-migrate.yml)
 di container sekali jalan yang harus selesai sebelum service dimulai. Service-nya sendiri hanya
 memvalidasi skema yang ia temukan.
 
 ## Siapa boleh melakukan apa
 
 - **Route wallet** memerlukan access token dari identity —
-  [RS256, dari key set identity, untuk audience Kinetix, dan hanya access token](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/api/src/main/java/com/kinetix/payment/api/security/SecurityConfig.java#L47-L70);
+  [RS256, dari key set identity, untuk audience Kinetix, dan hanya access token](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/api/src/main/java/com/kinetix/payment/api/security/SecurityConfig.java#L74-L97);
   lihat [Token yang bisa ditarik kembali](/id/learn/tokens-that-can-be-taken-back/).
 - **Setiap route membaca wallet pemanggilnya sendiri.** Tidak ada yang menerima akun untuk dilihat:
   wallet-nya adalah milik principal di token, sehingga tidak ada token yang bisa membaca saldo orang lain.
   Perannya
-  [menentukan route mana yang bisa dijangkau](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/api/src/main/java/com/kinetix/payment/api/controller/WalletController.java#L83-L92)
+  [menentukan route mana yang bisa dijangkau](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/api/src/main/java/com/kinetix/payment/api/controller/WalletController.java#L86-L95)
   — pelanggan ke saldo dan top-up pelanggan, seller ke saldo merchant, kurir ke saldo kurir. Status
   sebuah top-up
-  [hanya ditunjukkan ke pelanggan yang memulainya](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java#L100-L110).
+  [hanya ditunjukkan ke pelanggan yang memulainya](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java#L122-L132).
 - **Notifikasi Midtrans** tidak memerlukan token, karena Midtrans yang mengirimnya. Tanda tangannya yang
   membuatnya diterima, dan yang bisa ia lakukan hanyalah membuat payment bertanya ke Midtrans.
 - **Tidak ada route HTTP yang memindahkan uang escrow.** Menahan, membayar ongkir, me-refund, dan
@@ -209,9 +219,9 @@ memvalidasi skema yang ia temukan.
   order — bahwa paketnya sampai, bahwa masa returnya sudah ditutup. Ucapan seseorang lewat HTTP akan
   memutuskan fakta itu di tempat yang salah.
 - **Service lain** menjangkau port gRPC hanya dengan sertifikat dari CA Kinetix —
-  [handshake mewajibkannya](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/api/src/main/resources/application.yml#L100-L106)
+  [handshake mewajibkannya](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/api/src/main/resources/application.yml#L106-L112)
   — dan hanya jika sertifikat itu menyebut
-  [service di daftar izin payment](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/grpc/PeerAuthorizationInterceptor.java#L88-L104),
+  [service di daftar izin payment](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/grpc/PeerAuthorizationInterceptor.java#L88-L104),
   dan hanya untuk service gRPC yang diberikan daftar izinnya. Notary hanya diizinkan ke `LiabilityService`,
   dan proses keduanya hanya ke `LiabilityRecordService`, jadi tidak satu pun bisa menjangkau RPC escrow; lihat
   [Siapa yang memanggil?](/id/learn/who-is-calling/).
@@ -219,20 +229,25 @@ memvalidasi skema yang ia temukan.
 ## Mengoperasikannya
 
 - `/health` menjawab ketika prosesnya hidup; `/health/ready`
-  [menjalankan query sungguhan](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/api/src/main/java/com/kinetix/payment/api/controller/HealthController.java#L31-L48)
+  [menjalankan query sungguhan](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/api/src/main/java/com/kinetix/payment/api/controller/HealthController.java#L31-L48)
   dan menjadi `503` selama instance di-drain setelah `SIGTERM`.
 - `/metrics` menyajikan teks Prometheus dengan nama-nama yang diberikan kontrak platform untuk payment.
 - Token yang ditandatangani kunci yang tidak dipegang payment membuatnya
-  [mengambil ulang key set identity paling banyak dua kali dalam sepuluh detik](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/api/src/main/java/com/kinetix/payment/api/security/RateLimitedKeys.java#L25-L47);
+  [mengambil ulang key set identity paling banyak dua kali dalam sepuluh detik](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/api/src/main/java/com/kinetix/payment/api/security/RateLimitedKeys.java#L43-L64);
   lebih dari itu token-nya langsung ditolak, sehingga token dengan key id karangan tidak bisa membuat identity
-  menjawab sekali per request.
+  menjawab sekali per request. Kalau kunci identity sama sekali tidak bisa diambil, jawabannya
+  [`503`, bukan `401`](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/api/src/main/java/com/kinetix/payment/api/security/AuthenticationRefusals.java#L54-L65).
+- Database yang tidak bisa dijangkau payment
+  [dijawab `503`](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/api/src/main/java/com/kinetix/payment/api/config/GlobalExceptionHandler.java#L116-L127)
+  lewat HTTP, tidak pernah sebagai penolakan.
 - Transaksi escrow
-  [menunggu lock paling lama tiga detik dan berjalan paling lama empat detik](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/persistence/SpringTransactionRunner.java#L15-L16).
+  [menunggu lock paling lama tiga detik dan berjalan paling lama empat detik](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/persistence/SpringTransactionRunner.java#L15-L16).
   Panggilan yang kalah dalam perebutan itu
-  [dijawab `ABORTED`](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/grpc/PaymentGrpcServerService.java#L237-L270),
+  [dijawab `ABORTED`](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/grpc/PaymentGrpcServerService.java#L240-L278),
   yang berarti coba lagi. Penolakan berupa `FAILED_PRECONDITION`, `NOT_FOUND`, atau `INVALID_ARGUMENT`,
-  dengan alasannya di error detail, dan mencoba lagi tidak akan mengubahnya.
+  dengan alasannya di error detail, dan mencoba lagi tidak akan mengubahnya. Alasannya selalu kalimat
+  payment sendiri: teks database, atau teks sebuah library, tidak pernah ikut terkirim.
 - Kinetix memakai sandbox Midtrans, di production juga. Pindah ke environment lain cukup dengan
-  [base URL dan server key](https://github.com/WildanFrananda/kinetix-payment-service/blob/436aade1629ee50fe3271b2f4702c2e6c0267b94/modules/api/src/main/resources/application.yml#L35-L44),
+  [base URL dan server key](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/api/src/main/resources/application.yml#L37-L46),
   tidak ada yang lain, dan setiap panggilan ke Midtrans dibatasi — lima detik untuk terhubung, lima belas
   untuk menjawab.

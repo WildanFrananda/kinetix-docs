@@ -7,6 +7,7 @@ const httpApi = "src/main/scala/com/kinetix/notification/infrastructure/http/Htt
 const deviceRegistry = "src/main/scala/com/kinetix/notification/infrastructure/persistence/PostgresDeviceRegistry.scala";
 const verifyDevice = "src/main/scala/com/kinetix/notification/application/VerifyDevice.scala";
 const deviceChallenge = "src/main/scala/com/kinetix/notification/domain/DeviceChallenge.scala";
+const pushSender = "src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala";
 const handsetToken = "f7Kq2mXr0Ts:APA91bG3exampleHandsetRegistrationTokenK9vL2pQ8wR4tY6uI0oP3aS5dF7gH1jK";
 
 export const notificationAnswers: readonly RestCase[] = [
@@ -56,7 +57,7 @@ export const notificationAnswers: readonly RestCase[] = [
     status: 500,
     when: "rest.notification.answers.internal",
     headers: ["Content-Length: 0"],
-    source: restSource("notification", "src/main/scala/com/kinetix/notification/Main.scala", 184, 194)
+    source: restSource("notification", "src/main/scala/com/kinetix/notification/Main.scala", 192, 202)
   },
   {
     status: 503,
@@ -166,7 +167,17 @@ export const notificationEndpoints: readonly RestEndpoint[] = [
           message:
             "the push provider says this device token no longer exists; get a fresh FCM token and register it again"
         },
-        source: restSource("notification", deviceApi, 144, 146)
+        source: restSource("notification", deviceApi, 148, 150)
+      },
+      {
+        status: 422,
+        when: "rest.notification.registerDevice.case.foreignToken",
+        json: {
+          error: "ADDRESS_GONE",
+          message:
+            "the push provider says this device token belongs to another app; get an FCM token from this app and register it"
+        },
+        source: restSource("notification", pushSender, 130, 140)
       },
       {
         status: 429,
@@ -177,7 +188,7 @@ export const notificationEndpoints: readonly RestEndpoint[] = [
           message:
             "a proof was already sent to this device for this principal; echo its nonce, or register again after 2026-10-22T03:25:00.481236Z"
         },
-        source: restSource("notification", deviceApi, 160, 170)
+        source: restSource("notification", deviceApi, 170, 185)
       },
       {
         status: 429,
@@ -196,7 +207,7 @@ export const notificationEndpoints: readonly RestEndpoint[] = [
           error: "SENDER_REJECTED",
           message: "the push provider refused the message; repeating the request unchanged does not help"
         },
-        source: restSource("notification", deviceApi, 141, 141)
+        source: restSource("notification", deviceApi, 145, 145)
       },
       {
         status: 503,
@@ -206,7 +217,28 @@ export const notificationEndpoints: readonly RestEndpoint[] = [
           message:
             "the push provider did not answer; 3 attempts were made, with 200 ms and 600 ms back-off; try again later"
         },
-        source: restSource("notification", deviceApi, 149, 158)
+        source: restSource("notification", deviceApi, 139, 140)
+      },
+      {
+        status: 503,
+        when: "rest.notification.registerDevice.case.senderThrottled",
+        headers: ["Retry-After: 30"],
+        json: {
+          error: "SENDER_UNAVAILABLE",
+          message:
+            "the push provider is limiting how much this service may send; 3 attempts were made, with 200 ms and 600 ms back-off; try again after Retry-After"
+        },
+        source: restSource("notification", deviceApi, 141, 142)
+      },
+      {
+        status: 503,
+        when: "rest.notification.registerDevice.case.senderCredentials",
+        json: {
+          error: "SENDER_UNAVAILABLE",
+          message:
+            "the push provider did not accept this service's credentials; the request is not at fault; try again later"
+        },
+        source: restSource("notification", deviceApi, 143, 144)
       }
     ],
     source: restSource("notification", deviceApi, 47, 67)

@@ -27,7 +27,7 @@ export const edgeAnswers: readonly RestCase[] = [
       message: "Sign in first.",
       requestId
     },
-    source: restSource("edge", "src/http/forward.tl", 41, 44)
+    source: restSource("edge", "src/http/session_use.tl", 29, 32)
   },
   {
     status: 401,
@@ -38,7 +38,7 @@ export const edgeAnswers: readonly RestCase[] = [
       message: "The session has ended. Sign in again.",
       requestId
     },
-    source: restSource("edge", "src/http/forward.tl", 41, 48)
+    source: restSource("edge", "src/http/session_use.tl", 22, 42)
   },
   {
     status: 403,
@@ -49,7 +49,7 @@ export const edgeAnswers: readonly RestCase[] = [
       message: "This request did not come from the application's own page, so nothing was done.",
       requestId
     },
-    source: restSource("edge", "src/http/router.tl", 123, 147)
+    source: restSource("edge", "src/http/router.tl", 161, 185)
   },
   {
     status: 403,
@@ -60,7 +60,7 @@ export const edgeAnswers: readonly RestCase[] = [
       message: "This account cannot use this application.",
       requestId
     },
-    source: restSource("edge", "src/http/forward.tl", 67, 70)
+    source: restSource("edge", "src/http/session_use.tl", 52, 63)
   },
   {
     status: 404,
@@ -71,7 +71,7 @@ export const edgeAnswers: readonly RestCase[] = [
       message: "Nothing is served at this path.",
       requestId
     },
-    source: restSource("edge", "src/http/router.tl", 169, 172)
+    source: restSource("edge", "src/http/router.tl", 207, 210)
   },
   {
     status: 404,
@@ -82,7 +82,7 @@ export const edgeAnswers: readonly RestCase[] = [
       message: "Nothing is served at this path.",
       requestId
     },
-    source: restSource("edge", "src/http/forward.tl", 137, 141)
+    source: restSource("edge", "src/http/forward.tl", 85, 88)
   },
   {
     status: 405,
@@ -93,7 +93,7 @@ export const edgeAnswers: readonly RestCase[] = [
       message: "This path does not take that method.",
       requestId
     },
-    source: restSource("edge", "src/http/router.tl", 176, 178)
+    source: restSource("edge", "src/http/router.tl", 214, 216)
   },
   {
     status: 413,
@@ -115,7 +115,7 @@ export const edgeAnswers: readonly RestCase[] = [
       message: "The request path is longer than the edge accepts.",
       requestId: edgeRequestId
     },
-    source: restSource("edge", "nginx/nginx.conf", 92, 96)
+    source: restSource("edge", "nginx/nginx.conf", 133, 137)
   },
   {
     status: 415,
@@ -126,7 +126,7 @@ export const edgeAnswers: readonly RestCase[] = [
       message: "Request bodies must be application/json.",
       requestId
     },
-    source: restSource("edge", "src/http/router.tl", 130, 136)
+    source: restSource("edge", "src/http/router.tl", 168, 174)
   },
   {
     status: 431,
@@ -137,7 +137,7 @@ export const edgeAnswers: readonly RestCase[] = [
       message: "The request headers are larger than the edge accepts.",
       requestId: edgeRequestId
     },
-    source: restSource("edge", "nginx/nginx.conf", 98, 102)
+    source: restSource("edge", "nginx/nginx.conf", 139, 143)
   },
   {
     status: 500,
@@ -148,7 +148,7 @@ export const edgeAnswers: readonly RestCase[] = [
       message: "Something went wrong in the edge, and it is not known how much of this request took effect.",
       requestId
     },
-    source: restSource("edge", "src/http/router.tl", 149, 162)
+    source: restSource("edge", "src/http/router.tl", 187, 200)
   },
   {
     status: 502,
@@ -159,7 +159,7 @@ export const edgeAnswers: readonly RestCase[] = [
       message: "identity answered in a way the edge does not understand, so nothing was decided.",
       requestId
     },
-    source: restSource("edge", "src/http/sign_in.tl", 51, 62)
+    source: restSource("edge", "src/http/sign_in.tl", 44, 55)
   },
   {
     status: 503,
@@ -170,7 +170,7 @@ export const edgeAnswers: readonly RestCase[] = [
       message: "The session store could not be reached, so nothing was checked. Try again later.",
       requestId
     },
-    source: restSource("edge", "src/http/sign_in.tl", 165, 172)
+    source: restSource("edge", "src/http/sign_in.tl", 164, 171)
   },
   {
     status: 503,
@@ -181,7 +181,7 @@ export const edgeAnswers: readonly RestCase[] = [
       message: "identity could not be reached, so nothing was decided. Try again later.",
       requestId
     },
-    source: restSource("edge", "src/http/sign_in.tl", 42, 49)
+    source: restSource("edge", "src/http/sign_in.tl", 35, 42)
   },
   {
     status: 503,
@@ -193,7 +193,7 @@ export const edgeAnswers: readonly RestCase[] = [
         "The API could not be reached, and it is not known whether the request took effect. Read the current state first.",
       requestId
     },
-    source: restSource("edge", "src/http/forward.tl", 118, 125)
+    source: restSource("edge", "src/http/forward.tl", 65, 72)
   }
 ];
 
@@ -291,7 +291,7 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
           principalId: "0f8b6c1e-5a2d-4c3b-9e7f-1a2b3c4d5e6f",
           expiresAt: "2026-11-02T08:00:00.000Z"
         },
-        source: restSource("edge", "src/http/sign_in.tl", 113, 133)
+        source: restSource("edge", "src/http/sign_in.tl", 112, 132)
       },
       {
         status: 200,
@@ -300,7 +300,7 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
         json: {
           mfaRequired: true
         },
-        source: restSource("edge", "src/http/sign_in.tl", 157, 160)
+        source: restSource("edge", "src/http/sign_in.tl", 156, 158)
       },
       {
         status: 200,
@@ -309,7 +309,7 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
         json: {
           mfaEnrolmentRequired: true
         },
-        source: restSource("edge", "src/http/sign_in.tl", 157, 162)
+        source: restSource("edge", "src/http/sign_in.tl", 156, 161)
       },
       {
         status: 400,
@@ -320,7 +320,7 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
           message: "The request body is not what this endpoint takes.",
           requestId
         },
-        source: restSource("edge", "src/http/sign_in.tl", 212, 218)
+        source: restSource("edge", "src/http/sign_in.tl", 211, 217)
       },
       {
         status: 401,
@@ -331,7 +331,7 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
           message: "The email or the password is not correct.",
           requestId
         },
-        source: restSource("edge", "src/http/sign_in.tl", 179, 181)
+        source: restSource("edge", "src/http/sign_in.tl", 178, 180)
       },
       {
         status: 403,
@@ -342,7 +342,7 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
           message: "This account cannot use this application.",
           requestId
         },
-        source: restSource("edge", "src/http/sign_in.tl", 100, 111)
+        source: restSource("edge", "src/http/sign_in.tl", 99, 110)
       },
       {
         status: 429,
@@ -354,7 +354,7 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
             "Too many unsuccessful sign-in attempts for this account. Nothing was checked; try again after Retry-After.",
           requestId
         },
-        source: restSource("edge", "src/http/sign_in.tl", 64, 71)
+        source: restSource("edge", "src/http/sign_in.tl", 57, 64)
       },
       {
         status: 429,
@@ -365,10 +365,103 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
           message: "Too many requests. Try again after Retry-After.",
           requestId
         },
-        source: restSource("edge", "src/http/sign_in.tl", 64, 71)
+        source: restSource("edge", "src/http/sign_in.tl", 57, 64)
       }
     ],
-    source: restSource("edge", "src/http/sign_in.tl", 212, 227)
+    source: restSource("edge", "src/http/sign_in.tl", 211, 226)
+  },
+  {
+    id: "edge.register",
+    service: "edge",
+    method: "POST",
+    path: "/bff/register",
+    summary: "rest.edge.register.summary",
+    access: {
+      token: "none",
+      gatewayVerifies: false,
+      who: "rest.edge.register.who"
+    },
+    request: {
+      fields: [
+        {
+          name: "email",
+          in: "body",
+          type: "string",
+          required: true,
+          rule: "rest.edge.register.field.email"
+        },
+        {
+          name: "password",
+          in: "body",
+          type: "string",
+          required: true,
+          rule: "rest.edge.register.field.password"
+        }
+      ],
+      json: {
+        email: "new.seller@example.com",
+        password: "correct horse battery staple"
+      }
+    },
+    cases: [
+      {
+        status: 201,
+        when: "rest.edge.register.case.created",
+        headers: [sellerWebSession, noStore],
+        json: {
+          authenticated: true,
+          role: "customer",
+          principalId: "7d4e2a1b-8c3f-4e5d-9a6b-2c1d0e9f8a7b",
+          expiresAt: "2026-11-03T08:00:00.000Z"
+        },
+        source: restSource("edge", "src/http/sign_up.tl", 43, 48)
+      },
+      {
+        status: 400,
+        when: "rest.edge.register.case.invalid",
+        headers: [noStore],
+        json: {
+          error: "INVALID_REQUEST",
+          message: "The request body is not what this endpoint takes.",
+          requestId
+        },
+        source: restSource("edge", "src/http/sign_up.tl", 51, 57)
+      },
+      {
+        status: 400,
+        when: "rest.edge.register.case.rejected",
+        headers: [noStore],
+        json: {
+          error: "INVALID_REQUEST",
+          message: "password must be longer than or equal to 12 characters",
+          requestId
+        },
+        source: restSource("edge", "src/http/sign_up.tl", 19, 28)
+      },
+      {
+        status: 409,
+        when: "rest.edge.register.case.emailTaken",
+        headers: [noStore],
+        json: {
+          error: "EMAIL_TAKEN",
+          message: "An account with this email address already exists. Sign in instead.",
+          requestId
+        },
+        source: restSource("edge", "src/http/sign_up.tl", 35, 37)
+      },
+      {
+        status: 429,
+        when: "rest.edge.register.case.throttled",
+        headers: ["Retry-After: 42", noStore],
+        json: {
+          error: "TOO_MANY_REQUESTS",
+          message: "Too many requests. Try again after Retry-After.",
+          requestId
+        },
+        source: restSource("edge", "src/http/sign_in.tl", 57, 64)
+      }
+    ],
+    source: restSource("edge", "src/http/sign_up.tl", 51, 66)
   },
   {
     id: "edge.verifyTwoFactor",
@@ -407,7 +500,7 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
           principalId: "3c9d2e7a-6b1f-4d8e-a5c4-7e2f1b0a9d8c",
           expiresAt: "2026-10-26T08:15:00.000Z"
         },
-        source: restSource("edge", "src/http/sign_in.tl", 93, 133)
+        source: restSource("edge", "src/http/sign_in.tl", 86, 133)
       },
       {
         status: 200,
@@ -419,7 +512,7 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
           principalId: "0f8b6c1e-5a2d-4c3b-9e7f-1a2b3c4d5e6f",
           expiresAt: "2026-11-02T08:00:00.000Z"
         },
-        source: restSource("edge", "src/http/sign_in.tl", 93, 133)
+        source: restSource("edge", "src/http/sign_in.tl", 86, 133)
       },
       {
         status: 400,
@@ -430,7 +523,7 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
           message: "The request body is not what this endpoint takes.",
           requestId
         },
-        source: restSource("edge", "src/http/sign_in.tl", 250, 257)
+        source: restSource("edge", "src/http/sign_in.tl", 265, 272)
       },
       {
         status: 401,
@@ -441,7 +534,7 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
           message: "The code was not accepted. Try the next one, or sign in again if this keeps happening.",
           requestId
         },
-        source: restSource("edge", "src/http/sign_in.tl", 234, 236)
+        source: restSource("edge", "src/http/sign_in.tl", 243, 250)
       },
       {
         status: 401,
@@ -452,7 +545,18 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
           message: "No sign-in is in progress, or it has expired. Sign in again.",
           requestId
         },
-        source: restSource("edge", "src/http/sign_in.tl", 259, 267)
+        source: restSource("edge", "src/http/sign_in.tl", 228, 236)
+      },
+      {
+        status: 401,
+        when: "rest.edge.verifyTwoFactor.case.challengeEnded",
+        headers: [expiredPending, noStore],
+        json: {
+          error: "SIGN_IN_REQUIRED",
+          message: "No sign-in is in progress, or it has expired. Sign in again.",
+          requestId
+        },
+        source: restSource("edge", "src/http/sign_in.tl", 243, 248)
       },
       {
         status: 403,
@@ -463,7 +567,7 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
           message: "This account cannot use this application.",
           requestId
         },
-        source: restSource("edge", "src/http/sign_in.tl", 100, 111)
+        source: restSource("edge", "src/http/sign_in.tl", 99, 110)
       },
       {
         status: 429,
@@ -475,7 +579,7 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
             "Too many unsuccessful sign-in attempts for this account. Nothing was checked; try again after Retry-After.",
           requestId
         },
-        source: restSource("edge", "src/http/sign_in.tl", 64, 71)
+        source: restSource("edge", "src/http/sign_in.tl", 57, 64)
       },
       {
         status: 429,
@@ -486,10 +590,10 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
           message: "Too many requests. Try again after Retry-After.",
           requestId
         },
-        source: restSource("edge", "src/http/sign_in.tl", 64, 71)
+        source: restSource("edge", "src/http/sign_in.tl", 57, 64)
       }
     ],
-    source: restSource("edge", "src/http/sign_in.tl", 269, 291)
+    source: restSource("edge", "src/http/sign_in.tl", 274, 296)
   },
   {
     id: "edge.setupTwoFactor",
@@ -517,7 +621,7 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
             "otpauth://totp/Kinetix%3Aadmin%40example.com?secret=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA&issuer=Kinetix&algorithm=SHA1&digits=6&period=30",
           enabled: false
         },
-        source: restSource("edge", "src/http/sign_in.tl", 317, 324)
+        source: restSource("edge", "src/http/sign_in.tl", 323, 330)
       },
       {
         status: 401,
@@ -528,7 +632,7 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
           message: "No sign-in is in progress, or it has expired. Sign in again.",
           requestId
         },
-        source: restSource("edge", "src/http/sign_in.tl", 259, 267)
+        source: restSource("edge", "src/http/sign_in.tl", 228, 236)
       },
       {
         status: 409,
@@ -539,7 +643,7 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
           message: "Two-factor authentication is already enabled for this account. Sign in again.",
           requestId
         },
-        source: restSource("edge", "src/http/sign_in.tl", 304, 307)
+        source: restSource("edge", "src/http/sign_in.tl", 309, 312)
       },
       {
         status: 429,
@@ -550,10 +654,10 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
           message: "Too many requests. Try again after Retry-After.",
           requestId
         },
-        source: restSource("edge", "src/http/sign_in.tl", 64, 71)
+        source: restSource("edge", "src/http/sign_in.tl", 57, 64)
       }
     ],
-    source: restSource("edge", "src/http/sign_in.tl", 327, 344)
+    source: restSource("edge", "src/http/sign_in.tl", 333, 350)
   },
   {
     id: "edge.enableTwoFactor",
@@ -589,7 +693,7 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
         json: {
           enabled: true
         },
-        source: restSource("edge", "src/http/sign_in.tl", 359, 364)
+        source: restSource("edge", "src/http/sign_in.tl", 366, 371)
       },
       {
         status: 400,
@@ -600,7 +704,7 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
           message: "The request body is not what this endpoint takes.",
           requestId
         },
-        source: restSource("edge", "src/http/sign_in.tl", 250, 257)
+        source: restSource("edge", "src/http/sign_in.tl", 265, 272)
       },
       {
         status: 401,
@@ -611,7 +715,7 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
           message: "The code was not accepted. Try the next one, or sign in again if this keeps happening.",
           requestId
         },
-        source: restSource("edge", "src/http/sign_in.tl", 351, 353)
+        source: restSource("edge", "src/http/sign_in.tl", 358, 360)
       },
       {
         status: 401,
@@ -622,7 +726,7 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
           message: "No sign-in is in progress, or it has expired. Sign in again.",
           requestId
         },
-        source: restSource("edge", "src/http/sign_in.tl", 259, 267)
+        source: restSource("edge", "src/http/sign_in.tl", 228, 236)
       },
       {
         status: 429,
@@ -634,7 +738,7 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
             "Too many unsuccessful sign-in attempts for this account. Nothing was checked; try again after Retry-After.",
           requestId
         },
-        source: restSource("edge", "src/http/sign_in.tl", 64, 71)
+        source: restSource("edge", "src/http/sign_in.tl", 57, 64)
       },
       {
         status: 429,
@@ -645,10 +749,10 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
           message: "Too many requests. Try again after Retry-After.",
           requestId
         },
-        source: restSource("edge", "src/http/sign_in.tl", 64, 71)
+        source: restSource("edge", "src/http/sign_in.tl", 57, 64)
       }
     ],
-    source: restSource("edge", "src/http/sign_in.tl", 367, 389)
+    source: restSource("edge", "src/http/sign_in.tl", 374, 396)
   },
   {
     id: "edge.logout",
@@ -670,7 +774,7 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
         status: 204,
         when: "rest.edge.logout.case.signedOut",
         headers: [expiredSession, expiredPending, noStore],
-        source: restSource("edge", "src/http/logout.tl", 31, 49)
+        source: restSource("edge", "src/http/logout.tl", 31, 53)
       },
       {
         status: 503,
@@ -681,9 +785,9 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
           message: "identity could not be reached, so nothing was decided. Try again later.",
           requestId
         },
-        source: restSource("edge", "src/http/logout.tl", 72, 90)
+        source: restSource("edge", "src/http/logout.tl", 76, 94)
       }
     ],
-    source: restSource("edge", "src/http/logout.tl", 103, 121)
+    source: restSource("edge", "src/http/logout.tl", 107, 125)
   }
 ];

@@ -32,14 +32,6 @@ export const gatewayAnswers: readonly RestCase[] = [
   },
   {
     status: 401,
-    when: "rest.gateway.answers.multipleTokens",
-    headers: [challenge],
-    contentType: json,
-    raw: '{"message":"Multiple tokens provided"}',
-    source: kongSource("kong/plugins/jwt/handler.lua", 160, 167)
-  },
-  {
-    status: 401,
     when: "rest.gateway.answers.badToken",
     headers: [challenge],
     contentType: json,
@@ -181,10 +173,10 @@ export const gatewayEndpoints: readonly RestEndpoint[] = [
         when: "rest.gateway.health.case.up",
         contentType: "application/json",
         raw: '{"status":"ok"}',
-        source: restSource("gateway", "config/gateway.pkl", 159, 166)
+        source: restSource("gateway", "config/gateway.pkl", 162, 169)
       }
     ],
-    source: restSource("gateway", "config/gateway.pkl", 154, 168)
+    source: restSource("gateway", "config/gateway.pkl", 157, 171)
   },
   {
     id: "gateway.securityTxt",
@@ -206,9 +198,9 @@ export const gatewayEndpoints: readonly RestEndpoint[] = [
         when: "rest.gateway.securityTxt.case.served",
         contentType: plain,
         raw: securityTxt,
-        source: restSource("gateway", "config/gateway.pkl", 39, 46)
+        source: restSource("gateway", "config/gateway.pkl", 40, 47)
       }
     ],
-    source: restSource("gateway", "config/gateway.pkl", 170, 184)
+    source: restSource("gateway", "config/gateway.pkl", 173, 187)
   }
 ];

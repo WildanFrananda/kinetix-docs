@@ -2,7 +2,7 @@
 title: "payment.v1"
 description: "Paket gRPC payment.v1 di kinetix-contracts 1.7.0: service, message, dan enum-nya."
 editUrl: false
-sourceHash: "6f2382b2483a"
+sourceHash: "d3137019bc0b"
 ---
 
 <div class="grpc-reference">
@@ -17,7 +17,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`GetLiabilitySnapshotRecord`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/liability_record.proto#L9) | [`GetLiabilitySnapshotRecordRequest`](#getliabilitysnapshotrecordrequest) → [`GetLiabilitySnapshotRecordResponse`](#getliabilitysnapshotrecordresponse) | [payment](/id/services/payment/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/payment/records.go#L56) |
+| [`GetLiabilitySnapshotRecord`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/liability_record.proto#L9) | [`GetLiabilitySnapshotRecordRequest`](#getliabilitysnapshotrecordrequest) → [`GetLiabilitySnapshotRecordResponse`](#getliabilitysnapshotrecordresponse) | [payment](/id/services/payment/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/8446176813c354716d77ca6591038633871bcda5/internal/payment/records.go#L56) |
 
 ### LiabilityService
 
@@ -25,7 +25,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`StreamLiabilitySnapshot`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/liability.proto#L9) | [`StreamLiabilitySnapshotRequest`](#streamliabilitysnapshotrequest) → `stream` [`StreamLiabilitySnapshotResponse`](#streamliabilitysnapshotresponse) | [payment](/id/services/payment/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/payment/source.go#L61) |
+| [`StreamLiabilitySnapshot`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/liability.proto#L9) | [`StreamLiabilitySnapshotRequest`](#streamliabilitysnapshotrequest) → `stream` [`StreamLiabilitySnapshotResponse`](#streamliabilitysnapshotresponse) | [payment](/id/services/payment/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/8446176813c354716d77ca6591038633871bcda5/internal/payment/source.go#L61) |
 
 ### PaymentService
 
@@ -33,12 +33,12 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`CreateEscrowHold`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L9) | [`CreateEscrowHoldRequest`](#createescrowholdrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/id/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L49) |
-| [`ReleaseEscrow`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L10) | [`ReleaseEscrowRequest`](#releaseescrowrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/id/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L95) |
-| [`RefundEscrow`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L11) | [`RefundEscrowRequest`](#refundescrowrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/id/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L73) |
-| [`GetEscrowStatus`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L12) | [`GetEscrowStatusRequest`](#getescrowstatusrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/id/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L158) |
-| [`SettleShippingFee`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L13) | [`SettleShippingFeeRequest`](#settleshippingfeerequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/id/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L137) |
-| [`RefundGoods`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L14) | [`RefundGoodsRequest`](#refundgoodsrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/id/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/EscrowGrpcClient.cs#L110) |
+| [`CreateEscrowHold`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L9) | [`CreateEscrowHoldRequest`](#createescrowholdrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/id/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Grpc/EscrowGrpcClient.cs#L49) |
+| [`ReleaseEscrow`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L10) | [`ReleaseEscrowRequest`](#releaseescrowrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/id/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Grpc/EscrowGrpcClient.cs#L95) |
+| [`RefundEscrow`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L11) | [`RefundEscrowRequest`](#refundescrowrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/id/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Grpc/EscrowGrpcClient.cs#L73) |
+| [`GetEscrowStatus`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L12) | [`GetEscrowStatusRequest`](#getescrowstatusrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/id/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Grpc/EscrowGrpcClient.cs#L158) |
+| [`SettleShippingFee`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L13) | [`SettleShippingFeeRequest`](#settleshippingfeerequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/id/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Grpc/EscrowGrpcClient.cs#L137) |
+| [`RefundGoods`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/payment/v1/payment.proto#L14) | [`RefundGoodsRequest`](#refundgoodsrequest) → [`EscrowHoldResponse`](#escrowholdresponse) | [payment](/id/services/payment/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Grpc/EscrowGrpcClient.cs#L110) |
 
 ## Message
 

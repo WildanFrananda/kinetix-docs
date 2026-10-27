@@ -3,7 +3,7 @@ title: Pendapatan dan ulasan
 description: Cara penjual membaca dompet merchant-nya di payment dan ulasan yang ditinggalkan pembeli untuk produknya di review.
 sidebar:
   order: 9
-sourceHash: "b5235a270d1a"
+sourceHash: "6585d237d033"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -19,13 +19,13 @@ edge setiap panggilan tetap memerlukan session.
 Payment menahan bagian penjual dari setiap pesanan yang dibayar dan melepaskannya saat pesanan itu selesai;
 jawabannya menampilkan kedua jumlah itu. Saldo adalah satu-satunya yang ditampilkan API REST payment kepada
 penjual: tidak ada endpoint yang mendaftar pembayaran di baliknya
-([WalletController.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/ae1f3e07d4849f51bbc41b8cb5dd356dcfa5d793/modules/api/src/main/java/com/kinetix/payment/api/controller/WalletController.java#L21-L84)).
+([WalletController.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/api/src/main/java/com/kinetix/payment/api/controller/WalletController.java#L21-L84)).
 
 <RestEndpoint id="payment.merchantBalance" via="seller-web" />
 
 ## 2. Membaca ulasan toko
 
-`merchantPrincipalId` adalah `principalId` milik penjual. Minta `page` berikutnya selama nilainya masih di bawah
-`last_page`.
+`merchantPrincipalId` adalah `principalId` milik penjual. Halaman dihitung mulai dari 1: hilangkan `page`, atau
+kirim `1`, untuk halaman pertama, lalu minta halaman berikutnya selama nilainya masih di bawah `last_page`.
 
 <RestEndpoint id="review.listMerchantReviews" via="seller-web" />

@@ -46,6 +46,19 @@ export const architectureNodes: readonly MapNode[] = [
     deployed: true
   },
   {
+    id: "edge",
+    kind: "service",
+    name: "edge",
+    summary: "service.edge.owns",
+    x: 720,
+    y: 140,
+    repository: `${github}/kinetix-edge-service`,
+    serves: [],
+    routes: ["/bff/"],
+    stores: ["Redis"],
+    deployed: true
+  },
+  {
     id: "warehouse",
     kind: "service",
     name: "warehouse",
@@ -90,8 +103,8 @@ export const architectureNodes: readonly MapNode[] = [
     kind: "service",
     name: "matching",
     summary: "service.matching.owns",
-    x: 720,
-    y: 275,
+    x: 790,
+    y: 225,
     logo: "elixir",
     repository: `${github}/kinetix-matching-service`,
     serves: [
@@ -299,8 +312,8 @@ export const architectureNodes: readonly MapNode[] = [
     kind: "external",
     name: "Firebase",
     summary: "map.node.fcm.summary",
-    x: 905,
-    y: 245,
+    x: 855,
+    y: 305,
     serves: [],
     routes: [],
     stores: [],

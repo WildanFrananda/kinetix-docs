@@ -3,7 +3,7 @@ title: Penerimaan stok
 description: Cara staf mencari merchant pemilik sebuah kiriman di catalog, lalu membuat bin dan membukukan barang masuk dan keluar bin itu di warehouse.
 sidebar:
   order: 6
-sourceHash: "1b282274dfb0"
+sourceHash: "c368f99f9159"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -25,9 +25,9 @@ Nilai dengan tipe yang salah, di luar rentang atau terlalu panjang dijawab `422`
 Baca produk dengan `sku` yang tertera di kiriman dan simpan `merchant_principal_id`-nya, yaitu principal identity milik
 merchant yang menjualnya, yang dikirim di langkah 3 dan 4. Harus merchant itu: warehouse menyimpan stok per merchant
 dan SKU
-([bin_stock_service_handler.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/cc5ff5ff80b6342e2cafdb262f931e2e03dedf50/app/rpc/bin_stock_service_handler.rb#L32-L44)),
+([bin_stock_service_handler.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/rpc/bin_stock_service_handler.rb#L32-L46)),
 dan catalog menanyakan stok milik merchant produk itu sendiri
-([product_service.py](https://github.com/WildanFrananda/kinetix-catalog-service/blob/1348c6ea4f80448bba710e83b20c5551d10fa3e0/core/application/services/product_service.py#L113-L119)).
+([product_service.py](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/application/services/product_service.py#L113-L119)).
 Jawaban `404` berarti tidak ada produk dengan SKU itu yang sedang dijual.
 
 <RestEndpoint id="catalog.getProduct" via="backoffice" />
@@ -44,10 +44,11 @@ kiriman: request yang sama dengan `bin_code` yang sudah ada justru memperbarui z
 Kirim `bin_code` dari langkah 2, `sku`, jumlah unit yang dihitung sebagai `quantity`, `merchant_principal_id` dari
 langkah 1, dan `idempotency_key` yang dibuat client untuk kiriman yang satu ini dan disimpan sampai mendapat jawaban
 akhir. Key itu ada di body; endpoint ini tidak membaca header `Idempotency-Key`. Setelah timeout, `500` atau `503`,
-kirim body yang sama dengan key yang sama: kiriman yang sudah dibukukan menjawab `200` dengan `replayed: true` dan
+kirim body yang sama dengan key yang sama, setelah detik di `Retry-After` lewat bila jawabannya menyebutkannya,
+seperti `DATABASE_UNAVAILABLE` milik warehouse: kiriman yang sudah dibukukan menjawab `200` dengan `replayed: true` dan
 tidak dibukukan dua kali. Jawaban `400` atau `422` tidak membukukan apa pun dan membiarkan key itu belum terpakai, jadi
 body yang sudah dikoreksi bisa dikirim dengan key itu
-([receive_stock_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/cc5ff5ff80b6342e2cafdb262f931e2e03dedf50/app/services/inventory/receive_stock_service.rb#L64-L132)).
+([receive_stock_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/services/inventory/receive_stock_service.rb#L64-L132)).
 `422` `STOCK_LIMIT_EXCEEDED` berarti bin itu tidak bisa menghitung unit SKU itu sebanyak itu: bukukan sisanya ke bin
 lain.
 

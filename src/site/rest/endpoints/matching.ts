@@ -114,7 +114,7 @@ export const matchingAnswers: readonly RestCase[] = [
       errors: { detail: "Not Found" },
       traceId
     },
-    source: restSource("matching", "lib/fleet_pulse_web/controllers/error_json.ex", 16, 18)
+    source: restSource("matching", "lib/fleet_pulse_web/controllers/error_json.ex", 18, 20)
   },
   {
     status: 406,
@@ -144,7 +144,7 @@ export const matchingAnswers: readonly RestCase[] = [
       },
       traceId
     },
-    source: restSource("matching", "lib/fleet_pulse_web/controllers/error_json.ex", 9, 14)
+    source: restSource("matching", "lib/fleet_pulse_web/controllers/error_json.ex", 10, 16)
   },
   {
     status: 503,

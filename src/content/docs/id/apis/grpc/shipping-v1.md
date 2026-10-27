@@ -2,7 +2,7 @@
 title: "shipping.v1"
 description: "Paket gRPC shipping.v1 di kinetix-contracts 1.7.0: service, message, dan enum-nya."
 editUrl: false
-sourceHash: "e8b4a9af73bf"
+sourceHash: "8dc7f52a6114"
 ---
 
 <div class="grpc-reference">
@@ -17,7 +17,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`EstimateShippingOptions`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/shipping/v1/shipping.proto#L8) | [`EstimateShippingOptionsRequest`](#estimateshippingoptionsrequest) → [`EstimateShippingOptionsResponse`](#estimateshippingoptionsresponse) | [matching](/id/services/matching/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/ShippingGrpcClient.cs#L34) |
+| [`EstimateShippingOptions`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/shipping/v1/shipping.proto#L8) | [`EstimateShippingOptionsRequest`](#estimateshippingoptionsrequest) → [`EstimateShippingOptionsResponse`](#estimateshippingoptionsresponse) | [matching](/id/services/matching/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Grpc/ShippingGrpcClient.cs#L34) |
 
 ## Message
 

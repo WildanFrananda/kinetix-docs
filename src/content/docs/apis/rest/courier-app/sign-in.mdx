@@ -24,7 +24,7 @@ On this call, as on the code step, registration and every refresh, it also sends
 [client_proof.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/attestation/client_proof.dart#L14-L49)).
 identity knows the name `courier-app` and binds the session's tokens to it. As production is configured, it
 asks the courier app for no proof, so it does not read `X-Firebase-AppCheck`
-([client_gate.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/application/services/client_gate.service.ts#L60-L85)).
+([client_gate.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/client_gate.service.ts#L60-L85)).
 
 A `200` carrying `mfaRequired` goes to step 2 with its `challengeToken`; a `200` carrying the token pair goes
 to step 3. For an approved courier, `user.role` is `courier`. A `200` carrying `mfaEnrolmentRequired` comes only
@@ -45,9 +45,15 @@ authenticator app shows, within `expiresIn` seconds of step 1. The courier app n
 challenge arrives, and once it has passed asks the courier to sign in again instead of sending the code
 ([login_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/viewmodels/login_view_model.dart#L70-L83),
 [#L114-L122](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/viewmodels/login_view_model.dart#L114-L122)).
-It sends the same two headers as in step 1, and waits out a `429` the same way, keeping the challenge. The `200`
-carries the same token pair as a sign-in without a second factor; go on to step 3. The challenge is spent by
-then, so a `200` the courier app cannot read sends the courier back to the password
+It sends the same two headers as in step 1, and waits out a `429` the same way, keeping the challenge. A `401`
+with `WRONG_CODE` leaves the challenge open: the courier app shows the refusal and takes the next code. After
+any other `401`, the challenge can never succeed: the courier app drops it and asks for the password again.
+It tells `WRONG_CODE` apart by its `message`, `That code is not valid`
+([session_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/session_repository_impl.dart#L394-L404),
+[identity_error.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/auth/identity_error.dart#L76-L79),
+[login_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/viewmodels/login_view_model.dart#L162-L169)).
+The `200` carries the same token pair as a sign-in without a second factor; go on to step 3. The challenge is
+spent by then, so a `200` the courier app cannot read sends the courier back to the password
 ([session_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/session_repository_impl.dart#L157-L195)).
 
 <RestEndpoint id="identity.verifyTwoFactor" />

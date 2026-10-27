@@ -16,7 +16,7 @@ afterwards.
 
 Every create takes an `Idempotency-Key` header, which the edge passes on to pricing, and the edge passes
 `Idempotent-Replayed` back to the page
-([forwarding.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/config/forwarding.tl#L11-L38)).
+([forwarding.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/config/forwarding.tl#L11-L38)).
 Make a new key for each promotion and keep it with the request until it has a final answer. After a timeout, a `500`
 or a `503`, the edge's included, send the same body with the same key: a promotion the first attempt created comes
 back with `Idempotent-Replayed: true` instead of being created twice. Pricing looks the key up before anything else,

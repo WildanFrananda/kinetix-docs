@@ -114,8 +114,8 @@ export const paymentAnswers: readonly RestCase[] = [
     source: restSource(
       "payment",
       "modules/api/src/main/java/com/kinetix/payment/api/config/GlobalExceptionHandler.java",
-      139,
-      153
+      146,
+      160
     )
   },
   {
@@ -168,8 +168,8 @@ export const paymentAnswers: readonly RestCase[] = [
     source: restSource(
       "payment",
       "modules/api/src/main/java/com/kinetix/payment/api/config/GlobalExceptionHandler.java",
-      155,
-      172
+      162,
+      179
     )
   },
   {
@@ -182,8 +182,8 @@ export const paymentAnswers: readonly RestCase[] = [
     source: restSource(
       "payment",
       "modules/api/src/main/java/com/kinetix/payment/api/config/GlobalExceptionHandler.java",
-      155,
-      172
+      162,
+      179
     )
   },
   {
@@ -196,8 +196,8 @@ export const paymentAnswers: readonly RestCase[] = [
     source: restSource(
       "payment",
       "modules/api/src/main/java/com/kinetix/payment/api/config/GlobalExceptionHandler.java",
-      155,
-      172
+      162,
+      179
     )
   },
   {
@@ -222,8 +222,8 @@ export const paymentAnswers: readonly RestCase[] = [
     source: restSource(
       "payment",
       "modules/api/src/main/java/com/kinetix/payment/api/config/GlobalExceptionHandler.java",
-      109,
-      120
+      116,
+      127
     )
   },
   {
@@ -360,8 +360,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          347,
-          365
+          337,
+          355
         )
       },
       {
@@ -372,8 +372,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          435,
-          444
+          425,
+          434
         )
       },
       {
@@ -385,8 +385,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/api/src/main/java/com/kinetix/payment/api/config/GlobalExceptionHandler.java",
-          155,
-          172
+          162,
+          179
         )
       },
       {
@@ -398,8 +398,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/api/src/main/java/com/kinetix/payment/api/config/GlobalExceptionHandler.java",
-          122,
-          137
+          129,
+          144
         )
       },
       {
@@ -411,8 +411,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          472,
-          516
+          462,
+          506
         )
       },
       {
@@ -437,8 +437,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          409,
-          418
+          399,
+          408
         )
       },
       {
@@ -452,8 +452,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          487,
-          493
+          477,
+          483
         )
       },
       {
@@ -468,8 +468,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          446,
-          465
+          436,
+          455
         )
       },
       {
@@ -484,8 +484,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          446,
-          470
+          436,
+          460
         )
       },
       {
@@ -498,8 +498,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          366,
-          387
+          356,
+          377
         )
       },
       {
@@ -513,8 +513,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          388,
-          400
+          378,
+          390
         )
       },
       {
@@ -528,8 +528,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          420,
-          426
+          410,
+          416
         )
       }
     ],
@@ -571,8 +571,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          121,
-          131
+          122,
+          132
         )
       },
       {
@@ -583,8 +583,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          438,
-          444
+          428,
+          434
         )
       },
       {
@@ -609,8 +609,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          121,
-          129
+          122,
+          130
         )
       }
     ],
@@ -835,8 +835,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          174,
-          177
+          175,
+          178
         )
       },
       {
@@ -850,8 +850,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          182,
-          200
+          183,
+          201
         )
       }
     ],

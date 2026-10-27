@@ -55,7 +55,7 @@ const gateway =
     </dd>
     <dt>{text["rest.common.handler"]}</dt>
     <dd>
-      {page === undefined ? endpoint.service : <a href={`${prefix}${page}`}>{endpoint.service}</a>}{" "}
+      <a href={`${prefix}${page}`}>{endpoint.service}</a>{" "}
       <a href={releaseTree(endpoint.service)}>{release.tag}</a>
       {" · "}
       <a class="rest-source" href={endpoint.source.href}>{endpoint.source.label}</a>

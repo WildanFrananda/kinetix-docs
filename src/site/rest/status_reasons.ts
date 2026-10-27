@@ -26,6 +26,7 @@ export const statusReasons: Readonly<Record<number, string>> = {
   422: "Unprocessable Content",
   423: "Locked",
   425: "Too Early",
+  426: "Upgrade Required",
   428: "Precondition Required",
   429: "Too Many Requests",
   431: "Request Header Fields Too Large",

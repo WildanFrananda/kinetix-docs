@@ -3,7 +3,7 @@ title: Pesanan dan retur
 description: Cara admin mengikuti saga checkout dan retur yang menunggu tindakan orang di order, menolak retur, menyelesaikan pesanan lebih awal, dan membaca sebuah pesanan.
 sidebar:
   order: 8
-sourceHash: "1a081a599416"
+sourceHash: "4720251f2837"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -16,7 +16,7 @@ diputuskan staf untuk diselesaikan lebih awal. Setelah masuk dari jaringan staf 
 menyelesaikan pesanan, dan membaca sebuah pesanan. Order memeriksa token sendiri di setiap endpoint di sini. Order
 menulis setiap panggilan di langkah 1 sampai 5, dan pembacaan admin atas pesanan yang bukan miliknya, ke log audit
 tindakan admin-nya
-([AdminAudit.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Infrastructure/Observability/AdminAudit.cs#L30-L42)).
+([AdminAudit.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Observability/AdminAudit.cs#L30-L42)).
 
 ## 1. Hitung saga yang butuh perhatian
 
@@ -28,10 +28,10 @@ Sebuah angka saja, untuk lencana di backoffice; langkah 2 mendaftar saga di bali
 
 Setiap saga menyebut pesanannya dengan `orderNumber`, dan setiap entri di `unreleasedSteps`-nya membawa `remedy` yang
 menyebut operasi gRPC untuk mengembalikan langkah itu
-([SagaAdminController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Controllers/SagaAdminController.cs#L121-L137);
+([SagaAdminController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Controllers/SagaAdminController.cs#L121-L137);
 operasinya ada di [referensi gRPC](/id/apis/grpc/)). REST API milik order hanya membaca saga: controller ini hanya
 melayani dua `GET` ini
-([SagaAdminController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Controllers/SagaAdminController.cs#L12-L53)).
+([SagaAdminController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Controllers/SagaAdminController.cs#L12-L53)).
 
 <RestEndpoint id="order.listSagasNeedingAttention" via="backoffice" />
 
@@ -60,8 +60,8 @@ berarti pesanan sudah `COMPLETED`, jadi panggilan ini tidak diulang untuknya. `e
 payment langsung melepas escrow ke merchant; bila tidak, `detail` berisi salah satu dari dua kalimat tetap, yang bisa
 dipetakan backoffice ke kata-katanya sendiri: payment tidak bisa dihubungi dan order mencoba lagi pelepasannya sendiri,
 atau payment menolak dan pelepasannya menunggu staf
-([OrderCompletion.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Application/Completion/OrderCompletion.cs#L20-L24),
-[OrderCompletion.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Application/Completion/OrderCompletion.cs#L173-L176)).
+([OrderCompletion.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Completion/OrderCompletion.cs#L21-L25),
+[OrderCompletion.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Completion/OrderCompletion.cs#L175-L178)).
 Setelah `500` atau `503`, yang hasilnya tidak diketahui, panggilan ini boleh dikirim lagi: pesanan yang sudah
 diselesaikan percobaan pertama menjawab `409` `ORDER_ALREADY_COMPLETED` dan tidak ada yang berubah.
 
@@ -72,8 +72,8 @@ diselesaikan percobaan pertama menjawab `409` `ORDER_ALREADY_COMPLETED` dan tida
 Admin bisa membaca pesanan mana pun, tetapi hanya dengan `id`-nya, yaitu UUID yang dibawa jawaban checkout dan daftar
 pesanan milik pembeli. Daftar-daftar di atas hanya menyebut pesanan dengan `orderNumber`, dan tidak ada endpoint yang
 mencari pesanan dengan nomornya: path-nya hanya menerima UUID
-([OrderController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Controllers/OrderController.cs#L344-L374)),
+([OrderController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Controllers/OrderController.cs#L344-L374)),
 dan `GET /api/v1/orders/my-orders` hanya mendaftar pembelian milik pemanggil sendiri
-([OrderController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Controllers/OrderController.cs#L293-L342)).
+([OrderController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Controllers/OrderController.cs#L293-L342)).
 
 <RestEndpoint id="order.getOrder" via="backoffice" />

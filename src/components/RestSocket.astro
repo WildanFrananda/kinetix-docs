@@ -2,7 +2,7 @@
 import { Code } from "@astrojs/starlight/components";
 import "../styles/rest.css";
 import { localeOf } from "../diagrams/engine/locale_of";
-import { messageHeaders } from "../site/rest/message_headers";
+import { socketHeaders } from "../site/rest/message_headers";
 import { releaseTree } from "../site/rest/release_tree";
 import { restCatalogueFor } from "../site/rest/rest_catalogue";
 import { restReleases } from "../site/rest/rest_releases";
@@ -23,8 +23,9 @@ const prefix = locale === "en" ? "" : `/${locale}`;
 const socket = restSocket(id);
 const release = restReleases[socket.service];
 const page = servicePage(socket.service);
-const headers = messageHeaders(socket.request);
-const token = text[`rest.common.token.${socket.access.token}`];
+const headers = socketHeaders(socket);
+const token =
+  socket.via === undefined ? text[`rest.common.token.${socket.access.token}`] : text["rest.common.token.session"];
 const gateway =
   socket.access.token === "none"
     ? undefined
@@ -49,7 +50,7 @@ const gateway =
     </dd>
     <dt>{text["rest.common.handler"]}</dt>
     <dd>
-      {page === undefined ? socket.service : <a href={`${prefix}${page}`}>{socket.service}</a>}{" "}
+      <a href={`${prefix}${page}`}>{socket.service}</a>{" "}
       <a href={releaseTree(socket.service)}>{release.tag}</a>
       {" · "}
       <a class="rest-source" href={socket.source.href}>{socket.source.label}</a>
@@ -65,6 +66,12 @@ const gateway =
   {socket.cases.map((entry) => <RestCaseBlock entry={entry} />)}
   <p class="rest-also">
     {text["rest.common.also"]}{" "}
+    {socket.via !== undefined && (
+      <>
+        <a href={`${prefix}/apis/rest/#edge-answers`}>{text["rest.common.also.edge"]}</a>
+        {" · "}
+      </>
+    )}
     <a href={`${prefix}/apis/rest/#gateway-answers`}>{text["rest.common.also.gateway"]}</a>
   </p>
 </section>

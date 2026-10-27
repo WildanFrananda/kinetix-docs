@@ -11,14 +11,15 @@ The backoffice is the web application the API expects Kinetix staff to use, at `
 never holds a token. The browser calls only its own host, under `/bff/`, where the edge keeps the session: it signs
 the admin in with identity, keeps the token pair, adds the access token to every `/bff/api/` call it passes on to the
 API, and renews the pair by itself when a call finds the access token under a minute from expiry
-([timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/config/timing.tl#L4)).
+([timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/config/timing.tl#L4)).
 The browser holds only the `HttpOnly` cookie `__Host-kx_session`, which page scripts cannot read and the browser sends
 back by itself, so this page has no refresh step. What every call through the edge sends and gets back is in
 [The edge](/apis/rest/#the-edge).
 
 The backoffice admits only accounts whose `role` is `admin`, and only with a second factor: an admin who has none is
-led through enrolling one before any session starts. The host answers only from Kinetix's staff network; from
-anywhere else Kong refuses every request under `/bff/`, sign-in included, with `403`
+led through enrolling one before any session starts. It offers no sign-up: the edge's `POST /bff/register` belongs to
+the seller web and answers `404` here. The host answers only from Kinetix's staff network; from anywhere else Kong
+refuses every request under `/bff/`, sign-in included, with `403`
 ([Kong's answers](/apis/rest/#kongs-answers)).
 
 ## 1. Look for a session
@@ -53,15 +54,21 @@ from step 2 by itself. A `200` starts the session: the edge sets `__Host-kx_sess
 answers the same view as step 1.
 
 The session ends after 15 minutes without a `/bff/api/` call, or 8 hours after this step, whichever comes first
-([lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/config/lifetimes.tl#L5)),
+([lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/config/lifetimes.tl#L5)),
 and its cookie has no `Max-Age`, so it also ends when the browser closes
-([apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/config/apps.tl#L15-L26),
-[lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/src/http/lifetimes.tl#L38-L44)).
+([apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/config/apps.tl#L15-L28),
+[lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/src/http/lifetimes.tl#L38-L44)).
 After that, every `/bff/api/` call answers `401` `SESSION_ENDED`, and the admin signs in again at step 2. If the
 account stops being an admin, the edge's next renewal of the tokens ends the session with `403` `ROLE_REFUSED`.
 
-On `401` `CODE_REFUSED` the sign-in is still pending: ask for the next code, and if the answer repeats, start again
-at step 2. On `401` `SIGN_IN_REQUIRED` there is no pending sign-in any more: go back to step 2.
+On `401` `CODE_REFUSED` the code was wrong and the sign-in is still pending: ask for the next code. identity allows
+five codes per challenge
+([sign_in_attempt_policy.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/domain/sign_in_attempt_policy.ts#L7)),
+so after the fifth refusal the next code answers `401` `SIGN_IN_REQUIRED`. That answer means there is no pending
+sign-in any more: its 300 seconds have passed, it was answered from another tab, or identity has ended the challenge,
+and the edge has dropped it and expired `__Host-kx_pending`
+([sign_in.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/src/http/sign_in.tl#L243-L250)).
+Go back to step 2, and in step 3 send the code the authenticator shows next.
 
 <RestEndpoint id="edge.verifyTwoFactor" via="backoffice" />
 
@@ -98,7 +105,7 @@ this call is a use of the session and moves its idle end later.
 ## 7. Sign out
 
 The edge ends the session at identity and in its own store, and expires both cookies. The request has no body and is
-safe to repeat, so it can be sent whatever step 1 last answered. After the `204`, show the sign-in form. A `503` means
-identity could not be told and the admin is still signed in: send the sign-out again.
+safe to repeat, so it can be sent whatever step 1 last answered. After the `204`, show the sign-in form. A `503` or a
+`502` means identity has not ended the session and the admin is still signed in: send the sign-out again later.
 
 <RestEndpoint id="edge.logout" via="backoffice" />

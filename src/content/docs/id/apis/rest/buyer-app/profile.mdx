@@ -3,7 +3,7 @@ title: Profil pengiriman
 description: Menyimpan nama, nomor telepon dan alamat pembeli di identity, yang menempatkan alamat itu di peta.
 sidebar:
   order: 4
-sourceHash: "29471cf8534f"
+sourceHash: "27f20d9cd25a"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -12,8 +12,8 @@ identity menyimpan satu profil per akun: nama, nomor telepon dan alamat. Akun ba
 aplikasi pembeli menulisnya lebih dulu (langkah 1) dan membacanya saat dibuka berikutnya (langkah 2). `{id}`
 adalah id akun pembeli, `user.id` dari jawaban [masuk](/id/apis/rest/buyer-app/sign-up-and-sign-in/). Checkout
 tidak membaca profil: alamat, nama penerima dan nomor telepon dikirim di setiap request checkout
-([CheckoutRecipient.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Application/Checkout/CheckoutRecipient.cs#L7-L19),
-[OrderService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Application/Services/OrderService.cs#L332-L347)),
+([CheckoutRecipient.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Checkout/CheckoutRecipient.cs#L7-L19),
+[OrderService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/OrderService.cs#L332-L347)),
 jadi profil adalah tempat aplikasi pembeli menyimpan data itu untuk mengisi
 [request tersebut](/id/apis/rest/buyer-app/checkout/).
 
@@ -23,8 +23,8 @@ jadi profil adalah tempat aplikasi pembeli menyimpan data itu untuk mengisi
 dikirim tetap bernilai seperti sebelumnya. Aplikasi hanya mengirim apa yang diubah pembeli, dan tidak pernah
 mengirim `null`, kecuali sebagai `avatarUrl: null`, yang menghapus avatar: `null` di field lain dijawab `400`,
 dan tidak ada yang disimpan
-([update_profile_input.dto.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/application/dto/update_profile_input.dto.ts#L4-L37),
-[user_profile_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/application/services/user_profile_usecase.service.ts#L40-L47)).
+([update_profile_input.dto.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/dto/update_profile_input.dto.ts#L4-L37),
+[user_profile_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/user_profile_usecase.service.ts#L40-L47)).
 Ketika alamat berubah, identity menempatkannya di peta sebelum menjawab, yang bisa memakan beberapa detik.
 `200` membawa profil lengkap, jadi aplikasi menampilkannya tanpa membacanya lagi.
 

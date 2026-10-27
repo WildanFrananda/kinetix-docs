@@ -3,7 +3,7 @@ title: Pencarian
 description: Menyarankan judul produk selagi pembeli mengetik dan menjawab hasil berperingkat dengan hitungan per kategori, dari service search, lalu membuka produk dari catalog.
 sidebar:
   order: 6
-sourceHash: "175ae77e12d4"
+sourceHash: "80819f8e673f"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -12,7 +12,7 @@ Search menjawab dari indeksnya sendiri atas produk-produk catalog, yang dijaga t
 sync, dan tidak membaca token. Aplikasi pembeli menyarankan judul selagi pembeli mengetik (langkah 1),
 menjawab kueri dengan hasil berperingkat (langkah 2), dan membuka hit yang dipilih dari catalog (langkah 3).
 Path-nya berada di bawah `/api/v1/products/`, tetapi Kong mengirimnya ke service search, bukan ke catalog
-([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/6747ebc0ae2b8d5203539aab21f428f4b03784f7/config/gateway.pkl#L290-L303)).
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L295-L308)).
 
 ## 1. Menyarankan judul saat pembeli mengetik
 

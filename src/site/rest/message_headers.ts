@@ -1,4 +1,8 @@
 import type { RestMessage } from "../types/rest_message.type";
+import type { RestSocket } from "../types/rest_socket.type";
+import { bff } from "./bff";
+import { restHosts } from "./rest_hosts";
+import { webAppHosts } from "./web_app_hosts";
 
 export function messageHeaders(message: RestMessage): readonly string[] {
   const headers = message.headers ?? [];
@@ -12,4 +16,16 @@ export function messageHeaders(message: RestMessage): readonly string[] {
   }
 
   return headers;
+}
+
+export function socketHeaders(socket: RestSocket): readonly string[] {
+  if (socket.via === undefined) {
+    return messageHeaders(socket.request);
+  }
+
+  return [
+    `Cookie: ${bff.sessionCookie}=<session>`,
+    `Origin: https://${restHosts[webAppHosts[socket.via]]}`,
+    ...messageHeaders(socket.request)
+  ];
 }

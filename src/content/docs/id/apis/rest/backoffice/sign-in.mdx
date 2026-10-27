@@ -3,7 +3,7 @@ title: Masuk
 description: Cara backoffice memasukkan seorang admin lewat edge, dengan faktor kedua atau dengan mendaftarkannya lebih dulu, menemukan kembali session saat halaman dimuat, dan keluar.
 sidebar:
   order: 1
-sourceHash: "1a209e41bf93"
+sourceHash: "e5f41ee574bf"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -13,14 +13,15 @@ Aplikasi ini tidak pernah memegang token. Browser hanya memanggil host-nya sendi
 menyimpan session: edge memasukkan admin lewat identity, menyimpan pasangan token, menambahkan access token ke setiap
 panggilan `/bff/api/` yang diteruskannya ke API, dan memperbarui pasangan itu sendiri ketika sebuah panggilan
 mendapati access token kurang dari satu menit dari kedaluwarsa
-([timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/config/timing.tl#L4)).
+([timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/config/timing.tl#L4)).
 Browser hanya memegang cookie `HttpOnly` `__Host-kx_session`, yang tidak bisa dibaca skrip halaman dan dikirim balik
 oleh browser dengan sendirinya, jadi halaman ini tidak punya langkah refresh. Apa yang dikirim dan diterima setiap
 panggilan lewat edge ada di [Edge](/id/apis/rest/#edge).
 
 Backoffice hanya menerima akun yang `role`-nya `admin`, dan hanya dengan faktor kedua: admin yang belum punya
-dituntun mendaftarkannya sebelum session apa pun dimulai. Host ini hanya menjawab dari jaringan staf Kinetix; dari
-tempat lain Kong menolak setiap request di bawah `/bff/`, termasuk sign-in, dengan `403`
+dituntun mendaftarkannya sebelum session apa pun dimulai. Backoffice tidak menawarkan pendaftaran akun:
+`POST /bff/register` milik edge hanya untuk web penjual dan menjawab `404` di sini. Host ini hanya menjawab dari
+jaringan staf Kinetix; dari tempat lain Kong menolak setiap request di bawah `/bff/`, termasuk sign-in, dengan `403`
 ([jawaban Kong](/id/apis/rest/#jawaban-kong)).
 
 ## 1. Cari session
@@ -55,15 +56,21 @@ Setelah `mfaRequired`, kirim enam digit yang ditampilkan aplikasi authenticator 
 `__Host-kx_session`, mengedaluwarsakan cookie pending, dan menjawab tampilan yang sama seperti langkah 1.
 
 Session berakhir setelah 15 menit tanpa panggilan `/bff/api/`, atau 8 jam setelah langkah ini, mana yang lebih dulu
-([lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/config/lifetimes.tl#L5)),
+([lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/config/lifetimes.tl#L5)),
 dan cookie-nya tidak punya `Max-Age`, jadi session itu juga berakhir saat browser ditutup
-([apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/config/apps.tl#L15-L26),
-[lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/src/http/lifetimes.tl#L38-L44)).
+([apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/config/apps.tl#L15-L28),
+[lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/src/http/lifetimes.tl#L38-L44)).
 Sesudah itu, setiap panggilan `/bff/api/` menjawab `401` `SESSION_ENDED`, dan admin masuk lagi dari langkah 2. Bila
 akun itu tidak lagi admin, pembaruan token berikutnya oleh edge mengakhiri session dengan `403` `ROLE_REFUSED`.
 
-Pada `401` `CODE_REFUSED`, sign-in itu masih tertunda: minta kode berikutnya, dan bila jawaban itu berulang, mulai lagi
-dari langkah 2. Pada `401` `SIGN_IN_REQUIRED`, sudah tidak ada sign-in yang tertunda: kembali ke langkah 2.
+Pada `401` `CODE_REFUSED`, kodenya salah dan sign-in itu masih tertunda: minta kode berikutnya. identity mengizinkan
+lima kode per challenge
+([sign_in_attempt_policy.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/domain/sign_in_attempt_policy.ts#L7)),
+jadi setelah penolakan kelima, kode berikutnya menjawab `401` `SIGN_IN_REQUIRED`. Jawaban itu berarti sudah tidak ada
+sign-in yang tertunda: 300 detiknya sudah lewat, challenge itu sudah dijawab dari tab lain, atau identity sudah
+mengakhiri challenge itu, dan edge sudah membuangnya serta mengedaluwarsakan `__Host-kx_pending`
+([sign_in.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/src/http/sign_in.tl#L243-L250)).
+Kembali ke langkah 2, dan di langkah 3 kirim kode berikutnya yang ditampilkan authenticator.
 
 <RestEndpoint id="edge.verifyTwoFactor" via="backoffice" />
 
@@ -101,7 +108,7 @@ langkah 1. Berbeda dengan langkah 1, panggilan ini dihitung sebagai pemakaian se
 
 Edge mengakhiri session di identity dan di penyimpanannya sendiri, lalu mengedaluwarsakan kedua cookie. Request-nya
 tanpa body dan aman diulang, jadi bisa dikirim apa pun jawaban terakhir langkah 1. Setelah `204`, tampilkan formulir
-masuk. Jawaban `503` berarti identity tidak bisa diberi tahu dan admin masih dalam keadaan masuk: kirim lagi request
-keluar itu.
+masuk. Jawaban `503` atau `502` berarti identity belum mengakhiri session itu dan admin masih dalam keadaan masuk:
+kirim lagi request keluar itu nanti.
 
 <RestEndpoint id="edge.logout" via="backoffice" />

@@ -1,7 +1,7 @@
 ---
 title: Peta sistem
 description: Setiap service, panggilan di antara mereka, dan apa yang masuk dari luar — digambar dari kodenya, dengan setiap panah menautkan baris yang melakukan panggilan itu.
-sourceHash: "e35078c496d1"
+sourceHash: "3aacda0f1c47"
 sidebar:
   order: 1
 ---
@@ -20,6 +20,13 @@ peta ini digambar. Pilih sebuah kotak untuk menelusurinya.
 berbicara dengan Kong. Pilih gateway untuk melihat service mana yang dibukanya dan di path apa;
 satu-satunya rute publik notification adalah handset yang mendaftarkan dirinya, dan communication sama
 sekali tidak punya.
+
+**Web app lewat edge.** Web app penjual dan backoffice hanya memanggil `/bff/` di host mereka sendiri, yang
+diteruskan Kong ke edge. Edge menyimpan sesi mereka, memanggil identity langsung untuk mendaftar, login, dan
+memperbarui token, dan mengirim setiap panggilan lain kembali ke gateway, ke listener di dalam jaringan Kinetix.
+Socket web penjual ke matching menempuh jalan kembali yang sama, lewat
+[kembaran route socket merchant](/id/architecture/gateway/#kembaran-socket-merchant); lihat
+[edge](/id/services/edge/).
 
 **order adalah pemanggil tersibuk.** Checkout adalah saga yang dikoordinasikan order: harga dan voucher
 dari pricing, stok dari warehouse, escrow hold dari payment, opsi pengiriman dan kurir dari matching.

@@ -10,30 +10,38 @@ import RestEndpoint from "../../../../../components/RestEndpoint.astro";
 The seller opens a return for a delivered order while its return window is open, then reports the goods when
 they are back; order records both and works out the buyer's refund. Order learns of a delivery from matching,
 which reports each one when the courier completes it
-([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/dispatch.ex#L686-L691)),
-and opens a return only for an order it knows as delivered. The calls need a session whose role is `seller`.
+([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L686-L691)),
+and opens a return only for an order it knows as delivered. The calls need a session whose role is `seller`. A
+`503` `DATABASE_UNAVAILABLE` ([warehouse's answers](/apis/rest/#warehouse)) comes before the warehouse asks order
+anything, so the client sends the same request again after `Retry-After`.
 
 ## 1. Find the task
 
 A return is opened on the order's fulfillment task, and by the time an order is delivered its task has usually
-left the queue, which drops a task once its label is printed ([Pack orders](/apis/rest/seller-web/packing/), step 7). The seller types or
-picks the order's number, and the answer holds the seller's task for that order, in any state. Keep its `id`. An
-empty list means the seller has no task for that number.
+left the queue, which drops a task once its label is printed ([Pack orders](/apis/rest/seller-web/packing/),
+step 9). The seller types or picks the order's number, and the answer holds the seller's task for that order, in
+any state. Keep its `id`. An empty list means the seller has no task for that number.
 
 <RestEndpoint id="warehouse.findTask" via="seller-web" />
 
 ## 2. Open a return
 
 `fulfillment_task_id` is the task's `id` from step 1. `reason` is the seller's account of why the goods are
-coming back. Keep `return_number` from the answer. A `502` carries order's refusal in `message`, for an order that
-is not delivered yet or whose return window has closed; the same request gets the same answer.
+coming back. Keep `return_number` from the answer. A `502` `RETURN_NOT_RECORDED` carries order's refusal in
+`message`, for an order that is not delivered yet or whose return window has closed; the same request gets the
+same answer. After `502` `ORDER_FAILED`, `503` `ORDER_TIMEOUT` or `503` `ORDER_UNAVAILABLE`, the client sends the
+same request again, after `Retry-After` for a `503`: order opens at most one return per order, so if the first
+request did open one, the repeat answers `already_open: true` with its `return_number`.
 
 <RestEndpoint id="warehouse.openReturn" via="seller-web" />
 
 ## 3. Report the goods back
 
-When the parcel arrives, send the `return_number` from step 2, the SKUs and quantities that came back, which are
-among the task's `lines`, and the `bin_code` where they were put. The goods are not added to stock: units fit
-to sell again are booked through the backoffice's [stock intake](/apis/rest/backoffice/stock-intake/).
+When the parcel arrives, send the `return_number` exactly as step 2 answered it, and the SKUs and quantities that
+came back, which are among the task's `lines`. `bin_code`, where the goods were put, is optional: leave it out when
+no bin is named, since an empty one is refused. The same three order answers as in step 2 are handled the same
+way: order records a return's goods once, so if the first request did record them, the repeat answers
+`already_recorded: true`. The goods are not added to stock: units fit to sell again are booked through the
+backoffice's [stock intake](/apis/rest/backoffice/stock-intake/).
 
 <RestEndpoint id="warehouse.receiveReturnedGoods" via="seller-web" />

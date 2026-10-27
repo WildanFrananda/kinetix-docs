@@ -1,7 +1,7 @@
 ---
 title: Setiap service ditulis dalam bahasanya sendiri
-description: Setiap service punya bahasanya sendiri, sehingga satu domain dibangun dalam sebelas idiom dan kontraknya harus berlaku di antara semuanya. Go milik notary dan build RoadRunner milik review adalah dua pengecualian, masing-masing karena alasan di domainnya.
-sourceHash: "412a1726273d"
+description: Setiap service punya bahasanya sendiri, sehingga satu domain dibangun dalam dua belas idiom dan kontraknya harus berlaku di antara semuanya. Go milik notary dan build RoadRunner milik review adalah dua pengecualian, masing-masing karena alasan di domainnya.
+sourceHash: "b4320bedbbff"
 sidebar:
   order: 5
 adr:
@@ -20,7 +20,7 @@ Kinetix adalah satu domain — membeli, memenuhi pesanan, dan mengantar — yang
 masing-masing memiliki datanya sendiri dan hanya bertemu lewat gRPC
 ([ADR 0007](/id/decisions/0007-each-service-owns-its-database/)). Bahasa yang dipakai sebuah service bisa
 saja dipilih sekali untuk semuanya. Pilihan itu justru dibuat per service, dengan sengaja: satu domain,
-sebelas idiom, dan kontrak yang harus berlaku di antara semuanya.
+dua belas idiom, dan kontrak yang harus berlaku di antara semuanya.
 
 ## Keputusan
 
@@ -53,8 +53,8 @@ sebelas idiom, dan kontrak yang harus berlaku di antara semuanya.
   [sama sekali tidak bisa dikompilasi di C++](https://github.com/WildanFrananda/kinetix-contracts/blob/edc6c266cdd62d3635f96a14c796289f98447197/docs/BREAKING.md#L16-L38),
   dan kontraknya diubah karena itu.
 - **Satu aturan ditulis berkali-kali.** Pengecekan token yang sama ada dalam sembilan bahasa
-  ([ADR 0006](/id/decisions/0006-identity-is-the-only-issuer/)), aritmetika uang yang sama ada di semuanya
-  ([ADR 0002](/id/decisions/0002-money-in-minor-units/)). Aturan yang diimplementasikan sekali per bahasa
+  ([ADR 0006](/id/decisions/0006-identity-is-the-only-issuer/)), aritmetika uang yang sama ada di setiap bahasa
+  yang menangani uang ([ADR 0002](/id/decisions/0002-money-in-minor-units/)). Aturan yang diimplementasikan sekali per bahasa
   juga harus dicek sekali per bahasa.
 - **Sebagian toolchain mahal.** Runtime PHP milik review adalah image terpisah karena
   [mengompilasi extension gRPC dari source memakan 29 sampai 52 menit](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/docker/php-runtime.Dockerfile#L1-L7).

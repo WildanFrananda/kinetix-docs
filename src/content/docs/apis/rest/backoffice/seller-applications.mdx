@@ -11,11 +11,11 @@ An account applies to sell from the seller web application with `POST /api/v1/se
 ([Become a seller](/apis/rest/seller-web/become-a-seller/)), and the application waits in identity as `pending` until
 an admin decides on it. The decision is what lets a seller trade: catalog and pricing ask identity about the seller's
 merchant before accepting a product or a promotion
-([product_service.py](https://github.com/WildanFrananda/kinetix-catalog-service/blob/1348c6ea4f80448bba710e83b20c5551d10fa3e0/core/application/services/product_service.py#L148-L159),
+([product_service.py](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/application/services/product_service.py#L148-L159),
 [promotion_service.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0ed7db4cd6fb8d40375cab26dd7ac56ebce16a8a/src/services/promotion_service.rs#L43-L51)),
 and identity permits a merchant to trade only once its store is `verified` or `active`
-([merchant_standing.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/domain/merchant_standing.ts#L1-L5),
-[identity_grpc.controller.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/adapters/controllers/identity_grpc.controller.ts#L237-L258)).
+([merchant_standing.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/domain/merchant_standing.ts#L1-L5),
+[identity_grpc.controller.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/adapters/controllers/identity_grpc.controller.ts#L237-L258)).
 An admin, signed in from Kinetix's staff network as on [Sign in](/apis/rest/backoffice/sign-in/), lists the pending
 applications, reads one and, if needed, the applicant's profile, then approves or refuses it. Identity records every one
 of these calls with the admin who made it.

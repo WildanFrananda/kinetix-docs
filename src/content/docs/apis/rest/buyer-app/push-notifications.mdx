@@ -8,7 +8,7 @@ sidebar:
 import RestEndpoint from "../../../../../components/RestEndpoint.astro";
 
 The notification service sends pushes for a principal to the handsets registered for it
-([DeviceRegistryRecipientDirectory.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/4ad78ee085f9cc6b1bd055cf8e90fbefef97ff5e/src/main/scala/com/kinetix/notification/infrastructure/grpc/DeviceRegistryRecipientDirectory.scala#L11-L14)),
+([DeviceRegistryRecipientDirectory.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/grpc/DeviceRegistryRecipientDirectory.scala#L11-L14)),
 through Firebase Cloud Messaging (FCM). A buyer app gets the handset's FCM token (step 1) and registers it
 with the buyer's access token (step 2). Some registrations are answered `202`: the handset then receives a
 code by push (step 3) and sends it back (step 4). At sign-out the app forgets the handset (step 5).
@@ -18,8 +18,8 @@ code by push (step 3) and sends it back (step 4). At sign-out the app forgets th
 
 The Firebase SDK on the handset issues the token; this is not an API call. The notification service
 addresses each push to that token, as an FCM message with a title and a body
-([HttpPushSender.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/4ad78ee085f9cc6b1bd055cf8e90fbefef97ff5e/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L35-L40),
-[the message](https://github.com/WildanFrananda/kinetix-notification-service/blob/4ad78ee085f9cc6b1bd055cf8e90fbefef97ff5e/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L63-L72)).
+([HttpPushSender.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L37-L42),
+[the message](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L86-L95)).
 When the SDK replaces the token, the app registers the new one (step 2) and forgets the old one (step 5).
 
 ## 2. Register the handset
@@ -30,14 +30,21 @@ is done. A `202` means another principal holds the token, and the handset must f
 pushes sent to it: the app waits for step 3.
 
 Only one proof at a time goes to a claimant, and a token gets at most three an hour, whoever claims it
-([RegisterDevice.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/4ad78ee085f9cc6b1bd055cf8e90fbefef97ff5e/src/main/scala/com/kinetix/notification/application/RegisterDevice.scala#L42-L59),
-[DeviceChallenge.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/4ad78ee085f9cc6b1bd055cf8e90fbefef97ff5e/src/main/scala/com/kinetix/notification/domain/DeviceChallenge.scala#L21-L43)).
+([RegisterDevice.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/application/RegisterDevice.scala#L42-L59),
+[DeviceChallenge.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/domain/DeviceChallenge.scala#L21-L43)).
 So a registration repeated while a proof is pending sends nothing and is answered
 `429 VERIFICATION_ALREADY_PENDING`: the app goes on to step 4 with the nonce already sent, and registers again
 after `Retry-After` only if that message never came. After `429 VERIFICATION_LIMIT_REACHED` it registers
-again once `Retry-After` seconds have passed. `422 ADDRESS_GONE` means FCM no longer knows the token: the app
-gets a fresh one from the SDK (step 1) and registers that. A `503 SENDER_UNAVAILABLE` is repeated later; a
-`502 SENDER_REJECTED` is not repeated unchanged.
+again once `Retry-After` seconds have passed.
+
+The answers that follow concern the proof message, which only a token held by another principal needs, and
+come from what FCM said about it
+([HttpPushSender.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L130-L140)).
+`422 ADDRESS_GONE` means FCM no longer knows the token, or that the token was issued for another app than
+Kinetix's: either way the app gets a token from the Firebase SDK again (step 1) and registers that one.
+`503 SENDER_UNAVAILABLE` is not the request's fault, and no proof was counted: with `Retry-After`, the app
+registers again once that many seconds have passed, and without it, later. A `502 SENDER_REJECTED` is not
+repeated unchanged.
 
 <RestEndpoint id="notification.registerDevice" />
 
@@ -45,7 +52,7 @@ gets a fresh one from the SDK (step 1) and registers that. A `503 SENDER_UNAVAIL
 
 After a `202`, the handset receives an FCM data message rather than a visible notification: on Android a
 high-priority data message, on iOS a background push. Its data carries three fields
-([HttpPushSender.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/4ad78ee085f9cc6b1bd055cf8e90fbefef97ff5e/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L74-L101)):
+([HttpPushSender.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L97-L124)):
 
 ```json
 {

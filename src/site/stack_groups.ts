@@ -33,67 +33,70 @@ function service(name: string, layers: readonly StackLayer[]): StackEntry {
 
 const serviceEntries: readonly StackEntry[] = [
   service("identity", [
-    { role: "stack.role.language", techs: [tech("TypeScript", "5.5.4", "typescript")] },
+    { role: "stack.role.language", techs: [tech("TypeScript", "5.9.3", "typescript")] },
     { role: "stack.role.runtime", techs: [tech("Bun", "1", "bun")] },
-    { role: "stack.role.framework", techs: [tech("NestJS", "11.2.1", "nestjs"), tech("Fastify", "5.12.1")] },
-    { role: "stack.role.grpc", techs: [tech("@grpc/grpc-js", "1.14.4")] },
-    { role: "stack.role.data", techs: [postgres, tech("TypeORM", "1.1.0")] },
-    { role: "stack.role.tests", techs: [tech("Jest", "30.4.2")] }
+    { role: "stack.role.framework", techs: [tech("NestJS", "11.2.1", "nestjs"), tech("Fastify", "5.12.7")] },
+    { role: "stack.role.grpc", techs: [tech("@grpc/grpc-js", "1.14.6")] },
+    { role: "stack.role.data", techs: [postgres, tech("TypeORM", "1.1.2")] },
+    { role: "stack.role.tests", techs: [tech("Jest", "30.5.2")] }
   ]),
   service("catalog", [
     { role: "stack.role.language", techs: [tech("Python", "3.14", "python")] },
-    { role: "stack.role.framework", techs: [tech("Django", "6.1", "django"), tech("Django REST framework", "3.18.0")] },
-    { role: "stack.role.runtime", techs: [tech("Gunicorn", "23.0.0")] },
-    { role: "stack.role.grpc", techs: [tech("grpcio", "1.83.0")] },
-    { role: "stack.role.data", techs: [postgres, tech("psycopg", "3.3.4")] },
-    { role: "stack.role.tests", techs: [tech("pytest", "8.4.2")] },
-    { role: "stack.role.quality", techs: [tech("mypy", "1.18.2")] }
+    {
+      role: "stack.role.framework",
+      techs: [tech("Django", "6.1.2", "django"), tech("Django REST framework", "3.18.3")]
+    },
+    { role: "stack.role.runtime", techs: [tech("Gunicorn", "26.2.0")] },
+    { role: "stack.role.grpc", techs: [tech("grpcio", "1.84.1")] },
+    { role: "stack.role.data", techs: [postgres, tech("psycopg", "3.3.6")] },
+    { role: "stack.role.tests", techs: [tech("pytest", "9.1.1")] },
+    { role: "stack.role.quality", techs: [tech("mypy", "2.4.0")] }
   ]),
   service("pricing", [
-    { role: "stack.role.language", techs: [tech("Rust", "1.88", "rust")] },
+    { role: "stack.role.language", techs: [tech("Rust", "1.99", "rust")] },
     { role: "stack.role.framework", techs: [tech("Rocket", "0.5.1")] },
-    { role: "stack.role.runtime", techs: [tech("Tokio", "1.53.1")] },
+    { role: "stack.role.runtime", techs: [tech("Tokio", "1.54.1")] },
     { role: "stack.role.grpc", techs: [tech("Tonic", "0.11.0"), tech("prost", "0.12.6")] },
-    { role: "stack.role.data", techs: [postgres, tech("Diesel", "2.2.12"), tech("diesel-async", "0.5.2")] },
+    { role: "stack.role.data", techs: [postgres, tech("Diesel", "2.2.12"), tech("diesel-async", "0.6.1")] },
     { role: "stack.role.tests", techs: [tech("cargo test")] }
   ]),
   service("order", [
     { role: "stack.role.language", techs: [tech("C#", undefined, "csharp")] },
     { role: "stack.role.runtime", techs: [tech(".NET", "10", "dotnetcore")] },
     { role: "stack.role.framework", techs: [tech("ASP.NET Core"), tech("Kestrel")] },
-    { role: "stack.role.grpc", techs: [tech("Grpc.AspNetCore", "2.67.0")] },
+    { role: "stack.role.grpc", techs: [tech("Grpc.AspNetCore", "2.84.0")] },
     {
       role: "stack.role.data",
       techs: [
         postgres,
-        tech("EF Core", "10.0.12"),
+        tech("EF Core", "10.0.14"),
         tech("Npgsql", "10.0.3"),
         tech("Redis", "7.2", "redis"),
-        tech("StackExchange.Redis", "2.8.24")
+        tech("StackExchange.Redis", "3.4.20")
       ]
     },
-    { role: "stack.role.tests", techs: [tech("xUnit", "2.9.3"), tech("Moq", "4.20.72")] }
+    { role: "stack.role.tests", techs: [tech("xUnit", "2.9.3"), tech("Moq", "4.21.0")] }
   ]),
   service("payment", [
     { role: "stack.role.language", techs: [tech("Java", "21", "java")] },
-    { role: "stack.role.framework", techs: [tech("Spring Boot", "4.1.1", "spring"), tech("Tomcat", "11.0.26")] },
-    { role: "stack.role.grpc", techs: [tech("grpc-java", "1.83.1")] },
+    { role: "stack.role.framework", techs: [tech("Spring Boot", "4.1.2", "spring"), tech("Tomcat", "11.0.26")] },
+    { role: "stack.role.grpc", techs: [tech("grpc-java", "1.85.1")] },
     { role: "stack.role.data", techs: [postgres, tech("Spring Data JPA"), tech("Liquibase")] },
-    { role: "stack.role.tests", techs: [tech("JUnit Jupiter", "6.1.3"), tech("Mockito", "5.14.2")] },
+    { role: "stack.role.tests", techs: [tech("JUnit Jupiter", "6.1.3"), tech("Mockito", "5.24.0")] },
     { role: "stack.role.tooling", techs: [tech("Gradle", "8.14.6")] }
   ]),
   service("warehouse", [
     { role: "stack.role.language", techs: [tech("Ruby", "4.0.6", "ruby")] },
-    { role: "stack.role.framework", techs: [tech("Rails", "8.1.3.1", "rails")] },
-    { role: "stack.role.runtime", techs: [tech("Puma", "8.0.2"), tech("Thruster", "0.1.23")] },
-    { role: "stack.role.grpc", techs: [tech("grpc", "1.84.0")] },
-    { role: "stack.role.data", techs: [postgres, tech("pg", "1.6.3"), tech("Solid Queue", "1.6.0")] },
-    { role: "stack.role.quality", techs: [tech("Sorbet", "0.6.13421")] },
-    { role: "stack.role.tests", techs: [tech("RSpec Rails", "7.1.1")] }
+    { role: "stack.role.framework", techs: [tech("Rails", "8.1.4", "rails")] },
+    { role: "stack.role.runtime", techs: [tech("Puma", "8.0.2"), tech("Thruster", "0.1.27")] },
+    { role: "stack.role.grpc", techs: [tech("grpc", "1.84.1")] },
+    { role: "stack.role.data", techs: [postgres, tech("pg", "1.7.0"), tech("Solid Queue", "1.7.0")] },
+    { role: "stack.role.quality", techs: [tech("Sorbet", "0.6.13590")] },
+    { role: "stack.role.tests", techs: [tech("RSpec Rails", "8.0.4")] }
   ]),
   service("matching", [
     { role: "stack.role.language", techs: [tech("Elixir", "1.20.2", "elixir"), tech("Erlang/OTP", "29.0.3")] },
-    { role: "stack.role.framework", techs: [tech("Phoenix", "1.8.12", "phoenix"), tech("Bandit", "1.12.5")] },
+    { role: "stack.role.framework", techs: [tech("Phoenix", "1.8.16", "phoenix"), tech("Bandit", "1.13.1")] },
     { role: "stack.role.grpc", techs: [tech("grpc", "1.0.5")] },
     { role: "stack.role.data", techs: [postgres, tech("Ecto SQL", "3.14.0"), tech("Postgrex", "0.22.4")] },
     { role: "stack.role.tests", techs: [tech("ExUnit")] }
@@ -104,7 +107,7 @@ const serviceEntries: readonly StackEntry[] = [
     { role: "stack.role.runtime", techs: [tech("FrankenPHP"), tech("RoadRunner", "2025.1.15")] },
     {
       role: "stack.role.grpc",
-      techs: [tech("grpc/grpc", "1.82.0"), tech("spiral/roadrunner-grpc", "3.6.0"), tech("Go", "1.26", "go")]
+      techs: [tech("grpc/grpc", "1.82.0"), tech("spiral/roadrunner-grpc", "3.6.0"), tech("Go", "1.27", "go")]
     },
     { role: "stack.role.data", techs: [postgres, tech("Eloquent")] },
     { role: "stack.role.tests", techs: [tech("Pest", "4.7.8")] }
@@ -132,7 +135,7 @@ const serviceEntries: readonly StackEntry[] = [
   ]),
   service("search", [
     { role: "stack.role.language", techs: [tech("Go", "1.26.4", "go")] },
-    { role: "stack.role.framework", techs: [tech("chi", "5.3.2")] },
+    { role: "stack.role.framework", techs: [tech("chi", "5.5.0")] },
     { role: "stack.role.grpc", techs: [tech("grpc-go", "1.84.0")] },
     {
       role: "stack.role.data",
@@ -143,18 +146,25 @@ const serviceEntries: readonly StackEntry[] = [
   service("notary", [
     {
       role: "stack.role.language",
-      techs: [tech("Go", "1.26.4", "go"), tech("Solidity", "0.8.37", "solidity")]
+      techs: [tech("Go", "1.26.8", "go"), tech("Solidity", "0.8.37", "solidity")]
     },
-    { role: "stack.role.framework", techs: [tech("go-ethereum", "1.17.8"), tech("dig", "1.19.0")] },
+    { role: "stack.role.framework", techs: [tech("go-ethereum", "1.17.9"), tech("dig", "1.19.0")] },
     { role: "stack.role.grpc", techs: [tech("grpc-go", "1.84.0")] },
     {
       role: "stack.role.data",
-      techs: [postgres, tech("pgx", "5.11.0"), tech("sqlc", "1.31.1"), tech("goose", "3.28.0")]
+      techs: [postgres, tech("pgx", "5.11.0"), tech("sqlc", "1.31.1"), tech("goose", "3.29.0")]
     },
     {
       role: "stack.role.tooling",
       techs: [tech("Foundry", "1.8.3"), tech("OpenZeppelin", "5.7.0"), tech("account-abstraction", "0.8.0")]
     }
+  ]),
+  service("edge", [
+    { role: "stack.role.language", techs: [tech("Teal", "0.24.8")] },
+    { role: "stack.role.framework", techs: [tech("OpenResty", "1.31.1.1"), tech("lua-resty-http", "0.18.0")] },
+    { role: "stack.role.runtime", techs: [tech("LuaJIT")] },
+    { role: "stack.role.data", techs: [tech("Redis", "7.2", "redis")] },
+    { role: "stack.role.tests", techs: [tech("busted", "2.3.0")] }
   ])
 ];
 
@@ -308,8 +318,8 @@ const docsEntries: readonly StackEntry[] = [
     summary: "stack.docs.summary",
     repository: `${github}/kinetix-docs`,
     layers: [
-      { role: "stack.role.framework", techs: [tech("Astro", "7.3.4", "astro"), tech("Starlight", "0.42.3")] },
-      { role: "stack.role.ui", techs: [tech("Svelte", "5.57.1", "svelte")] },
+      { role: "stack.role.framework", techs: [tech("Astro", "7.4.2", "astro"), tech("Starlight", "0.42.6")] },
+      { role: "stack.role.ui", techs: [tech("Svelte", "5.57.2", "svelte")] },
       { role: "stack.role.runtime", techs: [tech("Bun", "1.3.14", "bun"), tech("TypeScript", "6.0.3", "typescript")] },
       { role: "stack.role.hosting", techs: [tech("Vercel", undefined, "vercel")] }
     ]

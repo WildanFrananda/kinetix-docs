@@ -4,7 +4,7 @@ description: Cara aplikasi web penjual memasukkan penjual lewat edge, menjawab c
 sidebar:
   label: Masuk
   order: 1
-sourceHash: "4a0229755067"
+sourceHash: "fbe51f032d5a"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -14,11 +14,11 @@ API. Browser tidak memegang token apa pun: edge menyimpan pasangan token dari id
 cookie `HttpOnly`, `__Host-kx_session`, yang tidak bisa dibaca script mana pun. Setiap fitur lain memanggil
 `/bff/api/<path>` di host yang sama, dan edge meneruskan request itu dengan access token milik session di
 `Authorization`
-([forward_headers.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/src/http/forward_headers.tl#L27-L49)).
+([forward_headers.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/src/http/forward_headers.tl#L27-L49)).
 Halaman dan edge berbagi satu origin, jadi tidak ada panggilan yang merupakan request CORS. Web penjual menerima
 akun ber-role `seller` atau `customer`; seorang `customer` masuk di sini untuk mengajukan diri berjualan, sedangkan
 `courier` atau `admin` ditolak
-([apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/config/apps.tl#L27-L38)).
+([apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/config/apps.tl#L29-L42)).
 Panggilannya adalah masuk, jawaban atas challenge dua faktor bila akun memakainya, pembacaan session saat halaman
 dimuat, pembacaan akun, dan keluar.
 
@@ -28,25 +28,26 @@ Yang dikirim browser bersama setiap panggilan ke edge:
   membawa cookie milik origin itu secara default.
 - `Origin` pada setiap `POST`, `PUT`, `PATCH` dan `DELETE`. Browser menambahkannya, dan edge menolak request itu
   kecuali nilainya persis `https://seller.wildanfrananda.my.id`
-  ([csrf.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/src/http/csrf.tl#L12-L30)).
+  ([csrf.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/src/http/csrf.tl#L12-L30)).
 - Body hanya sebagai `application/json`, paling besar 1 MiB. Form HTML atau body `multipart/form-data` tidak
   lolos dari edge
-  ([router.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/src/http/router.tl#L123-L147),
-  [nginx.conf](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/nginx/nginx.conf#L39)).
+  ([router.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/src/http/router.tl#L161-L185),
+  [nginx.conf](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/nginx/nginx.conf#L39)).
 
-Tidak ada panggilan refresh. Sebuah session berakhir 7 hari setelah panggilan `/bff/api/` terakhirnya, dan paling
-lambat 30 hari setelah masuk
-([lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/config/lifetimes.tl#L6)).
-Setiap panggilan `/bff/api/` memperpanjangnya, dan saat access token milik session tinggal kurang dari 60 detik,
-edge lebih dulu memperbarui pasangan token di identity, sekali untuk semua request session itu yang datang
-sementara itu
-([forward.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/src/http/forward.tl#L33-L78),
-[timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/config/timing.tl#L4),
-[sessions.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/src/http/sessions.tl#L476-L497)).
-Setelah session berakhir, karena batasnya, keluar, masuk yang lebih baru di browser yang sama, atau pembaruan
-yang ditolak identity, panggilan `/bff/api/` menjawab `401` `SESSION_ENDED` dan membuat cookie-nya kedaluwarsa;
-browser tanpa cookie itu mendapat `401` `SESSION_REQUIRED`. Dalam kedua kasus aplikasi menampilkan halaman masuk
-(langkah 1). Pembaruan yang mendapati akun itu bukan lagi `seller` atau `customer`, misalnya customer yang disetujui
+Tidak ada panggilan refresh. Sebuah session berakhir 7 hari setelah terakhir dipakai, dan paling lambat 30 hari
+setelah masuk
+([lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/config/lifetimes.tl#L6)).
+Setiap panggilan `/bff/api/` adalah pemakaian yang memperpanjangnya, begitu pula membuka socket merchant
+([Mengemas pesanan](/id/apis/rest/seller-web/packing/), langkah 2). Saat access token milik session tinggal kurang
+dari 60 detik, edge lebih dulu memperbarui pasangan token di identity, sekali untuk semua request session itu yang
+datang sementara itu
+([session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/src/http/session_use.tl#L22-L70),
+[timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/config/timing.tl#L4),
+[sessions.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/src/http/sessions.tl#L492-L513)).
+Setelah session berakhir, karena batasnya, keluar, masuk atau pendaftaran yang lebih baru di browser yang sama,
+atau pembaruan yang ditolak identity, panggilan `/bff/api/` menjawab `401` `SESSION_ENDED` dan membuat cookie-nya
+kedaluwarsa; browser tanpa cookie itu mendapat `401` `SESSION_REQUIRED`. Dalam kedua kasus aplikasi menampilkan
+halaman masuk (langkah 1). Pembaruan yang mendapati akun itu bukan lagi `seller` atau `customer`, misalnya customer yang disetujui
 sebagai kurir, mengakhiri session dengan `403` `ROLE_REFUSED`. Jawaban-jawaban ini tercantum di
 [jawaban edge](/id/apis/rest/#jawaban-edge).
 
@@ -58,7 +59,9 @@ bernilai `customer` berarti akun itu belum disetujui untuk berjualan, dan aplika
 [Menjadi penjual](/id/apis/rest/seller-web/become-a-seller/). Jawaban `200` dengan `mfaRequired: true` belum
 merupakan session: challenge-nya menunggu di edge di balik cookie kedua, `__Host-kx_pending`, untuk langkah 2 di
 browser ini. Setelah `429` `SIGN_IN_DELAYED`, aplikasi menunggu sejumlah detik di `Retry-After` sebelum percobaan
-berikutnya; penundaan itu milik akun, browser mana pun yang mencoba.
+berikutnya; penundaan itu milik akun, browser mana pun yang mencoba. Penjual yang belum punya akun membuatnya
+sebagai gantinya ([Menjadi penjual](/id/apis/rest/seller-web/become-a-seller/), langkah 1), yang memulai session
+tanpa langkah ini.
 
 <RestEndpoint id="edge.login" via="seller-web" />
 
@@ -66,9 +69,13 @@ berikutnya; penundaan itu milik akun, browser mana pun yang mencoba.
 
 Hanya setelah jawaban `200` dengan `mfaRequired`, dari browser yang sama, yang mengirim `__Host-kx_pending` dengan
 sendirinya, dalam 300 detiknya. Penjual mengetik enam digit yang ditampilkan aplikasi authenticator. Jawaban `200`
-adalah session-nya, seperti di langkah 1. Setelah `CODE_REFUSED` proses masuk yang tertunda tetap disimpan dan
-penjual mengetik kode berikutnya yang ditampilkan authenticator; setelah `SIGN_IN_REQUIRED` proses masuk dimulai
-lagi dari langkah 1. Sebuah akun mendapat challenge setelah penjualnya menyalakan
+adalah session-nya, seperti di langkah 1. `CODE_REFUSED` berarti identity menolak kode itu dan mempertahankan
+challenge-nya: proses masuk yang tertunda tetap ada, dan penjual mengetik kode yang ditampilkan authenticator saat
+ini. `SIGN_IN_REQUIRED` berarti tidak ada lagi challenge yang bisa dijawab, karena waktunya habis atau identity
+mengakhirinya, misalnya setelah lima kode ditolak; edge sudah membuang proses masuk yang tertunda, dan proses masuk
+dimulai lagi dari langkah 1
+([sign_in.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/src/http/sign_in.tl#L228-L251)).
+Sebuah akun mendapat challenge setelah penjualnya menyalakan
 [autentikasi dua faktor](/id/apis/rest/seller-web/two-factor/).
 
 <RestEndpoint id="edge.verifyTwoFactor" via="seller-web" />
@@ -101,9 +108,10 @@ adalah `expiresAt` di langkah 3.
 
 Aplikasi mengirim request tanpa body. Edge mengakhiri session di identity, menghapusnya dan membuat kedua cookie
 kedaluwarsa; session akun itu di browser dan perangkat lain tetap ada
-([logout.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/src/http/logout.tl#L72-L101),
-[identity_client.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/src/adapters/identity_client.tl#L69-L73)).
-Jawaban `204` juga datang saat tidak ada yang diakhiri, jadi keluar boleh dikirim lagi. Setelah `503` browser
-masih dalam keadaan masuk, dan aplikasi mencoba lagi nanti.
+([logout.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/src/http/logout.tl#L76-L105),
+[identity_client.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/src/adapters/identity_client.tl#L75-L79)).
+Untuk session yang masih hidup, `204` baru datang setelah identity mengakhirinya, dan `204` juga datang saat
+tidak ada yang diakhiri, jadi keluar boleh dikirim lagi. Setelah `503` atau `502` session tetap ada dan browser
+masih dalam keadaan masuk: aplikasi mencoba lagi nanti.
 
 <RestEndpoint id="edge.logout" via="seller-web" />

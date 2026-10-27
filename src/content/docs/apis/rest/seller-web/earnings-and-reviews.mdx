@@ -17,12 +17,13 @@ needs the session all the same.
 
 Payment holds the seller's share of each paid order and releases it when the order is completed; the answer shows
 both amounts. The balance is all that payment's REST API shows a seller: no endpoint lists the payments behind it
-([WalletController.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/ae1f3e07d4849f51bbc41b8cb5dd356dcfa5d793/modules/api/src/main/java/com/kinetix/payment/api/controller/WalletController.java#L21-L84)).
+([WalletController.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/api/src/main/java/com/kinetix/payment/api/controller/WalletController.java#L21-L84)).
 
 <RestEndpoint id="payment.merchantBalance" via="seller-web" />
 
 ## 2. Read the store's reviews
 
-`merchantPrincipalId` is the seller's `principalId`. Ask for the next `page` while it is below `last_page`.
+`merchantPrincipalId` is the seller's `principalId`. Pages count from 1: leave `page` out, or send `1`, for the
+first, and ask for the next while it is below `last_page`.
 
 <RestEndpoint id="review.listMerchantReviews" via="seller-web" />

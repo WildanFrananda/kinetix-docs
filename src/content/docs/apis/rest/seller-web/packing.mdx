@@ -1,79 +1,149 @@
 ---
 title: Pack orders
-description: How a seller works the warehouse's packing queue, from a paid order to a printed shipping label.
+description: How a seller works the warehouse's packing queue, from a paid order to a printed shipping label, and hears from matching's merchant socket when a parcel has a courier.
 sidebar:
   order: 7
 ---
 
 import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+import RestSocket from "../../../../../components/RestSocket.astro";
+import RestSocketMessage from "../../../../../components/RestSocketMessage.astro";
 
 Every paid order of a seller's goods becomes a fulfillment task in the warehouse. The seller works the queue:
 scan every line of a task, which starts packing it and, at the last line, packs the parcel and tells order; wait
 until order has booked a courier and recorded the parcel's tracking number; then print the label. The warehouse
 calls need a session whose role is `seller`
-([Become a seller](/apis/rest/seller-web/become-a-seller/), step 5).
+([Become a seller](/apis/rest/seller-web/become-a-seller/), step 5). After a `503` `DATABASE_UNAVAILABLE`
+([warehouse's answers](/apis/rest/#warehouse)) it is not known whether a change was written: the page waits the
+seconds in `Retry-After` and reads the queue (step 4) before it repeats one. The wait is heard on matching's merchant
+socket, which the edge carries for the seller web: it tells the page when the courier job of one of the seller's
+parcels is booked or changes, so the page knows when a parcel has a courier and its tracking number is on the way.
 
 ## 1. A paid order becomes a task
 
 Tasks are not created over REST. Order's checkout saga creates one over gRPC once the buyer's payment is held in
 escrow, with the order's number and its lines, each a SKU and a quantity
-([CheckoutSagaRunner.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Application/Checkout/CheckoutSagaRunner.cs#L237-L277)).
+([CheckoutSagaRunner.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Checkout/CheckoutSagaRunner.cs#L237-L277)).
 Its due time, `same_day_cutoff_at`, follows the merchant's cutoff hour
 ([Store set-up](/apis/rest/seller-web/store-setup/)).
 
-## 2. Read the queue
+## 2. Open the merchant socket
+
+The page opens the socket when it loads, before it reads the queue, so that no push about a parcel packed from
+then on is missed. It takes the same `seller` session as the warehouse calls: the browser sends the session cookie
+and `Origin` with the upgrade by itself, and the page offers the subprotocol `phoenix` or none, never a token. The
+edge checks the session as it does for a `/bff/api/` call, so opening the socket counts as a use of the session and
+may renew its tokens first; it admits only a `seller`, then opens matching's socket with the session's access token
+([merchant_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/src/http/merchant_socket.tl#L45-L83),
+[session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/src/http/session_use.tl#L22-L70)).
+matching verifies the token again and lets the socket join only the channel named after the token's
+`principalId`
+([merchant_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/merchant_socket.ex#L24-L45),
+[merchant_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/merchant_channel.ex#L32-L41)).
+
+<RestSocket id="matching.merchantSocket" />
+
+A browser's `WebSocket` does not show the page the status of a refused handshake, only that the connection failed
+and closed. The page then reads the session ([Sign in](/apis/rest/seller-web/sign-in/), step 3):
+`authenticated: false` shows the sign-in, a `customer` role is an account not approved yet or whose approval has not
+reached the session (Become a seller, step 5), and a `seller` session opens the socket again after a pause.
+matching closes its sockets in batches when it restarts
+([endpoint.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/endpoint.ex#L19-L26)),
+which the page takes as a lost connection: it connects again and joins again (step 3). The Phoenix JavaScript
+client does both by itself, connecting again after a short wait that grows to 5 seconds
+([socket.js](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/assets/js/phoenix/socket.js#L182-L188)).
+
+## 3. Join the seller's channel
+
+Every frame is a JSON array `[join_ref, ref, topic, event, payload]`; a reply repeats the `ref` of the frame it
+answers, and a push from matching has `null` for `ref`
+([v2_json_serializer.ex](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/socket/serializers/v2_json_serializer.ex#L63-L98)).
+Join the topic `merchant:` followed by the session's `principalId`, from the sign-in's answer or from
+`GET /bff/session` (Sign in, step 3):
+
+<RestSocketMessage id="matching.merchantSocket.join" />
+
+Right after the join, matching pushes the seller's unfinished courier jobs. The page takes the list as the current
+state, after the first join and after every reconnect alike, because changes made while the socket was down are
+not sent again:
+
+<RestSocketMessage id="matching.merchantSocket.activeOrders" />
+
+The channel only pushes. When it fails, for example because matching's database did not answer while it listed the
+jobs, Phoenix pushes `phx_error` and the channel is gone until it is joined again
+([socket.ex](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/socket.ex#L560-L569));
+the Phoenix JavaScript client joins again by itself, and the new `active_orders` replaces the list. matching closes a
+socket that has sent nothing for 60 seconds
+([websocket.ex](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/transports/websocket.ex#L26-L35)),
+so the page sends a heartbeat every 30 seconds, as the Phoenix JavaScript client does by itself
+([socket.js](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/assets/js/phoenix/socket.js#L174)):
+
+<RestSocketMessage id="matching.merchantSocket.heartbeat" />
+
+## 4. Read the queue
 
 The queue is the seller's work: tasks still to pack, and packed parcels whose label has not been printed. Keep
-each task's `id`, which every later step takes, and its `lines`, which say what goes into the parcel, from which
-bin, and whether a scan has matched each line yet (`scanned`).
+each task's `id`, which every later step takes, its `order_number`, by which step 8 matches the socket's pushes, and
+its `lines`, which say what goes into the parcel, from which bin, and whether a scan has matched each line yet
+(`scanned`).
 
 <RestEndpoint id="warehouse.taskQueue" via="seller-web" />
 
-## 3. Start packing
+## 5. Start packing
 
-Moving a `received` task to `packing`, with its `id` from step 2, tells the warehouse the packer has started. The
-step can be left out: the first matching scan in step 4 does the same. The same endpoint takes `packed` in step 5.
+Moving a `received` task to `packing`, with its `id` from step 4, tells the warehouse the packer has started. The
+step can be left out: the first matching scan in step 6 does the same. The same endpoint takes `packed` in step 7.
 
 <RestEndpoint id="warehouse.setTaskStatus" via="seller-web" />
 
-## 4. Scan the items
+## 6. Scan the items
 
 Send each code the packer scans, with the task's `id`, once for each line. A SKU marks its line as scanned, and the
 first match moves a `received` task to `packing`. The scan that matches the last unscanned line packs the parcel
 and tells order that it is ready, and order books a courier
-([verify_scan_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/cc5ff5ff80b6342e2cafdb262f931e2e03dedf50/app/services/fulfillment/verify_scan_service.rb#L64-L98),
-[task_transitions.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/cc5ff5ff80b6342e2cafdb262f931e2e03dedf50/app/services/fulfillment/task_transitions.rb#L28-L35)).
+([verify_scan_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/services/fulfillment/verify_scan_service.rb#L65-L99),
+[task_transitions.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/services/fulfillment/task_transitions.rb#L28-L35)).
 `lines_remaining` says how many lines are left. The order number or the tracking number matches too but marks no
 line, and a scan of a task that is already `packed` changes nothing and tells order nothing. A code that matches
 nothing moves nothing.
 
 <RestEndpoint id="warehouse.verifyScan" via="seller-web" />
 
-## 5. Re-send the packed report
+## 7. Re-send the packed report
 
-A task becomes `packed` only once a scan has matched every line: on a `packing` task, step 3's endpoint refuses
+A task becomes `packed` only once a scan has matched every line: on a `packing` task, step 5's endpoint refuses
 `packed` while a line is still unscanned
-([advance_task_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/cc5ff5ff80b6342e2cafdb262f931e2e03dedf50/app/services/fulfillment/advance_task_service.rb#L59-L62)).
+([advance_task_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/services/fulfillment/advance_task_service.rb#L61-L64)).
 Once the task is `packed`, sending `{"status": "packed"}` to that endpoint re-sends the report to order, and this
 is what it is for: when the scan that packed the parcel answered `order_notified` `false` with order unreachable,
 no courier has been booked yet
-([advance_task_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/cc5ff5ff80b6342e2cafdb262f931e2e03dedf50/app/services/fulfillment/advance_task_service.rb#L93-L116)).
+([advance_task_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/services/fulfillment/advance_task_service.rb#L95-L118)).
 Order keeps one courier booking per order, so a report sent again books no second courier
-([FulfillmentPackedHandler.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Application/Fulfillment/FulfillmentPackedHandler.cs#L62-L81)).
+([FulfillmentPackedHandler.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Fulfillment/FulfillmentPackedHandler.cs#L62-L81)).
 
-## 6. Wait for the tracking number
+## 8. Wait for the tracking number
 
-Order asks matching for a courier for the parcel and receives the parcel's tracking number (AWB)
-([CourierDispatcher.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Application/Fulfillment/CourierDispatcher.cs#L72-L108)),
-then records it in the warehouse over gRPC
-([CourierDispatcher.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Application/Fulfillment/CourierDispatcher.cs#L122-L151),
-[fulfillment_task_service_handler.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/cc5ff5ff80b6342e2cafdb262f931e2e03dedf50/app/rpc/fulfillment_task_service_handler.rb#L74-L99)).
-From then on, the task's card in the queue carries it as `tracking_number`
-([task_queue_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/cc5ff5ff80b6342e2cafdb262f931e2e03dedf50/app/services/fulfillment/task_queue_service.rb#L54)).
-Until then `tracking_number` is `null` and no label can be printed: read the queue again (step 2) until it is
-set.
+Order asks matching for a courier for the parcel. matching books the job at once, which the socket pushes as
+`pending`, but answers order with the parcel's tracking number (AWB) only once a courier is assigned to it
+([courier_telemetry_server.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/servers/courier_telemetry_server.ex#L24-L61));
+until then order asks again later
+([CourierDispatcher.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Fulfillment/CourierDispatcher.cs#L73-L109)).
+With the answer, order records the tracking number in the warehouse over gRPC
+([CourierDispatcher.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Fulfillment/CourierDispatcher.cs#L121-L146),
+[fulfillment_task_service_handler.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/rpc/fulfillment_task_service_handler.rb#L80-L111)),
+and from then on the task's card in the queue carries it as `tracking_number`
+([task_queue_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/services/fulfillment/task_queue_service.rb#L54)).
 
-## 7. Print the label
+The page matches each push to a task by `order_number`. A `pending` job has no courier yet: the page keeps waiting.
+An `assigned` job has one, and the page reads the queue again (step 4). Order learns the tracking number only from
+matching's answer to one of its requests, which can come a while after the push, so while that task's
+`tracking_number` is still `null`, the page reads the queue again later. Once set, `tracking_number` equals the
+job's `awb_number`; no label can be printed before. Later pushes, `picked_up` and `delivered`, follow the parcel
+on its way to the buyer.
+
+<RestSocketMessage id="matching.merchantSocket.orderUpdated" />
+
+## 9. Print the label
 
 With the task's `id`, once its `tracking_number` is set. `awb_number` is the tracking number the label carries.
 After the first print the task leaves the queue; the seller finds it again by its order number

@@ -16,7 +16,7 @@ on, every sign-in answers a challenge first, which the app answers as in
 
 Every call here takes the account's password in `password` besides the access token, so that a stolen access
 token alone cannot change the second factor
-([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/application/services/auth_usecase.service.ts#L363-L376)).
+([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/auth_usecase.service.ts#L375-L388)).
 The app asks the buyer for it at each step and does not keep it. A `401` for a wrong password concerns the
 password, not the session: the app keeps its tokens and asks again. Each call also counts as a check of the
 account towards the sign-in wait, as a sign-in does; on `429 SIGN_IN_DELAYED` the app waits `Retry-After`

@@ -16,7 +16,7 @@ Generated from release [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`GeocodeAddress`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/geo/v1/geo.proto#L8) | [`GeocodeAddressRequest`](#geocodeaddressrequest) → [`GeocodeAddressResponse`](#geocodeaddressresponse) | [identity](/services/identity/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Infrastructure/Grpc/IdentityAddressGeocoder.cs#L23) |
+| [`GeocodeAddress`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/geo/v1/geo.proto#L8) | [`GeocodeAddressRequest`](#geocodeaddressrequest) → [`GeocodeAddressResponse`](#geocodeaddressresponse) | [identity](/services/identity/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Grpc/IdentityAddressGeocoder.cs#L22) |
 | [`GeocodeAddresses`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/geo/v1/geo.proto#L9) | [`GeocodeAddressesRequest`](#geocodeaddressesrequest) → [`GeocodeAddressesResponse`](#geocodeaddressesresponse) | [identity](/services/identity/) | — |
 
 ## Messages

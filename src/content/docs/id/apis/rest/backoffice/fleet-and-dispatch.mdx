@@ -3,7 +3,7 @@ title: Armada dan dispatch
 description: Cara admin memantau kurir dan papan dispatch milik matching, lalu turun tangan untuk meng-assign, melepas atau membatalkan sebuah pekerjaan armada.
 sidebar:
   order: 7
-sourceHash: "9ed920c8cb6c"
+sourceHash: "3dcecabdc6ca"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -17,11 +17,11 @@ yang tidak ditunggu pesanan mana pun. Kurir masuk ke armada lewat
 pekerjaan, mencari kurir di dekat titik jemput, meng-assign, melepas atau membatalkan, dan mendaftar pekerjaan satu
 kurir. Kong memeriksa token di setiap endpoint di sini, matching memeriksa role-nya, dan matching mencatat setiap
 request di route ini bersama akun admin dan hasilnya
-([router.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse_web/router.ex#L24-L63)).
+([router.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/router.ex#L24-L63)).
 
 Aplikasi kurir memegang socket ke matching pada topic `driver:<driver_id>`, dan channel-nya berlangganan event dispatch
 milik kurir itu saat join
-([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse_web/channels/driver_channel.ex#L49-L56)).
+([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/driver_channel.ex#L49-L56)).
 Lewat situlah langkah 7, 8 dan 9 sampai ke aplikasi kurir.
 
 ## 1. Daftar armada
@@ -73,10 +73,10 @@ dibaca. Jawabannya mendaftar kurir yang dilacak, dari yang terdekat, apa pun sta
 
 Kirim `id` kurir pilihan dari langkah 6 sebagai `driver_id`, dengan `id` pekerjaan di path. Bila berhasil, matching
 melakukan push `order_assigned` ke socket kurir itu
-([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/dispatch.ex#L594-L600),
-[driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse_web/channels/driver_channel.ex#L144-L147)),
+([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L594-L600),
+[driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/driver_channel.ex#L144-L147)),
 yang membawa pekerjaan itu dalam bentuk ini
-([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse_web/channels/driver_channel.ex#L237-L247)):
+([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/driver_channel.ex#L237-L247)):
 
 ```json
 {
@@ -91,12 +91,12 @@ yang membawa pekerjaan itu dalam bentuk ini
 
 Pilihan admin mengesampingkan dua pemeriksaan yang dilakukan dispatch otomatis: matching tidak membandingkan kapasitas
 kurir dengan `weight_kg` pekerjaan, dan tidak memeriksa umur posisi terakhir kurir
-([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/dispatch.ex#L256-L269),
-dibandingkan [dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/dispatch.ex#L529-L537)).
+([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L256-L269),
+dibandingkan [dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L529-L537)).
 Setelah `500` atau `503`, dari matching maupun dari edge, baca lagi pekerjaan itu (langkah 5) sebelum mengulang:
 assignment-nya mungkin sudah terjadi, dan assignment yang gagal saat sedang ditulis membiarkan pekerjaan itu `pending`
 dan kurirnya bebas
-([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/dispatch.ex#L559-L592)).
+([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L559-L592)).
 
 <RestEndpoint id="matching.assignDispatch" via="backoffice" />
 
@@ -105,8 +105,8 @@ dan kurirnya bebas
 Lepas pekerjaan yang `status`-nya `assigned`, dengan `id`-nya di path. Matching melakukan push `order_unassigned`
 berisi `id` pekerjaan itu ke kurir yang memegangnya, lalu `active_order`, yaitu pekerjaan kurir itu yang masih terbuka
 atau `null`
-([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/dispatch.ex#L373-L386),
-[driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse_web/channels/driver_channel.ex#L154-L158)).
+([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L373-L386),
+[driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/driver_channel.ex#L154-L158)).
 Pekerjaan itu kembali `pending`, untuk ditawarkan matching kepada kurir lain atau untuk langkah 7.
 
 <RestEndpoint id="matching.unassignDispatch" via="backoffice" />
@@ -116,9 +116,9 @@ Pekerjaan itu kembali `pending`, untuk ditawarkan matching kepada kurir lain ata
 Hanya pekerjaan tanpa `order_number` yang bisa dibatalkan: pekerjaan yang membawanya, seperti setiap pekerjaan yang
 dibuat oleh order, menjawab `409` `bound_to_order` apa pun statusnya. Bila pekerjaan yang dibatalkan itu `assigned`,
 matching melakukan push `order_updated` berisi pekerjaan itu, dengan `status` `cancelled`, ke kurir yang memegangnya
-([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/dispatch.ex#L652-L663),
-[dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/dispatch.ex#L693-L698),
-[driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse_web/channels/driver_channel.ex#L149-L152));
+([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L652-L663),
+[dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L693-L698),
+[driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/driver_channel.ex#L149-L152));
 pekerjaan `pending` tidak punya kurir untuk diberi tahu.
 
 <RestEndpoint id="matching.cancelDispatch" via="backoffice" />

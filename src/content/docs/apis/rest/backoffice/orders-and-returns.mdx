@@ -14,7 +14,7 @@ network as on [Sign in](/apis/rest/backoffice/sign-in/), the admin counts and li
 rejects a return or completes an order, and reads an order. Order checks the token itself on every endpoint here. It
 writes every call of steps 1 to 5, and an admin's read of an order the admin did not place, to its audit log of admin
 actions
-([AdminAudit.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Infrastructure/Observability/AdminAudit.cs#L30-L42)).
+([AdminAudit.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Observability/AdminAudit.cs#L30-L42)).
 
 ## 1. Count the sagas that need attention
 
@@ -26,10 +26,10 @@ A bare number, for a badge in the backoffice; step 2 lists the sagas behind it.
 
 Each saga names its order by `orderNumber`, and each entry of its `unreleasedSteps` carries a `remedy` naming the gRPC
 operation that gives the step back
-([SagaAdminController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Controllers/SagaAdminController.cs#L121-L137);
+([SagaAdminController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Controllers/SagaAdminController.cs#L121-L137);
 the operations are in the [gRPC reference](/apis/grpc/)). Order's REST API only reads sagas: this controller serves
 these two `GET`s and nothing else
-([SagaAdminController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Controllers/SagaAdminController.cs#L12-L53)).
+([SagaAdminController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Controllers/SagaAdminController.cs#L12-L53)).
 
 <RestEndpoint id="order.listSagasNeedingAttention" via="backoffice" />
 
@@ -57,8 +57,8 @@ an `OPEN` one can be rejected in step 4 first, if that is the decision. A `200` 
 call is not repeated for it. `escrowReleased` says whether payment released the escrow to the merchant at once; when
 it did not, `detail` is one of two fixed sentences, which the backoffice can map to its own words: payment could not be
 reached and order retries the release on its own, or payment refused and the release waits for staff
-([OrderCompletion.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Application/Completion/OrderCompletion.cs#L20-L24),
-[OrderCompletion.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Application/Completion/OrderCompletion.cs#L173-L176)).
+([OrderCompletion.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Completion/OrderCompletion.cs#L21-L25),
+[OrderCompletion.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Completion/OrderCompletion.cs#L175-L178)).
 After a `500` or a `503`, whose outcome is unknown, the call can be sent again: an order the first attempt completed
 answers `409` `ORDER_ALREADY_COMPLETED` and nothing changes.
 
@@ -69,8 +69,8 @@ answers `409` `ORDER_ALREADY_COMPLETED` and nothing changes.
 An admin reads any order, but only by its `id`, the UUID that the buyer's checkout answer and order list carry. The
 lists above name orders by `orderNumber` alone, and no endpoint looks an order up by its number: the path takes only a
 UUID
-([OrderController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Controllers/OrderController.cs#L344-L374)),
+([OrderController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Controllers/OrderController.cs#L344-L374)),
 and `GET /api/v1/orders/my-orders` lists the caller's own purchases
-([OrderController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Controllers/OrderController.cs#L293-L342)).
+([OrderController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Controllers/OrderController.cs#L293-L342)).
 
 <RestEndpoint id="order.getOrder" via="backoffice" />

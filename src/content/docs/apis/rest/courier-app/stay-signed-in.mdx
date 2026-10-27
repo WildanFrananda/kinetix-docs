@@ -28,7 +28,7 @@ expired or was refused, never on a timer:
 - when the sign-out of step 3 is answered `401`.
 
 The driver socket reads the access token when it opens
-([driver_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse_web/channels/driver_socket.ex#L27-L36)),
+([driver_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/driver_socket.ex#L27-L36)),
 so every connection needs a current one. The courier app sends one refresh at a time for the whole app, and
 stores the new pair in one write before anything uses it
 ([session_renewer.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/auth/session_renewer.dart#L30-L88),
@@ -55,9 +55,9 @@ Not an HTTP call. While the driver socket is connected, push `status` with `offl
 
 matching answers with the resulting status, and stops offering the courier jobs, because automatic dispatch
 takes only couriers who are `online`
-([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse_web/channels/driver_channel.ex#L96-L105),
-[driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/tracking/driver_state.ex#L221-L223),
-[dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/dispatch.ex#L529-L537)):
+([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/driver_channel.ex#L96-L105),
+[driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/tracking/driver_state.ex#L221-L223),
+[dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L529-L537)):
 
 ```json
 ["1", "9", "driver:17", "phx_reply", {"status": "ok", "response": {"status": "offline"}}]
@@ -65,8 +65,8 @@ takes only couriers who are `online`
 
 Then close the socket. Closing it takes the courier off duty as well: when the channel ends, matching sets the
 courier `offline`
-([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/tracking/driver_state.ex#L258-L261),
-[#L290-L293](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/tracking/driver_state.ex#L290-L293)).
+([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/tracking/driver_state.ex#L258-L261),
+[#L290-L293](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/tracking/driver_state.ex#L290-L293)).
 The courier app pushes `status` `offline` when it is connected, then closes the socket
 ([tracking_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/viewmodels/tracking_view_model.dart#L91-L96),
 [duty_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L113-L125)).

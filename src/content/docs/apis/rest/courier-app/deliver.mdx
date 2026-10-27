@@ -24,7 +24,7 @@ A WebSocket connection to a fixed address. The client sets one header itself, `S
 access token in place of the placeholder; the WebSocket library adds the upgrade headers. Kong passes this path,
 and the same path ending in `/websocket`, which Phoenix's JavaScript client dials, to matching without checking
 the token, and counts each connection against the route's [limit per address](/apis/rest/#limits)
-([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/6747ebc0ae2b8d5203539aab21f428f4b03784f7/config/gateway.pkl#L421-L434)).
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L426-L439)).
 
 <RestSocket id="matching.driverSocket" />
 
@@ -81,7 +81,7 @@ The answers to frames on a topic that is not joined, and the silence for frames 
 the same file
 ([#L803-L842](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/socket.ex#L803-L842)).
 An event the channel does not know is answered `unknown_event`, and the channel stays joined
-([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse_web/channels/driver_channel.ex#L133-L135)).
+([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/driver_channel.ex#L133-L135)).
 
 ## 3. Keep the socket alive
 
@@ -102,8 +102,8 @@ then joins, and declares duty again as step 4 describes.
 
 Push `status` with `online`. When the channel ends, because the socket was closed or dropped, matching sets the
 courier `offline`
-([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/tracking/driver_state.ex#L258-L261),
-[#L290-L293](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/tracking/driver_state.ex#L290-L293)),
+([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/tracking/driver_state.ex#L258-L261),
+[#L290-L293](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/tracking/driver_state.ex#L290-L293)),
 so a courier on duty sends it again after every new join:
 
 <RestSocketMessage id="matching.driverSocket.status" />
@@ -115,8 +115,8 @@ The courier app does so; the first time, it asks for location permission and sta
 ## 5. Send the live position
 
 Automatic dispatch considers only couriers whose position arrived after they went on duty
-([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/tracking/driver_state.ex#L137-L145),
-[dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/dispatch.ex#L529-L537)),
+([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/tracking/driver_state.ex#L137-L145),
+[dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L529-L537)),
 so the first `ping` follows step 4 at once:
 
 <RestSocketMessage id="matching.driverSocket.ping" />
@@ -159,8 +159,8 @@ verdicts; it tells the courier to set the phone's clock automatically when entri
 
 There is no offer to accept or decline. matching assigns a job, automatically to the nearest `online` courier
 whose vehicle can carry it, or by an admin's choice, and tells the courier on the channel
-([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/dispatch.ex#L521-L537),
-[#L594-L600](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/dispatch.ex#L594-L600)).
+([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L521-L537),
+[#L594-L600](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L594-L600)).
 Beside `active_order` from step 2, three pushes concern the courier's job, at any time after the join:
 
 <RestSocketMessage id="matching.driverSocket.orderAssigned" />
@@ -231,7 +231,7 @@ forgets them when the job is cancelled, taken off the courier or no longer activ
 
 At the end of the shift, push `status` with `offline`, the message of step 4. matching then offers the courier no
 more jobs, because it assigns jobs only to couriers who are `online`
-([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/tracking/driver_state.ex#L207-L223)).
+([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/tracking/driver_state.ex#L207-L223)).
 The courier app pushes it when the courier turns duty off while connected
 ([duty_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L113-L125)).
 [Signing out](/apis/rest/courier-app/stay-signed-in/) also closes the socket.

@@ -3,13 +3,13 @@ title: Push notification
 description: Mendaftarkan token FCM ponsel ke service notification supaya push untuk pembeli yang sedang masuk sampai ke ponsel itu, membuktikan ponsel memegang token itu bila diminta, dan melupakannya saat keluar.
 sidebar:
   order: 13
-sourceHash: "00b40a67d60a"
+sourceHash: "3c5b41d60723"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
 
 Service notification mengirim push untuk sebuah principal ke ponsel-ponsel yang terdaftar untuknya
-([DeviceRegistryRecipientDirectory.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/4ad78ee085f9cc6b1bd055cf8e90fbefef97ff5e/src/main/scala/com/kinetix/notification/infrastructure/grpc/DeviceRegistryRecipientDirectory.scala#L11-L14)),
+([DeviceRegistryRecipientDirectory.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/grpc/DeviceRegistryRecipientDirectory.scala#L11-L14)),
 lewat Firebase Cloud Messaging (FCM). Aplikasi pembeli mengambil token FCM ponsel (langkah 1) dan
 mendaftarkannya dengan access token pembeli (langkah 2). Sebagian pendaftaran dijawab `202`: ponsel lalu
 menerima sebuah kode lewat push (langkah 3) dan mengirimnya kembali (langkah 4). Saat keluar, aplikasi
@@ -20,8 +20,8 @@ untuk aplikasi mobile.
 
 Firebase SDK di ponsel menerbitkan token-nya; ini bukan panggilan API. Service notification mengalamatkan
 setiap push ke token itu, sebagai pesan FCM dengan judul dan isi
-([HttpPushSender.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/4ad78ee085f9cc6b1bd055cf8e90fbefef97ff5e/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L35-L40),
-[pesannya](https://github.com/WildanFrananda/kinetix-notification-service/blob/4ad78ee085f9cc6b1bd055cf8e90fbefef97ff5e/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L63-L72)).
+([HttpPushSender.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L37-L42),
+[pesannya](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L86-L95)).
 Ketika SDK mengganti token-nya, aplikasi mendaftarkan yang baru (langkah 2) dan melupakan yang lama
 (langkah 5).
 
@@ -34,14 +34,21 @@ dulu membuktikan bahwa ia menerima push yang dikirim ke token itu: aplikasi menu
 
 Hanya satu bukti dalam satu waktu yang dikirim untuk seorang pengklaim, dan sebuah token menerima paling
 banyak tiga bukti per jam, siapa pun yang mengklaimnya
-([RegisterDevice.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/4ad78ee085f9cc6b1bd055cf8e90fbefef97ff5e/src/main/scala/com/kinetix/notification/application/RegisterDevice.scala#L42-L59),
-[DeviceChallenge.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/4ad78ee085f9cc6b1bd055cf8e90fbefef97ff5e/src/main/scala/com/kinetix/notification/domain/DeviceChallenge.scala#L21-L43)).
+([RegisterDevice.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/application/RegisterDevice.scala#L42-L59),
+[DeviceChallenge.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/domain/DeviceChallenge.scala#L21-L43)).
 Jadi pendaftaran yang diulang selagi sebuah bukti masih tertunda tidak mengirim apa pun dan dijawab
 `429 VERIFICATION_ALREADY_PENDING`: aplikasi lanjut ke langkah 4 dengan nonce yang sudah dikirim, dan mendaftar
 lagi setelah `Retry-After` hanya bila pesan itu tidak pernah datang. Setelah `429 VERIFICATION_LIMIT_REACHED`,
-aplikasi mendaftar lagi begitu `Retry-After` detik sudah lewat. `422 ADDRESS_GONE` berarti FCM tidak lagi
-mengenal token itu: aplikasi mengambil token baru dari SDK (langkah 1) dan mendaftarkannya.
-`503 SENDER_UNAVAILABLE` diulang nanti; `502 SENDER_REJECTED` tidak diulang tanpa perubahan.
+aplikasi mendaftar lagi begitu `Retry-After` detik sudah lewat.
+
+Jawaban-jawaban berikut menyangkut pesan bukti, yang hanya dibutuhkan token yang dipegang principal lain, dan
+berasal dari apa yang dikatakan FCM tentang pesan itu
+([HttpPushSender.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L130-L140)).
+`422 ADDRESS_GONE` berarti FCM tidak lagi mengenal token itu, atau token itu diterbitkan untuk aplikasi lain,
+bukan aplikasi Kinetix: dalam kedua hal, aplikasi mengambil token lagi dari Firebase SDK (langkah 1) dan
+mendaftarkan token itu. `503 SENDER_UNAVAILABLE` bukan kesalahan request-nya, dan tidak ada bukti yang
+dihitung: dengan `Retry-After`, aplikasi mendaftar lagi begitu detik sebanyak itu sudah lewat, dan tanpanya,
+nanti. `502 SENDER_REJECTED` tidak diulang tanpa perubahan.
 
 <RestEndpoint id="notification.registerDevice" />
 
@@ -49,7 +56,7 @@ mengenal token itu: aplikasi mengambil token baru dari SDK (langkah 1) dan menda
 
 Setelah `202`, ponsel menerima data message FCM, bukan notifikasi yang terlihat: di Android berupa data
 message berprioritas tinggi, di iOS berupa background push. Data-nya membawa tiga field
-([HttpPushSender.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/4ad78ee085f9cc6b1bd055cf8e90fbefef97ff5e/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L74-L101)):
+([HttpPushSender.scala](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L97-L124)):
 
 ```json
 {

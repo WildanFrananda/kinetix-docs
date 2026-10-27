@@ -1,7 +1,7 @@
 ---
 title: catalog
 description: Produk, kategori, dan harganya — service yang ditanya semua service lain tentang apa sebuah produk, siapa penjualnya, dan berapa harganya, dan satu-satunya yang memutuskan seorang seller boleh mendaftarkannya.
-sourceHash: "6173324b1805"
+sourceHash: "c30335d93bcc"
 ---
 
 import ServiceCalls from "../../../../components/ServiceCalls.astro";
@@ -17,7 +17,7 @@ terus terang ketika warehouse tidak bisa menjawab.
 Tabel di halaman ini dibangkitkan dari data terverifikasi yang sama dengan
 [peta sistem](/id/architecture/system-map/), pada commit yang ditautkan dari setiap baris. Teksnya dicek
 terhadap catalog
-[v1.0.0](https://github.com/WildanFrananda/kinetix-catalog-service/tree/2a395740eb832a69bfd72c82be54779d421ddef3),
+[v1.2.3](https://github.com/WildanFrananda/kinetix-catalog-service/tree/ab557c90cb3230221c5a504def11fa7df26a6f7a),
 versi yang berjalan di production.
 
 ## Sekilas
@@ -33,12 +33,12 @@ salinannya lengkap.
 <ServiceServes service="catalog" />
 
 Produk yang sudah ditarik
-[tidak ditemukan](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/repositories/django_product_repository.py#L139-L144)
+[tidak ditemukan](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/infrastructure/repositories/django_product_repository.py#L166-L174)
 oleh `GetProduct`, sehingga keranjang yang masih memuatnya tidak bisa di-checkout. Change feed
-[melaporkannya sebagai dihapus](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/repositories/django_product_repository.py#L108-L112)
+[melaporkannya sebagai dihapus](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/infrastructure/repositories/django_product_repository.py#L133-L139)
 alih-alih melewatkannya, dan dari situlah search tahu harus membuangnya. Cursor feed itu adalah transaksi
 database yang terakhir mengubah sebuah produk:
-[ia hanya menyajikan produk yang ditulis oleh transaksi yang lebih tua dari setiap transaksi yang masih berjalan](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/repositories/django_product_repository.py#L77-L134),
+[ia hanya menyajikan produk yang ditulis oleh transaksi yang lebih tua dari setiap transaksi yang masih berjalan](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/infrastructure/repositories/django_product_repository.py#L104-L161),
 sehingga produk yang transaksinya commit terlambat disajikan terlambat dan tidak pernah terlewat.
 
 ## Yang dipanggil
@@ -51,57 +51,68 @@ Sebuah produk dibuat, diubah, dan ditarik oleh seller yang merchant-nya menjual 
 siapa pun yang lain:
 
 - **Seller harus diizinkan berjualan.** Sebelum menulis apa pun, catalog bertanya ke identity
-  [merchant mana yang dijalankan seller itu dan apakah merchant itu boleh berjualan](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/application/services/product_service.py#L122-L133).
+  [merchant mana yang dijalankan seller itu dan apakah merchant itu boleh berjualan](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/application/services/product_service.py#L148-L159),
+  dan menolak dengan `403` `MERCHANT_MAY_NOT_SELL` ketika merchant itu tidak boleh berjualan.
   Kalau identity tidak bisa ditanya, penulisan ditolak dengan `503` — gangguan tidak dibaca sebagai "seller
   ini boleh" maupun "seller ini tidak boleh"; lihat [Tidak tahu bukan berarti tidak](/id/learn/unknown-is-not-no/).
 - **Produknya harus milik dia.** Mengubah atau menarik sebuah produk
-  [memerlukan kecocokan persis](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/application/services/product_service.py#L154-L199)
+  [memerlukan kecocokan persis](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/application/services/product_service.py#L179-L218)
   antara merchant produk itu dan merchant seller.
-- **Satu SKU menyebut satu produk.** Produk baru di-insert dan produk yang ada
-  [di-update berdasarkan id-nya](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/repositories/django_product_repository.py#L153-L176),
-  tidak pernah dicocokkan lewat SKU, sehingga SKU milik produk lain ditolak dengan `409` alih-alih menjangkau
-  produk tersebut.
+- **Satu SKU menyebut satu produk, untuk selamanya.** Produk baru di-insert dan produk yang ada
+  [di-update berdasarkan id-nya](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/infrastructure/repositories/django_product_repository.py#L183-L206),
+  tidak pernah dicocokkan lewat SKU, sehingga SKU milik produk lain, termasuk yang sudah ditarik, ditolak
+  dengan `409` alih-alih menjangkau produk tersebut. SKU sebuah produk
+  [tidak bisa diubah setelah produknya ada](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/application/services/product_service.py#L191-L192):
+  order dan warehouse menyebutnya dengan SKU itu, dan SKU baru berarti produk baru.
 - **Produk yang dijual punya merchant, dan berat yang ada bernilai positif.** Database sendiri menolak produk
   aktif tanpa merchant, dan berat nol atau kurang, lewat
-  [check constraint](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/models/product_model.py#L28-L34).
+  [check constraint](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/infrastructure/models/product_model.py#L28-L34).
 
 Menarik sebuah produk membuatnya tidak aktif; produk tidak pernah dihapus, karena order, change feed, dan
-warehouse masih menyebutnya dengan SKU-nya.
+warehouse masih menyebutnya dengan SKU-nya. Produk milik merchant yang tidak lagi boleh berjualan tetap
+tampil; checkout-lah yang menolaknya, karena order juga bertanya ke identity.
 
 ## Apa yang boleh tertulis di produk
 
-[Setiap field dicek](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/application/services/product_field_parser.py)
+[Setiap field dicek](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/application/services/product_field_parser.py)
 sebelum disimpan, dan request yang gagal dijawab `400` dengan menyebut field-nya:
 
 - **Harga** lebih dari nol, paling banyak dua angka desimal, dan muat di kolomnya.
 - **Mata uang** adalah rupiah, satu-satunya mata uang yang dibayarkan order. Harga dalam mata uang lain akan
   menjadi produk yang tidak bisa dibeli siapa pun.
 - **Berat** adalah
-  [bilangan bulat gram yang positif, paling banyak 1.000.000](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/application/services/product_field_parser.py#L81-L96),
+  [bilangan bulat gram yang positif, paling banyak 1.000.000](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/application/services/product_field_parser.py#L92-L101),
   dan produk baru wajib punya berat, karena ongkir dihitung dari berat. Produk yang dibuat sebelum 2026-10-18
   bisa tidak punya berat, dan catalog tidak mengarangnya: order menolak men-checkout-nya sampai seller-nya
   mengisinya. `GetProduct` hanya mengirim berat kalau memang ada, sehingga "tanpa berat" tidak pernah dibaca
   sebagai nol.
-- **SKU** tidak berisi spasi atau garis miring, karena ia bagian dari URL; judul dan URL gambar muat di
-  kolomnya, dan URL gambar memakai `http` atau `https`.
+- **SKU** tidak berisi spasi atau garis miring, karena ia bagian dari URL, dan bukan salah satu kata yang
+  dipakai route produk; judul dan URL gambar muat di kolomnya, URL gambar memakai `http` atau `https`, dan
+  tidak ada field yang berisi karakter NUL.
+
+Body request adalah sebuah objek JSON. Sebuah form boleh membawa field teks, dan
+[form yang membawa file ditolak](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/api/exception_handler.py#L102-L118)
+dengan `400` `FILES_NOT_ACCEPTED` sebelum file-nya dibaca: gambar produk adalah tautan, tidak pernah unggahan.
 
 Satu halaman daftar produk berisi
-[paling banyak seratus produk](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/application/services/product_filter_parser.py#L7),
-karena setiap produk di dalamnya adalah pertanyaan ke warehouse.
+[paling banyak seratus produk](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/application/services/product_filter_parser.py#L8),
+karena setiap produk di dalamnya adalah pertanyaan ke warehouse. Daftar produk diurutkan dari yang terbaru,
+dengan id sebagai penentu ketika waktunya sama, sehingga berpindah halaman tidak pernah mengulang atau
+melewatkan produk.
 
 ## Stok adalah jawaban warehouse
 
 catalog menampilkan stok tetapi tidak menyimpannya. Daftar produk bertanya ke warehouse sekali per merchant di
 halaman itu, dan ketika warehouse tidak bisa menjawab, stoknya
-[dilaporkan sebagai tidak diketahui](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/application/services/product_service.py#L44-L57)
+[dilaporkan sebagai tidak diketahui](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/application/services/product_service.py#L44-L61)
 — bukan nol, yang akan memberi tahu pembeli bahwa barangnya habis hanya karena sebuah dependency lambat. Stok
 sebuah produk adalah salah satu dari tiga jawaban: tersedia, habis, atau tidak diketahui.
 
 ## Kategori
 
-Kategori dikelola oleh [`admin`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/api/views/category_view.py#L20-L33)
+Kategori dikelola oleh [`admin`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/api/caller.py#L23-L28)
 dan bisa dibaca siapa saja. Kategori yang masih berisi produk, termasuk yang sudah ditarik,
-[tidak dihapus](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/repositories/django_product_repository.py#L209-L218):
+[tidak dihapus](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/infrastructure/repositories/django_product_repository.py#L239-L247):
 request-nya dijawab `409` beserta jumlah produk di dalamnya. Menghapus kategori tidak pernah menghapus produk.
 
 ## Bagaimana kodenya disusun
@@ -114,7 +125,7 @@ port. Di dalam `core/`:
 | `domain/` | entity, error, dan port — `ProductRepository` untuk yang dimiliki catalog, `...ServicePort` untuk yang dimiliki service lain |
 | `application/` | service produk dan kategori, dan parser yang mengecek apa yang boleh tertulis di request |
 | `infrastructure/` | model Django dan repository, client dan server gRPC, keamanan mesh, circuit breaker, observability |
-| `api/` | view Django REST Framework yang tipis dan wiring yang membangun service-nya |
+| `api/` | view Django REST Framework yang tipis, satu per route, pengecekan siapa yang memanggil, dan wiring yang membangun service-nya |
 
 Service-nya diuji dengan tiruan setiap port tanpa database; repository, change feed, dan aturan yang dijaga
 database diuji terhadap PostgreSQL.
@@ -122,24 +133,29 @@ database diuji terhadap PostgreSQL.
 ## Data
 
 PostgreSQL menyimpan produk dan kategori. Setiap produk membawa
-[transaksi yang terakhir mengubahnya, dicap oleh trigger pada setiap insert dan update](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/migrations/0009_products_record_their_change_transaction.py#L10-L33),
+[transaksi yang terakhir mengubahnya, dicap oleh trigger pada setiap insert dan update](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/migrations/0009_products_record_their_change_transaction.py#L10-L33),
 dan index pada transaksi itu dan SKU-nya, yang ditelusuri change feed: cursor-nya adalah transaksi dan SKU
 terakhir yang dikembalikan, sehingga sebuah halaman tidak pernah melewatkan atau mengulang produk, bahkan
-ketika banyak produk berubah dalam satu transaksi. Cursor tanpa transaksi masih dibaca dengan cara lama, lewat
+ketika banyak produk berubah dalam satu transaksi. Mengganti nama sebuah kategori
+[mencap ulang produk-produknya](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/migrations/0010_category_changes_stamp_their_products.py#L10-L29),
+sehingga feed membawa nama barunya ke search. Cursor tanpa transaksi masih dibaca dengan cara lama, lewat
 `(updated_at, sku)`; search tidak lagi mengirimnya.
 
 ## Siapa boleh melakukan apa
 
 - **Siapa saja** membaca daftar produk, sebuah produk berdasarkan SKU-nya, dan kategori.
 - **Seller** — dengan access token dari identity,
-  [hanya access token](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/security/token_verifier.py#L65-L66),
+  [hanya access token](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/infrastructure/security/token_verifier.py#L65-L66),
   lihat [Token yang bisa ditarik kembali](/id/learn/tokens-that-can-be-taken-back/) — membuat, mengubah, dan
-  menarik produk merchant-nya sendiri, dengan aturan di atas. Token yang ditandatangani kunci yang tidak
+  menarik produk merchant-nya sendiri, dengan aturan di atas, dan melihat daftar produknya sendiri, termasuk
+  yang sudah ditarik. Token yang ditandatangani kunci yang tidak
   dipegang catalog membuatnya
-  [mengambil ulang key set identity paling sering sekali tiap sepuluh detik](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/security/signing_key_set.py#L50-L61),
+  [mengambil ulang key set identity paling sering sekali tiap sepuluh detik](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/infrastructure/security/signing_key_set.py#L50-L61),
   dan ketika pengambilan itu gagal, request-nya
-  [dijawab `503`, bukan "token tidak valid"](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/security/identity_token_authentication.py#L29-L46).
-- **Admin** mengelola kategori.
+  [dijawab `503`, bukan "token tidak valid"](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/infrastructure/security/identity_token_authentication.py#L34-L54).
+- **Admin** mengelola kategori, dan setiap perubahan
+  [dicatat di log dan dihitung](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/infrastructure/observability/admin_action_audit.py#L23-L39)
+  beserta principal admin, kategorinya, dan bagaimana hasilnya.
 - **Service lain** menjangkau port gRPC hanya dengan sertifikat dari CA Kinetix yang menyebut service di daftar
   izin catalog; lihat [Siapa yang memanggil?](/id/learn/who-is-calling/).
 
@@ -148,15 +164,20 @@ ketika banyak produk berubah dalam satu transaksi. Cursor tanpa transaksi masih 
 Image yang sama berjalan sebagai dua container: satu melayani HTTP lewat gunicorn, yang lain melayani gRPC.
 
 - `/health` menjawab ketika prosesnya hidup; `/health/ready`
-  [menjalankan query sungguhan](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/api/views/readiness_view.py#L11-L22).
+  [menjalankan query sungguhan](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/api/views/readiness_view.py#L11-L22).
   Container gRPC diperiksa lewat protokol health milik gRPC sendiri.
 - `/metrics` menyajikan teks Prometheus dengan nama-nama yang diberikan kontrak platform untuk catalog.
+- Ketika database tidak bisa dijangkau, request HTTP dijawab `503` `DATABASE_UNAVAILABLE` dengan
+  `Retry-After`, dan panggilan gRPC
+  [gagal dengan `UNAVAILABLE`](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/infrastructure/grpc/error_status_interceptor.py#L86-L95),
+  tidak pernah "tidak ditemukan"; kegagalan lain menjadi `INTERNAL`, dengan teks tetap alih-alih kata-kata
+  error-nya sendiri.
 - Panggilan ke identity dan warehouse punya timeout lima detik dan berada di balik
-  [circuit breaker](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/resilience/circuit_breaker.py#L23-L29)
+  [circuit breaker](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/infrastructure/resilience/circuit_breaker.py#L23-L29)
   yang terbuka setelah tiga
-  [kegagalan peer](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/infrastructure/resilience/is_peer_fault.py)
+  [kegagalan peer](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/infrastructure/resilience/is_peer_fault.py)
   berturut-turut dan mencoba lagi setelah lima belas detik. Penolakan adalah jawaban, bukan kegagalan, dan
   tidak dihitung.
 - Saat `SIGTERM`, server gRPC
-  [melaporkan dirinya tidak melayani dan melakukan drain](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/management/commands/grpcserver.py#L91-L94)
+  [melaporkan dirinya tidak melayani dan melakukan drain](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/management/commands/grpcserver.py#L53-L56)
   paling lama sepuluh detik; gunicorn memberi worker HTTP 25 detik.

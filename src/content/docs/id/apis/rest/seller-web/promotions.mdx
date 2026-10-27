@@ -3,7 +3,7 @@ title: Promosi
 description: Cara penjual membuat diskon, voucher dan flash sale di pricing lalu membacanya kembali.
 sidebar:
   order: 6
-sourceHash: "fa9642c2bde9"
+sourceHash: "f2102da4dfe3"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -13,7 +13,7 @@ flash sale untuk satu produk. Masing-masing dibuat, lalu dibaca kembali; setelah
 diubah atau diakhiri lebih awal. Setiap pembuatan memerlukan session dengan role `seller`, untuk merchant yang
 diizinkan identity berdagang, dan header `Idempotency-Key` dengan key baru untuk setiap promosi, yang diteruskan
 edge, sebagaimana edge mengembalikan `Idempotent-Replayed`
-([forwarding.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/config/forwarding.tl#L11-L19)).
+([forwarding.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/config/forwarding.tl#L11-L19)).
 Pricing mencari key itu sebelum memeriksa syarat promosi atau bertanya ke identity dan catalog, dan mencatatnya
 dalam transaksi yang sama dengan promosinya, jadi satu key membuat paling banyak satu promosi
 ([discount_routes.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0ed7db4cd6fb8d40375cab26dd7ac56ebce16a8a/src/routes/discount_routes.rs#L22-L51),
@@ -37,7 +37,7 @@ satu produk milik penjual lewat SKU-nya di `target_product_id`
 Daftarnya memuat setiap diskon yang berlaku: milik platform dan milik setiap merchant. Diskon milik penjual
 sendiri membawa `principalId`-nya ([Masuk](/id/apis/rest/seller-web/sign-in/), langkah 3) di
 `merchant_principal_id`
-([identity_grpc.controller.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/adapters/controllers/identity_grpc.controller.ts#L240-L242)).
+([identity_grpc.controller.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/adapters/controllers/identity_grpc.controller.ts#L240-L242)).
 Diskon hanya tercantum di antara `start_time` dan `end_time`-nya, jadi diskon yang baru mulai nanti belum
 tercantum.
 

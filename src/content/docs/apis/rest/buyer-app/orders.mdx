@@ -12,9 +12,12 @@ one (step 2). The order that [checkout](/apis/rest/buyer-app/checkout/) placed i
 
 ## 1. List the orders
 
-Newest first. `status` narrows the list to one status. The app asks for the next `page` while `page` ×
-`pageSize` is below `totalCount`, up to `page` 10,000, the last one order serves (`maxPage`). Each item's `id`
-opens the order in step 2.
+Newest first, and orders placed at the same instant by `id`, so every order has one place in the list
+([OrderService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/OrderService.cs#L637-L642)).
+`status` narrows the list to one status. The app asks for the next `page` while `page` × `pageSize` is below
+`totalCount`, up to `page` 10,000, the last one order serves (`maxPage`). Pages are cut by position, so an
+order placed while the app pages makes the next page repeat orders already shown: the app drops repeats by
+`id`, and reads page 1 again to show orders placed since. Each item's `id` opens the order in step 2.
 
 <RestEndpoint id="order.listMyOrders" />
 

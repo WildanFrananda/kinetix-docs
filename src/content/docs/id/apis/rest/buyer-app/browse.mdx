@@ -3,7 +3,7 @@ title: Menjelajah katalog
 description: Menampilkan kategori, produk, flash sale dan diskon sebuah produk, serta ulasan produk dan merchant-nya, dari catalog, pricing dan review.
 sidebar:
   order: 5
-sourceHash: "d5aafbe270b5"
+sourceHash: "33bdef430fc8"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -54,7 +54,7 @@ Satu daftar tanpa halaman berisi semua diskon yang berlaku, yang dicocokkan apli
 Sebuah diskon berlaku untuk sebuah produk bila `target_product_id`-nya adalah `sku` produk itu,
 `target_category_id`-nya adalah `category_slug` produk itu, atau diskon itu tidak menyebut keduanya
 ([default_discount_evaluator.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0ed7db4cd6fb8d40375cab26dd7ac56ebce16a8a/src/traits/default_discount_evaluator.rs#L10-L25),
-[CatalogProductDirectory.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Infrastructure/Grpc/CatalogProductDirectory.cs#L55-L64)),
+[CatalogProductDirectory.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Grpc/CatalogProductDirectory.cs#L55-L64)),
 dan `merchant_principal_id`-nya `null` atau merchant produk itu
 ([pricing_service.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0ed7db4cd6fb8d40375cab26dd7ac56ebce16a8a/src/services/pricing_service.rs#L137-L146)).
 
@@ -63,8 +63,9 @@ dan `merchant_principal_id`-nya `null` atau merchant produk itu
 ## 6. Membaca ulasan produk
 
 `{productId}` adalah `sku` produk, bukan `id` numerik milik catalog: review menyimpan ulasannya berdasarkan
-SKU, dan key yang tidak dikenalnya dijawab dengan daftar kosong, bukan error. Aplikasi meminta `page`
-berikutnya sampai `last_page`.
+SKU, dan key yang tidak dikenalnya dijawab dengan daftar kosong, bukan error. Untuk halaman pertama, aplikasi
+mengirim `page` 1 atau tidak menyertakannya, dan meminta `page` berikutnya sampai `last_page`; review menolak
+`page` di bawah 1 alih-alih membacanya sebagai halaman pertama.
 
 <RestEndpoint id="review.listProductReviews" />
 

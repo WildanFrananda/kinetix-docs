@@ -18,7 +18,7 @@ export const warehouseAnswers: readonly RestCase[] = [
       message: "the request body could not be parsed as the content type it declares.",
       traceId: traceId
     },
-    source: restSource("warehouse", "app/controllers/concerns/api_error_handling.rb", 83, 92)
+    source: restSource("warehouse", "app/controllers/concerns/api_error_handling.rb", 155, 164)
   },
   {
     status: 400,
@@ -102,7 +102,7 @@ export const warehouseAnswers: readonly RestCase[] = [
         "something went wrong handling this request. No stock was moved or reserved unless a previous response said so.",
       traceId: traceId
     },
-    source: restSource("warehouse", "app/controllers/concerns/api_error_handling.rb", 28, 42)
+    source: restSource("warehouse", "app/controllers/concerns/api_error_handling.rb", 32, 48)
   },
   {
     status: 501,
@@ -129,18 +129,18 @@ export const warehouseAnswers: readonly RestCase[] = [
         "we could not check this account with identity, so the request was not applied. No stock was moved or reserved.",
       traceId: traceId
     },
-    source: restSource("warehouse", "app/controllers/concerns/api_error_handling.rb", 55, 69)
+    source: restSource("warehouse", "app/controllers/concerns/api_error_handling.rb", 76, 90)
   },
   {
     status: 503,
-    when: "rest.warehouse.answers.orderUnavailable",
+    when: "rest.warehouse.answers.databaseUnavailable",
     headers: ["Retry-After: 15"],
     json: {
-      error: "ORDER_UNAVAILABLE",
-      message: "order-service did not answer, so nothing was recorded. Try again shortly.",
+      error: "DATABASE_UNAVAILABLE",
+      message: "warehouse could not reach its database, so this request could not be completed. Try again shortly.",
       traceId: traceId
     },
-    source: restSource("warehouse", "app/controllers/concerns/api_error_handling.rb", 71, 81)
+    source: restSource("warehouse", "app/controllers/concerns/api_error_handling.rb", 50, 63)
   }
 ];
 
@@ -326,7 +326,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           status: "packing",
           updated_at: "2026-10-22T03:15:07.482Z"
         },
-        source: restSource("warehouse", "app/services/fulfillment/advance_task_service.rb", 69, 82)
+        source: restSource("warehouse", "app/services/fulfillment/advance_task_service.rb", 71, 84)
       },
       {
         status: 200,
@@ -340,7 +340,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           status: "packed",
           updated_at: "2026-10-22T03:24:51.006Z"
         },
-        source: restSource("warehouse", "app/services/fulfillment/advance_task_service.rb", 69, 82)
+        source: restSource("warehouse", "app/services/fulfillment/advance_task_service.rb", 71, 84)
       },
       {
         status: 200,
@@ -355,7 +355,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           status: "packed",
           updated_at: "2026-10-22T03:24:51.006Z"
         },
-        source: restSource("warehouse", "app/services/fulfillment/advance_task_service.rb", 111, 116)
+        source: restSource("warehouse", "app/services/fulfillment/advance_task_service.rb", 113, 118)
       },
       {
         status: 200,
@@ -369,7 +369,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           status: "packed",
           updated_at: "2026-10-22T03:24:51.006Z"
         },
-        source: restSource("warehouse", "app/services/fulfillment/advance_task_service.rb", 78, 80)
+        source: restSource("warehouse", "app/services/fulfillment/advance_task_service.rb", 80, 82)
       },
       {
         status: 404,
@@ -377,7 +377,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "Fulfillment task not found"
         },
-        source: restSource("warehouse", "app/services/fulfillment/advance_task_service.rb", 51, 52)
+        source: restSource("warehouse", "app/services/fulfillment/advance_task_service.rb", 53, 54)
       },
       {
         status: 404,
@@ -385,7 +385,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "Fulfillment task not found"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/fulfillment_tasks_controller.rb", 98, 104)
+        source: restSource("warehouse", "app/controllers/api/v1/fulfillment_tasks_controller.rb", 101, 107)
       },
       {
         status: 422,
@@ -397,11 +397,19 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
       },
       {
         status: 422,
+        when: "rest.warehouse.setTaskStatus.case.missingStatus",
+        json: {
+          error: "status is required: name the state to move the task to"
+        },
+        source: restSource("warehouse", "app/services/fulfillment/advance_task_service.rb", 47, 47)
+      },
+      {
+        status: 422,
         when: "rest.warehouse.setTaskStatus.case.unknownStatus",
         json: {
           error: "shipped is not a state this warehouse can put a task in"
         },
-        source: restSource("warehouse", "app/services/fulfillment/advance_task_service.rb", 47, 49)
+        source: restSource("warehouse", "app/services/fulfillment/advance_task_service.rb", 49, 51)
       },
       {
         status: 422,
@@ -409,7 +417,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "a received task cannot be moved to packed"
         },
-        source: restSource("warehouse", "app/services/fulfillment/advance_task_service.rb", 54, 57)
+        source: restSource("warehouse", "app/services/fulfillment/advance_task_service.rb", 56, 59)
       },
       {
         status: 422,
@@ -417,7 +425,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "1 line of this task has not been scanned; scan every line before the parcel is packed"
         },
-        source: restSource("warehouse", "app/services/fulfillment/advance_task_service.rb", 59, 62)
+        source: restSource("warehouse", "app/services/fulfillment/advance_task_service.rb", 61, 64)
       },
       {
         status: 422,
@@ -425,7 +433,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "the task changed while this request was being handled; read it again"
         },
-        source: restSource("warehouse", "app/services/fulfillment/advance_task_service.rb", 64, 67)
+        source: restSource("warehouse", "app/services/fulfillment/advance_task_service.rb", 66, 69)
       }
     ],
     source: restSource("warehouse", "app/controllers/api/v1/fulfillment_tasks_controller.rb", 44, 61)
@@ -479,7 +487,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "Fulfillment task not found"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/fulfillment_tasks_controller.rb", 98, 104)
+        source: restSource("warehouse", "app/controllers/api/v1/fulfillment_tasks_controller.rb", 101, 107)
       },
       {
         status: 422,
@@ -550,7 +558,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           notify_error: null,
           dispatch_ref: null
         },
-        source: restSource("warehouse", "app/services/fulfillment/verify_scan_service.rb", 100, 121)
+        source: restSource("warehouse", "app/services/fulfillment/verify_scan_service.rb", 101, 122)
       },
       {
         status: 200,
@@ -569,7 +577,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           notify_error: null,
           dispatch_ref: null
         },
-        source: restSource("warehouse", "app/services/fulfillment/verify_scan_service.rb", 64, 66)
+        source: restSource("warehouse", "app/services/fulfillment/verify_scan_service.rb", 65, 67)
       },
       {
         status: 200,
@@ -607,7 +615,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           notify_error: null,
           dispatch_ref: "DISP-2731"
         },
-        source: restSource("warehouse", "app/services/fulfillment/verify_scan_service.rb", 86, 92)
+        source: restSource("warehouse", "app/services/fulfillment/verify_scan_service.rb", 87, 93)
       },
       {
         status: 200,
@@ -627,7 +635,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
             "order-service could not be told this parcel is packed, so no courier has been sent yet. Set the task to packed again to re-send the report.",
           dispatch_ref: null
         },
-        source: restSource("warehouse", "app/services/fulfillment/verify_scan_service.rb", 117, 119)
+        source: restSource("warehouse", "app/services/fulfillment/verify_scan_service.rb", 118, 120)
       },
       {
         status: 200,
@@ -654,7 +662,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "Fulfillment task #418 not found for this merchant"
         },
-        source: restSource("warehouse", "app/services/fulfillment/verify_scan_service.rb", 50, 51)
+        source: restSource("warehouse", "app/services/fulfillment/verify_scan_service.rb", 51, 52)
       },
       {
         status: 404,
@@ -662,7 +670,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "Fulfillment task not found"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/fulfillment_tasks_controller.rb", 98, 104)
+        source: restSource("warehouse", "app/controllers/api/v1/fulfillment_tasks_controller.rb", 101, 107)
       },
       {
         status: 422,
@@ -674,11 +682,19 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
       },
       {
         status: 422,
+        when: "rest.warehouse.verifyScan.case.codeTooLong",
+        json: {
+          error: "scanned_code must be at most 128 characters"
+        },
+        source: restSource("warehouse", "app/controllers/api/v1/fulfillment_tasks_controller.rb", 86, 91)
+      },
+      {
+        status: 422,
         when: "rest.warehouse.verifyScan.case.blank",
         json: {
           error: "Scanned barcode code cannot be blank"
         },
-        source: restSource("warehouse", "app/services/fulfillment/verify_scan_service.rb", 47, 48)
+        source: restSource("warehouse", "app/services/fulfillment/verify_scan_service.rb", 48, 49)
       },
       {
         status: 422,
@@ -686,7 +702,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "✖ SKU MISMATCH! Scanned 'GAMIS-BLUE-M' does not match expected SKU (GAMIS-RED-M, KERUDUNG-PINK-01)"
         },
-        source: restSource("warehouse", "app/services/fulfillment/verify_scan_service.rb", 53, 57)
+        source: restSource("warehouse", "app/services/fulfillment/verify_scan_service.rb", 54, 58)
       },
       {
         status: 422,
@@ -694,7 +710,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "this task is cancelled; there is nothing left to scan"
         },
-        source: restSource("warehouse", "app/services/fulfillment/verify_scan_service.rb", 59, 62)
+        source: restSource("warehouse", "app/services/fulfillment/verify_scan_service.rb", 60, 63)
       },
       {
         status: 422,
@@ -702,10 +718,10 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "the task changed while this request was being handled; read it again"
         },
-        source: restSource("warehouse", "app/services/fulfillment/verify_scan_service.rb", 94, 95)
+        source: restSource("warehouse", "app/services/fulfillment/verify_scan_service.rb", 95, 96)
       }
     ],
-    source: restSource("warehouse", "app/controllers/api/v1/fulfillment_tasks_controller.rb", 77, 94)
+    source: restSource("warehouse", "app/controllers/api/v1/fulfillment_tasks_controller.rb", 77, 97)
   },
   {
     id: "warehouse.openReturn",
@@ -748,7 +764,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           fulfillment_task_id: 418,
           already_open: true
         },
-        source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 33, 38)
+        source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 37, 42)
       },
       {
         status: 201,
@@ -758,7 +774,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           fulfillment_task_id: 418,
           already_open: false
         },
-        source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 33, 38)
+        source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 37, 42)
       },
       {
         status: 404,
@@ -766,7 +782,27 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "Fulfillment task not found"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 95, 106)
+        source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 110, 121)
+      },
+      {
+        status: 404,
+        when: "rest.warehouse.openReturn.case.orderNotFound",
+        json: {
+          error: "ORDER_NOT_FOUND",
+          message: "order has no record of what this request names, so nothing was recorded.",
+          traceId: traceId
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_error_handling.rb", 129, 130)
+      },
+      {
+        status: 409,
+        when: "rest.warehouse.openReturn.case.orderConflict",
+        json: {
+          error: "ORDER_CONFLICT",
+          message: "order refused this request because of the state its records are in, so nothing was recorded.",
+          traceId: traceId
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_error_handling.rb", 137, 142)
       },
       {
         status: 422,
@@ -782,7 +818,26 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "Reason cannot be blank"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 20, 24)
+        source: restSource("warehouse", "app/forms/returns/return_reason.rb", 10, 12)
+      },
+      {
+        status: 422,
+        when: "rest.warehouse.openReturn.case.reasonTooLong",
+        json: {
+          error: "reason must be at most 500 characters"
+        },
+        source: restSource("warehouse", "app/forms/returns/return_reason.rb", 13, 21)
+      },
+      {
+        status: 422,
+        when: "rest.warehouse.openReturn.case.orderInvalidRequest",
+        json: {
+          error: "ORDER_INVALID_REQUEST",
+          message:
+            "order refused a value in this request, so nothing was recorded. Sending it again unchanged will not help.",
+          traceId: traceId
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_error_handling.rb", 131, 136)
       },
       {
         status: 502,
@@ -791,10 +846,44 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           error: "RETURN_NOT_RECORDED",
           message: "that order is PROCESSING_FULFILLMENT; a return is opened only against a delivered order"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 108, 114)
+        source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 123, 129)
+      },
+      {
+        status: 502,
+        when: "rest.warehouse.openReturn.case.orderFailed",
+        json: {
+          error: "ORDER_FAILED",
+          message:
+            "order-service failed while handling this request, so whether it recorded anything is not known. Sending the same request again is safe.",
+          traceId: traceId
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_error_handling.rb", 143, 149)
+      },
+      {
+        status: 503,
+        when: "rest.warehouse.openReturn.case.orderUnavailable",
+        headers: ["Retry-After: 15"],
+        json: {
+          error: "ORDER_UNAVAILABLE",
+          message: "order-service could not take this request, so nothing was recorded. Try again shortly.",
+          traceId: traceId
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_error_handling.rb", 92, 102)
+      },
+      {
+        status: 503,
+        when: "rest.warehouse.openReturn.case.orderTimeout",
+        headers: ["Retry-After: 15"],
+        json: {
+          error: "ORDER_TIMEOUT",
+          message:
+            "order-service did not answer in time, so whether it recorded this is not known. Send the same request again to find out: order records a return and its goods once, and answers already_open or already_recorded.",
+          traceId: traceId
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_error_handling.rb", 104, 116)
       }
     ],
-    source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 11, 42)
+    source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 14, 46)
   },
   {
     id: "warehouse.receiveReturnedGoods",
@@ -819,7 +908,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         {
           name: "bin_code",
           in: "body",
-          type: "string",
+          type: "string or null",
           required: false,
           rule: "rest.warehouse.receiveReturnedGoods.field.binCode"
         },
@@ -863,7 +952,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           return_number: returnNumber,
           already_recorded: false
         },
-        source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 83, 87)
+        source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 98, 102)
       },
       {
         status: 200,
@@ -872,7 +961,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           return_number: returnNumber,
           already_recorded: true
         },
-        source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 83, 87)
+        source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 98, 102)
       },
       {
         status: 400,
@@ -880,7 +969,35 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "lines must be a list of objects, each with a sku and a quantity"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 59, 66)
+        source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 74, 81)
+      },
+      {
+        status: 404,
+        when: "rest.warehouse.receiveReturnedGoods.case.unknownNumber",
+        json: {
+          error: "Return not found"
+        },
+        source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 53, 57)
+      },
+      {
+        status: 404,
+        when: "rest.warehouse.receiveReturnedGoods.case.orderNotFound",
+        json: {
+          error: "ORDER_NOT_FOUND",
+          message: "order has no record of what this request names, so nothing was recorded.",
+          traceId: traceId
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_error_handling.rb", 129, 130)
+      },
+      {
+        status: 409,
+        when: "rest.warehouse.receiveReturnedGoods.case.orderConflict",
+        json: {
+          error: "ORDER_CONFLICT",
+          message: "order refused this request because of the state its records are in, so nothing was recorded.",
+          traceId: traceId
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_error_handling.rb", 137, 142)
       },
       {
         status: 422,
@@ -892,11 +1009,19 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
       },
       {
         status: 422,
+        when: "rest.warehouse.receiveReturnedGoods.case.blankBinCode",
+        json: {
+          error: "bin_code must name the bin the goods went into, or be left out"
+        },
+        source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 60, 64)
+      },
+      {
+        status: 422,
         when: "rest.warehouse.receiveReturnedGoods.case.binCodeTooLong",
         json: {
           error: "bin_code must be at most 64 characters"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 50, 57)
+        source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 66, 72)
       },
       {
         status: 422,
@@ -904,7 +1029,18 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "Every line needs a whole quantity from 1 to 2147483647, written in digits"
         },
-        source: restSource("warehouse", "app/forms/returns/returned_lines_form.rb", 36, 44)
+        source: restSource("warehouse", "app/forms/returns/returned_lines_form.rb", 37, 46)
+      },
+      {
+        status: 422,
+        when: "rest.warehouse.receiveReturnedGoods.case.orderInvalidRequest",
+        json: {
+          error: "ORDER_INVALID_REQUEST",
+          message:
+            "order refused a value in this request, so nothing was recorded. Sending it again unchanged will not help.",
+          traceId: traceId
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_error_handling.rb", 131, 136)
       },
       {
         status: 502,
@@ -913,10 +1049,44 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           error: "RETURN_NOT_RECORDED",
           message: `3 of GAMIS-RED-M came back but order ${orderNumber} bought 2`
         },
-        source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 108, 114)
+        source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 123, 129)
+      },
+      {
+        status: 502,
+        when: "rest.warehouse.receiveReturnedGoods.case.orderFailed",
+        json: {
+          error: "ORDER_FAILED",
+          message:
+            "order-service failed while handling this request, so whether it recorded anything is not known. Sending the same request again is safe.",
+          traceId: traceId
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_error_handling.rb", 143, 149)
+      },
+      {
+        status: 503,
+        when: "rest.warehouse.receiveReturnedGoods.case.orderUnavailable",
+        headers: ["Retry-After: 15"],
+        json: {
+          error: "ORDER_UNAVAILABLE",
+          message: "order-service could not take this request, so nothing was recorded. Try again shortly.",
+          traceId: traceId
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_error_handling.rb", 92, 102)
+      },
+      {
+        status: 503,
+        when: "rest.warehouse.receiveReturnedGoods.case.orderTimeout",
+        headers: ["Retry-After: 15"],
+        json: {
+          error: "ORDER_TIMEOUT",
+          message:
+            "order-service did not answer in time, so whether it recorded this is not known. Send the same request again to find out: order records a return and its goods once, and answers already_open or already_recorded.",
+          traceId: traceId
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_error_handling.rb", 104, 116)
       }
     ],
-    source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 44, 91)
+    source: restSource("warehouse", "app/controllers/api/v1/returns_controller.rb", 48, 106)
   },
   {
     id: "warehouse.merchantMe",

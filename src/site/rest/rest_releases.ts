@@ -4,23 +4,23 @@ import type { RestService } from "../types/rest_service.type";
 export const restReleases: Readonly<Record<RestService, RestRelease>> = {
   gateway: {
     repository: "kinetix-api-gateway",
-    tag: "v1.5.1",
-    commit: "6747ebc0ae2b8d5203539aab21f428f4b03784f7"
+    tag: "v1.6.0",
+    commit: "45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d"
   },
   edge: {
     repository: "kinetix-edge-service",
-    tag: "v1.0.0",
-    commit: "89c12d3cdc0aa4aee974d4b32490128b10385656"
+    tag: "v1.1.0",
+    commit: "cddf1d4069472c90eb5ccc9f22b287be98417d12"
   },
   identity: {
     repository: "kinetix-identity-service",
-    tag: "v1.3.1",
-    commit: "9c54cf64d0a2b4d8315c7573be0992cb9b5d687d"
+    tag: "v1.4.0",
+    commit: "e1540249863f47b42f5409abdc396c06aadbb1e7"
   },
   catalog: {
     repository: "kinetix-catalog-service",
-    tag: "v1.2.2",
-    commit: "1348c6ea4f80448bba710e83b20c5551d10fa3e0"
+    tag: "v1.2.3",
+    commit: "ab557c90cb3230221c5a504def11fa7df26a6f7a"
   },
   search: {
     repository: "kinetix-search-service",
@@ -34,28 +34,28 @@ export const restReleases: Readonly<Record<RestService, RestRelease>> = {
   },
   order: {
     repository: "kinetix-order-service",
-    tag: "v1.4.3",
-    commit: "97118d2d78819ef98b74a21efb4ebc4c8247e4e8"
+    tag: "v1.5.1",
+    commit: "1395062e2b803ead17d09bc8f50622367c7fd2ab"
   },
   review: {
     repository: "kinetix-review-service",
-    tag: "v1.3.1",
-    commit: "531cdb5506d80532bf11bcbb1e84c5bab5115709"
+    tag: "v1.4.0",
+    commit: "e3ca897c68947dd7ba4a47f04355e5e91da9afa8"
   },
   warehouse: {
     repository: "kinetix-warehouse-service",
-    tag: "v1.2.1",
-    commit: "cc5ff5ff80b6342e2cafdb262f931e2e03dedf50"
+    tag: "v1.3.0",
+    commit: "ec17794d7551b0ccacc0ada5c31747f8d44526e3"
   },
   matching: {
     repository: "kinetix-matching-service",
-    tag: "v1.5.1",
-    commit: "93ae2712c382e6dc74e7cf2501b006ccf90c7817"
+    tag: "v1.5.2",
+    commit: "7ef67a0ca1d0e8945f638de8a2f9684e84d06886"
   },
   payment: {
     repository: "kinetix-payment-service",
-    tag: "v1.2.3",
-    commit: "ae1f3e07d4849f51bbc41b8cb5dd356dcfa5d793"
+    tag: "v1.3.0",
+    commit: "146892d5305fcafe0e59f1230b6e1c7b5fe7cd27"
   },
   notary: {
     repository: "kinetix-notary-service",
@@ -64,7 +64,7 @@ export const restReleases: Readonly<Record<RestService, RestRelease>> = {
   },
   notification: {
     repository: "kinetix-notification-service",
-    tag: "v1.3.2",
-    commit: "4ad78ee085f9cc6b1bd055cf8e90fbefef97ff5e"
+    tag: "v1.3.3",
+    commit: "510a1ecf16006e28913c30d9861c95af3af226b9"
   }
 };

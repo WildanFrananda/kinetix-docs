@@ -3,7 +3,7 @@ title: Top-up wallet
 description: Membaca saldo wallet pembeli di payment dan menambahnya lewat Midtrans dengan virtual account bank atau QRIS, uang yang dibelanjakan checkout.
 sidebar:
   order: 7
-sourceHash: "12297ab905f4"
+sourceHash: "0244046f841e"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -31,10 +31,16 @@ mengikutinya di langkah 5, bukan memulai top-up lain.
 
 Sebuah top-up tidak boleh membawa wallet melewati IDR 2.000.000, dan setiap top-up yang masih `PENDING` ikut
 dihitung seolah sudah dibayar, sampai top-up itu keluar dari `PENDING`
-([TopUpService.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/ae1f3e07d4849f51bbc41b8cb5dd356dcfa5d793/modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java#L446-L459)).
+([TopUpService.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java#L436-L449)).
 Top-up tidak bisa dibatalkan. Jadi aplikasi menyimpan `referenceNumber` setiap top-up sampai top-up itu keluar
 dari `PENDING`, dan pada `422 WALLET_BALANCE_LIMIT_EXCEEDED` selagi ada yang tertunda, aplikasi membawa
 pembeli kembali ke `instructions` top-up itu (langkah 5), bukan menawarkan top-up baru.
+
+Batas itu hanya diperiksa di sini. Top-up yang sudah dibayar pembeli dikreditkan penuh, bahkan ketika sebuah
+refund menaikkan saldo selagi top-up itu menunggu
+([TopUpService.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java#L276-L299)),
+jadi saldo di langkah 1 bisa berada di atas IDR 2.000.000. Wallet seperti itu tidak menerima top-up baru sampai
+checkout membelanjakannya hingga di bawah batas: setiap jumlah dijawab `422 WALLET_BALANCE_LIMIT_EXCEEDED`.
 
 <RestEndpoint id="payment.customerTopUp" />
 
@@ -44,15 +50,15 @@ Langkah ini terjadi di luar API. Pembeli mentransfer jumlahnya dari bank ke virt
 `instructions.virtualAccountNumber`, atau memindai kode QR di `instructions.qrCodeUrl` dengan aplikasi
 pembayaran yang menerima QRIS, sebelum `instructions.expiresAt`. Midtrans menerbitkan detail itu ketika
 payment membuat charge-nya, dengan `referenceNumber` top-up sebagai `order_id` di Midtrans
-([MidtransPaymentGatewayAdapter.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/ae1f3e07d4849f51bbc41b8cb5dd356dcfa5d793/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/gateway/MidtransPaymentGatewayAdapter.java#L190-L224),
-[instructions](https://github.com/WildanFrananda/kinetix-payment-service/blob/ae1f3e07d4849f51bbc41b8cb5dd356dcfa5d793/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/gateway/MidtransPaymentGatewayAdapter.java#L325-L349)).
+([MidtransPaymentGatewayAdapter.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/gateway/MidtransPaymentGatewayAdapter.java#L191-L225),
+[instructions](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/gateway/MidtransPaymentGatewayAdapter.java#L326-L350)).
 
 ## 4. Midtrans memberi tahu payment
 
 Midtrans mengirim request ini ke payment; aplikasi tidak pernah memanggilnya. `order_id`-nya adalah
 `referenceNumber` top-up. payment memeriksa tanda tangannya, menanyakan status transaksi ke Midtrans, dan
 mengkredit wallet begitu pembayarannya settle
-([MidtransNotificationController.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/ae1f3e07d4849f51bbc41b8cb5dd356dcfa5d793/modules/api/src/main/java/com/kinetix/payment/api/controller/MidtransNotificationController.java#L30-L55)).
+([MidtransNotificationController.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/api/src/main/java/com/kinetix/payment/api/controller/MidtransNotificationController.java#L30-L55)).
 Endpoint ini dicantumkan di sini karena inilah yang memindahkan top-up keluar dari `PENDING`.
 
 <RestEndpoint id="payment.midtransNotification" />

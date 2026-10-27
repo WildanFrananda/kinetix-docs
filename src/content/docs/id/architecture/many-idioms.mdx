@@ -1,17 +1,18 @@
 ---
 title: Satu aturan, sebelas idiom
-description: Bagaimana setiap service Kinetix menaruh logika bisnisnya di balik port dalam bahasanya sendiri, di mana build yang menjaga aturan itu dan di mana hanya code review yang menjaganya, dan di mana sebuah bahasa mengubah desainnya sendiri.
-sourceHash: "5e607489e277"
+description: Bagaimana sebelas dari dua belas service Kinetix di production menaruh logika bisnisnya di balik port, masing-masing dalam bahasanya sendiri, di mana build yang menjaga aturan itu dan di mana hanya code review yang menjaganya, di mana sebuah bahasa mengubah desainnya sendiri, dan bagaimana edge bekerja tanpa port.
+sourceHash: "319f3549479e"
 sidebar:
   order: 5
 ---
 
-Kinetix menjalankan sebelas service di production, dan semuanya memegang aturan yang sama: logika
-bisnis bergantung pada port, adapter mengimplementasikannya, dan satu tempat di luar logika memilih
-adapter-nya. Yang berubah dari service ke service adalah cara bahasanya mengatakan hal itu. Port adalah
-interface di C#, trait di Rust, behaviour di Elixir, dan abstract class di Python; wiring-nya berupa
-container dependency injection di satu service, sebuah fungsi di service lain, dan lookup konfigurasi di
-service ketiga.
+Kinetix menjalankan dua belas service di production, dan sebelas di antaranya memegang aturan yang sama:
+logika bisnis bergantung pada port, adapter mengimplementasikannya, dan satu tempat di luar logika memilih
+adapter-nya. Yang kedua belas, edge, tidak punya port, dan [bagian terakhir](#pengecualiannya-edge) menjelaskan
+apa yang dilakukannya sebagai gantinya. Yang berubah dari service ke service adalah cara bahasanya mengatakan
+hal itu. Port adalah interface di C#, trait di Rust, behaviour di Elixir, dan abstract class di Python;
+wiring-nya berupa container dependency injection di satu service, sebuah fungsi di service lain, dan lookup
+konfigurasi di service ketiga.
 
 Halaman ini menjajarkan kesebelasnya. Setiap halaman service punya bagian "Bagaimana kodenya disusun"
 untuk direktorinya sendiri; halaman ini membahas apa yang sama di antara mereka dan kenapa mereka
@@ -215,7 +216,7 @@ membuktikan bahwa logika memakai port alih-alih melewatinya.
 
 ## Fake, dan apa yang dibuktikannya
 
-Setiap service menguji logikanya terhadap fake dari port-port-nya. Sebagian besar ditulis dengan tangan
+Masing-masing dari kesebelasnya menguji logikanya terhadap fake dari port-port-nya. Sebagian besar ditulis dengan tangan
 dan mengimplementasikan port seperti adapter lainnya:
 [stok milik catalog](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/tests/unit/fake_bin_stock_service_port.py#L6-L35),
 [identity milik warehouse](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/spec/support/fake_identity_client.rb#L4-L31),
@@ -257,3 +258,20 @@ Masing-masing adalah alat alami di runtime-nya. PostgreSQL memang sudah memegang
 menyerialkan akses ke sebuah baris. BEAM, mesin virtual Elixir, memberi matching satu proses murah per
 kurir, yang state-nya juga berubah di setiap update lokasi yang dikirim kurir, tanpa menulis ke
 database.
+
+## Pengecualiannya: edge
+
+Edge, browser token handler milik Kinetix, ditulis dalam Teal dan berjalan di OpenResty, dan ia tidak memakai port.
+[Sebuah modul langsung me-require adapter-nya](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/src/http/sessions.tl#L1-L24):
+kode sesi menyebut store Redis, client identity, dan logger sebagai modul, dan tidak ada yang di luarnya yang
+memilihnya. Satu-satunya dependency yang diserahkan dari luar adalah koneksi Redis, yang diterima fungsi-fungsi
+sesi sebagai argumen, sehingga sebuah unit test bisa memberinya koneksi palsu.
+
+Edge diuji di tempat ia berjalan. Modul-modul murninya punya unit test, dan integration test-nya
+[menjalankan OpenResty sungguhan dengan Lua hasil generate dan `nginx.conf` production](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/bin/integration#L93-L141)
+terhadap Redis sungguhan, dengan identity, API, dan socket matching digantikan di level jaringan oleh fake yang
+menjawab lewat HTTP dan WebSocket. Pemeriksaan keamanannya dijaga oleh mutation test:
+[masing-masing dirusak sekali](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/tests/mutation/catalogue.tl),
+dan
+[perubahan yang tidak disadari test mana pun menggagalkan run-nya](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/bin/mutate#L74-L88).
+[Halaman edge](/id/services/edge/#bagaimana-kodenya-disusun) menunjukkan direktorinya.

@@ -15,7 +15,7 @@ export const services: readonly Service[] = [
     repository: `${github}/kinetix-catalog-service`,
     owns: "service.catalog.owns",
     language: { name: "Python", logo: "python" },
-    framework: { name: "Django", logo: "django", version: "6.1" }
+    framework: { name: "Django", logo: "django", version: "6.1.2" }
   },
   {
     name: "pricing",
@@ -36,21 +36,21 @@ export const services: readonly Service[] = [
     repository: `${github}/kinetix-payment-service`,
     owns: "service.payment.owns",
     language: { name: "Java", logo: "java" },
-    framework: { name: "Spring Boot", logo: "spring", version: "4.1.1" }
+    framework: { name: "Spring Boot", logo: "spring", version: "4.1.2" }
   },
   {
     name: "warehouse",
     repository: `${github}/kinetix-warehouse-service`,
     owns: "service.warehouse.owns",
     language: { name: "Ruby", logo: "ruby" },
-    framework: { name: "Rails", logo: "rails", version: "8.1.3.1" }
+    framework: { name: "Rails", logo: "rails", version: "8.1.4" }
   },
   {
     name: "matching",
     repository: `${github}/kinetix-matching-service`,
     owns: "service.matching.owns",
     language: { name: "Elixir", logo: "elixir" },
-    framework: { name: "Phoenix", logo: "phoenix", version: "1.8.12" }
+    framework: { name: "Phoenix", logo: "phoenix", version: "1.8.16" }
   },
   {
     name: "review",
@@ -78,13 +78,20 @@ export const services: readonly Service[] = [
     repository: `${github}/kinetix-search-service`,
     owns: "service.search.owns",
     language: { name: "Go", logo: "go" },
-    framework: { name: "chi", version: "5.3.2" }
+    framework: { name: "chi", version: "5.5.0" }
   },
   {
     name: "notary",
     repository: `${github}/kinetix-notary-service`,
     owns: "service.notary.owns",
     language: { name: "Go", logo: "go" },
-    framework: { name: "go-ethereum", version: "1.17.8" }
+    framework: { name: "go-ethereum", version: "1.17.9" }
+  },
+  {
+    name: "edge",
+    repository: `${github}/kinetix-edge-service`,
+    owns: "service.edge.owns",
+    language: { name: "Teal" },
+    framework: { name: "OpenResty", version: "1.31.1.1" }
   }
 ];

@@ -1,15 +1,16 @@
 ---
 title: One rule, eleven idioms
-description: How every Kinetix service keeps its business logic behind ports in its own language, where the build holds that rule and where only code review does, and where a language changes the design itself.
+description: How eleven of Kinetix's twelve production services keep their business logic behind ports, each in its own language, where the build holds that rule and where only code review does, where a language changes the design itself, and how the edge does without ports.
 sidebar:
   order: 5
 ---
 
-Kinetix runs eleven services in production, and every one keeps the same rule: the business logic
-depends on ports, adapters implement them, and one place outside the logic chooses the adapters. What
-changes from service to service is how the language says it. A port is an interface in C#, a trait in
-Rust, a behaviour in Elixir and an abstract class in Python; the wiring is a dependency injection
-container in one service, a function in another and a configuration lookup in a third.
+Kinetix runs twelve services in production, and eleven of them keep the same rule: the business logic
+depends on ports, adapters implement them, and one place outside the logic chooses the adapters. The
+twelfth, the edge, has no ports, and [the last section](#the-exception-the-edge) says what it does
+instead. What changes from service to service is how the language says it. A port is an interface in
+C#, a trait in Rust, a behaviour in Elixir and an abstract class in Python; the wiring is a dependency
+injection container in one service, a function in another and a configuration lookup in a third.
 
 This page sets the eleven side by side. Each service page has a section, "How the code is laid out",
 for its own directories; this one is about what they have in common and why they differ.
@@ -207,7 +208,7 @@ instead of reaching past it.
 
 ## Fakes, and what they prove
 
-Every service tests its logic against fakes of its ports. Most are written by hand and implement the
+Each of the eleven tests its logic against fakes of its ports. Most are written by hand and implement the
 port like any adapter:
 [catalog's stock](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/tests/unit/fake_bin_stock_service_port.py#L6-L35),
 [warehouse's identity](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/spec/support/fake_identity_client.rb#L4-L31),
@@ -248,3 +249,20 @@ the last units of a product, or a courier's last free slot.
 Each is the natural tool of its runtime. PostgreSQL already holds warehouse's stock and serialises
 access to a row. The BEAM, Elixir's virtual machine, gives matching a cheap process per courier, whose
 state also changes with every location update the courier sends, without a database write.
+
+## The exception: the edge
+
+The edge, Kinetix's browser token handler, is written in Teal and runs on OpenResty, and it keeps no ports.
+[A module requires its adapters directly](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/src/http/sessions.tl#L1-L24):
+the session code names the Redis store, identity's client and the logger as modules, and nothing outside it
+chooses them. The one dependency handed in is the Redis connection, which the session functions take as an
+argument, so a unit test can give them a fake one.
+
+The edge is tested where it runs instead. Its pure modules have unit tests, and its integration tests
+[start real OpenResty with the generated Lua and the production `nginx.conf`](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/bin/integration#L93-L141)
+against real Redis, with identity, the API and matching's socket replaced at the network by fakes that answer
+over HTTP and WebSocket. Its security checks are held by mutation tests:
+[each one is broken once](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/tests/mutation/catalogue.tl),
+and
+[a change that no test notices fails the run](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/bin/mutate#L74-L88).
+The [edge's page](/services/edge/#how-the-code-is-laid-out) shows its directories.

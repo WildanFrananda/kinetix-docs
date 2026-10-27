@@ -10,33 +10,41 @@ import RestEndpoint from "../../../../../components/RestEndpoint.astro";
 Once an order is delivered, its buyer reviews each product in it and rates the courier who delivered it.
 review reads the order from order itself, so a request names only the order and the product; the merchant
 and the courier come from the order
-([GrpcOrderClient.php](https://github.com/WildanFrananda/kinetix-review-service/blob/531cdb5506d80532bf11bcbb1e84c5bab5115709/app/Clients/GrpcOrderClient.php#L144-L158)).
+([GrpcOrderClient.php](https://github.com/WildanFrananda/kinetix-review-service/blob/e3ca897c68947dd7ba4a47f04355e5e91da9afa8/app/Clients/GrpcOrderClient.php#L144-L158)).
 A buyer app reads the order (step 1), reviews its products (step 2) and rates the courier (step 3). Steps 2
 and 3 do not depend on each other.
 
 ## 1. Read the order
 
 The app offers reviews only when `status` is `DELIVERED` or `COMPLETED`, the two statuses review accepts
-([GrpcOrderClient.php](https://github.com/WildanFrananda/kinetix-review-service/blob/531cdb5506d80532bf11bcbb1e84c5bab5115709/app/Clients/GrpcOrderClient.php#L32-L35),
-[ProductReviewService.php](https://github.com/WildanFrananda/kinetix-review-service/blob/531cdb5506d80532bf11bcbb1e84c5bab5115709/app/Services/ProductReviewService.php#L33-L35)).
+([GrpcOrderClient.php](https://github.com/WildanFrananda/kinetix-review-service/blob/e3ca897c68947dd7ba4a47f04355e5e91da9afa8/app/Clients/GrpcOrderClient.php#L32-L35),
+[ProductReviewService.php](https://github.com/WildanFrananda/kinetix-review-service/blob/e3ca897c68947dd7ba4a47f04355e5e91da9afa8/app/Services/ProductReviewService.php#L34-L36)).
 It keeps the order's `id`, each line's `productId`, and `driverPrincipalId`.
 
 <RestEndpoint id="order.getOrder" />
 
 ## 2. Review each product
 
-One request per line of the order: `order_id` is the order's `id` (not its `orderNumber`), and `product_id`
-the line's `productId`. The app keeps the review's id, which its
-[proof](/apis/rest/buyer-app/proofs/#6-fetch-a-reviews-evidence) takes: `id` from a `201`, or `review_id` from a
-`409`, which means the line already has the buyer's review and the app shows it as done. A write whose outcome
-is unknown, after a `503` or no answer, is sent again unchanged, and ends in one of these two answers.
+One request per line of the order: `order_id` is the order's `id` as order answered it, and `product_id` the
+line's `productId`. review takes `order_id` only as a UUID, and refuses the `orderNumber` with a `422` before
+it asks order; the app also takes NUL characters (U+0000) out of the buyer's `comment`, which review refuses
+the same way
+([ProductReviewController.php](https://github.com/WildanFrananda/kinetix-review-service/blob/e3ca897c68947dd7ba4a47f04355e5e91da9afa8/app/Http/Controllers/ProductReviewController.php#L23-L28)).
+review keeps the order's id in lower case, so its letter case does not matter
+([ProductReviewService.php](https://github.com/WildanFrananda/kinetix-review-service/blob/e3ca897c68947dd7ba4a47f04355e5e91da9afa8/app/Services/ProductReviewService.php#L19-L24)).
+The app keeps the review's id, which its [proof](/apis/rest/buyer-app/proofs/#6-fetch-a-reviews-evidence)
+takes: `id` from a `201`, or `review_id` from a `409`, which means the line already has the buyer's review and
+the app shows it as done. A write whose outcome is unknown, after a `503` or no answer, is sent again
+unchanged, and ends in one of these two answers.
 
 <RestEndpoint id="review.createProductReview" />
 
 ## 3. Rate the courier
 
-One request per order, and only when step 1 showed a `driverPrincipalId`: `order_id` is the order's `id`. As in
-step 2, the app keeps the rating's id, `id` from a `201` or `review_id` from a `409` that says the rating is
-already done, and sends a write of unknown outcome again unchanged.
+One request per order, and only when step 1 showed a `driverPrincipalId`: `order_id` is the order's `id`.
+`order_id` and `comment` follow the same rules as in step 2
+([DriverRatingController.php](https://github.com/WildanFrananda/kinetix-review-service/blob/e3ca897c68947dd7ba4a47f04355e5e91da9afa8/app/Http/Controllers/DriverRatingController.php#L23-L27)).
+As in step 2, the app keeps the rating's id, `id` from a `201` or `review_id` from a `409` that says the rating
+is already done, and sends a write of unknown outcome again unchanged.
 
 <RestEndpoint id="review.createDriverRating" />

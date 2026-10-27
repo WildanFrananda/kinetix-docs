@@ -11,8 +11,8 @@ identity keeps a profile per account: a name, a phone number and an address. A n
 buyer app writes it first (step 1) and reads it on later starts (step 2). `{id}` is the buyer's account id,
 `user.id` from the [sign-in](/apis/rest/buyer-app/sign-up-and-sign-in/) answer. Checkout does not read the
 profile: the address, the recipient's name and the phone number travel in each checkout request
-([CheckoutRecipient.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Application/Checkout/CheckoutRecipient.cs#L7-L19),
-[OrderService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Application/Services/OrderService.cs#L332-L347)),
+([CheckoutRecipient.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Checkout/CheckoutRecipient.cs#L7-L19),
+[OrderService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/OrderService.cs#L332-L347)),
 so the profile is where a buyer app keeps them to fill [that request](/apis/rest/buyer-app/checkout/).
 
 ## 1. Create or change the profile
@@ -20,8 +20,8 @@ so the profile is where a buyer app keeps them to fill [that request](/apis/rest
 The first `PUT` creates the profile; a later one changes only the fields it sends, and a field left out keeps
 its value. The app sends only what the buyer changed, and never `null`, except as `avatarUrl: null`, which
 removes the avatar: `null` in any other field is a `400`, and nothing is saved
-([update_profile_input.dto.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/application/dto/update_profile_input.dto.ts#L4-L37),
-[user_profile_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/application/services/user_profile_usecase.service.ts#L40-L47)).
+([update_profile_input.dto.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/dto/update_profile_input.dto.ts#L4-L37),
+[user_profile_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/user_profile_usecase.service.ts#L40-L47)).
 When the address changes, identity places it on the map before it answers, which can take a few seconds. The
 `200` carries the whole profile, so the app shows it without reading it again.
 

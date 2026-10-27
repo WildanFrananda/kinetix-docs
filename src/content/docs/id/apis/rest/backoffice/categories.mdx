@@ -3,7 +3,7 @@ title: Kategori
 description: Cara admin mendaftar, membaca, membuat, mengganti nama dan menghapus kategori catalog tempat penjual menaruh produknya.
 sidebar:
   order: 4
-sourceHash: "8b3f81bb0cce"
+sourceHash: "ad9719979c3c"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -42,7 +42,7 @@ Update mengganti kedua nilai, jadi kirim `name` dan `slug` bersamaan, yang tidak
 `id` dari langkah 1 atau 3 di path. Filter produk milik catalog sendiri langsung memakai slug baru. Search menyusul pada
 sinkronisasi berikutnya: perubahan nama atau slug menandai setiap produk di bawah kategori itu, dalam transaksi yang
 sama, untuk dikirim ulang ke search
-([0010_category_changes_stamp_their_products.py](https://github.com/WildanFrananda/kinetix-catalog-service/blob/1348c6ea4f80448bba710e83b20c5551d10fa3e0/core/migrations/0010_category_changes_stamp_their_products.py#L13-L28)).
+([0010_category_changes_stamp_their_products.py](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/migrations/0010_category_changes_stamp_their_products.py#L13-L28)).
 Client tidak perlu melakukan apa pun lagi.
 
 <RestEndpoint id="catalog.updateCategory" via="backoffice" />

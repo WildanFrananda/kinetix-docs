@@ -22,9 +22,9 @@ type, out of range or too long is answered `422` and changes nothing.
 
 Read the product by the `sku` on the delivery and keep its `merchant_principal_id`, the identity principal of the
 merchant who sells it, which steps 3 and 4 send. It must be that merchant: warehouse keeps stock per merchant and SKU
-([bin_stock_service_handler.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/cc5ff5ff80b6342e2cafdb262f931e2e03dedf50/app/rpc/bin_stock_service_handler.rb#L32-L44)),
+([bin_stock_service_handler.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/rpc/bin_stock_service_handler.rb#L32-L46)),
 and catalog asks it for the stock of the product's own merchant
-([product_service.py](https://github.com/WildanFrananda/kinetix-catalog-service/blob/1348c6ea4f80448bba710e83b20c5551d10fa3e0/core/application/services/product_service.py#L113-L119)).
+([product_service.py](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/application/services/product_service.py#L113-L119)).
 A `404` means no product with this SKU is on sale.
 
 <RestEndpoint id="catalog.getProduct" via="backoffice" />
@@ -41,9 +41,10 @@ the same request with a `bin_code` that exists updates that bin's zone and shelf
 Send the `bin_code` from step 2, the `sku`, the units counted as `quantity`, the `merchant_principal_id` from step 1,
 and an `idempotency_key` the client makes up for this one delivery and keeps until it has a final answer. The key goes
 in the body; this endpoint reads no `Idempotency-Key` header. After a timeout, a `500` or a `503`, send the same body
-with the same key: a delivery already booked answers `200` with `replayed: true` and is not booked twice. A `400` or a
-`422` booked nothing and left the key unused, so the corrected body can go out with it
-([receive_stock_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/cc5ff5ff80b6342e2cafdb262f931e2e03dedf50/app/services/inventory/receive_stock_service.rb#L64-L132)).
+with the same key, once the seconds in `Retry-After` have passed when the answer gives them, as warehouse's
+`DATABASE_UNAVAILABLE` does: a delivery already booked answers `200` with `replayed: true` and is not booked twice.
+A `400` or a `422` booked nothing and left the key unused, so the corrected body can go out with it
+([receive_stock_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/services/inventory/receive_stock_service.rb#L64-L132)).
 `422` `STOCK_LIMIT_EXCEEDED` means the bin cannot count that many units of the SKU: book the rest into another bin.
 
 <RestEndpoint id="warehouse.receiveStock" via="backoffice" />

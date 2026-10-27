@@ -11,10 +11,10 @@ Checkout turns the cart into an order and pays for it from the buyer's wallet in
 order that is already `PAID`. Two things must hold before it. The cart holds the products of one merchant
 ([Cart](/apis/rest/buyer-app/cart/)). The wallet holds the order's total, goods and shipping after
 discounts, which checkout works out itself: the saga debits that total from the wallet
-([EscrowService.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/ae1f3e07d4849f51bbc41b8cb5dd356dcfa5d793/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L420-L423)),
+([EscrowService.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/EscrowService.java#L421-L424)),
 and a balance short of it ends the checkout with `409 CHECKOUT_ROLLED_BACK` and a `reason` that starts
 `escrow:`
-([CheckoutSagaRunner.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Application/Checkout/CheckoutSagaRunner.cs#L237-L260)).
+([CheckoutSagaRunner.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Checkout/CheckoutSagaRunner.cs#L237-L260)).
 So [Top up the wallet](/apis/rest/buyer-app/wallet-top-up/) comes first. The app reads the cart (step 1),
 places the order (step 2), reads it (step 3) and reads the cart again (step 4).
 
@@ -36,9 +36,9 @@ choose from. From the `201` the app keeps `id`, to read the order, and `orderNum
 
 The app makes a new `Idempotency-Key` for each checkout and keeps it until it has a final answer. order
 records the key on the order row, which it writes only after every check that comes before the saga
-([OrderService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Application/Services/OrderService.cs#L139-L185)),
+([OrderService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/OrderService.cs#L139-L185)),
 and answers a request whose key it has recorded from that order instead of running it again
-([OrderService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Application/Services/OrderService.cs#L246-L278)).
+([OrderService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/OrderService.cs#L246-L278)).
 So the answers fall into four groups:
 
 - `201`, `409 CHECKOUT_ROLLED_BACK`, `409 CHECKOUT_ROLLBACK_PENDING` and `503 CHECKOUT_DEPENDENCY_UNAVAILABLE`
@@ -67,7 +67,7 @@ follows its `status` from here on, as on [My orders](/apis/rest/buyer-app/orders
 After a `201`, order takes out of the cart only the lines the order bought, by the quantities it bought, and
 the voucher code if the cart still holds the same one, so a line added or a quantity raised while the checkout
 ran stays in the cart
-([OrderService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Application/Services/OrderService.cs#L226-L231),
-[CartService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Application/Services/CartService.cs#L115-L152)).
+([OrderService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/OrderService.cs#L226-L231),
+[CartService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/CartService.cs#L115-L152)).
 The app reads the cart as in step 1 to show what is left, and never clears it with
 `DELETE /api/v1/cart` after a checkout, which would delete those lines too.

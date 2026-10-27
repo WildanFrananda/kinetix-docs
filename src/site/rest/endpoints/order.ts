@@ -1216,7 +1216,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           pageSize: 10,
           totalCount: 1
         },
-        source: restSource("order", "Controllers/OrderController.cs", 335, 341)
+        source: restSource("order", "Application/Services/OrderService.cs", 621, 650)
       },
       {
         status: 400,
@@ -1330,7 +1330,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           escrowReleased: true,
           detail: null
         },
-        source: restSource("order", "Application/Completion/OrderCompletion.cs", 71, 85)
+        source: restSource("order", "Application/Completion/OrderCompletion.cs", 72, 86)
       },
       {
         status: 200,
@@ -1341,7 +1341,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           detail:
             "payment could not be asked to release the escrow; the release is retried until payment accepts it"
         },
-        source: restSource("order", "Application/Completion/OrderCompletion.cs", 91, 93)
+        source: restSource("order", "Application/Completion/OrderCompletion.cs", 92, 94)
       },
       {
         status: 200,
@@ -1351,7 +1351,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           escrowReleased: false,
           detail: "payment refused to release the escrow; the release is not retried and waits for staff"
         },
-        source: restSource("order", "Application/Completion/OrderCompletion.cs", 86, 90)
+        source: restSource("order", "Application/Completion/OrderCompletion.cs", 87, 91)
       },
       {
         status: 403,

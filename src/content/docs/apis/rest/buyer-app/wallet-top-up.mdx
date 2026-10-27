@@ -29,10 +29,16 @@ and may still be paid, so the app follows it in step 5 instead of starting anoth
 
 A top-up may not take the wallet above IDR 2,000,000, and every top-up still `PENDING` counts against that
 as if it were paid, until it leaves `PENDING`
-([TopUpService.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/ae1f3e07d4849f51bbc41b8cb5dd356dcfa5d793/modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java#L446-L459)).
+([TopUpService.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java#L436-L449)).
 A top-up cannot be cancelled. So the app keeps the `referenceNumber` of each top-up until it leaves `PENDING`,
 and on a `422 WALLET_BALANCE_LIMIT_EXCEEDED` while one is pending, it takes the buyer back to that top-up's
 `instructions` (step 5) rather than offering a new one.
+
+The limit is checked here only. A top-up the buyer has paid is credited in full, even when a refund raised the
+balance while it waited
+([TopUpService.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java#L276-L299)),
+so the balance of step 1 can stand above IDR 2,000,000. Such a wallet takes no new top-up until checkout has
+spent it below the limit: every amount is answered `422 WALLET_BALANCE_LIMIT_EXCEEDED`.
 
 <RestEndpoint id="payment.customerTopUp" />
 
@@ -42,15 +48,15 @@ This happens outside the API. The buyer transfers the amount from a bank to the 
 `instructions.virtualAccountNumber`, or scans the QR code at `instructions.qrCodeUrl` with a payment app
 that takes QRIS, before `instructions.expiresAt`. Midtrans issued these details when payment created the
 charge, with the top-up's `referenceNumber` as Midtrans' `order_id`
-([MidtransPaymentGatewayAdapter.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/ae1f3e07d4849f51bbc41b8cb5dd356dcfa5d793/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/gateway/MidtransPaymentGatewayAdapter.java#L190-L224),
-[instructions](https://github.com/WildanFrananda/kinetix-payment-service/blob/ae1f3e07d4849f51bbc41b8cb5dd356dcfa5d793/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/gateway/MidtransPaymentGatewayAdapter.java#L325-L349)).
+([MidtransPaymentGatewayAdapter.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/gateway/MidtransPaymentGatewayAdapter.java#L191-L225),
+[instructions](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/infrastructure/src/main/java/com/kinetix/payment/infrastructure/gateway/MidtransPaymentGatewayAdapter.java#L326-L350)).
 
 ## 4. Midtrans notifies payment
 
 Midtrans sends this request to payment; the app never calls it. Its `order_id` is the top-up's
 `referenceNumber`. payment checks the signature, asks Midtrans for the transaction's status and credits the
 wallet once it has settled
-([MidtransNotificationController.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/ae1f3e07d4849f51bbc41b8cb5dd356dcfa5d793/modules/api/src/main/java/com/kinetix/payment/api/controller/MidtransNotificationController.java#L30-L55)).
+([MidtransNotificationController.java](https://github.com/WildanFrananda/kinetix-payment-service/blob/146892d5305fcafe0e59f1230b6e1c7b5fe7cd27/modules/api/src/main/java/com/kinetix/payment/api/controller/MidtransNotificationController.java#L30-L55)).
 It is listed here because it is what moves the top-up out of `PENDING`.
 
 <RestEndpoint id="payment.midtransNotification" />

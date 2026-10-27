@@ -15,9 +15,9 @@ whom, and the record of what it was asked to send and what became of each attemp
 
 The tables on this page are generated from the same verified data as the
 [system map](/architecture/system-map/), at the commits linked from each row. The prose is checked
-against notification [v1.1.1](https://github.com/WildanFrananda/kinetix-notification-service/tree/f9df9569c08802be573e611540460526d6efd9b4),
+against notification [v1.3.3](https://github.com/WildanFrananda/kinetix-notification-service/tree/510a1ecf16006e28913c30d9861c95af3af226b9),
 the version in production. In production one service is granted a template: the notary, which since 2026-10-20
-tells holders that a statement of their balance is ready. The handset route is live too.
+tells holders that a statement of their balance is ready. The handset routes are live too.
 
 ## At a glance
 
@@ -26,12 +26,13 @@ tells holders that a statement of their balance is ready. The handset route is l
 ## What it serves
 
 Over HTTP, through the gateway,
-[one route with two methods](https://github.com/WildanFrananda/kinetix-api-gateway/blob/950ae468ea021ff4b17bb2336790f6316ef98d9a/config/gateway.pkl#L322-L343):
-`POST /api/v1/notifications/devices` registers the calling handset for push and `DELETE` forgets it. Both
-need an access token, which the gateway checks and notification checks again.
+[one route](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L586-L598):
+`POST /api/v1/notifications/devices` registers the calling handset for push, `POST` on
+`/api/v1/notifications/devices/verify` finishes a registration that had to be proved, and `DELETE` forgets
+a handset. All three need an access token, which the gateway checks and notification checks again.
 
 Over gRPC, four operations: `Notify` sends, `GetDelivery` reports what became of a notification, and
-`RegisterDevice` and `ForgetDevice` let a trusted service act for a handset. Each caller is granted
+`RegisterDevice` and `ForgetDevice` are for a trusted service acting for a handset. Each caller is granted
 operations one by one, and production grants one: the notary may call `Notify`.
 
 <ServiceServes service="notification" />
@@ -40,95 +41,117 @@ operations one by one, and production grants one: the notary may call `Notify`.
 
 identity's `GetUserProfile`, for the email address of the principal a message is for, and two providers
 outside the estate: Firebase Cloud Messaging for push, through
-[its HTTP v1 API](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L31-L52),
+[its HTTP v1 API](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L37-L70),
 and Resend for email,
-[one JSON request per message](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/http/HttpEmailSender.scala#L32-L50).
+[one JSON request per message](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/HttpEmailSender.scala#L30-L50).
 
 <ServiceCalls service="notification" />
 
 Firebase takes an OAuth access token rather than a key: notification
-[signs an assertion with its service account and exchanges it](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/http/GoogleAccessTokens.scala#L37-L58),
-then [holds the token](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/http/GoogleAccessTokens.scala#L20-L35)
-until a minute before it expires.
+[signs an assertion with its service account and exchanges it](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/GoogleAccessTokens.scala#L40-L61),
+then [holds the token](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/GoogleAccessTokens.scala#L20-L38)
+until a minute before it expires. When Firebase answers `401` to the token in hand,
+[that token is dropped and the message is asked once more, at once, with a fresh one](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L72-L84);
+only a second refusal counts as Firebase refusing this service's credentials.
 
 ## Sending a notification
 
 A `Notify` request names a template, the recipient's principal, the template's parameters, optionally
 the channels to use, and optionally an idempotency key.
-[The order of the checks](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/application/Notify.scala#L22-L37)
+[The order of the checks](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/application/Notify.scala#L25-L40)
 is the order of what they protect:
 
 1. **The template must be granted to the caller.** A service allowed to call `Notify` may still send only
    the templates named for it, so the service that dispatches couriers cannot tell a buyer their order
    was paid. A caller with no template grant sends nothing: `TEMPLATE_NOT_GRANTED`.
 2. **The words must be complete.** The copy lives in
-   [a catalogue](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/resources/messages/id.json),
+   [a catalogue](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/resources/messages/id.json),
    and every `{name}` in a title or body
-   [must arrive as a parameter](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/domain/Message.scala#L23-L44).
+   [must arrive as a parameter](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/domain/Message.scala#L23-L44).
    A missing one is refused as `TEMPLATE_PARAM_MISSING` rather than sent with a hole in it. A catalogue
    that lacks a template
-   [stops the service starting](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/domain/MessageCatalogue.scala#L7-L11).
+   [stops the service starting](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/domain/MessageCatalogue.scala#L7-L11).
    The liability statement's copy
-   [asks for the epoch and the Verify page's address, nothing else](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/resources/messages/id.json#L26-L29),
+   [asks for the epoch and the Verify page's address, nothing else](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/resources/messages/id.json#L26-L29),
    so no balance passes through an email provider.
 3. **A repeated key is a replay, not a second message.** Keys belong to the service that sent them. The
    same key with the same recipient, template and parameters
-   [answers with the notification it made the first time](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/application/Notify.scala#L42-L49);
+   [answers with the notification it made the first time](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/application/Notify.scala#L45-L52);
    the same key with anything else is `IDEMPOTENCY_KEY_REUSED`, never somebody else's notification.
 4. **Someone must be reachable.** identity supplies the email address and notification's own registry
    the device tokens. A principal with no usable address on any channel is `NO_CHANNEL_AVAILABLE`, and
-   leaves no record: a notification to nobody is not a notification.
+   leaves no record: a notification to nobody is not a notification. When identity cannot be asked, the
+   request is refused as `DIRECTORY_UNAVAILABLE`, which its sender may try again.
 
 Then the record is written,
-[before anything is sent](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/application/Notify.scala#L68-L85).
+[before anything is sent](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/application/Notify.scala#L54-L88).
 A crash between the two leaves a notification that looks unsent, which somebody can act on, rather than
 a message nobody has a trace of. Two first calls with one key can arrive together: the insert
-[does nothing when the key is already taken](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/persistence/NotificationQueries.scala#L34-L48),
+[does nothing when the key is already taken](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/persistence/NotificationQueries.scala#L34-L48),
 and the call that lost
-[reads the winner and answers with it](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/application/Notify.scala#L87-L106),
+[reads the winner and answers with it](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/application/Notify.scala#L90-L111),
 so exactly one message goes out.
 
 Each channel is then
-[tried and its outcome recorded](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/application/Notify.scala#L125-L153).
+[tried and its outcome recorded](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/application/Notify.scala#L132-L156).
 A provider that did not answer, or answered with a server error, is retried
-[up to three times, waiting 200 ms and then 600 ms](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/retry/ExponentialBackoffRetry.scala#L23-L38).
-A provider that refused — a dead token, a rejected address — is not: that is an answer, and asking again
-gets the same one. Only
-[failures that are not answers](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/domain/NotificationError.scala#L39-L43)
-are transient. A failed channel does not fail the request: the notification was accepted, and its record
-says which channels reached the recipient and why the others did not.
+[up to three times, waiting 200 ms and then 600 ms](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/retry/ExponentialBackoffRetry.scala#L20-L39).
+A provider that refused — a dead token, a rejected address, this service's own credentials — is not retried:
+that is an answer, and asking again gets the same one. A device token Firebase says no longer exists
+[is forgotten](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/application/Notify.scala#L158-L171),
+so the next message does not try it again. A failed channel does not fail the request: the notification was
+accepted, and its record says which channels reached the recipient and why the others did not, in
+[notification's own words](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/domain/NotificationError.scala#L30-L76),
+never the provider's.
 
 ## A handset registers itself
 
 A phone has no certificate from Kinetix's CA and reaches the estate only through the gateway, so device
 registration is the one piece of business on notification's HTTP port.
-[Every request needs a bearer token](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/http/DeviceApi.scala#L56-L71),
+[Every request needs a bearer token](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/DeviceApi.scala#L90-L105),
 verified against identity's published keys with
-[RS256 only, identity's issuer, the estate's audience and `token_use: access`](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/http/NimbusAccessTokenVerifier.scala#L31-L49).
+[RS256 only, identity's issuer, the estate's audience and `token_use: access`](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/NimbusAccessTokenVerifier.scala#L53-L73).
 An unsigned token, an HMAC token keyed with the public key and a refresh token are all refused.
 
 The handset is registered to
-[the principal the token names](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/http/DeviceApi.scala#L28-L44),
+[the principal the token names](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/DeviceApi.scala#L47-L67),
 never to one the body claims. The body is read
-[up to 4 KiB and no further](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/http/DeviceApi.scala#L73-L83),
+[up to 4 KiB and no further](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/DeviceApi.scala#L107-L117),
 and its platform must be
-[`ANDROID` or `IOS`](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/http/DeviceApi.scala#L85-L88).
-A token another principal held
-[moves to whoever registers it now](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/persistence/PostgresDeviceRegistry.scala#L25-L54):
-it is the same phone, signed in as somebody else. Forgetting removes the token
-[only if it belongs to the caller](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/persistence/PostgresDeviceRegistry.scala#L59-L67),
+[`ANDROID` or `IOS`](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/DeviceApi.scala#L119-L122).
+A principal holds a limited number of handsets, and
+[registering one more forgets the oldest](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/persistence/DeviceQueries.scala#L66-L77).
+
+A token another principal holds is not simply taken over: it might be a phone signed in as somebody else,
+or a token copied from someone's phone. The registration
+[is answered `202` and proved first](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/application/RegisterDevice.scala#L42-L71):
+notification sends a random nonce to that token as a silent data message, keeps only the nonce's SHA-256,
+and moves the token only when the claimant echoes the nonce to `/verify`. The proof
+[lasts ten minutes and allows five wrong answers](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/domain/DeviceChallenge.scala#L21-L43),
+one proof is pending per claimant and token, and a token is sent at most three proofs an hour, so the
+route cannot be used to spam a stranger's phone. Only the phone that holds the token receives the nonce,
+so only it can finish the move.
+
+Forgetting removes the token
+[only if it belongs to the caller](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/persistence/DeviceQueries.scala#L82-L87),
 and answers `204` either way, so it says nothing about whose token it was.
 
 When identity's keys cannot be fetched, the answer is `503 TOKEN_UNVERIFIABLE`, not `401`. "Your token is
 bad" and "the keys could not be read" are different facts, and reporting the second as the first sends a
 signed-in user to sign in again.
 
+Over gRPC, `RegisterDevice` lets a trusted service register a handset for a principal it vouches for, and the
+phone still has to prove the token unless that principal already holds it. `ForgetDevice`
+[forgets nothing](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/grpc/GrpcNotificationServer.scala#L74-L89):
+its request names a token but no principal, and a token alone does not say whose binding to forget, so it
+answers `PRINCIPAL_REQUIRED`. Production grants neither.
+
 ## Asking what happened
 
 `GetDelivery` returns a notification's recipient, template and the outcome on each channel —
-[and only to the service that sent it](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/persistence/NotificationQueries.scala#L10-L16).
+[and only to the service that sent it](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/persistence/NotificationQueries.scala#L10-L16).
 Another service is told it does not exist. When the store cannot be reached the call
-[fails with `UNAVAILABLE`](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/grpc/GrpcNotificationServer.scala#L30-L40)
+[fails with `UNAVAILABLE`](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/grpc/GrpcNotificationServer.scala#L29-L39)
 rather than answering `found = false` for a notification that may well exist.
 
 ## How the code is laid out
@@ -137,11 +160,11 @@ notification is Scala 3 with Cats Effect, written tagless-final behind a hexagon
 
 | Directory | Holds |
 | --- | --- |
-| `domain/` | values, the error type, templates and grants, and the ports the use cases need — no effect type, no gRPC or HTTP |
-| `application/` | the use cases — notify, report a delivery, register and forget a device — generic in their effect and tested against hand-written fakes |
+| `domain/` | values, the error type, templates and grants, device proofs, and the ports the use cases need — no effect type, no gRPC or HTTP |
+| `application/` | the use cases — notify, report a delivery, register, prove and forget a device — generic in their effect and tested against hand-written fakes |
 | `infrastructure/grpc` | the gRPC server, the caller check, the identity client |
 | `infrastructure/http` | the handset routes, token verification, the two providers, health and metrics |
-| `infrastructure/persistence` | PostgreSQL through doobie, and the schema migration |
+| `infrastructure/persistence` | PostgreSQL through doobie, and the schema migrations |
 | `Main.scala` | the only place adapters are built and wired, by hand, with no container |
 
 The compiler holds the rules: warnings are errors, and an unused import or a discarded value stops the
@@ -150,61 +173,68 @@ are never different versions.
 
 ## Data
 
-PostgreSQL, three tables:
-[`notifications`, `notification_attempts` and `notification_devices`](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/resources/db/migration/V1__notification_tables.sql#L1-L36).
+PostgreSQL, five tables:
+[`notifications`, `notification_attempts` and `notification_devices`](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/resources/db/migration/V1__notification_tables.sql#L1-L36),
+and for the proofs
+[`notification_device_challenges`](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/resources/db/migration/V4__device_challenges.sql#L1-L18)
+and
+[`notification_device_challenge_issues`](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/resources/db/migration/V5__device_challenge_issues.sql#L1-L15),
+which hold a nonce's digest, never the nonce.
 A notification carries its sender, recipient, template and parameters; an idempotency key is
-[unique per sender](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/resources/db/migration/V2__notifications_belong_to_their_sender.sql#L1-L17),
+[unique per sender](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/resources/db/migration/V2__notifications_belong_to_their_sender.sql#L1-L17),
 and the table
-[refuses a template the service does not know](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/resources/db/migration/V3__liability_statement_template.sql#L1-L13). An attempt is one row per channel, with its
+[refuses a template the service does not know](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/resources/db/migration/V3__liability_statement_template.sql#L1-L13). An attempt is one row per channel, with its
 status, count and last error. A device token belongs to one principal at a time. A row the service cannot
 read is reported as a store failure, never read as a guess.
 
 ## Who may do what
 
-- **A handset** may register itself and forget its own token, with an access token from identity.
+- **A handset** may register itself, prove a token it holds, and forget its own token, with an access token
+  from identity.
 - **A service** may call only the gRPC operations granted to it by name, and send only the templates
   granted to it. Grants are written per operation —
-  [`peer@package.Service/Method`](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/grpc/PeerAllowList.scala#L10-L19),
+  [`peer@package.Service/Method`](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/grpc/PeerAllowList.scala#L10-L19),
   as order and identity read theirs — and the caller is
-  [the service its certificate names](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/grpc/PeerAuthorizationInterceptor.scala#L19-L44),
+  [the service its certificate names](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/grpc/PeerAuthorizationInterceptor.scala#L19-L44),
   which reaches the handler
-  [after whatever the client sent under that name is thrown away](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/grpc/CallerHeader.scala#L12-L14).
+  [after whatever the client sent under that name is thrown away](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/grpc/CallerHeader.scala#L12-L14).
   Both lists
-  [must be set even when empty](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/config/Env.scala#L12-L21),
+  [must be set even when empty](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/config/Env.scala#L12-L21),
   and a grant for an operation notification does not serve
-  [stops it starting](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/Main.scala#L199-L211):
+  [stops it starting](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/Main.scala#L230-L242):
   a misspelt grant would otherwise grant nothing, silently. In production each holds one grant:
   `notary@notification.v1.NotificationService/Notify`, and `notary:TEMPLATE_LIABILITY_STATEMENT`.
 - **Any service with a certificate from Kinetix's CA** may ask the gRPC port what it serves, through
   reflection, and nothing else.
-  [The handshake requires a client certificate](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/ServiceIdentity.scala#L10-L21).
+  [The handshake requires a client certificate](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/ServiceIdentity.scala#L10-L21).
 - **To read an email address**, notification presents a certificate naming notification. identity
-  [lets it read a profile and make no other call](https://github.com/WildanFrananda/kinetix-identity-service/blob/40b7e4f76a3f151100f1d48dd9253126ee16ddcb/src/infrastructure/mesh/peer_allow_list.ts#L48-L63);
+  [lets it read a profile and make no other call](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/infrastructure/mesh/peer_allow_list.ts#L48-L63);
   see [Who is calling?](/learn/who-is-calling/).
 
 ## Operating it
 
 - `/health` answers while the process runs and touches nothing.
-  [`/health/ready`](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/http/HttpApi.scala#L28-L43)
+  [`/health/ready`](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/HttpApi.scala#L48-L59)
   asks PostgreSQL a real question, and
-  [logs why it failed](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/persistence/PostgresReadiness.scala#L9-L21)
+  [logs why it failed](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/persistence/PostgresReadiness.scala#L9-L21)
   rather than putting the driver's words in the response.
-- `/metrics` serves the estate's metric names, and
-  [every series starts at zero](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/Main.scala#L150-L154)
+- `/metrics` serves the estate's metric names, and counts every failure a provider gives by channel and
+  reason, so a credential Firebase or Resend stopped accepting shows as its own series.
+  [Every series starts at zero](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/Main.scala#L171-L175)
   when the process starts, so "nothing has failed yet" and "this does not report failures" never look
   the same.
 - At start-up the log
-  [names who is granted what](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/Main.scala#L133-L138);
-  in production it reads
+  [names who is granted what](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/Main.scala#L153-L159);
+  in production it begins
   `gRPC callers: notary (notification.v1.NotificationService/Notify); templates: notary (LiabilityStatement)`,
-  and `nobody` where nothing is granted. A refused call is logged with the method and the peer.
+  and says `nobody` where nothing is granted. A refused call is logged with the method and the peer.
 - The gRPC metrics interceptors
-  [close the call they wrap](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/grpc/ServerMetricsInterceptor.scala#L24-L29)
-  and [pass the close to the listener they wrap](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/grpc/ClientMetricsInterceptor.scala#L29-L35),
+  [close the call they wrap](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/grpc/ServerMetricsInterceptor.scala#L24-L29)
+  and [pass the close to the listener they wrap](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/grpc/ClientMetricsInterceptor.scala#L29-L35),
   never through `super`. From v1.0.0 to v1.1.0 they went through `super`, which Scala 3.3 compiles against a
   package-private grpc-java class. The JVM refused that when the first gRPC call closed, and the process died.
   Nothing called notification over gRPC before the notary's first statement on 2026-10-20, so it surfaced then;
-  [a test now sends a real call through both](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/test/scala/com/kinetix/notification/infrastructure/grpc/MetricsInterceptorSuite.scala#L38).
+  [a test now sends a real call through both](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/test/scala/com/kinetix/notification/infrastructure/grpc/MetricsInterceptorSuite.scala#L38).
 - The schema changes in a one-shot `Migrate` run before the service starts, never from inside it, so
   replicas do not race to change it and a failed migration does not look like a service that would not
   boot.

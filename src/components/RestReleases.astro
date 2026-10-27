@@ -26,7 +26,7 @@ const pages = services.map((service) => ({ service, page: servicePage(service) }
     {
       pages.map(({ service, page }) => (
         <tr>
-          <td>{page === undefined ? service : <a href={`${prefix}${page}`}>{service}</a>}</td>
+          <td><a href={`${prefix}${page}`}>{service}</a></td>
           <td>{restReleases[service].tag}</td>
           <td>
             <a href={releaseTree(service)}>

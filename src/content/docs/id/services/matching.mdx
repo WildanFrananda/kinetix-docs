@@ -1,7 +1,7 @@
 ---
 title: matching
 description: Armada — kendaraan kurir, posisi live mereka, job pengantaran yang mereka bawa, dan bukti bahwa paket sampai. matching menghitung perjalanan, memilih kurir, dan memberi tahu order ketika paket terkirim.
-sourceHash: "16bb53bbb514"
+sourceHash: "5d504d0f818f"
 ---
 
 import ServiceCalls from "../../../../components/ServiceCalls.astro";
@@ -17,7 +17,7 @@ arti sebuah pengantaran bagi uangnya.
 Tabel di halaman ini dibangkitkan dari data terverifikasi yang sama dengan
 [peta sistem](/id/architecture/system-map/), pada commit yang ditautkan dari setiap baris. Teksnya
 dicek terhadap matching
-[v1.3.0](https://github.com/WildanFrananda/kinetix-matching-service/tree/f2f99d91895f356cf85fbbdd53c8caa57e8f5798),
+[v1.5.2](https://github.com/WildanFrananda/kinetix-matching-service/tree/7ef67a0ca1d0e8945f638de8a2f9684e84d06886),
 versi yang berjalan di production.
 
 ## Sekilas
@@ -30,10 +30,10 @@ order meminta opsi pengiriman sebuah keranjang ke matching dan, setelah warehous
 meminta kurir. identity mendaftarkan kendaraan kurir baru dan mengaktifkan driver-nya ketika admin
 menyetujui akunnya.
 
-matching juga menyajikan [delivery evidence-nya](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/servers/delivery_evidence_server.ex#L18-L28),
+matching juga menyajikan [delivery evidence-nya](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/servers/delivery_evidence_server.ex#L18-L28),
 satu record per paket yang terkirim beserta hash foto dan tanda tangannya, halaman demi halaman, ke
 [notary](/id/services/notary/), yang meng-anchor-nya di chain. Cursor feed itu adalah transaksi database:
-[ia hanya menyajikan record yang ditulis oleh transaksi yang lebih tua dari setiap transaksi yang masih berjalan](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch/evidence_feed.ex#L23-L31),
+[ia hanya menyajikan record yang ditulis oleh transaksi yang lebih tua dari setiap transaksi yang masih berjalan](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch/evidence_feed.ex#L23-L31),
 sehingga pengantaran yang transaksinya commit terlambat disajikan terlambat dan tidak pernah terlewat.
 
 <ServiceServes service="matching" />
@@ -47,7 +47,7 @@ matching memanggil keluar untuk satu hal: memberi tahu order bahwa seorang kurir
 ## Menghitung perjalanan
 
 `EstimateShippingOptions` mengukur jarak antara toko dan pembeli lalu
-[menjawab tier layanan mana yang bisa membawa paketnya](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/shipping.ex#L16-L32)
+[menjawab tier layanan mana yang bisa membawa paketnya](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/shipping.ex#L16-L32)
 dan mengapa yang lain tidak: instant sampai 15 km dan 10 kg, same day sampai 30 km dan 20 kg, regular sampai
 500 km dan 30 kg, dan cargo untuk paket 10 kg atau lebih. matching tidak memberi harga pada tier; pembeli
 memilih satu, dan pricing mengubahnya menjadi ongkir — lihat [pricing](/id/services/pricing/).
@@ -56,45 +56,61 @@ memilih satu, dan pricing mengubahnya menjadi ongkir — lihat [pricing](/id/ser
 
 1. **Satu job per order.** order memanggil `DispatchCourier` dengan nomor order, kedua titiknya, dan berat
    paketnya, dan matching
-   [membuat job untuk nomor order itu, atau menemukan job yang sudah pernah dibuat](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch.ex#L98-L103)
+   [membuat job untuk nomor order itu, atau menemukan job yang sudah pernah dibuat](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L120-L127)
    — sehingga dispatch yang di-retry dijawab dengan job, kurir, dan nomor resi yang sama, bukan membuat
-   job kedua. [Beratnya dicatat dalam kilogram bulat, dibulatkan ke atas](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch.ex#L69-L74):
+   job kedua. [Beratnya dicatat dalam kilogram bulat, dibulatkan ke atas](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L93-L98):
    paket 1.200 g menjadi 2 kg, sehingga pengecekan kapasitas tidak pernah melihat paket lebih ringan dari
    aslinya. Order yang dibuat sebelum 2026-10-18 tidak mengirim berat dan dicatat 0 kg, seperti semua job
    sebelumnya.
 2. **Kurir terdekat yang sanggup membawanya.** Job yang masih pending
-   [ditawarkan ke kurir online dalam radius tiga kilometer dari toko](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch.ex#L343-L351)
-   yang kendaraannya sanggup membawa berat paketnya, mulai dari yang terdekat. Setiap kurir adalah sebuah
-   proses yang memegang state-nya sendiri, dan mengambil job adalah klaim atomik pada proses itu, sehingga
-   seorang kurir tidak pernah diberi lebih banyak job sekaligus daripada yang boleh ia bawa — satu, kecuali
-   batasnya dinaikkan.
-3. **Tidak ada kurir kosong bukan penolakan selamanya.** Job tetap pending, dan ketika ada kurir yang online
-   [matching menawarkan lagi job-job yang pending](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch/re_dispatcher.ex#L91-L95).
+   [ditawarkan ke kurir online dalam radius tiga kilometer dari toko](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L242-L254)
+   yang kendaraannya sanggup membawa berat paketnya, mulai dari yang terdekat. Membuka aplikasi tidak membuat
+   kurir mulai bertugas: ia sendiri yang menyatakan online, dan
+   [hanya posisi yang dilaporkan sejak itu yang dihitung](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L529-L537),
+   sehingga kurir tidak pernah dipilih berdasarkan posisinya kemarin. Setiap kurir adalah sebuah proses yang
+   memegang state-nya sendiri, dan mengambil job adalah klaim atomik pada proses itu, sehingga seorang kurir
+   tidak pernah diberi lebih banyak job sekaligus daripada yang boleh ia bawa — satu, kecuali batasnya
+   dinaikkan.
+3. **Tidak ada kurir kosong bukan penolakan selamanya.** Job tetap pending, dan ketika ada kurir yang online,
+   atau sebuah job kembali menjadi pending,
+   [matching menawarkan lagi job-job yang pending](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch/re_dispatcher.ex#L52-L61).
    order terus bertanya sampai seorang kurir ditugaskan, dan begitulah warehouse menerima nomor resinya —
    lihat [dispatch kurir di order](/id/services/order/#mengirim-kurir).
+
+Admin juga bisa turun tangan. Menugaskan job ke kurir pilihan adalah override, yang dicatat seperti setiap
+tindakan admin.
+[Melepas job yang sudah ditugaskan dari kurirnya](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L271-L283)
+mengembalikannya ke pending, mencatat siapa yang melakukannya, dan langsung menawarkannya lagi — tidak pernah
+ke kurir yang sama. Job yang sudah diambil tidak bisa dibatalkan, dan
+[begitu pula job yang terikat pada sebuah order](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L337-L355):
+order tidak akan pernah mendengarnya, dan order yang sudah dibayar akan menunggu kurir selamanya.
 
 ## Mengantarkan paket
 
 Sebuah job bergerak
-[dari assigned ke picked up ke delivered](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch.ex#L33-L37),
+[dari assigned ke picked up ke delivered](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L36-L40),
 dan hanya
-[kurir yang ditugaskan](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch.ex#L411-L412)
-yang bisa menggerakkannya; admin bisa membatalkannya.
+[kurir yang ditugaskan](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L625-L627)
+yang bisa menggerakkannya.
 
-Pengantaran membutuhkan foto. Setelah paket diambil, aplikasi kurir meng-hash fotonya dan meminta
-[alamat upload untuk hash itu](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch.ex#L238-L254): sebuah URL yang berlaku sepuluh
+Pengantaran membutuhkan foto dan tanda tangan penerima. Setelah paket diambil, aplikasi kurir meng-hash
+fotonya dan meminta
+[alamat upload untuk hash itu](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L285-L304): sebuah URL yang berlaku sepuluh
 menit, yang mengizinkan HP menaruh satu foto ke bucket privat atas nama job itu dan hash-nya.
-[URL itu ditandatangani atas SHA-256 foto dan `if-none-match: *`](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/storage/s3.ex#L22-L30),
+[URL itu ditandatangani atas SHA-256 foto dan `if-none-match: *`](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/storage/s3.ex#L24-L32),
 sehingga storage hanya menyimpan byte yang di-hash kurir dan menolak penulisan kedua ke nama yang sama.
-Aplikasi meng-upload fotonya lalu mengirim alamatnya bersama laporan pengantaran, dan matching
-[menerima pengantaran hanya jika fotonya milik job itu, benar-benar ada, dan checksum tersimpannya sama dengan hash di namanya](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch.ex#L298-L317).
+Aplikasi meng-upload fotonya lalu mengirim alamatnya bersama laporan pengantaran, beserta tanda tangan yang
+digambar di HP sebagai PNG, dan matching
+[menerima pengantaran hanya jika fotonya milik job itu, benar-benar ada, berupa JPEG, dan checksum tersimpannya sama dengan hash di namanya](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L450-L486),
+dan hanya
+[dengan tanda tangan](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch/proof.ex#L51-L64).
 Jika bucket tidak bisa ditanya, pengantaran tidak ditolak dan tidak diterima: kurir mencoba lagi. Bucket
 itu tidak pernah publik; backoffice melihat foto lewat alamat yang kedaluwarsa dalam lima belas menit.
 
 Pengantaran dicatat bersama bukti pengantarannya:
-[satu row berisi hash foto, hash tanda tangan, dan principal kurir, dimasukkan dalam transaksi yang sama dengan yang menandai job sebagai terkirim](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch.ex#L429-L458).
+[satu row berisi hash foto, hash tanda tangan, dan principal kurir, dimasukkan dalam transaksi yang sama dengan yang menandai job sebagai terkirim](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L407-L448).
 Kurir tanpa principal identity tidak bisa mengantar, karena catatannya harus menyebut siapa pelakunya.
-[Postgres menolak job yang ditandai terkirim tanpa row itu, dan menolak perubahan apa pun pada log-nya](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/priv/repo/migrations/20261016160000_deliveries_keep_an_evidence_log.exs#L31-L78),
+[Postgres menolak job yang ditandai terkirim tanpa row itu, dan menolak perubahan apa pun pada log-nya](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/priv/repo/migrations/20261016160000_deliveries_keep_an_evidence_log.exs#L31-L78),
 sehingga jalur kode baru yang lupa menulis bukti gagal pada statement pertamanya.
 
 ## Memberi tahu order
@@ -102,12 +118,13 @@ sehingga jalur kode baru yang lupa menulis bukti gagal pada statement pertamanya
 order yang memutuskan arti sebuah pengantaran — ongkir kurir, dimulainya masa retur, kapan merchant
 dibayar — jadi bagian matching adalah memastikan order mendengarnya. Pengantaran dicatat beserta waktu
 paket sampai dan
-[langsung dilaporkan](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch/delivery_report.ex#L25-L38);
+[langsung dilaporkan](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L686-L691),
+tanpa membuat jawaban untuk kurir menunggu order;
 jika order tidak bisa dijangkau, laporannya
-[menjadi utang dan dicoba lagi setiap menit](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/dispatch/delivery_report.ex#L41-L51),
+[menjadi utang dan dicoba lagi setiap menit](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch/delivery_report.ex#L41-L51),
 dengan jeda yang memanjang sampai satu jam, selalu dengan waktu pengantaran yang asli. order mencatat
 sebuah pengantaran sekali dan menjawab pengulangan sebagai sudah tercatat, jadi retry aman. Hanya
-[penolakan dari order sendiri yang menghentikan retry](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/clients/order_grpc.ex#L100-L110);
+[penolakan dari order sendiri yang menghentikan retry](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/clients/order_grpc.ex#L92-L102);
 panggilan yang tidak bisa dilakukan berarti tidak diketahui, bukan penolakan — lihat
 [Tidak tahu bukan berarti tidak](/id/learn/unknown-is-not-no/).
 
@@ -115,12 +132,12 @@ panggilan yang tidak bisa dilakukan berarti tidak diketahui, bukan penolakan —
 
 | Direktori | Isi |
 | --- | --- |
-| `lib/fleet_pulse/dispatch/` | job pengantaran, aturannya, menawarkan ulang job yang pending, dan melaporkan pengantaran ke order |
+| `lib/fleet_pulse/dispatch/` | job pengantaran, aturan dan buktinya, menawarkan ulang job yang pending, dan melaporkan pengantaran ke order |
 | `lib/fleet_pulse/tracking/` | kurir dan kendaraannya, satu proses per kurir yang online, posisi live dan penyimpanannya |
 | `lib/fleet_pulse/shipping.ex` | perhitungan perjalanan |
 | `lib/fleet_pulse/storage/` | bucket bukti pengantaran dan alamat presigned untuknya |
-| `lib/fleet_pulse/servers/` | server gRPC yang dipanggil order dan identity |
-| `lib/fleet_pulse_web/` | route HTTP, channel websocket kurir dan merchant, dan plug yang mengautentikasinya |
+| `lib/fleet_pulse/servers/` | server gRPC yang dipanggil order, identity, dan notary |
+| `lib/fleet_pulse_web/` | route HTTP, channel websocket kurir dan merchant, dan plug yang mengautentikasi serta mengauditnya |
 
 Context memiliki aturannya; lapisan web dan server gRPC hanya menerjemahkan request menjadi panggilan ke
 context itu.
@@ -128,26 +145,35 @@ context itu.
 ## Data
 
 PostgreSQL, lewat Ecto, menyimpan kurir dan kendaraannya, job pengantaran beserta bukti pengantaran dan
-apakah order sudah mendengarnya, log bukti pengantaran yang hanya bisa ditambah, serta jejak ping posisi. Posisi yang dipakai armada hidup di memori, satu
+apakah order sudah mendengarnya, admin mana yang melepas job mana dari kurir mana, log bukti pengantaran yang
+hanya bisa ditambah, serta jejak ping posisi. Posisi yang dipakai armada hidup di memori, satu
 proses per kurir yang online;
-[ping ditulis ke PostgreSQL setiap tiga puluh detik](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/tracking/persistence_batcher.ex#L44)
-dan [disimpan tiga puluh hari](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/tracking/ping_retention.ex#L23-L24).
+[ping ditulis ke PostgreSQL setiap tiga puluh detik](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/tracking/persistence_batcher.ex#L44)
+dan [disimpan tiga puluh hari](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/tracking/ping_retention.ex#L23-L24).
+Posisi yang disimpan aplikasi selama tidak ada koneksi datang belakangan dalam batch dan
+[hanya masuk ke jejaknya](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/tracking/offline_history.ex#L1-L6):
+posisi itu tidak pernah memindahkan kurir atau dihitung untuk dispatch.
 Foto paket yang terkirim disimpan di object storage, di bucket tersendiri yang hanya boleh ditulis matching.
 
 ## Siapa boleh melakukan apa
 
 - **Kurir** terhubung ke websocket armada dengan access token identity untuk
-  [akun kurir yang sudah disetujui dan punya kendaraan di armada](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse_web/channels/driver_socket.ex#L26-L34),
+  [akun kurir yang sudah disetujui dan punya kendaraan di armada](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/driver_socket.ex#L27-L36),
   hanya bergabung ke
-  [channel driver miliknya sendiri](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse_web/channels/driver_channel.ex#L155-L156),
+  [channel driver miliknya sendiri](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/driver_channel.ex#L194-L196),
   dan hanya menggerakkan job yang ditugaskan kepadanya.
-- **Seller** terhubung ke channel merchant hanya untuk merchant miliknya, dan
-  [hanya mendengar tentang job miliknya sendiri](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse_web/channels/merchant_channel.ex#L41-L47).
+- **Seller** terhubung ke channel merchant hanya untuk merchant miliknya — dari seller web, lewat
+  [edge](/id/apis/rest/#edge), yang menambahkan token-nya — dan
+  [hanya mendengar tentang job miliknya sendiri](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/merchant_channel.ex#L54-L66):
+  job yang belum selesai saat ia bergabung, lalu setiap perubahannya.
 - **Posisi armada dan papan dispatch** —
-  [posisi live setiap kurir, job-job, serta menugaskan dan membatalkannya](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse_web/router.ex#L24-L45)
-  — untuk peran `admin`. Posisi seorang kurir adalah data pribadi; tidak ada peran lain yang membacanya.
+  [posisi live setiap kurir, job-job, serta menugaskan, melepas, dan membatalkannya](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/router.ex#L24-L63)
+  — untuk peran `admin`, dan setiap request-nya
+  [dicatat di log dan dihitung](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/plugs/admin_audit.ex#L19-L43)
+  beserta principal admin, tindakannya, targetnya, dan bagaimana hasilnya. Posisi seorang kurir adalah data
+  pribadi; tidak ada peran lain yang membacanya.
 - **Service lain** menjangkau port gRPC hanya dengan sertifikat dari CA Kinetix yang menyebut service di
-  daftar izin matching, dan [sebuah entri bisa menyebut satu service gRPC atau satu method](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/security/peer_authorization_interceptor.ex#L47-L59).
+  daftar izin matching, dan [sebuah entri bisa menyebut satu service gRPC atau satu method](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/security/peer_authorization_interceptor.ex#L47-L59).
   identity hanya boleh mendaftarkan dan mengaktifkan kurir, sehingga ia tidak bisa mengirim kurir atau
   menghitung perjalanan, dan notary hanya boleh membaca bukti pengantaran; lihat
   [Siapa yang memanggil?](/id/learn/who-is-calling/).
@@ -155,16 +181,20 @@ Foto paket yang terkirim disimpan di object storage, di bucket tersendiri yang h
 ## Mengoperasikannya
 
 - `/health` menjawab ketika prosesnya hidup; `/health/ready`
-  [menjalankan query sungguhan](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse_web/controllers/health_controller.ex#L31-L54),
+  [menjalankan query sungguhan](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/controllers/health_controller.ex#L31-L54),
   sehingga container dianggap sehat hanya ketika service bisa melayani.
 - `/metrics` menyajikan teks Prometheus dengan nama-nama yang diberikan kontrak platform untuk matching.
+- Setiap jawaban, termasuk handshake kedua socket,
+  [membawa request id-nya sendiri](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/request_trace.ex#L1-L26)
+  di `x-request-id`, dan body error menyebut id yang sama sebagai `traceId`: id milik pemanggil kalau id itu
+  sah, selain itu id baru.
 - Token yang ditandatangani kunci yang tidak dipegang matching membuatnya
-  [mengambil ulang key set identity paling sering sekali tiap sepuluh detik](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/security/token_verifier.ex#L90-L95),
+  [mengambil ulang key set identity paling sering sekali tiap sepuluh detik](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/security/token_verifier.ex#L90-L95),
   sehingga token dengan key id karangan tidak bisa membuat identity menjawab sekali per request.
 - Kurir yang aplikasinya diam tetap punya prosesnya untuk sementara, supaya saat terhubung lagi posisi
   terakhirnya masih ada;
-  [kurir offline yang diam selama lima belas menit dihentikan](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/tracking/idle_reaper.ex#L32),
+  [kurir offline yang diam selama lima belas menit dihentikan](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/tracking/idle_reaper.ex#L32),
   sehingga kurir yang tidak pernah kembali tidak memegang proses selamanya.
 - Saat `SIGTERM`, listener gRPC berhenti menerima panggilan dan
-  [menunggu panggilan yang sedang berjalan](https://github.com/WildanFrananda/kinetix-matching-service/blob/f2f99d91895f356cf85fbbdd53c8caa57e8f5798/lib/fleet_pulse/grpc_drain.ex#L1-L4)
+  [menunggu panggilan yang sedang berjalan](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/grpc_drain.ex#L1-L4)
   sebelum proses berakhir.

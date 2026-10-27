@@ -101,7 +101,9 @@ A new call between services is a new edge on the map, and the map may have to be
 service is not an edge and its operation is not in that service's `serves`: notary's `ApproveEpoch`, from
 notaryd to notary-watch, is described in the page's prose instead, because a served row with no caller
 would read as "nothing calls it". Adding notary (session 26) moved order to (335, 430); the layout was
-found by searching positions with the test's own geometry, not by eye.
+found by searching positions with the test's own geometry, not by eye. Adding the edge (2026-10-27: its HTTP calls
+to identity and back to the gateway) put it at (720, 140) and moved matching to (790, 225) and Firebase to
+(855, 305): no free position fitted both lines without moving a box, and this one clears every line at padding 6.
 
 ## Decision records
 
@@ -211,8 +213,10 @@ each feature as the calls in the order the application makes them, with every re
   rendered by `<RestSocketMessage id="…" />`. Phoenix's own behaviour links Phoenix at the version matching's
   `mix.lock` pins (`src/site/rest/phoenix_release.ts`). `tests/rest_sockets.test.ts` refuses unpinned links and
   malformed frames; `tests/rest_pages.test.ts` refuses a socket on no page and any `/ws/` path written without
-  `wss://` (never an HTTP `GET … HTTP/1.1`). Only sockets a client can use are written: the merchant socket is not
-  (the seller web holds no token and the edge forwards no WebSocket).
+  `wss://` (never an HTTP `GET … HTTP/1.1`). Only sockets a client can use are written. The merchant socket is
+  written since edge v1.1.0 (2026-10-27) as the seller web opens it: `RestSocket.via` puts it on the seller web's
+  host under `/bff/`, with the session cookie and `Origin` instead of a token, and its handshake answers come from
+  both the edge and matching.
 - **Shared look.** `src/styles/rest.css` holds the styles of every REST component (endpoint, case, socket), so a
   socket looks exactly like an endpoint; `RestFields.astro` renders a field list for both.
 - **Pinned.** `src/site/rest/rest_releases.ts` holds each service's production tag and commit, read from the
@@ -308,8 +312,9 @@ disagree; this repository writes no verification logic of its own.
   owners' logs are linked at
   the tags production runs: order v1.2.0 (`0c3698e`), matching v1.3.0 (`f2f99d9`) and review v1.1.1 (`d259ba5`),
   moved on 2026-10-19; matching's upload signing now lives in `storage/s3.ex`, since MinIO left the estate.
-  The notary service page and the map's notary edges are the exception: they moved to v1.7.0 (`9eaeb1c`) on 2026-10-21
-  with the statement loop (step 6b), by the same script. Of 100 links, 88 were byte-identical, 6 moved, 6 changed
+  The notary service page is the exception: it moved to v1.7.0 (`9eaeb1c`) on 2026-10-21 with the statement loop
+  (step 6b), by the same script (the map's notary edges moved with every other edge to the production tags,
+  v1.10.1 `8446176`, on 2026-10-27). Of 100 links, 88 were byte-identical, 6 moved, 6 changed
   (three ranges, in both languages) and were re-read by hand. v1.7.0 changed nothing on the verification path, but its
   `notary-verify.wasm` is not v1.6.1's (`82f224f9…`, 135 KB larger): `cmd/notary-verify` imports `internal/wiring`, so
   the daemon's new gRPC client is linked into the browser build too. The pin therefore stays at v1.6.1. A notary

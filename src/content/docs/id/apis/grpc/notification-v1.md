@@ -2,7 +2,7 @@
 title: "notification.v1"
 description: "Paket gRPC notification.v1 di kinetix-contracts 1.7.0: service, message, dan enum-nya."
 editUrl: false
-sourceHash: "e441c00bafc5"
+sourceHash: "2cad6f279a1e"
 ---
 
 <div class="grpc-reference">
@@ -17,7 +17,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`Notify`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notification/v1/notification.proto#L8) | [`NotifyRequest`](#notifyrequest) → [`NotifyResponse`](#notifyresponse) | [notification](/id/services/notification/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/9eaeb1c040e1e2518eca8417d787452ccacdaa74/internal/notification/notifier.go#L75) |
+| [`Notify`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notification/v1/notification.proto#L8) | [`NotifyRequest`](#notifyrequest) → [`NotifyResponse`](#notifyresponse) | [notification](/id/services/notification/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/8446176813c354716d77ca6591038633871bcda5/internal/notification/notifier.go#L75) |
 | [`GetDelivery`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notification/v1/notification.proto#L9) | [`GetDeliveryRequest`](#getdeliveryrequest) → [`GetDeliveryResponse`](#getdeliveryresponse) | [notification](/id/services/notification/) | — |
 | [`RegisterDevice`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notification/v1/notification.proto#L10) | [`RegisterDeviceRequest`](#registerdevicerequest) → [`RegisterDeviceResponse`](#registerdeviceresponse) | [notification](/id/services/notification/) | — |
 | [`ForgetDevice`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/notification/v1/notification.proto#L11) | [`ForgetDeviceRequest`](#forgetdevicerequest) → [`ForgetDeviceResponse`](#forgetdeviceresponse) | [notification](/id/services/notification/) | — |

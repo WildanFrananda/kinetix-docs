@@ -53,7 +53,7 @@ When the buyer types a code, the app can show its terms: `value`, `min_spend`, `
 
 A preview: `code` as the buyer typed it, `cart_subtotal`, and `merchant_principal_id` from the cart lines'
 `merchantPrincipalId`. The cart's `subtotal` is at catalog prices
-([CustomerCart.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Domain/Entities/CustomerCart.cs#L7)),
+([CustomerCart.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Domain/Entities/CustomerCart.cs#L7)),
 while checkout compares `min_spend` with the subtotal after flash sales and discounts
 ([pricing_service.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0ed7db4cd6fb8d40375cab26dd7ac56ebce16a8a/src/services/pricing_service.rs#L151-L219)).
 Sent with the cart's `subtotal`, the preview can accept a code that checkout will not grant; the order's
@@ -79,7 +79,7 @@ The cart's `appliedVoucherCode` becomes `null`.
 For an explicit "empty the cart" action only. A placed order takes out of the cart the lines it bought, by
 the quantities it bought, and the voucher code if it is still the one checked out with; a line added while the
 checkout ran stays
-([CartService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Application/Services/CartService.cs#L115-L152)).
+([CartService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/CartService.cs#L115-L152)).
 So after checkout the app reads the cart again
 ([step 4 of Check out](/apis/rest/buyer-app/checkout/#4-read-the-cart-again)) and never clears it.
 

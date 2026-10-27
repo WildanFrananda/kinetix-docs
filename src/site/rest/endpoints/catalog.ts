@@ -11,7 +11,7 @@ export const catalogAnswers: readonly RestCase[] = [
       message: "JSON parse error - Expecting ',' delimiter: line 1 column 23 (char 22)",
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("catalog", "core/api/exception_handler.py", 125, 128)
+    source: restSource("catalog", "core/api/exception_handler.py", 134, 137)
   },
   {
     status: 400,
@@ -32,7 +32,17 @@ export const catalogAnswers: readonly RestCase[] = [
       message: "this request carries more than 1000 query or form fields, so it was not read",
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("catalog", "core/api/exception_handler.py", 106, 107)
+    source: restSource("catalog", "core/api/exception_handler.py", 109, 110)
+  },
+  {
+    status: 400,
+    when: "rest.catalog.answers.filesNotAccepted",
+    json: {
+      error: "FILES_NOT_ACCEPTED",
+      message: "a multipart/form-data body may carry text fields only, and this one carries a file, so it was not read",
+      traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+    },
+    source: restSource("catalog", "core/api/exception_handler.py", 112, 116)
   },
   {
     status: 401,
@@ -75,7 +85,7 @@ export const catalogAnswers: readonly RestCase[] = [
       message: "Method \"POST\" not allowed.",
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("catalog", "core/api/exception_handler.py", 125, 128)
+    source: restSource("catalog", "core/api/exception_handler.py", 134, 137)
   },
   {
     status: 406,
@@ -85,7 +95,7 @@ export const catalogAnswers: readonly RestCase[] = [
       message: "Could not satisfy the request Accept header.",
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("catalog", "core/api/exception_handler.py", 125, 128)
+    source: restSource("catalog", "core/api/exception_handler.py", 134, 137)
   },
   {
     status: 413,
@@ -95,7 +105,7 @@ export const catalogAnswers: readonly RestCase[] = [
       message: "the request body is larger than 2621440 bytes, so it was not read",
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("catalog", "core/api/exception_handler.py", 99, 104)
+    source: restSource("catalog", "core/api/exception_handler.py", 102, 107)
   },
   {
     status: 415,
@@ -105,7 +115,7 @@ export const catalogAnswers: readonly RestCase[] = [
       message: "Unsupported media type \"text/plain\" in request.",
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("catalog", "core/api/exception_handler.py", 125, 128)
+    source: restSource("catalog", "core/api/exception_handler.py", 134, 137)
   },
   {
     status: 500,
@@ -115,7 +125,7 @@ export const catalogAnswers: readonly RestCase[] = [
       message: "something went wrong handling this request. No product or stock was changed unless a previous response said so.",
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("catalog", "core/api/exception_handler.py", 56, 61)
+    source: restSource("catalog", "core/api/exception_handler.py", 59, 64)
   },
   {
     status: 503,
@@ -126,7 +136,7 @@ export const catalogAnswers: readonly RestCase[] = [
       message: "the catalogue could not reach its database, so this request could not be answered. Try again shortly.",
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("catalog", "core/api/exception_handler.py", 112, 122)
+    source: restSource("catalog", "core/api/exception_handler.py", 121, 131)
   },
   {
     status: 503,
@@ -642,7 +652,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           message: "we could not check this merchant account right now, so the request was not applied. Nothing was created, changed or deleted.",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/api/exception_handler.py", 89, 94)
+        source: restSource("catalog", "core/api/exception_handler.py", 92, 97)
       }
     ],
     source: restSource("catalog", "core/api/views/product_create_view.py", 14, 22)
@@ -839,7 +849,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           message: "we could not check this merchant account right now, so the request was not applied. Nothing was created, changed or deleted.",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/api/exception_handler.py", 89, 94)
+        source: restSource("catalog", "core/api/exception_handler.py", 92, 97)
       }
     ],
     source: restSource("catalog", "core/api/views/product_manage_view.py", 18, 28)
@@ -921,7 +931,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           message: "we could not check this merchant account right now, so the request was not applied. Nothing was created, changed or deleted.",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/api/exception_handler.py", 89, 94)
+        source: restSource("catalog", "core/api/exception_handler.py", 92, 97)
       }
     ],
     source: restSource("catalog", "core/api/views/product_manage_view.py", 30, 39)

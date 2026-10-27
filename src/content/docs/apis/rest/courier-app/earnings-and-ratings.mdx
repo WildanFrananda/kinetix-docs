@@ -25,7 +25,7 @@ the caller's own, so the path names no one.
 ## 2. List the courier's ratings
 
 The path takes the courier's principal id: `user.principalId` in the answer to signing in, to registration or
-to a refresh. The listing is public and needs no token. Ask for the next page with `page` while it is below
-`last_page`.
+to a refresh. The listing is public and needs no token. For the first page send `page` 1 or leave it out,
+and ask for the next page while `page` is below `last_page`.
 
 <RestEndpoint id="review.listDriverRatings" />

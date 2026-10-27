@@ -2,7 +2,7 @@
 title: "fleet.v1"
 description: "Paket gRPC fleet.v1 di kinetix-contracts 1.7.0: service, message, dan enum-nya."
 editUrl: false
-sourceHash: "80f5494e0ee8"
+sourceHash: "50094fb70f14"
 ---
 
 <div class="grpc-reference">
@@ -17,7 +17,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`DispatchCourier`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/fleet.proto#L9) | [`DispatchCourierRequest`](#dispatchcourierrequest) → [`DispatchCourierResponse`](#dispatchcourierresponse) | [matching](/id/services/matching/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Fulfillment/CourierDispatcher.cs#L74) |
+| [`DispatchCourier`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/fleet.proto#L9) | [`DispatchCourierRequest`](#dispatchcourierrequest) → [`DispatchCourierResponse`](#dispatchcourierresponse) | [matching](/id/services/matching/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Fulfillment/CourierDispatcher.cs#L75) |
 | [`StreamDriverLocation`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/fleet.proto#L10) | `stream` [`DriverLocationPing`](#driverlocationping) → `stream` [`DriverLocationAck`](#driverlocationack) | — | — |
 
 ### FleetRegistryService
@@ -26,8 +26,8 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`RegisterDriver`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/registry.proto#L8) | [`RegisterDriverRequest`](#registerdriverrequest) → [`RegisterDriverResponse`](#registerdriverresponse) | [matching](/id/services/matching/) | [identity](https://github.com/WildanFrananda/kinetix-identity-service/blob/40b7e4f76a3f151100f1d48dd9253126ee16ddcb/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L38) |
-| [`ActivateDriver`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/registry.proto#L9) | [`ActivateDriverRequest`](#activatedriverrequest) → [`ActivateDriverResponse`](#activatedriverresponse) | [matching](/id/services/matching/) | [identity](https://github.com/WildanFrananda/kinetix-identity-service/blob/40b7e4f76a3f151100f1d48dd9253126ee16ddcb/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L55) |
+| [`RegisterDriver`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/registry.proto#L8) | [`RegisterDriverRequest`](#registerdriverrequest) → [`RegisterDriverResponse`](#registerdriverresponse) | [matching](/id/services/matching/) | [identity](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L45) |
+| [`ActivateDriver`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/registry.proto#L9) | [`ActivateDriverRequest`](#activatedriverrequest) → [`ActivateDriverResponse`](#activatedriverresponse) | [matching](/id/services/matching/) | [identity](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L62) |
 
 ## Message
 

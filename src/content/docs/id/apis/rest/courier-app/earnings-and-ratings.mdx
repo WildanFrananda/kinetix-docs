@@ -3,7 +3,7 @@ title: Pendapatan dan rating
 description: Kurir membaca wallet driver dari payment, tempat ongkos kirim ditahan lalu dicairkan, dan rating yang diberikan pembeli dari review; aplikasi kurir belum memanggil keduanya.
 sidebar:
   order: 5
-sourceHash: "ed30c673a396"
+sourceHash: "8441c0ef2bf9"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -27,6 +27,7 @@ Wallet-nya selalu milik pemanggil sendiri, jadi path-nya tidak menyebut siapa pu
 ## 2. Daftar rating kurir
 
 Path-nya memakai principal id kurir: `user.principalId` di jawaban masuk, registrasi, atau refresh. Daftarnya
-publik dan tidak butuh token. Minta halaman berikutnya dengan `page` selama nilainya masih di bawah `last_page`.
+publik dan tidak butuh token. Untuk halaman pertama, kirim `page` 1 atau jangan
+sertakan, lalu minta halaman berikutnya selama `page` masih di bawah `last_page`.
 
 <RestEndpoint id="review.listDriverRatings" />

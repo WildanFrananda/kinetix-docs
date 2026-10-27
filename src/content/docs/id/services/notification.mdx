@@ -1,7 +1,7 @@
 ---
 title: notification
 description: Push dan email untuk orang-orang yang berkepentingan dengan sebuah order. notification memiliki device token milik handset dan catatan setiap pesan yang ia terima; sebuah service hanya boleh memintanya mengirim template yang diberikan kepadanya, dan sebuah handset hanya mendaftarkan dirinya sendiri.
-sourceHash: "7fee3396388c"
+sourceHash: "6186b4aeeb6b"
 ---
 
 import ServiceCalls from "../../../../components/ServiceCalls.astro";
@@ -18,7 +18,7 @@ hasil setiap percobaannya.
 Tabel-tabel di halaman ini dihasilkan dari data terverifikasi yang sama dengan
 [peta sistem](/id/architecture/system-map/), pada commit yang ditautkan dari setiap baris. Prosanya
 diperiksa terhadap notification
-[v1.1.1](https://github.com/WildanFrananda/kinetix-notification-service/tree/f9df9569c08802be573e611540460526d6efd9b4),
+[v1.3.3](https://github.com/WildanFrananda/kinetix-notification-service/tree/510a1ecf16006e28913c30d9861c95af3af226b9),
 versi yang berjalan di production. Di production satu service diberi template: notary, yang sejak 2026-10-20
 memberi tahu para pemegang bahwa statement atas saldo mereka sudah siap. Route untuk handset juga sudah aktif.
 
@@ -29,12 +29,14 @@ memberi tahu para pemegang bahwa statement atas saldo mereka sudah siap. Route u
 ## Apa yang dilayaninya
 
 Lewat HTTP, melalui gateway,
-[satu route dengan dua method](https://github.com/WildanFrananda/kinetix-api-gateway/blob/950ae468ea021ff4b17bb2336790f6316ef98d9a/config/gateway.pkl#L322-L343):
-`POST /api/v1/notifications/devices` mendaftarkan handset pemanggil untuk push dan `DELETE` melupakannya.
-Keduanya memerlukan access token, yang diperiksa gateway lalu diperiksa lagi oleh notification.
+[satu route](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L586-L598):
+`POST /api/v1/notifications/devices` mendaftarkan handset pemanggil untuk push, `POST` di
+`/api/v1/notifications/devices/verify` menyelesaikan pendaftaran yang harus dibuktikan dulu, dan `DELETE`
+melupakan sebuah handset. Ketiganya memerlukan access token, yang diperiksa gateway lalu diperiksa lagi oleh
+notification.
 
 Lewat gRPC, empat operasi: `Notify` mengirim, `GetDelivery` melaporkan nasib sebuah notifikasi, dan
-`RegisterDevice` serta `ForgetDevice` memungkinkan service tepercaya bertindak atas nama sebuah handset.
+`RegisterDevice` serta `ForgetDevice` ditujukan bagi service tepercaya yang bertindak atas nama sebuah handset.
 Setiap pemanggil diberi operasi satu per satu, dan production memberikan satu: notary boleh memanggil `Notify`.
 
 <ServiceServes service="notification" />
@@ -43,22 +45,24 @@ Setiap pemanggil diberi operasi satu per satu, dan production memberikan satu: n
 
 `GetUserProfile` milik identity, untuk alamat email principal yang dituju sebuah pesan, dan dua penyedia
 di luar estate: Firebase Cloud Messaging untuk push, melalui
-[API HTTP v1-nya](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L31-L52),
+[API HTTP v1-nya](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L37-L70),
 dan Resend untuk email,
-[satu request JSON per pesan](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/http/HttpEmailSender.scala#L32-L50).
+[satu request JSON per pesan](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/HttpEmailSender.scala#L30-L50).
 
 <ServiceCalls service="notification" />
 
 Firebase menerima OAuth access token, bukan key: notification
-[menandatangani sebuah assertion dengan service account-nya lalu menukarnya](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/http/GoogleAccessTokens.scala#L37-L58),
-kemudian [menyimpan token itu](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/http/GoogleAccessTokens.scala#L20-L35)
-sampai satu menit sebelum kedaluwarsa.
+[menandatangani sebuah assertion dengan service account-nya lalu menukarnya](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/GoogleAccessTokens.scala#L40-L61),
+kemudian [menyimpan token itu](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/GoogleAccessTokens.scala#L20-L38)
+sampai satu menit sebelum kedaluwarsa. Ketika Firebase menjawab `401` untuk token yang sedang dipegang,
+[token itu dibuang dan pesannya diminta sekali lagi, saat itu juga, dengan token baru](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/HttpPushSender.scala#L72-L84);
+hanya penolakan kedua yang dihitung sebagai Firebase menolak kredensial service ini.
 
 ## Mengirim sebuah notifikasi
 
 Request `Notify` menyebut sebuah template, principal penerima, parameter template, secara opsional
 channel yang dipakai, dan secara opsional sebuah idempotency key.
-[Urutan pemeriksaannya](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/application/Notify.scala#L22-L37)
+[Urutan pemeriksaannya](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/application/Notify.scala#L25-L40)
 adalah urutan hal yang dilindunginya:
 
 1. **Template harus diberikan kepada pemanggil.** Service yang boleh memanggil `Notify` tetap hanya boleh
@@ -66,75 +70,97 @@ adalah urutan hal yang dilindunginya:
    pembeli bahwa order-nya sudah dibayar. Pemanggil tanpa template sama sekali tidak mengirim apa pun:
    `TEMPLATE_NOT_GRANTED`.
 2. **Kalimatnya harus lengkap.** Teksnya ada di
-   [sebuah katalog](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/resources/messages/id.json),
+   [sebuah katalog](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/resources/messages/id.json),
    dan setiap `{name}` di judul atau isi
-   [harus datang sebagai parameter](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/domain/Message.scala#L23-L44).
+   [harus datang sebagai parameter](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/domain/Message.scala#L23-L44).
    Yang hilang ditolak sebagai `TEMPLATE_PARAM_MISSING`, bukan dikirim dengan lubang. Katalog yang tidak
    memuat sebuah template
-   [menghentikan service saat start](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/domain/MessageCatalogue.scala#L7-L11).
+   [menghentikan service saat start](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/domain/MessageCatalogue.scala#L7-L11).
    Teks liability statement
-   [meminta epoch dan alamat halaman Verify, tidak lebih](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/resources/messages/id.json#L26-L29),
+   [meminta epoch dan alamat halaman Verify, tidak lebih](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/resources/messages/id.json#L26-L29),
    jadi tidak ada saldo yang lewat penyedia email.
 3. **Key yang berulang adalah replay, bukan pesan kedua.** Key milik service yang mengirimnya. Key yang
    sama dengan penerima, template, dan parameter yang sama
-   [dijawab dengan notifikasi yang dibuat pertama kali](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/application/Notify.scala#L42-L49);
+   [dijawab dengan notifikasi yang dibuat pertama kali](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/application/Notify.scala#L45-L52);
    key yang sama dengan isi lain adalah `IDEMPOTENCY_KEY_REUSED`, tidak pernah notifikasi milik orang lain.
 4. **Harus ada yang bisa dihubungi.** identity memberikan alamat email dan registry milik notification
    sendiri memberikan device token. Principal tanpa alamat yang bisa dipakai di channel mana pun adalah
    `NO_CHANNEL_AVAILABLE`, dan tidak meninggalkan catatan: notifikasi untuk tak seorang pun bukan
-   notifikasi.
+   notifikasi. Ketika identity tidak bisa ditanya, request-nya ditolak sebagai `DIRECTORY_UNAVAILABLE`, yang
+   boleh dicoba lagi oleh pengirimnya.
 
 Lalu catatannya ditulis,
-[sebelum apa pun dikirim](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/application/Notify.scala#L68-L85).
+[sebelum apa pun dikirim](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/application/Notify.scala#L54-L88).
 Crash di antara keduanya meninggalkan notifikasi yang tampak belum terkirim, yang bisa ditindaklanjuti
 seseorang, alih-alih pesan yang tidak berjejak sama sekali. Dua panggilan pertama dengan satu key bisa
 datang bersamaan: insert-nya
-[tidak melakukan apa-apa bila key itu sudah dipakai](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/persistence/NotificationQueries.scala#L34-L48),
+[tidak melakukan apa-apa bila key itu sudah dipakai](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/persistence/NotificationQueries.scala#L34-L48),
 dan panggilan yang kalah
-[membaca pemenangnya lalu menjawab dengannya](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/application/Notify.scala#L87-L106),
+[membaca pemenangnya lalu menjawab dengannya](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/application/Notify.scala#L90-L111),
 sehingga tepat satu pesan yang keluar.
 
 Setiap channel kemudian
-[dicoba dan hasilnya dicatat](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/application/Notify.scala#L125-L153).
+[dicoba dan hasilnya dicatat](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/application/Notify.scala#L132-L156).
 Penyedia yang tidak menjawab, atau menjawab dengan server error, di-retry
-[sampai tiga kali, menunggu 200 ms lalu 600 ms](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/retry/ExponentialBackoffRetry.scala#L23-L38).
-Penyedia yang menolak — token yang sudah mati, alamat yang ditolak — tidak di-retry: itu sebuah jawaban,
-dan bertanya lagi akan mendapat jawaban yang sama. Hanya
-[kegagalan yang bukan jawaban](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/domain/NotificationError.scala#L39-L43)
-yang bersifat sementara. Channel yang gagal tidak menggagalkan request: notifikasinya sudah diterima, dan
-catatannya menyebut channel mana yang sampai ke penerima dan mengapa yang lain tidak.
+[sampai tiga kali, menunggu 200 ms lalu 600 ms](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/retry/ExponentialBackoffRetry.scala#L20-L39).
+Penyedia yang menolak — token yang sudah mati, alamat yang ditolak, kredensial milik service ini sendiri —
+tidak di-retry: itu sebuah jawaban, dan bertanya lagi akan mendapat jawaban yang sama. Device token yang
+menurut Firebase sudah tidak ada
+[dilupakan](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/application/Notify.scala#L158-L171),
+sehingga pesan berikutnya tidak mencobanya lagi. Channel yang gagal tidak menggagalkan request: notifikasinya
+sudah diterima, dan catatannya menyebut channel mana yang sampai ke penerima dan mengapa yang lain tidak,
+dengan
+[kata-kata notification sendiri](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/domain/NotificationError.scala#L30-L76),
+tidak pernah kata-kata penyedianya.
 
 ## Handset mendaftarkan dirinya sendiri
 
 Ponsel tidak punya sertifikat dari CA Kinetix dan hanya bisa mencapai estate lewat gateway, jadi
 pendaftaran device adalah satu-satunya urusan bisnis di port HTTP notification.
-[Setiap request memerlukan bearer token](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/http/DeviceApi.scala#L56-L71),
+[Setiap request memerlukan bearer token](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/DeviceApi.scala#L90-L105),
 yang diverifikasi terhadap key yang dipublikasikan identity dengan
-[hanya RS256, issuer milik identity, audience estate, dan `token_use: access`](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/http/NimbusAccessTokenVerifier.scala#L31-L49).
+[hanya RS256, issuer milik identity, audience estate, dan `token_use: access`](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/NimbusAccessTokenVerifier.scala#L53-L73).
 Token tanpa tanda tangan, token HMAC yang di-key dengan public key, dan refresh token semuanya ditolak.
 
 Handset didaftarkan ke
-[principal yang disebut token](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/http/DeviceApi.scala#L28-L44),
+[principal yang disebut token](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/DeviceApi.scala#L47-L67),
 tidak pernah ke principal yang diklaim body. Body dibaca
-[sampai 4 KiB dan tidak lebih](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/http/DeviceApi.scala#L73-L83),
+[sampai 4 KiB dan tidak lebih](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/DeviceApi.scala#L107-L117),
 dan platform-nya harus
-[`ANDROID` atau `IOS`](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/http/DeviceApi.scala#L85-L88).
-Token yang sebelumnya dipegang principal lain
-[pindah ke siapa pun yang mendaftarkannya sekarang](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/persistence/PostgresDeviceRegistry.scala#L25-L54):
-itu ponsel yang sama, login sebagai orang lain. Melupakan menghapus token
-[hanya bila token itu milik pemanggil](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/persistence/PostgresDeviceRegistry.scala#L59-L67),
+[`ANDROID` atau `IOS`](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/DeviceApi.scala#L119-L122).
+Satu principal memegang handset dalam jumlah terbatas, dan
+[mendaftarkan satu lagi melupakan yang paling lama](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/persistence/DeviceQueries.scala#L66-L77).
+
+Token yang dipegang principal lain tidak begitu saja diambil alih: bisa jadi itu ponsel yang login sebagai
+orang lain, atau token yang disalin dari ponsel seseorang. Pendaftarannya
+[dijawab `202` dan dibuktikan dulu](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/application/RegisterDevice.scala#L42-L71):
+notification mengirim nonce acak ke token itu sebagai data message yang senyap, hanya menyimpan SHA-256 dari
+nonce itu, dan memindahkan token hanya ketika pengklaim mengembalikan nonce itu ke `/verify`. Pembuktiannya
+[berlaku sepuluh menit dan menerima lima jawaban salah](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/domain/DeviceChallenge.scala#L21-L43),
+hanya ada satu pembuktian yang tertunda per pengklaim dan token, dan sebuah token dikirimi paling banyak tiga
+pembuktian per jam, sehingga route ini tidak bisa dipakai untuk membanjiri ponsel orang asing. Hanya ponsel
+yang memegang token itu yang menerima nonce-nya, jadi hanya ponsel itu yang bisa menuntaskan perpindahannya.
+
+Melupakan menghapus token
+[hanya bila token itu milik pemanggil](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/persistence/DeviceQueries.scala#L82-L87),
 dan menjawab `204` dalam kedua kasus, sehingga tidak membocorkan token itu milik siapa.
 
 Bila key identity tidak bisa diambil, jawabannya `503 TOKEN_UNVERIFIABLE`, bukan `401`. "Token-mu buruk"
 dan "key-nya tidak bisa dibaca" adalah dua fakta berbeda, dan melaporkan yang kedua sebagai yang pertama
 menyuruh pengguna yang sudah login untuk login lagi.
 
+Lewat gRPC, `RegisterDevice` memungkinkan service tepercaya mendaftarkan handset untuk principal yang ia jamin,
+dan ponselnya tetap harus membuktikan token itu kecuali principal tersebut sudah memegangnya. `ForgetDevice`
+[tidak melupakan apa pun](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/grpc/GrpcNotificationServer.scala#L74-L89):
+request-nya menyebut token tetapi tidak menyebut principal, dan token saja tidak mengatakan ikatan milik
+siapa yang harus dilupakan, jadi ia menjawab `PRINCIPAL_REQUIRED`. Production tidak memberikan keduanya.
+
 ## Menanyakan apa yang terjadi
 
 `GetDelivery` mengembalikan penerima, template, dan hasil di setiap channel sebuah notifikasi —
-[dan hanya kepada service yang mengirimnya](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/persistence/NotificationQueries.scala#L10-L16).
+[dan hanya kepada service yang mengirimnya](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/persistence/NotificationQueries.scala#L10-L16).
 Service lain diberi tahu bahwa notifikasi itu tidak ada. Bila store tidak bisa dihubungi, panggilannya
-[gagal dengan `UNAVAILABLE`](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/grpc/GrpcNotificationServer.scala#L30-L40)
+[gagal dengan `UNAVAILABLE`](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/grpc/GrpcNotificationServer.scala#L29-L39)
 alih-alih menjawab `found = false` untuk notifikasi yang mungkin saja ada.
 
 ## Bagaimana kodenya disusun
@@ -143,8 +169,8 @@ notification ditulis dengan Scala 3 dan Cats Effect, secara tagless-final di bal
 
 | Direktori | Isinya |
 | --- | --- |
-| `domain/` | value, tipe error, template dan grant, serta port yang dibutuhkan use case — tanpa effect type, tanpa gRPC atau HTTP |
-| `application/` | use case — notify, melaporkan delivery, mendaftarkan dan melupakan device — generik terhadap effect-nya dan dites dengan fake yang ditulis tangan |
+| `domain/` | value, tipe error, template dan grant, pembuktian device, serta port yang dibutuhkan use case — tanpa effect type, tanpa gRPC atau HTTP |
+| `application/` | use case — notify, melaporkan delivery, mendaftarkan, membuktikan, dan melupakan device — generik terhadap effect-nya dan dites dengan fake yang ditulis tangan |
 | `infrastructure/grpc` | server gRPC, pemeriksaan pemanggil, client identity |
 | `infrastructure/http` | route handset, verifikasi token, kedua penyedia, health dan metrics |
 | `infrastructure/persistence` | PostgreSQL lewat doobie, dan migrasi skema |
@@ -156,67 +182,74 @@ service yang membacanya tidak pernah berbeda versi.
 
 ## Data
 
-PostgreSQL, tiga tabel:
-[`notifications`, `notification_attempts`, dan `notification_devices`](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/resources/db/migration/V1__notification_tables.sql#L1-L36).
+PostgreSQL, lima tabel:
+[`notifications`, `notification_attempts`, dan `notification_devices`](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/resources/db/migration/V1__notification_tables.sql#L1-L36),
+serta untuk pembuktian
+[`notification_device_challenges`](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/resources/db/migration/V4__device_challenges.sql#L1-L18)
+dan
+[`notification_device_challenge_issues`](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/resources/db/migration/V5__device_challenge_issues.sql#L1-L15),
+yang menyimpan digest sebuah nonce, tidak pernah nonce-nya.
 Sebuah notifikasi membawa pengirim, penerima, template, dan parameternya; idempotency key
-[unik per pengirim](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/resources/db/migration/V2__notifications_belong_to_their_sender.sql#L1-L17),
+[unik per pengirim](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/resources/db/migration/V2__notifications_belong_to_their_sender.sql#L1-L17),
 dan tabelnya
-[menolak template yang tidak dikenal service](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/resources/db/migration/V3__liability_statement_template.sql#L1-L13). Sebuah percobaan adalah satu baris per channel,
+[menolak template yang tidak dikenal service](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/resources/db/migration/V3__liability_statement_template.sql#L1-L13). Sebuah percobaan adalah satu baris per channel,
 dengan status, jumlah, dan error terakhirnya. Sebuah device token dimiliki satu principal pada satu waktu.
 Baris yang tidak bisa dibaca service dilaporkan sebagai kegagalan store, tidak pernah dibaca dengan
 tebakan.
 
 ## Siapa boleh melakukan apa
 
-- **Sebuah handset** boleh mendaftarkan dirinya dan melupakan tokennya sendiri, dengan access token dari
-  identity.
+- **Sebuah handset** boleh mendaftarkan dirinya, membuktikan token yang ia pegang, dan melupakan tokennya
+  sendiri, dengan access token dari identity.
 - **Sebuah service** hanya boleh memanggil operasi gRPC yang diberikan kepadanya dengan nama, dan hanya
   mengirim template yang diberikan kepadanya. Grant ditulis per operasi —
-  [`peer@package.Service/Method`](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/grpc/PeerAllowList.scala#L10-L19),
+  [`peer@package.Service/Method`](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/grpc/PeerAllowList.scala#L10-L19),
   sebagaimana order dan identity membacanya — dan pemanggilnya adalah
-  [service yang disebut sertifikatnya](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/grpc/PeerAuthorizationInterceptor.scala#L19-L44),
+  [service yang disebut sertifikatnya](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/grpc/PeerAuthorizationInterceptor.scala#L19-L44),
   yang sampai ke handler
-  [setelah apa pun yang dikirim client dengan nama itu dibuang](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/grpc/CallerHeader.scala#L12-L14).
+  [setelah apa pun yang dikirim client dengan nama itu dibuang](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/grpc/CallerHeader.scala#L12-L14).
   Kedua daftar
-  [harus diisi walaupun kosong](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/config/Env.scala#L12-L21),
+  [harus diisi walaupun kosong](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/config/Env.scala#L12-L21),
   dan grant untuk operasi yang tidak dilayani notification
-  [menghentikannya saat start](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/Main.scala#L199-L211):
+  [menghentikannya saat start](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/Main.scala#L230-L242):
   grant yang salah eja kalau tidak begitu tidak memberi apa-apa, diam-diam. Di production masing-masing
   berisi satu grant: `notary@notification.v1.NotificationService/Notify`, dan
   `notary:TEMPLATE_LIABILITY_STATEMENT`.
 - **Service mana pun yang punya sertifikat dari CA Kinetix** boleh menanyakan apa yang dilayani port gRPC
   lewat reflection, dan tidak lebih.
-  [Handshake-nya mewajibkan sertifikat client](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/ServiceIdentity.scala#L10-L21).
+  [Handshake-nya mewajibkan sertifikat client](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/ServiceIdentity.scala#L10-L21).
 - **Untuk membaca alamat email**, notification menunjukkan sertifikat yang menyebut notification.
   identity
-  [mengizinkannya membaca profil dan tidak melakukan panggilan lain](https://github.com/WildanFrananda/kinetix-identity-service/blob/40b7e4f76a3f151100f1d48dd9253126ee16ddcb/src/infrastructure/mesh/peer_allow_list.ts#L48-L63);
+  [mengizinkannya membaca profil dan tidak melakukan panggilan lain](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/infrastructure/mesh/peer_allow_list.ts#L48-L63);
   lihat [Siapa yang memanggil?](/id/learn/who-is-calling/).
 
 ## Mengoperasikannya
 
 - `/health` menjawab selama prosesnya berjalan dan tidak menyentuh apa pun.
-  [`/health/ready`](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/http/HttpApi.scala#L28-L43)
+  [`/health/ready`](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/http/HttpApi.scala#L48-L59)
   menanyakan pertanyaan sungguhan ke PostgreSQL, dan
-  [mencatat mengapa gagal di log](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/persistence/PostgresReadiness.scala#L9-L21)
+  [mencatat mengapa gagal di log](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/persistence/PostgresReadiness.scala#L9-L21)
   alih-alih menaruh kata-kata driver di response.
-- `/metrics` menyajikan nama metrik estate, dan
-  [setiap series dimulai dari nol](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/Main.scala#L150-L154)
+- `/metrics` menyajikan nama metrik estate, dan menghitung setiap kegagalan yang diberikan penyedia per channel
+  dan alasannya, sehingga kredensial yang tidak lagi diterima Firebase atau Resend tampak sebagai series
+  tersendiri.
+  [Setiap series dimulai dari nol](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/Main.scala#L171-L175)
   saat proses start, sehingga "belum ada yang gagal" dan "ini tidak melaporkan kegagalan" tidak pernah
   tampak sama.
 - Saat start, log-nya
-  [menyebut siapa diberi apa](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/Main.scala#L133-L138);
-  di production isinya
+  [menyebut siapa diberi apa](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/Main.scala#L153-L159);
+  di production ia diawali
   `gRPC callers: notary (notification.v1.NotificationService/Notify); templates: notary (LiabilityStatement)`,
-  dan `nobody` di tempat yang tidak diberi grant. Panggilan yang ditolak dicatat di log bersama method dan
-  peer-nya.
+  dan menyebut `nobody` di tempat yang tidak diberi grant. Panggilan yang ditolak dicatat di log bersama method
+  dan peer-nya.
 - Interceptor metrics gRPC
-  [menutup call yang dibungkusnya](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/grpc/ServerMetricsInterceptor.scala#L24-L29)
-  dan [meneruskan close ke listener yang dibungkusnya](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/main/scala/com/kinetix/notification/infrastructure/grpc/ClientMetricsInterceptor.scala#L29-L35),
+  [menutup call yang dibungkusnya](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/grpc/ServerMetricsInterceptor.scala#L24-L29)
+  dan [meneruskan close ke listener yang dibungkusnya](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/grpc/ClientMetricsInterceptor.scala#L29-L35),
   tidak pernah lewat `super`. Dari v1.0.0 sampai v1.1.0 keduanya lewat `super`, yang oleh Scala 3.3
   dikompilasi terhadap class grpc-java yang package-private. JVM menolaknya ketika call gRPC pertama ditutup,
   dan prosesnya mati. Tidak ada yang memanggil notification lewat gRPC sebelum statement pertama dari notary
   pada 2026-10-20, jadi masalah itu baru muncul saat itu;
-  [sebuah test sekarang mengirim call sungguhan melewati keduanya](https://github.com/WildanFrananda/kinetix-notification-service/blob/f9df9569c08802be573e611540460526d6efd9b4/src/test/scala/com/kinetix/notification/infrastructure/grpc/MetricsInterceptorSuite.scala#L38).
+  [sebuah test sekarang mengirim call sungguhan melewati keduanya](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/test/scala/com/kinetix/notification/infrastructure/grpc/MetricsInterceptorSuite.scala#L38).
 - Skema berubah lewat satu kali jalan `Migrate` sebelum service start, tidak pernah dari dalamnya, sehingga
   replika tidak berebut mengubahnya dan migrasi yang gagal tidak tampak seperti service yang tidak mau
   boot.

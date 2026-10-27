@@ -3,7 +3,7 @@ title: Pengaturan toko
 description: Cara penjual membaca catatan merchant-nya di warehouse dan mengatur jam yang menentukan kapan paketnya jatuh tempo.
 sidebar:
   order: 4
-sourceHash: "dd9a046b152a"
+sourceHash: "a118070979d6"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -24,7 +24,7 @@ merchant itu berdagang, dan jamnya tidak bisa diubah.
 
 Kirim jam yang dipilih penjual, dengan `id` dari langkah 1. Jam itu berlaku untuk task yang dibuat sejak saat
 itu; batas waktu setiap task tampil di antrean pengemasan sebagai `same_day_cutoff_at`
-([Mengemas pesanan](/id/apis/rest/seller-web/packing/), langkah 2).
+([Mengemas pesanan](/id/apis/rest/seller-web/packing/), langkah 4).
 
 <RestEndpoint id="warehouse.setCutoffHour" via="seller-web" />
 

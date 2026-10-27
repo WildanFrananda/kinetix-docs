@@ -43,7 +43,7 @@ export const identityAnswers: readonly RestCase[] = [
       statusCode: 401,
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("identity", "src/application/services/token.service.ts", 376, 399)
+    source: restSource("identity", "src/application/services/token.service.ts", 395, 418)
   },
   {
     status: 401,
@@ -190,7 +190,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
             principalId: "0f8b6c1e-5a2d-4c3b-9e7f-1a2b3c4d5e6f"
           }
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 303, 326)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 315, 338)
       },
       {
         status: 200,
@@ -214,7 +214,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           expiresIn: 600,
           userId: 3
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 328, 348)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 340, 360)
       },
       {
         status: 400,
@@ -332,7 +332,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
             principalId: "0f8b6c1e-5a2d-4c3b-9e7f-1a2b3c4d5e6f"
           }
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 127, 143)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 139, 155)
       },
       {
         status: 400,
@@ -364,7 +364,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 131, 134)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 143, 146)
       },
       {
         status: 429,
@@ -429,7 +429,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
             principalId: "0f8b6c1e-5a2d-4c3b-9e7f-1a2b3c4d5e6f"
           }
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 145, 198)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 157, 210)
       },
       {
         status: 400,
@@ -461,7 +461,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/token.service.ts", 376, 399)
+        source: restSource("identity", "src/application/services/token.service.ts", 395, 418)
       },
       {
         status: 401,
@@ -472,7 +472,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/token.service.ts", 241, 247)
+        source: restSource("identity", "src/application/services/token.service.ts", 260, 266)
       },
       {
         status: 401,
@@ -494,7 +494,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 154, 157)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 166, 169)
       },
       {
         status: 401,
@@ -505,7 +505,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
             "An admin account must use two-factor authentication, so this session has ended. Sign in again to set it up.",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 159, 167)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 171, 179)
       },
       {
         status: 401,
@@ -516,7 +516,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/token.service.ts", 263, 265)
+        source: restSource("identity", "src/application/services/token.service.ts", 282, 284)
       },
       {
         status: 401,
@@ -527,7 +527,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/token.service.ts", 267, 269)
+        source: restSource("identity", "src/application/services/token.service.ts", 286, 288)
       },
       {
         status: 401,
@@ -538,7 +538,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/token.service.ts", 271, 274)
+        source: restSource("identity", "src/application/services/token.service.ts", 290, 293)
       },
       {
         status: 429,
@@ -611,7 +611,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
             principalId: "0f8b6c1e-5a2d-4c3b-9e7f-1a2b3c4d5e6f"
           }
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 113, 124)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 122, 136)
       },
       {
         status: 400,
@@ -638,89 +638,81 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         status: 401,
         when: "rest.identity.verifyTwoFactor.case.invalidChallenge",
         json: {
+          error: "CHALLENGE_INVALID",
           message: "Invalid token",
-          error: "Unauthorized",
-          statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/token.service.ts", 376, 399)
+        source: restSource("identity", "src/application/services/token.service.ts", 240, 251)
       },
       {
         status: 401,
         when: "rest.identity.verifyTwoFactor.case.notChallenge",
         json: {
+          error: "CHALLENGE_INVALID",
           message: "This is not a two-factor challenge",
-          error: "Unauthorized",
-          statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/token.service.ts", 233, 239)
-      },
-      {
-        status: 401,
-        when: "rest.identity.verifyTwoFactor.case.accountGone",
-        json: {
-          message: "The account behind this challenge no longer exists",
-          error: "Unauthorized",
-          statusCode: 401,
-          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
-        },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 88, 91)
-      },
-      {
-        status: 401,
-        when: "rest.identity.verifyTwoFactor.case.notEnabled",
-        json: {
-          message: "This account does not have two-factor authentication enabled",
-          error: "Unauthorized",
-          statusCode: 401,
-          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
-        },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 93, 95)
-      },
-      {
-        status: 401,
-        when: "rest.identity.verifyTwoFactor.case.challengeExhausted",
-        json: {
-          message: "This challenge allows no more attempts; sign in again",
-          error: "Unauthorized",
-          statusCode: 401,
-          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
-        },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 99, 102)
-      },
-      {
-        status: 401,
-        when: "rest.identity.verifyTwoFactor.case.wrongCode",
-        json: {
-          message: "That code is not valid",
-          error: "Unauthorized",
-          statusCode: 401,
-          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
-        },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 104, 111)
+        source: restSource("identity", "src/application/services/token.service.ts", 253, 255)
       },
       {
         status: 401,
         when: "rest.identity.verifyTwoFactor.case.challengeUsed",
         json: {
+          error: "CHALLENGE_SPENT",
           message: "This challenge has already been answered; sign in again",
-          error: "Unauthorized",
-          statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/token.service.ts", 221, 231)
+        source: restSource("identity", "src/application/services/token.service.ts", 221, 238)
+      },
+      {
+        status: 401,
+        when: "rest.identity.verifyTwoFactor.case.accountGone",
+        json: {
+          error: "CHALLENGE_INVALID",
+          message: "The account behind this challenge no longer exists",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 90, 96)
+      },
+      {
+        status: 401,
+        when: "rest.identity.verifyTwoFactor.case.notEnabled",
+        json: {
+          error: "CHALLENGE_INVALID",
+          message: "This account does not have two-factor authentication enabled",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 98, 103)
+      },
+      {
+        status: 401,
+        when: "rest.identity.verifyTwoFactor.case.challengeExhausted",
+        json: {
+          error: "CHALLENGE_EXHAUSTED",
+          message: "This challenge allows no more attempts; sign in again",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 105, 111)
+      },
+      {
+        status: 401,
+        when: "rest.identity.verifyTwoFactor.case.wrongCode",
+        json: {
+          error: "WRONG_CODE",
+          message: "That code is not valid",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 113, 120)
       },
       {
         status: 401,
         when: "rest.identity.verifyTwoFactor.case.codeUsed",
         json: {
+          error: "CHALLENGE_SPENT",
           message: "That code has already been used; sign in again with the next one",
-          error: "Unauthorized",
-          statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 115, 122)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 124, 134)
       },
       {
         status: 429,
@@ -779,7 +771,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         status: 204,
         when: "rest.identity.logout.case.signedOut",
         headers: ["X-RateLimit-Limit: 10", "X-RateLimit-Remaining: 9", "X-RateLimit-Reset: 60"],
-        source: restSource("identity", "src/application/services/token.service.ts", 307, 314)
+        source: restSource("identity", "src/application/services/token.service.ts", 326, 333)
       },
       {
         status: 400,
@@ -801,7 +793,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/token.service.ts", 376, 399)
+        source: restSource("identity", "src/application/services/token.service.ts", 395, 418)
       },
       {
         status: 401,
@@ -812,7 +804,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/token.service.ts", 241, 247)
+        source: restSource("identity", "src/application/services/token.service.ts", 260, 266)
       },
       {
         status: 403,
@@ -823,7 +815,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 403,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 203, 206)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 215, 218)
       },
       {
         status: 429,
@@ -924,7 +916,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
             "otpauth://totp/Kinetix%3Abuyer%40example.com?secret=<32 base32 characters>&issuer=Kinetix&algorithm=SHA1&digits=6&period=30",
           enabled: false
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 231, 236)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 243, 248)
       },
       {
         status: 400,
@@ -945,7 +937,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           message: "Changing the second factor from a signed-in session needs the account's current password.",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 363, 376)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 375, 388)
       },
       {
         status: 401,
@@ -956,7 +948,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 378, 392)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 390, 404)
       },
       {
         status: 403,
@@ -978,7 +970,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 404,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 355, 358)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 367, 370)
       },
       {
         status: 409,
@@ -989,7 +981,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 227, 229)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 239, 241)
       },
       {
         status: 429,
@@ -1066,7 +1058,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         json: {
           enabled: true
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 257, 269)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 269, 281)
       },
       {
         status: 400,
@@ -1087,7 +1079,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           message: "Changing the second factor from a signed-in session needs the account's current password.",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 363, 376)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 375, 388)
       },
       {
         status: 400,
@@ -1098,7 +1090,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 400,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 253, 255)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 265, 267)
       },
       {
         status: 401,
@@ -1109,7 +1101,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 378, 392)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 390, 404)
       },
       {
         status: 403,
@@ -1131,7 +1123,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 404,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 355, 358)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 367, 370)
       },
       {
         status: 422,
@@ -1142,7 +1134,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 422,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 401, 408)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 413, 420)
       },
       {
         status: 422,
@@ -1153,7 +1145,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 422,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 410, 417)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 422, 429)
       },
       {
         status: 429,
@@ -1230,7 +1222,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         json: {
           enabled: false
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 287, 300)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 299, 312)
       },
       {
         status: 400,
@@ -1252,7 +1244,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 378, 392)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 390, 404)
       },
       {
         status: 403,
@@ -1274,7 +1266,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 404,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 355, 358)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 367, 370)
       },
       {
         status: 409,
@@ -1285,7 +1277,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 283, 285)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 295, 297)
       },
       {
         status: 422,
@@ -1296,7 +1288,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 422,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 401, 408)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 413, 420)
       },
       {
         status: 422,
@@ -1307,7 +1299,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 422,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 410, 417)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 422, 429)
       },
       {
         status: 429,
@@ -2214,7 +2206,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           },
           driverId: 118
         },
-        source: restSource("identity", "src/application/services/courier_registration_usecase.service.ts", 41, 64)
+        source: restSource("identity", "src/application/services/courier_registration_usecase.service.ts", 49, 72)
       },
       {
         status: 400,
@@ -2250,8 +2242,8 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "identity",
           "src/application/services/courier_registration_usecase.service.ts",
-          156,
-          165
+          164,
+          173
         )
       },
       {
@@ -2263,7 +2255,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 131, 134)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 143, 146)
       },
       {
         status: 409,
@@ -2274,7 +2266,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/courier_registration_usecase.service.ts", 79, 86)
+        source: restSource("identity", "src/application/services/courier_registration_usecase.service.ts", 87, 94)
       },
       {
         status: 409,
@@ -2286,7 +2278,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/courier_registration_usecase.service.ts", 88, 93)
+        source: restSource("identity", "src/application/services/courier_registration_usecase.service.ts", 96, 101)
       },
       {
         status: 409,
@@ -2298,7 +2290,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/courier_registration_usecase.service.ts", 95, 100)
+        source: restSource("identity", "src/application/services/courier_registration_usecase.service.ts", 103, 108)
       },
       {
         status: 429,
@@ -2337,8 +2329,8 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "identity",
           "src/application/services/courier_registration_usecase.service.ts",
-          140,
-          154
+          148,
+          162
         )
       },
       {
@@ -2354,8 +2346,8 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "identity",
           "src/application/services/courier_registration_usecase.service.ts",
-          167,
-          173
+          175,
+          181
         )
       }
     ],

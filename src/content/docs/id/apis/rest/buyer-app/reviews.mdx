@@ -3,7 +3,7 @@ title: Mengulas order
 description: Mengulas setiap produk dari order yang sudah terkirim dan memberi rating kurir yang mengantarnya, di review, yang membaca order dari order.
 sidebar:
   order: 11
-sourceHash: "50d957692fc7"
+sourceHash: "16dc70dad227"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -11,7 +11,7 @@ import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
 Begitu sebuah order terkirim, pembelinya mengulas setiap produk di dalamnya dan memberi rating kurir yang
 mengantarnya. review membaca order itu sendiri dari order, jadi request hanya menyebut order dan produknya;
 merchant dan kurir diambil dari order
-([GrpcOrderClient.php](https://github.com/WildanFrananda/kinetix-review-service/blob/531cdb5506d80532bf11bcbb1e84c5bab5115709/app/Clients/GrpcOrderClient.php#L144-L158)).
+([GrpcOrderClient.php](https://github.com/WildanFrananda/kinetix-review-service/blob/e3ca897c68947dd7ba4a47f04355e5e91da9afa8/app/Clients/GrpcOrderClient.php#L144-L158)).
 Aplikasi pembeli membaca order (langkah 1), mengulas produk-produknya (langkah 2) dan memberi rating kurir
 (langkah 3). Langkah 2 dan 3 tidak saling bergantung.
 
@@ -19,16 +19,22 @@ Aplikasi pembeli membaca order (langkah 1), mengulas produk-produknya (langkah 2
 
 Aplikasi menawarkan ulasan hanya bila `status` bernilai `DELIVERED` atau `COMPLETED`, dua status yang diterima
 review
-([GrpcOrderClient.php](https://github.com/WildanFrananda/kinetix-review-service/blob/531cdb5506d80532bf11bcbb1e84c5bab5115709/app/Clients/GrpcOrderClient.php#L32-L35),
-[ProductReviewService.php](https://github.com/WildanFrananda/kinetix-review-service/blob/531cdb5506d80532bf11bcbb1e84c5bab5115709/app/Services/ProductReviewService.php#L33-L35)).
+([GrpcOrderClient.php](https://github.com/WildanFrananda/kinetix-review-service/blob/e3ca897c68947dd7ba4a47f04355e5e91da9afa8/app/Clients/GrpcOrderClient.php#L32-L35),
+[ProductReviewService.php](https://github.com/WildanFrananda/kinetix-review-service/blob/e3ca897c68947dd7ba4a47f04355e5e91da9afa8/app/Services/ProductReviewService.php#L34-L36)).
 Aplikasi menyimpan `id` order, `productId` setiap baris, dan `driverPrincipalId`.
 
 <RestEndpoint id="order.getOrder" />
 
 ## 2. Mengulas setiap produk
 
-Satu request per baris order: `order_id` adalah `id` order (bukan `orderNumber`-nya), dan `product_id` adalah
-`productId` baris itu. Aplikasi menyimpan id ulasan, yang dipakai
+Satu request per baris order: `order_id` adalah `id` order seperti yang dijawab order, dan `product_id` adalah
+`productId` baris itu. review hanya menerima `order_id` berupa UUID, dan menolak `orderNumber` dengan `422`
+sebelum bertanya ke order; aplikasi juga membuang karakter NUL (U+0000) dari `comment` pembeli, yang ditolak
+review dengan cara yang sama
+([ProductReviewController.php](https://github.com/WildanFrananda/kinetix-review-service/blob/e3ca897c68947dd7ba4a47f04355e5e91da9afa8/app/Http/Controllers/ProductReviewController.php#L23-L28)).
+review menyimpan id order dalam huruf kecil, jadi besar-kecil hurufnya tidak berpengaruh
+([ProductReviewService.php](https://github.com/WildanFrananda/kinetix-review-service/blob/e3ca897c68947dd7ba4a47f04355e5e91da9afa8/app/Services/ProductReviewService.php#L19-L24)).
+Aplikasi menyimpan id ulasan, yang dipakai
 [proof-nya](/id/apis/rest/buyer-app/proofs/#6-mengambil-evidence-ulasan): `id` dari `201`, atau `review_id` dari
 `409`, yang berarti baris itu sudah punya ulasan dari pembeli dan aplikasi menampilkannya sebagai selesai.
 Penulisan yang hasilnya belum diketahui, setelah `503` atau tanpa jawaban, dikirim lagi tanpa perubahan, dan
@@ -39,7 +45,9 @@ berakhir dengan salah satu dari dua jawaban itu.
 ## 3. Memberi rating kurir
 
 Satu request per order, dan hanya bila langkah 1 menunjukkan `driverPrincipalId`: `order_id` adalah `id`
-order. Seperti di langkah 2, aplikasi menyimpan id rating, yaitu `id` dari `201` atau `review_id` dari `409`
+order. `order_id` dan `comment` mengikuti aturan yang sama seperti di langkah 2
+([DriverRatingController.php](https://github.com/WildanFrananda/kinetix-review-service/blob/e3ca897c68947dd7ba4a47f04355e5e91da9afa8/app/Http/Controllers/DriverRatingController.php#L23-L27)).
+Seperti di langkah 2, aplikasi menyimpan id rating, yaitu `id` dari `201` atau `review_id` dari `409`
 yang menyatakan rating-nya sudah diberikan, dan mengirim lagi tanpa perubahan penulisan yang hasilnya belum
 diketahui.
 

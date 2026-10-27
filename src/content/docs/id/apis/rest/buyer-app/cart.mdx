@@ -3,7 +3,7 @@ title: Keranjang
 description: Menyimpan keranjang pembeli yang sedang masuk di order, serta memeriksa dan memasang voucher dengan pricing sebelum checkout.
 sidebar:
   order: 8
-sourceHash: "02abf7b309a0"
+sourceHash: "a40bee20dfde"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -55,7 +55,7 @@ dengan keranjang ini adalah urusan langkah 6.
 
 Sebuah pratinjau: `code` seperti yang diketik pembeli, `cart_subtotal`, dan `merchant_principal_id` dari
 `merchantPrincipalId` di baris-baris keranjang. `subtotal` keranjang memakai harga catalog
-([CustomerCart.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Domain/Entities/CustomerCart.cs#L7)),
+([CustomerCart.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Domain/Entities/CustomerCart.cs#L7)),
 sedangkan checkout membandingkan `min_spend` dengan subtotal setelah flash sale dan diskon
 ([pricing_service.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0ed7db4cd6fb8d40375cab26dd7ac56ebce16a8a/src/services/pricing_service.rs#L151-L219)).
 Bila dikirim dengan `subtotal` keranjang, pratinjau bisa menerima kode yang tidak akan diberikan checkout;
@@ -82,7 +82,7 @@ order.
 Hanya untuk aksi "kosongkan keranjang" yang eksplisit. Order yang berhasil dibuat mengeluarkan dari keranjang
 baris-baris yang dibelinya, sebanyak jumlah yang dibelinya, beserta kode voucher bila kodenya masih yang dipakai
 saat checkout; baris yang ditambahkan selagi checkout berjalan tetap ada
-([CartService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Application/Services/CartService.cs#L115-L152)).
+([CartService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/CartService.cs#L115-L152)).
 Jadi setelah checkout aplikasi membaca keranjang lagi
 ([langkah 4 Checkout](/id/apis/rest/buyer-app/checkout/#4-membaca-keranjang-lagi)) dan tidak pernah
 mengosongkannya.
