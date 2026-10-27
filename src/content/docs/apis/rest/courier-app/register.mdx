@@ -19,13 +19,20 @@ from then on.
 
 Every field comes from the courier's input. The courier app checks them against the same rules before sending,
 and sends the phone number without spaces, dashes, dots or brackets
-([register_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/viewmodels/register_view_model.dart#L43-L48),
-[#L94-L140](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/viewmodels/register_view_model.dart#L94-L140)).
-Keep both tokens and `driverId` from the `201`: the tokens are a signed-in session for the next steps, and
-`driverId` is the courier's id in matching, the topic of the [driver socket](/apis/rest/courier-app/deliver/).
-The courier app stores the three together
-([session_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/session_repository_impl.dart#L143-L177)).
-The answers that carry `accountExists` mean the account exists already; each says what to send again.
+([register_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/viewmodels/register_view_model.dart#L44-L49),
+[#L112-L158](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/viewmodels/register_view_model.dart#L112-L158)).
+It sends `X-Kinetix-Client: courier-app`, so the session is bound to that name and its refreshes must name it
+too, and `X-Firebase-AppCheck`, which identity does not read as production is configured;
+[signing in](/apis/rest/courier-app/sign-in/) says more about both. Keep both tokens and `driverId` from the
+`201`: the tokens are a signed-in session for the next steps, and `driverId` is the courier's id in matching, the
+topic of the [driver socket](/apis/rest/courier-app/deliver/). The courier app stores the three together and
+shows the waiting screen
+([session_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/session_repository_impl.dart#L197-L250),
+[register_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/viewmodels/register_view_model.dart#L70-L86)).
+The answers that carry `accountExists` mean the account exists already; each says what to send again. On a
+`429` the courier app counts the wait down as on [signing in](/apis/rest/courier-app/sign-in/), and on a `201`
+it cannot read it asks the courier to sign in with the same email and password, since the account exists by
+then.
 
 <RestEndpoint id="identity.registerCourier" />
 
@@ -33,23 +40,29 @@ The answers that carry `accountExists` mean the account exists already; each say
 
 Send the access token from step 1. Until an admin approves the courier, matching answers `403` with
 `pending_approval`, and its driver socket refuses the courier as well. After approval it answers `200`. With a
-stored session, the courier app asks at every start and shows a waiting screen while the answer is
-`pending_approval`
-([splash_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/viewmodels/splash_view_model.dart#L31-L36)).
+stored session, the courier app asks at every start, and again whenever the courier taps "Check again" on the
+waiting screen; it stays there while the answer is `pending_approval`, and opens the tracking screen on a `200`
+([splash_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/viewmodels/splash_view_model.dart#L20-L48),
+[pending_approval_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/viewmodels/pending_approval_view_model.dart#L21-L47)).
+When the access token is refused it refreshes once (step 3) and asks again, and it stores the `data.id` of a
+`200` as the driver id, in place of the one it held
+([session_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/session_repository_impl.dart#L72-L95),
+[#L263-L275](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/session_repository_impl.dart#L263-L275)).
 
 <RestEndpoint id="matching.driverMe" />
 
 ## 3. Refresh after approval
 
 Approval makes the account a `courier` in identity
-([courier_onboarding_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/courier_onboarding_usecase.service.ts#L63-L74)),
+([courier_onboarding_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/application/services/courier_onboarding_usecase.service.ts#L63-L74)),
 but a token keeps the role it was issued with, so the tokens from step 1 still say `customer`. The driver socket
 admits only the roles `courier` and `admin`
-([driver_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_socket.ex#L46-L49))
+([driver_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse_web/channels/driver_socket.ex#L46-L49))
 and refuses the old access token with `403`. A refresh reads the role from the account
-([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/auth_usecase.service.ts#L108-L128)):
-exchange the refresh token from step 1 and use the new pair from then on. The courier app refreshes when the
-driver socket refuses its token, then connects again with the new access token
-([connection_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/connection_repository_impl.dart#L88-L124)).
+([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/application/services/auth_usecase.service.ts#L145-L198)):
+exchange the refresh token from step 1, with the same `X-Kinetix-Client` as step 1, and use the new pair from then
+on. The courier app refreshes when the driver socket refuses its token, then connects again with the new access
+token
+([connection_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/connection_repository_impl.dart#L95-L134)).
 
 <RestEndpoint id="identity.refresh" />

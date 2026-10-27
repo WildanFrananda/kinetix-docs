@@ -1,5 +1,6 @@
 ---
 import { Code } from "@astrojs/starlight/components";
+import "../styles/rest.css";
 import { localeOf } from "../diagrams/engine/locale_of";
 import { messageHeaders } from "../site/rest/message_headers";
 import { messagePayload } from "../site/rest/message_payload";
@@ -39,78 +40,3 @@ if (reason === undefined) {
     }
   </div>
 </div>
-
-<style>
-  a {
-    color: var(--sl-color-white);
-    text-decoration: underline;
-    text-decoration-color: var(--sl-color-accent);
-    text-decoration-thickness: 1px;
-    text-underline-offset: 0.22em;
-  }
-
-  a:hover {
-    color: var(--sl-color-accent);
-  }
-
-  .rest-case {
-    padding: 0.875rem 0;
-    border-top: 1px solid var(--kx-rule);
-  }
-
-  .rest-case-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 0.25rem 1rem;
-    margin: 0;
-  }
-
-  .rest-status {
-    font-family: var(--sl-font-mono);
-    font-size: var(--sl-text-sm);
-    font-weight: 600;
-  }
-
-  .rest-tone-green {
-    color: var(--kx-lane-b);
-  }
-
-  .rest-tone-blue {
-    color: var(--kx-lane-a);
-  }
-
-  .rest-tone-orange {
-    color: var(--sl-color-accent);
-  }
-
-  .rest-tone-red {
-    color: var(--sl-color-red);
-  }
-
-  .rest-source {
-    font-family: var(--sl-font-mono);
-    font-size: var(--sl-text-xs);
-    overflow-wrap: anywhere;
-  }
-
-  .rest-when {
-    margin: 0.375rem 0 0;
-    color: var(--sl-color-gray-2);
-  }
-
-  .rest-parts {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.625rem;
-    margin-top: 0.625rem;
-    min-width: 0;
-  }
-
-  .rest-none {
-    margin: 0;
-    font-size: var(--sl-text-sm);
-    color: var(--sl-color-gray-3);
-  }
-</style>

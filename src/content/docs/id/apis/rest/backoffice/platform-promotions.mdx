@@ -3,22 +3,28 @@ title: Promosi platform
 description: Cara admin membuat diskon, voucher dan flash sale milik platform sendiri di pricing, dan membaca kembali pemakaian sebuah voucher.
 sidebar:
   order: 5
-sourceHash: "2c30c9b062dd"
+sourceHash: "c24fd8fc0d54"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
 
 Promosi yang dibuat admin adalah milik platform, bukan milik satu merchant: `merchant_principal_id`-nya `null`, dan
-promosi itu berlaku untuk setiap keranjang. Admin yang sudah masuk seperti di
+promosi itu berlaku untuk setiap keranjang. Admin yang sudah masuk dari jaringan staf Kinetix seperti di
 [Masuk](/id/apis/rest/backoffice/sign-in/) membuat diskon, voucher atau flash sale, dan membaca kembali sebuah voucher
-untuk mengikuti pemakaiannya. Pricing memeriksa token admin sendiri. Tidak ada endpoint yang mengubah atau mengakhiri
-promosi setelah dibuat, jadi sebuah pembuatan tidak bisa dikoreksi sesudahnya.
+untuk mengikuti pemakaiannya. Pricing memeriksa token admin sendiri, dan menulis setiap pembuatan dan setiap pembacaan
+voucher yang memakai token itu ke log audit admin-nya. Tidak ada endpoint yang mengubah atau mengakhiri promosi setelah
+dibuat, jadi sebuah pembuatan tidak bisa dikoreksi sesudahnya.
 
-Setiap pembuatan menerima header `Idempotency-Key`. Buat key baru untuk setiap promosi dan simpan bersama request-nya
-sampai request itu mendapat jawaban akhir; setelah timeout, `500` atau `503`, kirim body yang sama dengan key yang
-sama, dan promosi yang sudah dibuat percobaan pertama dikembalikan dengan `Idempotent-Replayed: true`, bukan dibuat
-dua kali. Kong mengizinkan browser mengirim `Idempotency-Key` dan membaca `Idempotent-Replayed`
-([Browser](/id/apis/rest/#browser)).
+Setiap pembuatan menerima header `Idempotency-Key`, yang diteruskan edge ke pricing, dan edge meneruskan
+`Idempotent-Replayed` kembali ke halaman
+([forwarding.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/config/forwarding.tl#L11-L38)).
+Buat key baru untuk setiap promosi dan simpan bersama request-nya sampai request itu mendapat jawaban akhir. Setelah
+timeout, `500` atau `503`, termasuk dari edge, kirim body yang sama dengan key yang sama: promosi yang sudah dibuat
+percobaan pertama dikembalikan dengan `Idempotent-Replayed: true`, bukan dibuat dua kali. Pricing mencari key itu
+sebelum memeriksa apa pun, jadi replay tetap kembali walaupun jendela waktu promosinya sudah tertutup atau catalog sudah
+membuang produknya sejak itu. Jawaban `422` `UNPROCESSABLE` berarti key itu sudah dipakai untuk body lain, dan
+request-nya butuh key baru; penolakan lain mana pun tidak membuat apa-apa dan membiarkan key itu belum terpakai, jadi
+request yang sudah dikoreksi bisa dikirim dengan key itu.
 
 ## 1. Buat diskon
 
@@ -27,7 +33,7 @@ Diskon memotong persentase atau nominal tertentu dari harga satuan di antara dua
 dari daftar di [Kategori](/id/apis/rest/backoffice/categories/); atau ke semua produk dengan menghilangkan keduanya.
 Simpan `id` dari jawabannya.
 
-<RestEndpoint id="pricing.createDiscount" />
+<RestEndpoint id="pricing.createDiscount" via="backoffice" />
 
 ## 2. Buat voucher
 
@@ -35,19 +41,19 @@ Voucher adalah kode yang dimasukkan pembeli, dengan belanja minimum, batas poton
 berlaku. Kodenya unik di antara voucher semua merchant dan disimpan dalam huruf besar; simpan `code` dari jawabannya
 untuk langkah 3.
 
-<RestEndpoint id="pricing.createVoucher" />
+<RestEndpoint id="pricing.createVoucher" via="backoffice" />
 
 ## 3. Baca pemakaian voucher
 
-Baca voucher dengan `code`-nya memakai token admin, yang menampilkan `quota` dan `used_count` selain syarat yang
-dilihat pembeli. Voucher hanya ditemukan selama masih bisa dipakai: begitu kedaluwarsa atau kuotanya habis, jawabannya
-`404`.
+Baca voucher dengan `code`-nya. Edge mengirim token admin, jadi jawabannya menampilkan `quota` dan `used_count` selain
+syarat yang dilihat pembeli. Voucher hanya ditemukan selama masih bisa dipakai: begitu kedaluwarsa atau kuotanya
+habis, jawabannya `404`.
 
-<RestEndpoint id="pricing.getVoucher" />
+<RestEndpoint id="pricing.getVoucher" via="backoffice" />
 
 ## 4. Buat flash sale
 
 Flash sale menjual sejumlah terbatas unit satu produk dengan harga tetap di antara dua waktu. `product_id` adalah `sku`
 produk itu di catalog, yang diperiksa pricing ke catalog untuk admin juga. Simpan `id` dari jawabannya.
 
-<RestEndpoint id="pricing.createFlashSale" />
+<RestEndpoint id="pricing.createFlashSale" via="backoffice" />

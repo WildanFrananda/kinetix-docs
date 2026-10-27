@@ -1,5 +1,6 @@
 import commonEnglish from "../../catalogue/rest/en/common.json";
 import gatewayEnglish from "../../catalogue/rest/en/gateway.json";
+import edgeEnglish from "../../catalogue/rest/en/edge.json";
 import identityEnglish from "../../catalogue/rest/en/identity.json";
 import catalogEnglish from "../../catalogue/rest/en/catalog.json";
 import searchEnglish from "../../catalogue/rest/en/search.json";
@@ -13,6 +14,7 @@ import notaryEnglish from "../../catalogue/rest/en/notary.json";
 import notificationEnglish from "../../catalogue/rest/en/notification.json";
 import commonIndonesian from "../../catalogue/rest/id/common.json";
 import gatewayIndonesian from "../../catalogue/rest/id/gateway.json";
+import edgeIndonesian from "../../catalogue/rest/id/edge.json";
 import identityIndonesian from "../../catalogue/rest/id/identity.json";
 import catalogIndonesian from "../../catalogue/rest/id/catalog.json";
 import searchIndonesian from "../../catalogue/rest/id/search.json";
@@ -30,6 +32,7 @@ import type { RestCatalogue } from "../types/rest_catalogue.type";
 export const restEnglish = {
   ...commonEnglish,
   ...gatewayEnglish,
+  ...edgeEnglish,
   ...identityEnglish,
   ...catalogEnglish,
   ...searchEnglish,
@@ -46,6 +49,7 @@ export const restEnglish = {
 const restIndonesian = {
   ...commonIndonesian,
   ...gatewayIndonesian,
+  ...edgeIndonesian,
   ...identityIndonesian,
   ...catalogIndonesian,
   ...searchIndonesian,

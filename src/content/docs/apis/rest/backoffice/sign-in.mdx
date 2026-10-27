@@ -1,58 +1,104 @@
 ---
 title: Sign in
-description: How the backoffice signs a staff member in, answers a two-factor challenge, keeps the token pair fresh and signs out, all against identity.
+description: How the backoffice signs an admin in through the edge, with a second factor or by enrolling one first, finds the session again on page load, and signs out.
 sidebar:
   order: 1
 ---
 
 import RestEndpoint from "../../../../../components/RestEndpoint.astro";
 
-The backoffice is the web application the API expects Kinetix staff to use. It is for accounts whose `role` is
-`admin`: the staff endpoints on the following pages answer `403` to any other role. A staff member signs in with an
-email and a password, answers a two-factor challenge when the account has two-factor authentication on, and the
-application then keeps the token pair fresh until the staff member signs out. Being a browser application, the
-backoffice is subject to CORS and authenticates with the bearer token alone, never a cookie; see
-[Browsers](/apis/rest/#browsers).
+The backoffice is the web application the API expects Kinetix staff to use, at `backoffice.wildanfrananda.my.id`. It
+never holds a token. The browser calls only its own host, under `/bff/`, where the edge keeps the session: it signs
+the admin in with identity, keeps the token pair, adds the access token to every `/bff/api/` call it passes on to the
+API, and renews the pair by itself when a call finds the access token under a minute from expiry
+([timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/config/timing.tl#L4)).
+The browser holds only the `HttpOnly` cookie `__Host-kx_session`, which page scripts cannot read and the browser sends
+back by itself, so this page has no refresh step. What every call through the edge sends and gets back is in
+[The edge](/apis/rest/#the-edge).
 
-## 1. Sign in with email and password
+The backoffice admits only accounts whose `role` is `admin`, and only with a second factor: an admin who has none is
+led through enrolling one before any session starts. The host answers only from Kinetix's staff network; from
+anywhere else Kong refuses every request under `/bff/`, sign-in included, with `403`
+([Kong's answers](/apis/rest/#kongs-answers)).
 
-The email and the password the staff member types go to identity in one request. A `200` carrying `accessToken`
-starts the session: keep `accessToken`, `refreshToken` and `expiresIn`, and read `user.role`, since an account whose
-role is not `admin` signs in here but is refused by every staff endpoint. A `200` carrying `mfaRequired` has started
-no session yet: keep `challengeToken` and go to step 2.
+## 1. Look for a session
 
-<RestEndpoint id="identity.login" />
+On every page load, before showing the sign-in form, ask the edge whether this browser is signed in.
+`authenticated: true` means the app can be shown: `role` is `admin`, and `expiresAt` is when the session ends if the
+admin does nothing. `authenticated: false` means step 2. Reading the session is not a use of it, so calling this
+again and again keeps nothing alive.
 
-## 2. Answer the two-factor challenge
+<RestEndpoint id="edge.session" via="backoffice" />
 
-Only an account with two-factor authentication on gets here. Any account, an admin's included, turns it on with the
-calls on the buyer app's [Two-factor authentication](/apis/rest/buyer-app/two-factor/) page. Send `challengeToken`
-from step 1 and the six digits the staff member's authenticator shows, within the challenge's `expiresIn` seconds. A
-`200` is the same token pair as step 1's, kept the same way; a `401` sends the staff member back to step 1.
+## 2. Sign in with email and password
 
-<RestEndpoint id="identity.verifyTwoFactor" />
+The email and the password the admin types go to the edge, which asks identity. On the backoffice a password alone
+never starts a session, so a `200` carries one of two flags, and with either the edge sets the `HttpOnly` cookie
+`__Host-kx_pending`, which holds the sign-in in progress:
 
-## 3. Restore the session from a stored token
+- `mfaRequired`: the account has a second factor. Go to step 3 within 300 seconds, in the same browser.
+- `mfaEnrolmentRequired`: the account is an admin without a second factor. Go to steps 4 and 5 within 600 seconds,
+  then sign in here again.
 
-When the application loads again with a stored access token, this call says whose token it is, with what `role`, and
-when it expires (`expiresAt`), without asking for the password. Its fields come from the token itself. A `401`, from
-Kong or from identity, means the access token can no longer be used: step 4 exchanges the refresh token for a new
-pair.
+A `403` `ROLE_REFUSED`, here or in step 3, means the account is not an admin and cannot use the backoffice; the edge
+has already signed its tokens out at identity. After a `429`, wait the seconds in `Retry-After` before the next
+attempt.
 
-<RestEndpoint id="identity.me" />
+<RestEndpoint id="edge.login" via="backoffice" />
 
-## 4. Refresh the token pair
+## 3. Answer the two-factor challenge
 
-Once `expiresIn` seconds have passed, or after a `401` for an expired access token, exchange `refreshToken` for a
-new pair and replace both stored tokens at once. The refresh token sent is spent, and sending it a second time ends
-the session, so a backoffice open in several browser tabs must let only one of them refresh at a time and share the
-new pair with the others. Any `401` here means signing in again at step 1.
+After `mfaRequired`, send the six digits the admin's authenticator app shows; the browser sends `__Host-kx_pending`
+from step 2 by itself. A `200` starts the session: the edge sets `__Host-kx_session`, expires the pending cookie, and
+answers the same view as step 1.
 
-<RestEndpoint id="identity.refresh" />
+The session ends after 15 minutes without a `/bff/api/` call, or 8 hours after this step, whichever comes first
+([lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/config/lifetimes.tl#L5)),
+and its cookie has no `Max-Age`, so it also ends when the browser closes
+([apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/config/apps.tl#L15-L26),
+[lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/src/http/lifetimes.tl#L38-L44)).
+After that, every `/bff/api/` call answers `401` `SESSION_ENDED`, and the admin signs in again at step 2. If the
+account stops being an admin, the edge's next renewal of the tokens ends the session with `403` `ROLE_REFUSED`.
 
-## 5. Sign out
+On `401` `CODE_REFUSED` the sign-in is still pending: ask for the next code, and if the answer repeats, start again
+at step 2. On `401` `SIGN_IN_REQUIRED` there is no pending sign-in any more: go back to step 2.
 
-Send the access token in `Authorization` and the session's `refreshToken` in the body; leave `refreshToken` out to
-end every session of the account instead. Discard both stored tokens after the `204`.
+<RestEndpoint id="edge.verifyTwoFactor" via="backoffice" />
 
-<RestEndpoint id="identity.logout" />
+## 4. Enrol a second factor: get a secret
+
+Only after `mfaEnrolmentRequired` in step 2. The request has no body: the pending cookie names the enrolment. Show
+`qrCodeUrl` as a QR code for the admin's authenticator app, and `twoFactorSecret` for typing in by hand. Calling this
+again replaces the secret, so only codes from the latest one pass step 5. A `409` means the account got a second
+factor through another sign-in meanwhile: go back to step 2, which now answers `mfaRequired`. A `401`
+`SIGN_IN_REQUIRED` means the enrolment has ended, for instance because its 600 seconds have passed: start again at
+step 2.
+
+<RestEndpoint id="edge.setupTwoFactor" via="backoffice" />
+
+## 5. Enrol a second factor: confirm a code
+
+Send a code the authenticator app shows for the secret from step 4. A `200` turns two-factor authentication on but
+starts no session: identity ends every session the account had and spends the enrolment, and the edge expires
+`__Host-kx_pending`. Go back to step 2: the sign-in now answers `mfaRequired`, and step 3 starts the session. On
+`401` `CODE_REFUSED`, send the next code; on `401` `SIGN_IN_REQUIRED`, the enrolment has ended as in step 4, so start
+again at step 2.
+
+<RestEndpoint id="edge.enableTwoFactor" via="backoffice" />
+
+## 6. Read the signed-in account
+
+This step is optional. Step 1 names the session's `role` and `principalId` but not the account's `email` or its
+`userId`; this call does, passed on by the edge to identity with the session's access token. Its `expiresAt` is that
+access token's, which the edge renews by itself: the session's own end is the `expiresAt` of step 1. Unlike step 1,
+this call is a use of the session and moves its idle end later.
+
+<RestEndpoint id="identity.me" via="backoffice" />
+
+## 7. Sign out
+
+The edge ends the session at identity and in its own store, and expires both cookies. The request has no body and is
+safe to repeat, so it can be sent whatever step 1 last answered. After the `204`, show the sign-in form. A `503` means
+identity could not be told and the admin is still signed in: send the sign-out again.
+
+<RestEndpoint id="edge.logout" via="backoffice" />

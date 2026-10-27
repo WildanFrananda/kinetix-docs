@@ -15,11 +15,14 @@ tokens are described on the [overview](/apis/rest/#tokens).
 
 ## 1. Refresh the token pair
 
-The app refreshes once `expiresIn` seconds have passed, or when a request is refused with a `401` because the
-access token expired, then repeats that request with the new access token. On `200` it replaces both stored
-tokens at once. Refresh tokens rotate: each exchange spends the token sent, and a spent token sent again is
-taken as stolen, which ends the whole session
-([token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/token.service.ts#L185-L231)).
+The app refreshes once `expiresIn` seconds have passed, or when a request is refused with a `401` and the
+access token's `exp` has passed, then repeats that request with the new access token. A `401` while the token
+is still in date is not cured by a refresh: identity's two-factor endpoints, for one, answer a wrong password
+with it ([Two-factor authentication](/apis/rest/buyer-app/two-factor/)). Like the sign-in, the refresh carries
+no `X-Kinetix-Client`: a session started without one is renewed without one. On `200` the app replaces both
+stored tokens at once. Refresh tokens rotate: each exchange spends the token sent, and a spent token sent again
+is taken as stolen, which ends the whole session
+([token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/application/services/token.service.ts#L249-L305)).
 So the app never sends a refresh token twice, and never in two requests at the same time: requests that
 find the access token expired while a refresh is under way wait for that refresh instead of starting their
 own. A `401` here means the session is over: the buyer signs in again.
@@ -35,10 +38,10 @@ An app that never registered the handset goes straight to step 3.
 ## 3. Sign out
 
 The app sends its access token and, in the body, the `refreshToken` of this session. identity then revokes
-that access token and ends this session alone. Without `refreshToken`, it ends every session of the account,
-on every device the buyer is signed in on
-([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/auth_usecase.service.ts#L130-L141),
-[token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/token.service.ts#L233-L240)).
+that access token and ends this session alone. With the field left out, it ends every session of the
+account, on every device the buyer is signed in on; `null` is refused rather than read that way
+([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/application/services/auth_usecase.service.ts#L200-L211),
+[token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/application/services/token.service.ts#L307-L314)).
 Kong checks the access token on this route, so an expired one is refused before identity sees it: the app
 refreshes (step 1) and signs out with the new pair. After the `204` it discards both tokens.
 

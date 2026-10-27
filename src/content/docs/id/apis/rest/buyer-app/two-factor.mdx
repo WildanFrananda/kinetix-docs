@@ -1,9 +1,9 @@
 ---
 title: Autentikasi dua faktor
-description: Mengaktifkan faktor kedua untuk akun pembeli sendiri dengan aplikasi authenticator, dan mematikannya lagi, di identity.
+description: Mengaktifkan faktor kedua untuk akun pembeli sendiri dengan aplikasi authenticator, dan mematikannya lagi, di identity, dengan mengonfirmasi setiap perubahan memakai password akun.
 sidebar:
   order: 3
-sourceHash: "587ee66b478a"
+sourceHash: "c6ee3d08f18d"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -15,27 +15,38 @@ mematikannya nanti (langkah 3). `{id}` di setiap path adalah id akun pembeli: `u
 setiap kali masuk identity menjawab dengan challenge lebih dulu, yang dijawab aplikasi seperti di
 [langkah 3 Daftar dan masuk](/id/apis/rest/buyer-app/sign-up-and-sign-in/#3-menjawab-challenge-dua-faktor).
 
+Setiap panggilan di sini menerima password akun di `password` selain access token, supaya access token yang
+dicuri saja tidak bisa mengubah faktor kedua
+([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/application/services/auth_usecase.service.ts#L363-L376)).
+Aplikasi menanyakannya kepada pembeli di setiap langkah dan tidak menyimpannya. `401` untuk password yang
+salah menyangkut password-nya, bukan session-nya: aplikasi tetap memegang token-nya dan menanyakan password
+lagi. Setiap panggilan juga dihitung sebagai pemeriksaan akun untuk waktu tunggu masuk, sama seperti masuk;
+pada `429 SIGN_IN_DELAYED`, aplikasi menunggu `Retry-After` detik lalu mengirim request yang sama lagi.
+
 ## 1. Mengambil secret baru
 
-`qrCodeUrl` di jawabannya adalah URI `otpauth://`: aplikasi menampilkannya sebagai kode QR untuk dipindai
-aplikasi authenticator, dan menampilkan `twoFactorSecret` bagi pembeli yang mengetiknya sendiri. Belum ada
-yang berlaku. Meminta lagi sebelum langkah 2 mengganti secret-nya, jadi authenticator harus memegang yang
-terbaru.
+Pembeli mengetik password akunnya; request tanpa password dijawab `400 PASSWORD_REQUIRED`. `qrCodeUrl` di
+jawabannya adalah URI `otpauth://`: aplikasi menampilkannya sebagai kode QR untuk dipindai aplikasi
+authenticator, dan menampilkan `twoFactorSecret` bagi pembeli yang mengetiknya sendiri. Belum ada yang berlaku.
+Meminta lagi sebelum langkah 2 mengganti secret-nya, jadi authenticator harus memegang yang terbaru. `409`
+berarti autentikasi dua faktor sudah aktif: langkah 3 mematikannya lebih dulu.
 
 <RestEndpoint id="identity.setupTwoFactor" />
 
 ## 2. Mengonfirmasi dengan kode
 
-Pembeli mengetik enam digit yang sedang ditampilkan aplikasi authenticator. `200` dengan `enabled: true`
-memberlakukan faktor kedua untuk setiap kali masuk berikutnya. Sesi ini tetap memegang token-nya; semua sesi
-lain dari akun itu berakhir, dan perangkat-perangkat itu harus masuk lagi.
+Pembeli mengetik enam digit yang sedang ditampilkan aplikasi authenticator, dan password-nya lagi. `200`
+dengan `enabled: true` memberlakukan faktor kedua untuk setiap kali masuk berikutnya. Session ini tetap
+memegang token-nya; semua session lain dari akun itu berakhir, dan perangkat-perangkat itu harus masuk lagi.
+`422` adalah kode yang tidak cocok atau sudah terpakai: tidak ada yang berubah, dan pembeli mengetik kode
+berikutnya.
 
 <RestEndpoint id="identity.enableTwoFactor" />
 
 ## 3. Mematikannya
 
-Pembeli mengetik kode terkini dari aplikasi authenticator yang sama. `200` dengan `enabled: false` menghapus
-secret-nya, dan masuk berikutnya langsung menjawab dengan sesi. Seperti di langkah 2, semua sesi lain dari
-akun itu berakhir.
+Pembeli mengetik password dan kode terkini dari aplikasi authenticator yang sama. `200` dengan
+`enabled: false` menghapus secret-nya, dan masuk berikutnya langsung menjawab dengan session. Seperti di
+langkah 2, semua session lain dari akun itu berakhir.
 
 <RestEndpoint id="identity.disableTwoFactor" />

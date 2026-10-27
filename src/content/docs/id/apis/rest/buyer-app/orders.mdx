@@ -3,7 +3,7 @@ title: Order saya
 description: Mendaftar order yang dibuat pembeli dan membaca salah satunya, di order.
 sidebar:
   order: 10
-sourceHash: "dc49446459e4"
+sourceHash: "023a2ece37af"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -15,7 +15,8 @@ dibaca dengan cara yang sama.
 ## 1. Mendaftar order
 
 Terbaru lebih dulu. `status` menyempitkan daftar ke satu status. Aplikasi meminta `page` berikutnya selama
-`page` × `pageSize` masih di bawah `totalCount`. `id` setiap item membuka order-nya di langkah 2.
+`page` × `pageSize` masih di bawah `totalCount`, sampai `page` 10.000, halaman terakhir yang dilayani order
+(`maxPage`). `id` setiap item membuka order-nya di langkah 2.
 
 <RestEndpoint id="order.listMyOrders" />
 

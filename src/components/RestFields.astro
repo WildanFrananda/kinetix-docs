@@ -1,0 +1,32 @@
+---
+import { localeOf } from "../diagrams/engine/locale_of";
+import { restCatalogueFor } from "../site/rest/rest_catalogue";
+import type { RestFieldsProps } from "../site/types/rest_fields_props.type";
+import RestText from "./RestText.astro";
+
+type Props = RestFieldsProps;
+
+const { fields } = Astro.props;
+const text = restCatalogueFor(localeOf(Astro.locals.starlightRoute.entryMeta.lang));
+---
+
+{
+  fields.length === 0 ? (
+    <p class="rest-none">{text["rest.common.noFields"]}</p>
+  ) : (
+    <ul class="rest-fields">
+      {fields.map((field) => (
+        <li>
+          <p class="rest-field-head">
+            <code>{field.name}</code>
+            <span class="rest-field-meta">
+              {text[`rest.common.in.${field.in}`]} · {field.type} ·{" "}
+              {field.required ? text["rest.common.required"] : text["rest.common.optional"]}
+            </span>
+          </p>
+          <p class="rest-field-rule"><RestText text={text[field.rule]} /></p>
+        </li>
+      ))}
+    </ul>
+  )
+}

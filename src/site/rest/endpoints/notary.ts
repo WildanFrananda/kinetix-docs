@@ -406,7 +406,16 @@ export const notaryEndpoints: readonly RestEndpoint[] = [
           error: "registration_refused",
           message: "the request was issued at 2026-10-22T03:05:00Z; it must be at most 5m0s old"
         },
-        source: restSource("notary", "internal/registering/registrar.go", 216, 228)
+        source: restSource("notary", "internal/registering/registrar.go", 219, 228)
+      },
+      {
+        status: 403,
+        when: "rest.notary.register.case.issuedAhead",
+        json: {
+          error: "registration_refused",
+          message: "the request was issued at 2026-10-22T03:12:00Z, more than 1m0s ahead of the notary's clock"
+        },
+        source: restSource("notary", "internal/registering/registrar.go", 230, 239)
       },
       {
         status: 403,
@@ -416,7 +425,7 @@ export const notaryEndpoints: readonly RestEndpoint[] = [
           message:
             "the request is signed by 0x8a3e1f5c7b9d2e4a6c8f0b1d3e5a7c9f2b4d6e81, not by 0x657cb2e1d417fd966d350cdf7007bb5e30b04b02"
         },
-        source: restSource("notary", "internal/registering/registrar.go", 235, 244)
+        source: restSource("notary", "internal/registering/registrar.go", 246, 255)
       },
       {
         status: 403,
@@ -590,7 +599,7 @@ export const notaryEndpoints: readonly RestEndpoint[] = [
           ],
           pending: 1
         },
-        source: restSource("notary", "internal/httpapi/evidence_proofs.go", 58, 71)
+        source: restSource("notary", "internal/httpapi/evidence_proofs.go", 61, 74)
       },
       {
         status: 200,
@@ -606,9 +615,9 @@ export const notaryEndpoints: readonly RestEndpoint[] = [
         when: "rest.notary.orderEvidence.case.invalidReference",
         json: {
           error: "invalid_reference",
-          message: "the order is not named"
+          message: "the order reference is 300 bytes, more than 255"
         },
-        source: restSource("notary", "internal/httpapi/evidence_proofs.go", 44, 49)
+        source: restSource("notary", "internal/httpapi/evidence_proofs.go", 77, 90)
       },
       {
         status: 404,
@@ -626,10 +635,10 @@ export const notaryEndpoints: readonly RestEndpoint[] = [
           error: "disagreement",
           message: "the evidence proofs could not be produced"
         },
-        source: restSource("notary", "internal/httpapi/evidence_proofs.go", 82, 92)
+        source: restSource("notary", "internal/httpapi/evidence_proofs.go", 100, 110)
       }
     ],
-    source: restSource("notary", "internal/httpapi/evidence_proofs.go", 36, 72)
+    source: restSource("notary", "internal/httpapi/evidence_proofs.go", 39, 75)
   },
   {
     id: "notary.reviewEvidence",
@@ -701,7 +710,7 @@ export const notaryEndpoints: readonly RestEndpoint[] = [
           ],
           pending: 0
         },
-        source: restSource("notary", "internal/httpapi/evidence_proofs.go", 58, 71)
+        source: restSource("notary", "internal/httpapi/evidence_proofs.go", 61, 74)
       },
       {
         status: 200,
@@ -717,9 +726,9 @@ export const notaryEndpoints: readonly RestEndpoint[] = [
         when: "rest.notary.reviewEvidence.case.invalidReference",
         json: {
           error: "invalid_reference",
-          message: "the review is not named"
+          message: "the review reference is not valid UTF-8"
         },
-        source: restSource("notary", "internal/httpapi/evidence_proofs.go", 44, 49)
+        source: restSource("notary", "internal/httpapi/evidence_proofs.go", 77, 90)
       },
       {
         status: 404,
@@ -737,9 +746,9 @@ export const notaryEndpoints: readonly RestEndpoint[] = [
           error: "disagreement",
           message: "the evidence proofs could not be produced"
         },
-        source: restSource("notary", "internal/httpapi/evidence_proofs.go", 82, 92)
+        source: restSource("notary", "internal/httpapi/evidence_proofs.go", 100, 110)
       }
     ],
-    source: restSource("notary", "internal/httpapi/evidence_proofs.go", 36, 72)
+    source: restSource("notary", "internal/httpapi/evidence_proofs.go", 39, 75)
   }
 ];

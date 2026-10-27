@@ -3,10 +3,12 @@ title: Mulai bertugas dan mengantar
 description: Kurir membuka driver socket milik matching, mulai bertugas dan melaporkan posisi, menerima job yang ditugaskan matching, mengambil paketnya, meng-upload foto bukti ke storage, dan melaporkan pengantaran.
 sidebar:
   order: 4
-sourceHash: "dcd8d1a67ef3"
+sourceHash: "f3941843bab6"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+import RestSocket from "../../../../../../components/RestSocket.astro";
+import RestSocketMessage from "../../../../../../components/RestSocketMessage.astro";
 
 Sebagian besar pekerjaan kurir berjalan lewat driver socket milik matching, sebuah channel Phoenix, bukan lewat
 HTTP. Kurir membuka socket, join ke channel `driver:<driver id>`, mulai bertugas dan mengirim posisi, lalu
@@ -19,248 +21,190 @@ access token-nya harus membawa role `courier` dan masih berlaku saat socket dibu
 
 ## 1. Buka driver socket
 
-Sebuah upgrade WebSocket di alamat yang tetap. `vsn=2.0.0` memilih format frame kedua milik Phoenix, dan access
-token dikirim di `Sec-WebSocket-Protocol` di samping subprotocol `phoenix`, di-encode base64 tanpa padding `=`,
-menggantikan `<token>`:
+Sebuah koneksi WebSocket ke alamat yang tetap. Client sendiri hanya mengisi satu header, `Sec-WebSocket-Protocol`,
+dengan access token menggantikan placeholder-nya; header upgrade ditambahkan oleh library WebSocket. Kong
+meneruskan path ini, dan path yang sama berakhiran `/websocket`, yang dipakai client JavaScript milik Phoenix, ke
+matching tanpa memeriksa token-nya, dan menghitung setiap koneksi terhadap
+[batas per alamat](/id/apis/rest/#batas) milik route itu
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/6747ebc0ae2b8d5203539aab21f428f4b03784f7/config/gateway.pkl#L421-L434)).
 
-```http
-GET /ws/v1/matching/driver?vsn=2.0.0 HTTP/1.1
-Host: api.wildanfrananda.my.id
-Upgrade: websocket
-Connection: Upgrade
-Sec-WebSocket-Protocol: phoenix, base64url.bearer.phx.<token>
-```
+<RestSocket id="matching.driverSocket" />
 
-Kong meneruskan route ini ke matching tanpa memeriksa token-nya
-([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/2b38bcc9a795dac8a6a3088b6d67f297fcfa9f5c/config/gateway.pkl#L155-L166)).
-matching memeriksanya saat upgrade: access token yang ditandatangani identity, role `courier` atau `admin`, dan
-data kurir yang sudah disetujui untuk `sub` milik token itu
-([driver_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_socket.ex#L27-L49)).
-matching menolak dengan body kosong: `403` bila token-nya tidak ada atau ditolak, role-nya lain, akunnya tidak
-punya data kurir, atau kurirnya belum disetujui, dan `503` bila matching tidak bisa mengambil key milik identity
-untuk memeriksa token. Bila berhasil, matching memilih subprotocol `phoenix`
-([websocket.ex](https://github.com/phoenixframework/phoenix/blob/a27a0320ec8bcc874a8ae93a85f15dfdd5e91e25/lib/phoenix/transports/websocket.ex#L39-L56),
-[transport.ex](https://github.com/phoenixframework/phoenix/blob/a27a0320ec8bcc874a8ae93a85f15dfdd5e91e25/lib/phoenix/socket/transport.ex#L405-L422)).
 Aplikasi kurir menyusun alamat dan subprotocol seperti di atas
-([channel_client.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/services/channel/channel_client.dart#L75-L86)).
-Setelah `403`, aplikasi melakukan refresh sesi lalu tersambung lagi
-([connection_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/connection_repository_impl.dart#L88-L124));
-setelah `503` atau koneksi yang terputus, aplikasi tersambung lagi setelah 1, 2, 4 dan paling lama 30 detik
-([channel_client.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/services/channel/channel_client.dart#L359-L379)).
+([channel_client.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L86-L97)),
+dan hanya membuka socket untuk session yang tahu driver id-nya; session yang disimpan selagi persetujuan masih
+ditunggu tidak punya driver id, dan menampilkan layar tunggu
+([#L202-L216](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L202-L216)).
+Aplikasi hanya menganggap `401` dan `403` sebagai penolakan
+([handshake_refused_exception.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/handshake_refused_exception.dart#L8-L10)):
+lalu aplikasi melakukan refresh session dan tersambung lagi
+([connection_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/connection_repository_impl.dart#L95-L134)).
+Bila token baru itu juga ditolak sebelum ada koneksi yang bertahan, aplikasi menanyakan alasannya ke
+`GET /api/v1/matching/driver/me`: pada `pending_approval` aplikasi menampilkan layar tunggu dan menyimpan
+session-nya, pada `401`, `403` lain atau `404` aplikasi mengakhiri session, dan pada `200` yang menyebut driver
+id lain aplikasi menyimpan id itu lalu tersambung lagi
+([#L136-L177](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/connection_repository_impl.dart#L136-L177)).
+Setelah jawaban lain atau koneksi yang terputus, aplikasi tersambung lagi setelah 1, 2, 4 dan paling lama 30
+detik, dan setiap jeda diperpanjang acak sampai satu detik
+([channel_client.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L409-L429)).
 
 ## 2. Join ke channel kurir
 
 Setiap frame adalah array JSON `[join_ref, ref, topic, event, payload]`; balasan mengulang `ref` dari frame yang
 dijawabnya, dan push dari matching berisi `null` untuk `ref`
-([v2_json_serializer.ex](https://github.com/phoenixframework/phoenix/blob/a27a0320ec8bcc874a8ae93a85f15dfdd5e91e25/lib/phoenix/socket/serializers/v2_json_serializer.ex#L63-L98)).
-Join ke topic `driver:` diikuti driver id, dengan payload kosong:
+([v2_json_serializer.ex](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/socket/serializers/v2_json_serializer.ex#L63-L98)).
+Join ke topic `driver:` diikuti driver id:
 
-```json
-["1", "1", "driver:17", "phx_join", {}]
-```
+<RestSocketMessage id="matching.driverSocket.join" />
 
-matching menjawab dengan status tugas kurir, yang tidak diubah oleh join:
+Tepat setelah join, matching melakukan push job kurir saat ini, sehingga kurir yang tersambung lagi di tengah
+pengantaran langsung kembali ke job itu; langkah 7 menjelaskan bagaimana aplikasi memperlakukannya:
 
-```json
-["1", "1", "driver:17", "phx_reply", {"status": "ok", "response": {"status": "offline"}}]
-```
+<RestSocketMessage id="matching.driverSocket.activeOrder" />
 
-matching menolak join dengan `{"status": "error", "response": {"reason": "…"}}`: `invalid_topic` bila id-nya
-bukan bilangan bulat positif, `forbidden` bila id-nya bukan kurir yang membuka socket itu, `not_found` atau
-`pending_approval` bila datanya sudah tidak ada atau belum disetujui
-([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_channel.ex#L49-L62),
-[#L194-L204](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_channel.ex#L194-L204)).
-Tepat setelah join, matching melakukan push `active_order` (langkah 7). Aplikasi kurir mengirim setiap frame
-berikutnya dengan `ref` milik join sebagai `join_ref` dan `ref` yang baru
-([channel_client.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/services/channel/channel_client.dart#L136-L161),
-[#L244-L271](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/services/channel/channel_client.dart#L244-L271)).
+Aplikasi kurir mengirim setiap frame berikutnya dengan `ref` milik join sebagai `join_ref` dan `ref` yang baru
+([channel_client.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L154-L180),
+[#L272-L297](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L272-L297)).
+Aplikasi menangani `forbidden` dan `invalid_topic` seperti token yang ditolak di langkah 1, sehingga driver id
+yang bukan lagi milik kurir itu diganti dengan id yang disebut `GET /api/v1/matching/driver/me`, dan tersambung
+lagi setelah penolakan lain, termasuk `join crashed`
+([#L37-L44](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L37-L44),
+[#L254-L264](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L254-L264)).
+
+Phoenix sendiri mengirim dua frame yang tidak ditampilkan blok di atas. Ketika channel gagal, misalnya karena
+database matching tidak menjawab, Phoenix melakukan push `phx_error` dengan `ref` milik join di kedua tempat
+referensinya, dan channel itu hilang sampai di-join lagi; `phx_join` kedua untuk topic yang sama menggantikan
+channel yang sudah di-join, yang lebih dulu ditutup Phoenix dengan `phx_close`
+([socket.ex](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/socket.ex#L560-L569),
+[#L769-L786](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/socket.ex#L769-L786),
+[#L866-L898](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/socket.ex#L866-L898));
+aplikasi kurir memperlakukan keduanya sebagai koneksi yang terputus
+([channel_client.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L345-L349)).
+Jawaban untuk frame di topic yang belum di-join, dan diamnya Phoenix terhadap frame dengan `join_ref` lama, berasal
+dari file yang sama
+([#L803-L842](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/socket.ex#L803-L842)).
+Event yang tidak dikenal channel dijawab `unknown_event`, dan channel tetap ter-join
+([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse_web/channels/driver_channel.ex#L133-L135)).
 
 ## 3. Jaga socket tetap hidup
 
-matching menutup socket yang tidak menerima apa pun selama 60 detik
-([websocket.ex](https://github.com/phoenixframework/phoenix/blob/a27a0320ec8bcc874a8ae93a85f15dfdd5e91e25/lib/phoenix/transports/websocket.ex#L26-L35)).
-Kirim heartbeat di topic `phoenix` setiap 30 detik:
+Batas 60 detik itu adalah idle timeout Phoenix untuk WebSocket
+([websocket.ex](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/transports/websocket.ex#L26-L35)),
+jadi kurir yang tidak mengirim posisi tetap mengirim heartbeat:
 
-```json
-[null, "2", "phoenix", "heartbeat", {}]
-```
+<RestSocketMessage id="matching.driverSocket.heartbeat" />
 
-Phoenix menjawabnya dengan `phx_reply` yang status-nya `ok`
-([socket.ex](https://github.com/phoenixframework/phoenix/blob/a27a0320ec8bcc874a8ae93a85f15dfdd5e91e25/lib/phoenix/socket.ex#L705-L714)).
-Aplikasi kurir mengirim satu heartbeat setiap 30 detik sejak join berhasil
-([channel_client.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/services/channel/channel_client.dart#L336-L357)).
+Aplikasi kurir mengirim satu heartbeat setiap 30 detik sejak join berhasil, dan satu lagi seketika bila sebuah
+push belum dibalas setelah 5 detik. Bila heartbeat tidak dibalas dalam 10 detik, aplikasi menutup socket dan
+tersambung lagi
+([channel_client.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L32-L35),
+[#L172-L179](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L172-L179),
+[#L362-L407](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L362-L407)),
+lalu join, dan menyatakan status bertugas lagi seperti dijelaskan langkah 4.
 
 ## 4. Mulai bertugas
 
-Push `status` dengan `online`:
+Push `status` dengan `online`. Ketika channel berakhir, karena socket ditutup atau terputus, matching mengubah
+status kurir menjadi `offline`
+([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/tracking/driver_state.ex#L258-L261),
+[#L290-L293](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/tracking/driver_state.ex#L290-L293)),
+jadi kurir yang sedang bertugas mengirimnya lagi setelah setiap join baru:
 
-```json
-["1", "3", "driver:17", "status", {"status": "online"}]
-```
+<RestSocketMessage id="matching.driverSocket.status" />
 
-Balasannya membawa status yang berlaku: `online`, atau `busy` bila kurir sedang memegang job
-([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_channel.ex#L96-L109),
-[driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/tracking/driver_state.ex#L221-L247)).
-Nilai selain `online`, `busy` dan `offline` ditolak dengan `invalid_status`, dan `busy` tanpa job ditolak dengan
-`no_active_job`. Ketika channel berakhir, karena socket ditutup atau terputus, matching mengubah status kurir
-menjadi `offline`
-([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/tracking/driver_state.ex#L258-L261),
-[#L290-L293](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/tracking/driver_state.ex#L290-L293)),
-jadi kurir yang sedang bertugas mengirim `status` `online` lagi setelah setiap join baru. Aplikasi kurir
-melakukannya; pertama kali, aplikasi meminta izin lokasi dan menyalakan GPS sebelum push
-([duty_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/duty_repository_impl.dart#L73-L102),
-[#L118-L134](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/duty_repository_impl.dart#L118-L134)).
+Aplikasi kurir melakukannya; pertama kali, aplikasi meminta izin lokasi dan menyalakan GPS sebelum push
+([duty_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L76-L111),
+[#L127-L143](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L127-L143)).
 
 ## 5. Kirim posisi live
 
-Push `ping` dengan posisi terbaru:
-
-```json
-["1", "4", "driver:17", "ping", {"latitude": -6.2001, "longitude": 106.8166, "recorded_at": "2026-10-22T03:15:00.123Z", "speed_kmh": 21.6, "bearing_deg": 90.0}]
-```
-
-`latitude` dan `longitude` adalah angka di dalam rentangnya. `recorded_at` adalah waktu ISO 8601 beserta
-offset-nya, misalnya `Z`, paling jauh 300 detik di depan jam matching. `speed_kmh`, nol atau lebih, dan
-`bearing_deg`, dari 0 sampai kurang dari 360, boleh tidak dikirim
-([telemetry.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/tracking/telemetry.ex#L8),
-[#L37-L100](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/tracking/telemetry.ex#L37-L100),
-[driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/tracking/driver_state.ex#L85-L93)).
-Balasannya `ok` dengan response kosong; posisi yang direkam sebelum posisi yang sudah dipegang matching dijawab
-`ok` dan diabaikan
-([#L359-L375](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/tracking/driver_state.ex#L359-L375)).
-Push ini ditolak dengan `invalid_telemetry` bila ada field yang hilang atau di luar rentang, dan dengan
-`rate_limited` bila lebih dari 100 ping dalam 10 detik dari satu kurir
-([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_channel.ex#L69-L79),
-[config.exs](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/config/config.exs#L40-L44)).
 Dispatch otomatis hanya mempertimbangkan kurir yang posisinya tiba setelah mereka mulai bertugas
-([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/tracking/driver_state.ex#L137-L145),
-[dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L529-L537)),
-jadi kirim `ping` tepat setelah langkah 4. Aplikasi kurir langsung mengirim satu, lalu, setiap 4 detik, posisi
-terbaru bila kurir sudah berpindah paling sedikit 5 meter
-([duty_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/duty_repository_impl.dart#L21-L22),
-[#L199-L209](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/duty_repository_impl.dart#L199-L209)).
+([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/tracking/driver_state.ex#L137-L145),
+[dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/dispatch.ex#L529-L537)),
+jadi `ping` pertama langsung menyusul langkah 4:
+
+<RestSocketMessage id="matching.driverSocket.ping" />
+
+Aplikasi kurir langsung mengirim satu, lalu, setiap 4 detik, posisi terbaru bila kurir sudah berpindah paling
+sedikit 5 meter
+([duty_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L21-L22),
+[#L208-L218](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L208-L218),
+[#L254-L278](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L254-L278)).
+Posisi yang tidak bisa dikirim live disimpan untuk langkah 6: selama socket terputus, sebelum `status` `online`
+dijawab, ketika sebuah `ping` tidak dibalas, dan selama jeda 10 detik setelah `rate_limited`; ketika jedanya
+selesai, posisi terbaru dikirim live
+([#L280-L289](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L280-L289),
+[#L306-L352](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L306-L352),
+[#L478-L490](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L478-L490)).
 
 ## 6. Kirim posisi yang direkam saat offline
 
-Posisi yang direkam ponsel saat tidak punya koneksi dikirim lewat `ping_batch`, paling banyak 100 per batch,
-masing-masing berbentuk seperti payload `ping`:
+Posisi yang direkam ponsel saat tidak punya koneksi dikirim lewat `ping_batch` setelah socket tersambung lagi,
+tidak pernah sebagai `ping` live:
 
-```json
-["1", "5", "driver:17", "ping_batch", {"pings": [
-  {"latitude": -6.1932, "longitude": 106.8201, "recorded_at": "2026-10-22T02:58:04.000Z"},
-  {"latitude": -6.1937, "longitude": 106.8209, "recorded_at": "2026-10-22T02:58:09.000Z"},
-  {"latitude": -6.1702, "longitude": 106.8311, "recorded_at": "2026-10-20T23:10:00.000Z"}
-]}]
-```
+<RestSocketMessage id="matching.driverSocket.pingBatch" />
 
-matching menyimpannya sebagai riwayat kurir: posisi ini tidak pernah memindahkan posisi live kurir dan tidak
-dihitung untuk dispatch
-([offline_history.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/tracking/offline_history.ex#L1-L6)).
-Response balasannya memilah entri menurut posisinya di `pings`, dihitung dari 0:
-
-```json
-{"stored": [0], "duplicates": [1], "refused": [{"index": 2, "reason": "too_old"}]}
-```
-
-`stored` mendaftar entri yang disimpan. `duplicates` mendaftar entri yang `recorded_at`-nya sudah dipegang
-matching untuk kurir itu, atau yang mengulang entri sebelumnya di batch yang sama. `refused` mendaftar entri yang
-gagal: `invalid_telemetry` seperti pada `ping`, `ahead_of_server_clock` untuk lebih dari 300 detik di depan, dan
-`too_old` untuk lebih tua dari 24 jam
-([offline_history.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/tracking/offline_history.ex#L31-L84)).
-Seluruh batch ditolak dengan `invalid_batch` bila `pings` tidak ada atau bukan list, `batch_too_large` bila lebih
-dari 100 entri, `rate_limited` bila lebih dari 30 batch dalam 60 detik, dan `unavailable` bila matching tidak
-bisa menyimpannya, dan dalam hal itu tidak ada yang tersimpan
-([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_channel.ex#L81-L94),
-[offline_history.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/tracking/offline_history.ex#L101-L123)).
-Sebuah batch boleh dikirim lagi: entri yang tersimpan pada kiriman pertama kembali di `duplicates`. Aplikasi
-kurir menyusun setiap entri dari field yang sama dengan `ping`
-([channel_client.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/services/channel/channel_client.dart#L106-L113),
-[#L163-L169](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/services/channel/channel_client.dart#L163-L169)).
+Aplikasi kurir menyimpan setiap posisi yang tidak bisa dikirimnya di bawah kurir yang sedang bertugas, dan
+menyusun batch hanya dari posisi milik kurir itu, yang terlama lebih dulu, dari field yang sama dengan `ping`;
+posisi yang ditinggalkan kurir lain di ponsel menunggu kurir itu masuk lagi, dan posisi yang lebih tua dari 24 jam
+dibuang sebelum batch disusun
+([offline_position_store.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/offline/offline_position_store.dart#L48-L86),
+[channel_client.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L119-L131),
+[#L182-L188](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L182-L188),
+[duty_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L380-L437)).
+Aplikasi menghapus sebuah batch hanya setelah balasannya `ok`, termasuk entri `refused`, karena mengirim ulang
+tidak mengubah putusan itu; aplikasi meminta kurir mengatur jam ponsel secara otomatis bila ada entri yang
+kembali sebagai `ahead_of_server_clock`. Batch berikutnya dikirim 2,5 detik setelah sebuah batch selesai, 60
+detik setelah `rate_limited`, dan setelah penolakan lain atau tanpa balasan, 5 detik lalu berlipat dua sampai 5
+menit
+([#L21-L30](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L21-L30),
+[#L439-L476](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L439-L476)).
 
 ## 7. Terima job
 
 Tidak ada tawaran untuk diterima atau ditolak. matching menugaskan job, secara otomatis kepada kurir `online`
 terdekat yang kendaraannya sanggup membawanya, atau atas pilihan admin, lalu memberi tahu kurir di channel
-([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L521-L537),
-[#L579-L585](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L579-L585)).
-Empat push menyangkut job kurir, kapan saja setelah join
-([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_channel.ex#L139-L158)):
+([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/dispatch.ex#L521-L537),
+[#L594-L600](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/dispatch.ex#L594-L600)).
+Selain `active_order` dari langkah 2, tiga push menyangkut job kurir, kapan saja setelah join:
 
-- `order_assigned`, berisi job: sebuah job baru saja ditugaskan kepada kurir ini.
-- `active_order`, berisi `{"order": <job>}` atau `{"order": null}`: job terbaru kurir yang `assigned` atau
-  `picked_up`, dikirim setelah setiap join dan setelah `order_unassigned`
-  ([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L225-L232)).
-- `order_updated`, berisi job: job berpindah ke `picked_up` atau `delivered`, atau dibatalkan admin
-  ([#L678-L681](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L678-L681)).
-- `order_unassigned`, berisi `{"id": <job id>}`: admin mencabut job itu dari kurir ini
-  ([#L375-L386](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L375-L386)).
+<RestSocketMessage id="matching.driverSocket.orderAssigned" />
 
-Sebuah job membawa id, status, berat dalam kilogram, titik pengambilan dan titik antar, dan waktu job itu
-ditugaskan
-([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_channel.ex#L237-L247)):
+<RestSocketMessage id="matching.driverSocket.orderUpdated" />
 
-```json
-["1", null, "driver:17", "order_assigned", {"id": 4812, "status": "assigned", "weight_kg": 2, "pickup": {"latitude": -6.1754, "longitude": 106.8272}, "dropoff": {"latitude": -6.2088, "longitude": 106.8456}, "assigned_at": "2026-10-22T02:41:07.512904Z"}]
-```
+<RestSocketMessage id="matching.driverSocket.orderUnassigned" />
 
-`id` adalah nilai yang dikirim setiap langkah berikutnya sebagai `order_id`. Aplikasi kurir membuka layar job
-ketika job yang belum pernah ditampilkannya tiba
-([tracking_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/viewmodels/tracking_view_model.dart#L131-L150)).
+`id` milik job adalah nilai yang dikirim setiap langkah berikutnya sebagai `order_id`. Aplikasi kurir membuka
+layar job ketika job yang belum pernah ditampilkannya tiba
+([tracking_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/viewmodels/tracking_view_model.dart#L133-L155)).
+Layar sebuah job hanya berubah karena kabar tentang job itu sendiri: `order_updated` dengan `cancelled`
+menutupnya sebagai dibatalkan, `order_unassigned` sebagai dicabut dari kurir, dan `active_order` dengan `null`
+sebagai tidak aktif lagi; kabar tentang job lain tidak mengubahnya
+([order_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/order_repository_impl.dart#L213-L262),
+[order_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/viewmodels/order_view_model.dart#L185-L211)).
 
 ## 8. Ambil paket
 
 Di merchant, push `pickup` dengan `id` milik job:
 
-```json
-["1", "6", "driver:17", "pickup", {"order_id": 4812}]
-```
+<RestSocketMessage id="matching.driverSocket.pickup" />
 
-Balasannya `ok` dengan response kosong, lalu matching melakukan push `order_updated` dengan `status`
-`picked_up`
-([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L316-L326),
-[#L637-L648](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L637-L648)).
-Push ini ditolak dengan `invalid_order_id` bila `order_id` tidak ada atau bukan bilangan bulat positif,
-`not_found` bila job-nya tidak ada, `forbidden` bila job-nya milik kurir lain, dan `invalid_transition` bila
-job-nya tidak `assigned`
-([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_channel.ex#L111-L131),
-[dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L610-L635)).
-`pickup` untuk job yang sudah `picked_up` dijawab `ok` dan tidak mengubah apa pun, jadi push yang balasannya
-hilang boleh dikirim lagi. Aplikasi kurir menampilkan langkah bukti pengiriman setelah status job menjadi
-`picked_up`
-([order_view.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/ui/widgets/order/order_view.dart#L50-L91)).
+Karena `pickup` yang diulang tidak mengubah apa pun, aplikasi kurir mengirimnya lagi sampai ada balasan, berjarak
+1, 2, 4 dan paling lama 15 detik, selama socket-nya masih milik kurir itu
+([order_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/order_repository_impl.dart#L39-L44),
+[retry_mixin.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/mixins/retry_mixin.dart#L4-L45)),
+dan menampilkan langkah bukti pengiriman setelah status job menjadi `picked_up`
+([order_view.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/ui/widgets/order/order_view.dart#L50-L91)).
 
 ## 9. Minta alamat upload foto
 
-Hash byte foto apa adanya dengan SHA-256, lalu push `pod_upload` dengan `id` milik job dan hash-nya dalam hex
-huruf kecil:
+Hash byte foto apa adanya dengan SHA-256, lalu push `pod_upload` dengan `id` milik job dan hash-nya:
 
-```json
-["1", "7", "driver:17", "pod_upload", {"order_id": 4812, "photo_sha256": "bb3b2962c01de34b467fc7ea8ba66d2a142f992f03a6d51c78c690eb883cf18c"}]
-```
+<RestSocketMessage id="matching.driverSocket.podUpload" />
 
-Job-nya harus `picked_up`. Response balasannya memuat alamat upload, header yang ikut ditandatangani, dan alamat
-yang akan dimiliki foto itu
-([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L285-L304),
-[s3.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/storage/s3.ex#L18-L38)):
-
-```json
-{
-  "upload_url": "https://storage.wildanfrananda.my.id/example-bucket/pod/4812/bb3b2962c01de34b467fc7ea8ba66d2a142f992f03a6d51c78c690eb883cf18c.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=…&X-Amz-Date=20261022T025950Z&X-Amz-Expires=600&X-Amz-SignedHeaders=host%3Bif-none-match%3Bx-amz-checksum-sha256&X-Amz-Signature=…",
-  "upload_headers": {
-    "if-none-match": "*",
-    "x-amz-checksum-sha256": "uzspYsAd40tGf8fqi6ZtKhQvmS8DptUceMaQ64g88Yw="
-  },
-  "photo_url": "https://storage.wildanfrananda.my.id/example-bucket/pod/4812/bb3b2962c01de34b467fc7ea8ba66d2a142f992f03a6d51c78c690eb883cf18c.jpg"
-}
-```
-
-`upload_url` berlaku selama 600 detik. Push ini ditolak dengan `invalid_photo_hash` bila `photo_sha256` bukan 64
-digit hex huruf kecil, yang diperiksa lebih dulu, lalu dengan `not_found`, `forbidden`, atau `invalid_transition`
-bila job-nya tidak `picked_up`, dan dengan `invalid_order_id` seperti pada `pickup`
-([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_channel.ex#L116-L122),
-[proof.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch/proof.ex#L16-L29)).
-Aplikasi kurir memeriksa bahwa foto diawali seperti JPEG, `FF D8 FF`, sebelum meng-hash-nya
-([order_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/order_repository_impl.dart#L56-L88)).
+Simpan `upload_url` dan `upload_headers` untuk langkah 10 serta `photo_url` untuk langkah 11. Aplikasi kurir
+memeriksa bahwa foto diawali seperti JPEG, `FF D8 FF`, sebelum meng-hash-nya
+([order_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/order_repository_impl.dart#L46-L78)).
 
 ## 10. Upload foto ke storage
 
@@ -268,56 +212,32 @@ Sebuah `PUT` HTTP berisi byte JPEG ke `upload_url`, tanpa diubah, dengan header 
 adanya, dan tanpa token. Host storage memeriksa tanda tangan dan digest-nya, dan tidak menyimpan apa pun yang
 ditolaknya. `412` berarti sudah ada object dengan key ini; key itu adalah SHA-256 foto itu sendiri, jadi fotonya
 sudah tersimpan dan kurir lanjut ke langkah 11. Aplikasi kurir menganggap `2xx` dan `412` sama-sama tersimpan
-([pod_photo_uploader.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/services/storage/pod_photo_uploader.dart#L17-L38)).
+([pod_photo_uploader.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/storage/pod_photo_uploader.dart#L17-L38)).
 
 <RestEndpoint id="matching.uploadProofPhoto" />
 
 ## 11. Laporkan pengantaran
 
 Push `delivered` dengan `id` milik job, `photo_url` dari langkah 9 sebagai `pod_photo_url`, dan tanda tangan
-penerima sebagai PNG di dalam URI `data:`. Foto dan tanda tangan sama-sama wajib:
+penerima:
 
-```json
-["1", "8", "driver:17", "delivered", {"order_id": 4812, "pod_photo_url": "https://storage.wildanfrananda.my.id/example-bucket/pod/4812/bb3b2962c01de34b467fc7ea8ba66d2a142f992f03a6d51c78c690eb883cf18c.jpg", "pod_signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA…"}]
-```
-
-Sebelum menerima, matching membaca foto yang tersimpan: foto itu harus ada di folder job ini, membawa checksum
-yang dijanjikan namanya, dan diawali seperti JPEG
-([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L450-L486)).
-Balasannya `ok` dengan response kosong, disusul `order_updated` dengan `status` `delivered`; untuk job milik
-sebuah order, matching lalu melaporkan pengantaran itu ke order dengan sendirinya, setelah balasan
-([#L390-L403](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L390-L403),
-[#L671-L676](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L671-L676)).
-`delivered` untuk job yang sudah `delivered` dijawab `ok` dan tidak mengubah apa pun, jadi push yang balasannya
-hilang boleh dikirim lagi. Penolakannya
-([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_channel.ex#L124-L131),
-[proof.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch/proof.ex#L51-L64),
-[order.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch/order.ex#L109-L129),
-[dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L488-L497)):
-
-- `signature_required`: `pod_signature` tidak ada atau kosong.
-- `invalid_proof`: tanda tangannya bukan PNG di dalam URI `data:image/png;base64,`; URL fotonya bukan milik job
-  ini; fotonya tidak ada, membawa checksum lain, atau bukan JPEG; atau URL-nya lebih dari 2.048 karakter atau
-  tanda tangannya lebih dari 65.536.
-- `proof_unverifiable`: matching tidak bisa menjangkau storage untuk memeriksa fotonya. Kirim `delivered` lagi.
-- `invalid_transition`: job-nya bukan `picked_up` dan bukan `delivered`.
-- `unlinked`: data kurirnya tidak menyebut akun mana pun.
-- `not_found`, `forbidden` dan `invalid_order_id`, seperti pada `pickup`.
+<RestSocketMessage id="matching.driverSocket.delivered" />
 
 Aplikasi kurir mengambil tanda tangan di layar ponsel dan mengirimnya sebagai PNG
-([order_view.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/ui/widgets/order/order_view.dart#L102-L147)).
+([order_view.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/ui/widgets/order/order_view.dart#L102-L147)).
+Aplikasi mengirim `delivered` lagi, seperti `pickup`, selama belum ada balasan dan pada `proof_unverifiable`
+([order_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/order_repository_impl.dart#L135-L181)).
+Sampai pengantarannya dijawab, aplikasi menyimpan `photo_url` dan tanda tangan di ponsel di bawah kurir dan job
+itu, paling lama 24 jam, sehingga layar job yang dibuka lagi, setelah aplikasi ditutup, berlanjut di langkah
+ini; aplikasi melupakannya bila job-nya dibatalkan, dicabut dari kurir, atau tidak aktif lagi
+([proof_draft_store.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/storage/proof_draft_store.dart#L17-L112),
+[order_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/viewmodels/order_view_model.dart#L173-L211)).
 
 ## 12. Berhenti bertugas
 
-Di akhir shift, push `status` dengan `offline`:
-
-```json
-["1", "9", "driver:17", "status", {"status": "offline"}]
-```
-
-matching menjawab `{"status": "offline"}` dan tidak lagi menawarkan job kepada kurir itu, karena matching hanya
-menugaskan job kepada kurir yang `online`
-([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/tracking/driver_state.ex#L207-L223)).
+Di akhir shift, push `status` dengan `offline`, pesan yang sama dengan langkah 4. matching lalu tidak lagi
+menawarkan job kepada kurir itu, karena matching hanya menugaskan job kepada kurir yang `online`
+([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/tracking/driver_state.ex#L207-L223)).
 Aplikasi kurir melakukan push ini ketika kurir mematikan status bertugas selagi tersambung
-([duty_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/duty_repository_impl.dart#L104-L116)).
+([duty_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L113-L125)).
 [Keluar](/id/apis/rest/courier-app/stay-signed-in/) juga menutup socket-nya.

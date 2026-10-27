@@ -2,14 +2,14 @@
 title: Store set-up
 description: How a seller reads its merchant record in the warehouse and sets the hour that decides when its parcels are due.
 sidebar:
-  order: 3
+  order: 4
 ---
 
 import RestEndpoint from "../../../../../components/RestEndpoint.astro";
 
 The warehouse keeps one record per merchant, with the cutoff hour that decides whether a new order's parcel is
-due the same day or the next. The seller reads the record, then sets the hour. Both calls take an access token
-whose role is `seller`, which an approved seller holds once it has refreshed its session
+due the same day or the next. The seller reads the record, then sets the hour. Both calls need a session whose
+role is `seller`, which an approved seller's session carries once the edge has renewed its tokens
 ([Become a seller](/apis/rest/seller-web/become-a-seller/), step 5).
 
 ## 1. Read the merchant record
@@ -17,7 +17,7 @@ whose role is `seller`, which an approved seller holds once it has refreshed its
 Keep `id`, which steps 2 and 3 take. While `may_sell` is `false`, identity does not let the merchant trade, and
 the hour cannot be changed.
 
-<RestEndpoint id="warehouse.merchantMe" />
+<RestEndpoint id="warehouse.merchantMe" via="seller-web" />
 
 ## 2. Set the cutoff hour
 
@@ -25,10 +25,10 @@ Send the hour the seller chooses, with `id` from step 1. It applies to the tasks
 task's due time shows in the packing queue as `same_day_cutoff_at`
 ([Pack orders](/apis/rest/seller-web/packing/), step 2).
 
-<RestEndpoint id="warehouse.setCutoffHour" />
+<RestEndpoint id="warehouse.setCutoffHour" via="seller-web" />
 
 ## 3. Or set it with `PUT`
 
 `PUT` on the same path reaches the same action as step 2. A client uses one of the two methods.
 
-<RestEndpoint id="warehouse.replaceCutoffHour" />
+<RestEndpoint id="warehouse.replaceCutoffHour" via="seller-web" />

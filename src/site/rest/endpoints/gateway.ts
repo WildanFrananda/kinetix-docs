@@ -12,6 +12,15 @@ function kongError(message: string): string {
   return `{\n  "message":"${message}",\n  "request_id":"${requestId}"\n}`;
 }
 
+const securityTxt = [
+  "Contact: https://github.com/WildanFrananda/kinetix-docs/security/advisories/new",
+  "Expires: 2027-10-21T00:00:00.000Z",
+  "Preferred-Languages: en, id",
+  "Canonical: https://api.wildanfrananda.my.id/.well-known/security.txt",
+  "Policy: https://docs.wildanfrananda.my.id/reference/report-a-vulnerability/",
+  ""
+].join("\n");
+
 export const gatewayAnswers: readonly RestCase[] = [
   {
     status: 401,
@@ -86,11 +95,25 @@ export const gatewayAnswers: readonly RestCase[] = [
     source: kongSource("kong/plugins/jwt/jwt_parser.lua", 434, 435)
   },
   {
+    status: 403,
+    when: "rest.gateway.answers.staffNetwork",
+    contentType: json,
+    raw: kongError("This route is not available from your network"),
+    source: kongSource("kong/plugins/ip-restriction/handler.lua", 84, 91)
+  },
+  {
     status: 404,
     when: "rest.gateway.answers.noRoute",
     contentType: json,
     raw: kongError("no Route matched with those values"),
     source: kongSource("kong/runloop/handler.lua", 1190, 1198)
+  },
+  {
+    status: 404,
+    when: "rest.gateway.answers.appHost",
+    contentType: json,
+    raw: '{"message":"Not found"}',
+    source: kongSource("kong/plugins/request-termination/handler.lua", 72, 73)
   },
   {
     status: 413,
@@ -126,7 +149,7 @@ export const gatewayAnswers: readonly RestCase[] = [
     when: "rest.gateway.answers.serviceDown",
     contentType: json,
     raw: kongError("name resolution failed"),
-    source: kongSource("kong/runloop/balancer/init.lua", 378, 384)
+    source: kongSource("kong/runloop/balancer/init.lua", 380, 385)
   },
   {
     status: 504,
@@ -157,10 +180,35 @@ export const gatewayEndpoints: readonly RestEndpoint[] = [
         status: 200,
         when: "rest.gateway.health.case.up",
         contentType: "application/json",
-        raw: '{"status":"ok","gateway":"kinetix-api-gateway","engine":"Kong/DB-less (Apple Pkl)"}',
-        source: restSource("gateway", "config/gateway.pkl", 14, 35)
+        raw: '{"status":"ok"}',
+        source: restSource("gateway", "config/gateway.pkl", 159, 166)
       }
     ],
-    source: restSource("gateway", "config/gateway.pkl", 14, 35)
+    source: restSource("gateway", "config/gateway.pkl", 154, 168)
+  },
+  {
+    id: "gateway.securityTxt",
+    service: "gateway",
+    method: "GET",
+    path: "/.well-known/security.txt",
+    summary: "rest.gateway.securityTxt.summary",
+    access: {
+      token: "none",
+      gatewayVerifies: false,
+      who: "rest.gateway.securityTxt.who"
+    },
+    request: {
+      fields: []
+    },
+    cases: [
+      {
+        status: 200,
+        when: "rest.gateway.securityTxt.case.served",
+        contentType: plain,
+        raw: securityTxt,
+        source: restSource("gateway", "config/gateway.pkl", 39, 46)
+      }
+    ],
+    source: restSource("gateway", "config/gateway.pkl", 170, 184)
   }
 ];

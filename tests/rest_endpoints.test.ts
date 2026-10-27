@@ -10,7 +10,8 @@ import type { RestService } from "../src/site/types/rest_service.type";
 const kong = "https://github.com/Kong/kong/blob/";
 
 const gatewayPrefixes: Readonly<Record<RestService, readonly string[]>> = {
-  gateway: ["/health"],
+  gateway: ["/health", "/.well-known/security.txt"],
+  edge: ["/bff/"],
   identity: [
     "/api/v1/auth",
     "/api/v1/users",
@@ -108,6 +109,7 @@ describe("REST endpoints", () => {
       expect(cases.filter((entry) => !allowed.some((start) => entry.source.href.startsWith(start)))).toEqual([]);
       expect(cases.filter((entry) => !entry.when.startsWith(`rest.${service}.`))).toEqual([]);
       expect(statuses).toEqual([...statuses].sort((a, b) => a - b));
+      expect(statuses.filter((status) => statusReasons[status] === undefined)).toEqual([]);
     });
   }
 

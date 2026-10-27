@@ -1,4 +1,5 @@
 import { gatewayEndpoints } from "./endpoints/gateway";
+import { edgeEndpoints } from "./endpoints/edge";
 import { identityEndpoints } from "./endpoints/identity";
 import { catalogEndpoints } from "./endpoints/catalog";
 import { searchEndpoints } from "./endpoints/search";
@@ -14,6 +15,7 @@ import type { RestEndpoint } from "../types/rest_endpoint.type";
 
 export const restEndpoints: readonly RestEndpoint[] = [
   ...gatewayEndpoints,
+  ...edgeEndpoints,
   ...identityEndpoints,
   ...catalogEndpoints,
   ...searchEndpoints,

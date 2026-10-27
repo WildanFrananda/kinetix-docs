@@ -1,1 +1,1 @@
-export type RestHost = "api" | "storage";
+export type RestHost = "api" | "storage" | "seller" | "backoffice";

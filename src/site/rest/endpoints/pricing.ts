@@ -112,13 +112,13 @@ export const pricingAnswers: readonly RestCase[] = [
     status: 400,
     when: "rest.pricing.answers.invalidJson",
     json: refusal("INVALID_JSON", "the body is not valid JSON: EOF while parsing a value at line 1 column 0"),
-    source: restSource("pricing", "src/guards/json_body.rs", 38, 72)
+    source: restSource("pricing", "src/guards/json_body.rs", 41, 96)
   },
   {
     status: 401,
     when: "rest.pricing.answers.unauthorized",
     json: refusal("UNAUTHORIZED", "this endpoint needs a valid identity access token."),
-    source: restSource("pricing", "src/guards/bearer.rs", 47, 52)
+    source: restSource("pricing", "src/guards/bearer.rs", 56, 59)
   },
   {
     status: 404,
@@ -137,7 +137,13 @@ export const pricingAnswers: readonly RestCase[] = [
     status: 413,
     when: "rest.pricing.answers.tooLarge",
     json: refusal("PAYLOAD_TOO_LARGE", "the body is larger than the 1MiB this endpoint reads"),
-    source: restSource("pricing", "src/guards/json_body.rs", 27, 37)
+    source: restSource("pricing", "src/guards/json_body.rs", 33, 40)
+  },
+  {
+    status: 422,
+    when: "rest.pricing.answers.notAnObject",
+    json: refusal("INVALID_BODY", "the body must be a JSON object with this endpoint's fields by name."),
+    source: restSource("pricing", "src/guards/json_body.rs", 51, 60)
   },
   {
     status: 500,
@@ -164,7 +170,7 @@ export const pricingAnswers: readonly RestCase[] = [
       "IDENTITY_UNAVAILABLE",
       "pricing cannot check the access token because identity's signing keys cannot be fetched right now. Nothing was changed; try again."
     ),
-    source: restSource("pricing", "src/guards/bearer.rs", 53, 56)
+    source: restSource("pricing", "src/guards/bearer.rs", 60, 63)
   },
   {
     status: 503,
@@ -263,14 +269,14 @@ export const pricingEndpoints: readonly RestEndpoint[] = [
         status: 201,
         when: "rest.pricing.createDiscount.case.created",
         json: discount,
-        source: restSource("pricing", "src/routes/discount_routes.rs", 32, 40)
+        source: restSource("pricing", "src/routes/discount_routes.rs", 46, 51)
       },
       {
         status: 201,
         when: "rest.pricing.createDiscount.case.replayed",
         headers: [replayed],
         json: discount,
-        source: restSource("pricing", "src/repositories/discount_repository.rs", 58, 68)
+        source: restSource("pricing", "src/routes/discount_routes.rs", 28, 34)
       },
       {
         status: 400,
@@ -327,16 +333,16 @@ export const pricingEndpoints: readonly RestEndpoint[] = [
           "INVALID_BODY",
           "discount_type: unknown variant `PERCENT`, expected `PERCENTAGE` or `FIXED` at line 3 column 28"
         ),
-        source: restSource("pricing", "src/guards/json_body.rs", 74, 83)
+        source: restSource("pricing", "src/guards/json_body.rs", 85, 108)
       },
       {
         status: 422,
         when: "rest.pricing.createDiscount.case.keyReused",
         json: keyReused,
-        source: restSource("pricing", "src/repositories/promotion_creation_ledger.rs", 53, 59)
+        source: restSource("pricing", "src/repositories/promotion_creation_ledger.rs", 38, 44)
       }
     ],
-    source: restSource("pricing", "src/routes/discount_routes.rs", 13, 41)
+    source: restSource("pricing", "src/routes/discount_routes.rs", 13, 52)
   },
   {
     id: "pricing.listDiscounts",
@@ -389,7 +395,7 @@ export const pricingEndpoints: readonly RestEndpoint[] = [
         source: restSource("pricing", "src/repositories/discount_repository.rs", 20, 33)
       }
     ],
-    source: restSource("pricing", "src/routes/discount_routes.rs", 43, 48)
+    source: restSource("pricing", "src/routes/discount_routes.rs", 54, 59)
   },
   {
     id: "pricing.createVoucher",
@@ -484,14 +490,14 @@ export const pricingEndpoints: readonly RestEndpoint[] = [
         status: 201,
         when: "rest.pricing.createVoucher.case.created",
         json: voucher,
-        source: restSource("pricing", "src/routes/voucher_routes.rs", 33, 41)
+        source: restSource("pricing", "src/routes/voucher_routes.rs", 49, 54)
       },
       {
         status: 201,
         when: "rest.pricing.createVoucher.case.replayed",
         headers: [replayed],
         json: voucher,
-        source: restSource("pricing", "src/repositories/voucher_repository.rs", 71, 81)
+        source: restSource("pricing", "src/routes/voucher_routes.rs", 35, 41)
       },
       {
         status: 400,
@@ -536,22 +542,22 @@ export const pricingEndpoints: readonly RestEndpoint[] = [
           "CONFLICT",
           "a voucher with the code 'HARBOLNAS25' already exists; voucher codes are unique across every merchant"
         ),
-        source: restSource("pricing", "src/repositories/voucher_repository.rs", 119, 130)
+        source: restSource("pricing", "src/repositories/voucher_repository.rs", 149, 163)
       },
       {
         status: 422,
         when: "rest.pricing.createVoucher.case.invalidBody",
         json: refusal("INVALID_BODY", 'quota: invalid type: string "500", expected i32 at line 7 column 16'),
-        source: restSource("pricing", "src/guards/json_body.rs", 74, 83)
+        source: restSource("pricing", "src/guards/json_body.rs", 85, 108)
       },
       {
         status: 422,
         when: "rest.pricing.createVoucher.case.keyReused",
         json: keyReused,
-        source: restSource("pricing", "src/repositories/promotion_creation_ledger.rs", 53, 59)
+        source: restSource("pricing", "src/repositories/promotion_creation_ledger.rs", 38, 44)
       }
     ],
-    source: restSource("pricing", "src/routes/voucher_routes.rs", 17, 42)
+    source: restSource("pricing", "src/routes/voucher_routes.rs", 19, 55)
   },
   {
     id: "pricing.applyVoucher",
@@ -611,13 +617,13 @@ export const pricingEndpoints: readonly RestEndpoint[] = [
         status: 200,
         when: "rest.pricing.applyVoucher.case.none",
         json: null,
-        source: restSource("pricing", "src/routes/voucher_routes.rs", 64, 78)
+        source: restSource("pricing", "src/routes/voucher_routes.rs", 80, 94)
       },
       {
         status: 400,
         when: "rest.pricing.applyVoucher.case.blank",
         json: refusal("INVALID_REQUEST", "Voucher code cannot be blank"),
-        source: restSource("pricing", "src/routes/voucher_routes.rs", 58, 62)
+        source: restSource("pricing", "src/routes/voucher_routes.rs", 72, 76)
       },
       {
         status: 422,
@@ -626,10 +632,10 @@ export const pricingEndpoints: readonly RestEndpoint[] = [
           "INVALID_BODY",
           'cart_subtotal: invalid value: string "Rp150.000", expected a Decimal type representing a fixed-point number at line 3 column 30'
         ),
-        source: restSource("pricing", "src/guards/json_body.rs", 74, 83)
+        source: restSource("pricing", "src/guards/json_body.rs", 85, 108)
       }
     ],
-    source: restSource("pricing", "src/routes/voucher_routes.rs", 44, 82)
+    source: restSource("pricing", "src/routes/voucher_routes.rs", 57, 98)
   },
   {
     id: "pricing.getVoucher",
@@ -670,10 +676,10 @@ export const pricingEndpoints: readonly RestEndpoint[] = [
         status: 404,
         when: "rest.pricing.getVoucher.case.notFound",
         json: refusal("NOT_FOUND", "Voucher 'HARBOLNAS25' not found"),
-        source: restSource("pricing", "src/routes/voucher_routes.rs", 91, 97)
+        source: restSource("pricing", "src/routes/voucher_routes.rs", 110, 116)
       }
     ],
-    source: restSource("pricing", "src/routes/voucher_routes.rs", 84, 101)
+    source: restSource("pricing", "src/routes/voucher_routes.rs", 100, 120)
   },
   {
     id: "pricing.createFlashSale",
@@ -753,14 +759,14 @@ export const pricingEndpoints: readonly RestEndpoint[] = [
         status: 201,
         when: "rest.pricing.createFlashSale.case.created",
         json: flashSale,
-        source: restSource("pricing", "src/routes/flash_sale_routes.rs", 30, 38)
+        source: restSource("pricing", "src/routes/flash_sale_routes.rs", 44, 49)
       },
       {
         status: 201,
         when: "rest.pricing.createFlashSale.case.replayed",
         headers: [replayed],
         json: flashSale,
-        source: restSource("pricing", "src/repositories/flash_sale_repository.rs", 85, 95)
+        source: restSource("pricing", "src/routes/flash_sale_routes.rs", 30, 36)
       },
       {
         status: 400,
@@ -817,16 +823,16 @@ export const pricingEndpoints: readonly RestEndpoint[] = [
           "INVALID_BODY",
           "the body does not match this endpoint: missing field `stock_limit` at line 7 column 1"
         ),
-        source: restSource("pricing", "src/guards/json_body.rs", 74, 83)
+        source: restSource("pricing", "src/guards/json_body.rs", 85, 108)
       },
       {
         status: 422,
         when: "rest.pricing.createFlashSale.case.keyReused",
         json: keyReused,
-        source: restSource("pricing", "src/repositories/promotion_creation_ledger.rs", 53, 59)
+        source: restSource("pricing", "src/repositories/promotion_creation_ledger.rs", 38, 44)
       }
     ],
-    source: restSource("pricing", "src/routes/flash_sale_routes.rs", 15, 39)
+    source: restSource("pricing", "src/routes/flash_sale_routes.rs", 15, 50)
   },
   {
     id: "pricing.getFlashSale",
@@ -868,15 +874,15 @@ export const pricingEndpoints: readonly RestEndpoint[] = [
           updated_at: "2026-11-11T02:41:09.553820Z",
           merchant_principal_id: merchant
         },
-        source: restSource("pricing", "src/repositories/flash_sale_repository.rs", 129, 144)
+        source: restSource("pricing", "src/repositories/flash_sale_repository.rs", 157, 172)
       },
       {
         status: 200,
         when: "rest.pricing.getFlashSale.case.none",
         json: null,
-        source: restSource("pricing", "src/routes/flash_sale_routes.rs", 41, 51)
+        source: restSource("pricing", "src/routes/flash_sale_routes.rs", 52, 62)
       }
     ],
-    source: restSource("pricing", "src/routes/flash_sale_routes.rs", 41, 51)
+    source: restSource("pricing", "src/routes/flash_sale_routes.rs", 52, 62)
   }
 ];

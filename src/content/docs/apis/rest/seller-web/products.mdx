@@ -1,52 +1,59 @@
 ---
 title: Products
-description: How a seller puts products on sale in catalog, reads them as buyers see them, changes them and withdraws them.
+description: How a seller lists its own products in catalog, puts new ones on sale, reads them as buyers see them, changes them and withdraws them.
 sidebar:
-  order: 4
+  order: 5
 ---
 
 import RestEndpoint from "../../../../../components/RestEndpoint.astro";
 
-A seller's products live in catalog. The seller picks a category, creates the product, reads it as buyers see
-it, changes it and withdraws it. Every write asks identity whether the account's merchant may trade, so the
-account must have been approved ([Become a seller](/apis/rest/seller-web/become-a-seller/)). The API has no list
-of a seller's own products: the product list has no merchant filter and leaves withdrawn products out. The
-client therefore keeps the `id` of every product it creates, the only way to change or withdraw the product
-later. Stock is not set here; it arrives through the backoffice's
+A seller's products live in catalog. The seller lists its own products, picks a category, creates a product, reads
+it as buyers see it, changes it and withdraws it. Every write asks identity whether the account's merchant may
+trade, so the account must have been approved ([Become a seller](/apis/rest/seller-web/become-a-seller/)). The list
+reads the role from the session's access token instead, so it answers once the session carries `seller`
+(Become a seller, step 5). Stock is not set here; it arrives through the backoffice's
 [stock intake](/apis/rest/backoffice/stock-intake/).
 
-## 1. Choose a category
+## 1. List the seller's products
 
-Every product belongs to one category. Send the chosen category's `id` as `category_id` in step 2. Its `slug`
+The products screen starts here, and the list is how the application finds a product's `id` again, withdrawn
+products included. Ask for the next `page` until the pages read hold `count` products. `id` addresses a product in
+steps 5 and 6; `is_active` `false` marks one that is withdrawn.
+
+<RestEndpoint id="catalog.listMyProducts" via="seller-web" />
+
+## 2. Choose a category
+
+Every product belongs to one category. Send the chosen category's `id` as `category_id` in step 3. Its `slug`
 is what a category discount names ([Promotions](/apis/rest/seller-web/promotions/), step 1).
 
-<RestEndpoint id="catalog.listCategories" />
+<RestEndpoint id="catalog.listCategories" via="seller-web" />
 
-## 2. Create the product
+## 3. Create the product
 
-The seller chooses the `sku` and enters the rest; `category_id` comes from step 1. Keep `id` from the `201`.
-The create takes no idempotency key: when its answer is lost, reading the product by its SKU (step 3) shows
-whether it exists, whose it is (`merchant_principal_id`) and its `id`.
+The seller chooses the `sku` and enters the rest; `category_id` comes from step 2. The `201` carries the product's
+`id`, and step 1 lists it from then on. The create takes no idempotency key: when its answer is lost, reading the
+product by its SKU (step 4) shows whether it exists, whose it is (`merchant_principal_id`) and its `id`.
 
-<RestEndpoint id="catalog.createProduct" />
+<RestEndpoint id="catalog.createProduct" via="seller-web" />
 
-## 3. Read the product as buyers see it
+## 4. Read the product as buyers see it
 
-By the `sku` from step 2. `warehouse_stock` reads `out_of_stock` until stock for the SKU has been received
+By the `sku` from step 3. `warehouse_stock` reads `out_of_stock` until stock for the SKU has been received
 through the backoffice's stock intake.
 
-<RestEndpoint id="catalog.getProduct" />
+<RestEndpoint id="catalog.getProduct" via="seller-web" />
 
-## 4. Change the product
+## 5. Change the product
 
-Send only the fields that change, with the `id` kept from step 2. `is_active` `false` withdraws the product as
-step 5 does, and `true` puts a withdrawn product back on sale.
+Send only the fields that change, with the product's `id` from step 1 or step 3. `is_active` `false` withdraws
+the product as step 6 does, and `true` puts a withdrawn product back on sale.
 
-<RestEndpoint id="catalog.updateProduct" />
+<RestEndpoint id="catalog.updateProduct" via="seller-web" />
 
-## 5. Withdraw the product
+## 6. Withdraw the product
 
-With the same `id`. The product stays in catalog with its SKU, and step 4 with `is_active` `true` puts it back
-on sale.
+With the same `id`. The product stays in catalog with its SKU and in step 1's list, and step 5 with `is_active`
+`true` puts it back on sale.
 
-<RestEndpoint id="catalog.deleteProduct" />
+<RestEndpoint id="catalog.deleteProduct" via="seller-web" />

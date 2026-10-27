@@ -11,7 +11,7 @@ Search answers from its own index of catalog's products, which a sync keeps curr
 buyer app suggests titles while the buyer types (step 1), answers the query with ranked results (step 2), and
 opens a chosen hit from catalog (step 3). The paths sit under `/api/v1/products/`, but Kong sends them to the
 search service, not to catalog
-([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/2b38bcc9a795dac8a6a3088b6d67f297fcfa9f5c/config/gateway.pkl#L94-L107)).
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/6747ebc0ae2b8d5203539aab21f428f4b03784f7/config/gateway.pkl#L290-L303)).
 
 ## 1. Suggest titles as the buyer types
 
@@ -33,7 +33,7 @@ app offers those values as filters, with names from
 ## 3. Open a product
 
 A hit's `id` is the product's SKU, the key search indexed it under
-([convert.go](https://github.com/WildanFrananda/kinetix-search-service/blob/bb71585106395dbdcaf4dbf8dfabc62c2266498a/internal/catalogclient/convert.go#L64-L95)).
+([convert.go](https://github.com/WildanFrananda/kinetix-search-service/blob/ba054100e0e91fd9640842c0035b514d923f674e/internal/catalogclient/convert.go#L64-L95)).
 The product page reads it from catalog with `GET /api/v1/products/{sku}`, as in
 [step 3 of Browse the catalogue](/apis/rest/buyer-app/browse/#3-read-one-product), which answers the
 current price and stock; the rest of that page (flash sale, discounts, reviews) follows from there. A hit's

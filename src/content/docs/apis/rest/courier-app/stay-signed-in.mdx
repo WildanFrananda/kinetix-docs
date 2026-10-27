@@ -15,24 +15,33 @@ and signing out with identity. The calls, in order: a refresh whenever one is ne
 
 ## 1. Refresh the token pair
 
-Send the refresh token of the latest pair. The courier app refreshes when a token is needed and has expired or
-was refused, never on a timer:
+Send the refresh token of the latest pair, with the `X-Kinetix-Client` the session was started with: the courier
+app sends `courier-app` on every refresh, as it did at sign-in. It refreshes when a token is needed and has
+expired or was refused, never on a timer:
 
 - before opening the driver socket, when the stored expiry, the time of the answer plus `expiresIn`, has passed
-  ([session_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/session_repository_impl.dart#L30-L43));
-- at start-up, when `GET /api/v1/matching/driver/me` refuses the access token
-  ([#L45-L67](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/session_repository_impl.dart#L45-L67));
+  ([session_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/session_repository_impl.dart#L57-L70));
+- when `GET /api/v1/matching/driver/me` refuses the access token, at start-up and on the waiting screen
+  ([#L72-L95](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/session_repository_impl.dart#L72-L95));
 - when the driver socket refuses the access token, after which it connects again with the new one
-  ([connection_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/connection_repository_impl.dart#L88-L124));
+  ([connection_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/connection_repository_impl.dart#L95-L134));
 - when the sign-out of step 3 is answered `401`.
 
 The driver socket reads the access token when it opens
-([driver_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_socket.ex#L27-L36)),
+([driver_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse_web/channels/driver_socket.ex#L27-L36)),
 so every connection needs a current one. The courier app sends one refresh at a time for the whole app, and
 stores the new pair in one write before anything uses it
-([session_renewer.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/services/auth/session_renewer.dart#L18-L46)).
-A `400` or a `401` ends the session: the app deletes the stored pair, and the courier signs in again
-([#L47-L55](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/services/auth/session_renewer.dart#L47-L55)).
+([session_renewer.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/auth/session_renewer.dart#L30-L88),
+[token_store.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/auth/token_store.dart#L27-L37)).
+What it does with the answer depends on whether identity may have spent the refresh token
+([session_renewer.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/auth/session_renewer.dart#L66-L161)):
+
+- A `400` or a `401` ends the session: the app deletes the stored pair, and the courier signs in again.
+- A `429`, `502` or `503`, or a request that could not be sent, leaves the token unspent: the app keeps the
+  session and refreshes later.
+- An answer lost after the request went out (a receive timeout, a connection dropped mid-answer, a `500` or a
+  `504`), or a `200` the app cannot read, may have spent the token. Sending it again would be answered as reuse
+  and end the session, so the app deletes the stored pair, and the courier signs in again.
 
 <RestEndpoint id="identity.refresh" />
 
@@ -46,9 +55,9 @@ Not an HTTP call. While the driver socket is connected, push `status` with `offl
 
 matching answers with the resulting status, and stops offering the courier jobs, because automatic dispatch
 takes only couriers who are `online`
-([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse_web/channels/driver_channel.ex#L96-L105),
-[driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/tracking/driver_state.ex#L221-L223),
-[dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L529-L537)):
+([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse_web/channels/driver_channel.ex#L96-L105),
+[driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/tracking/driver_state.ex#L221-L223),
+[dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/dispatch.ex#L529-L537)):
 
 ```json
 ["1", "9", "driver:17", "phx_reply", {"status": "ok", "response": {"status": "offline"}}]
@@ -56,17 +65,17 @@ takes only couriers who are `online`
 
 Then close the socket. Closing it takes the courier off duty as well: when the channel ends, matching sets the
 courier `offline`
-([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/tracking/driver_state.ex#L258-L261),
-[#L290-L293](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/tracking/driver_state.ex#L290-L293)).
+([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/tracking/driver_state.ex#L258-L261),
+[#L290-L293](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/tracking/driver_state.ex#L290-L293)).
 The courier app pushes `status` `offline` when it is connected, then closes the socket
-([tracking_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/viewmodels/tracking_view_model.dart#L91-L96),
-[duty_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/duty_repository_impl.dart#L104-L116)).
+([tracking_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/viewmodels/tracking_view_model.dart#L91-L96),
+[duty_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L113-L125)).
 
 ## 3. Sign out
 
 Send the access token in `Authorization` and the refresh token of the current pair in the body, so that only
 this session ends. The courier app waits at most five seconds for the answer and deletes its stored tokens
 whatever the answer is; on a `401` it refreshes once (step 1) and signs out again with the new pair
-([session_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/session_repository_impl.dart#L179-L227)).
+([session_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/session_repository_impl.dart#L252-L314)).
 
 <RestEndpoint id="identity.logout" />

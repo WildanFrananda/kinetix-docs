@@ -11,7 +11,7 @@ export const identityAnswers: readonly RestCase[] = [
       message: "Body is not valid JSON but content-type is set to 'application/json'",
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("identity", "src/infrastructure/observability/unhandled_exception_filter.ts", 53, 69)
+    source: restSource("identity", "src/infrastructure/observability/unhandled_exception_filter.ts", 77, 93)
   },
   {
     status: 400,
@@ -21,7 +21,7 @@ export const identityAnswers: readonly RestCase[] = [
       message: "Body cannot be empty when content-type is set to 'application/json'",
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("identity", "src/infrastructure/observability/unhandled_exception_filter.ts", 53, 69)
+    source: restSource("identity", "src/infrastructure/observability/unhandled_exception_filter.ts", 77, 93)
   },
   {
     status: 401,
@@ -32,7 +32,7 @@ export const identityAnswers: readonly RestCase[] = [
       statusCode: 401,
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("identity", "src/adapters/guards/jwt_auth.guard.ts", 25, 33)
+    source: restSource("identity", "src/adapters/guards/jwt_auth.guard.ts", 27, 33)
   },
   {
     status: 401,
@@ -43,7 +43,7 @@ export const identityAnswers: readonly RestCase[] = [
       statusCode: 401,
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("identity", "src/application/services/token.service.ts", 302, 325)
+    source: restSource("identity", "src/application/services/token.service.ts", 376, 399)
   },
   {
     status: 401,
@@ -54,7 +54,7 @@ export const identityAnswers: readonly RestCase[] = [
       statusCode: 401,
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("identity", "src/application/services/token.service.ts", 122, 127)
+    source: restSource("identity", "src/application/services/token.service.ts", 153, 163)
   },
   {
     status: 401,
@@ -65,7 +65,18 @@ export const identityAnswers: readonly RestCase[] = [
       statusCode: 401,
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("identity", "src/application/services/token.service.ts", 129, 132)
+    source: restSource("identity", "src/application/services/token.service.ts", 165, 170)
+  },
+  {
+    status: 403,
+    when: "rest.identity.answers.enrolmentOnly",
+    json: {
+      error: "TWO_FACTOR_ENROLMENT_ONLY",
+      message:
+        "This session can only set up two-factor authentication. Enable it, then sign in again to reach anything else.",
+      traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+    },
+    source: restSource("identity", "src/adapters/guards/jwt_auth.guard.ts", 37, 45)
   },
   {
     status: 404,
@@ -76,7 +87,7 @@ export const identityAnswers: readonly RestCase[] = [
       statusCode: 404,
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("identity", "src/infrastructure/observability/unhandled_exception_filter.ts", 53, 69)
+    source: restSource("identity", "src/infrastructure/observability/unhandled_exception_filter.ts", 77, 93)
   },
   {
     status: 413,
@@ -86,7 +97,7 @@ export const identityAnswers: readonly RestCase[] = [
       message: "Request body is too large",
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("identity", "src/infrastructure/observability/unhandled_exception_filter.ts", 53, 69)
+    source: restSource("identity", "src/infrastructure/observability/unhandled_exception_filter.ts", 77, 93)
   },
   {
     status: 415,
@@ -96,7 +107,7 @@ export const identityAnswers: readonly RestCase[] = [
       message: "Unsupported Media Type",
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("identity", "src/infrastructure/observability/unhandled_exception_filter.ts", 53, 69)
+    source: restSource("identity", "src/infrastructure/observability/unhandled_exception_filter.ts", 77, 93)
   },
   {
     status: 500,
@@ -107,7 +118,7 @@ export const identityAnswers: readonly RestCase[] = [
         "something went wrong handling this request, and it is not known how much of it took effect. Read the current state before retrying.",
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("identity", "src/infrastructure/observability/unhandled_exception_filter.ts", 71, 88)
+    source: restSource("identity", "src/infrastructure/observability/unhandled_exception_filter.ts", 95, 112)
   },
   {
     status: 503,
@@ -117,7 +128,7 @@ export const identityAnswers: readonly RestCase[] = [
       message: "identity could not reach its database, so it cannot say what this request would have done. Retry later.",
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("identity", "src/infrastructure/observability/unhandled_exception_filter.ts", 31, 50)
+    source: restSource("identity", "src/infrastructure/observability/unhandled_exception_filter.ts", 32, 52)
   }
 ];
 
@@ -135,6 +146,13 @@ export const identityEndpoints: readonly RestEndpoint[] = [
     },
     request: {
       fields: [
+        {
+          name: "X-Kinetix-Client",
+          in: "header",
+          type: "string",
+          required: false,
+          rule: "rest.identity.login.field.kinetixClient"
+        },
         {
           name: "email",
           in: "body",
@@ -172,7 +190,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
             principalId: "0f8b6c1e-5a2d-4c3b-9e7f-1a2b3c4d5e6f"
           }
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 191, 206)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 303, 326)
       },
       {
         status: 200,
@@ -183,7 +201,20 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           challengeToken: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.<claims>.<signature>",
           expiresIn: 300
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 36, 49)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 54, 61)
+      },
+      {
+        status: 200,
+        when: "rest.identity.login.case.enrolmentRequired",
+        headers: ["X-RateLimit-Limit: 5", "X-RateLimit-Remaining: 4", "X-RateLimit-Reset: 60"],
+        json: {
+          mfaEnrolmentRequired: true,
+          enrolmentToken: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.<claims>.<signature>",
+          tokenType: "Bearer",
+          expiresIn: 600,
+          userId: 3
+        },
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 328, 348)
       },
       {
         status: 400,
@@ -197,6 +228,16 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         source: restSource("identity", "src/infrastructure/http/http_pipeline.ts", 7, 13)
       },
       {
+        status: 400,
+        when: "rest.identity.login.case.unknownClient",
+        json: {
+          error: "UNKNOWN_CLIENT",
+          message: "X-Kinetix-Client names a client identity does not know.",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/client_gate.service.ts", 184, 188)
+      },
+      {
         status: 401,
         when: "rest.identity.login.case.wrongCredentials",
         json: {
@@ -205,7 +246,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 51, 64)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 70, 84)
       },
       {
         status: 429,
@@ -216,10 +257,23 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           message: "ThrottlerException: Too Many Requests",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 23, 29)
+        source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 28, 38)
+      },
+      {
+        status: 429,
+        when: "rest.identity.login.case.delayed",
+        headers: ["Retry-After: 8"],
+        json: {
+          error: "SIGN_IN_DELAYED",
+          message:
+            "Too many unsuccessful sign-in attempts for this account. Nothing was checked; try again after the number of seconds in Retry-After.",
+          retryAfterSeconds: 8,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/infrastructure/observability/unhandled_exception_filter.ts", 54, 75)
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 23, 29)
+    source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 28, 38)
   },
   {
     id: "identity.register",
@@ -234,6 +288,13 @@ export const identityEndpoints: readonly RestEndpoint[] = [
     },
     request: {
       fields: [
+        {
+          name: "X-Kinetix-Client",
+          in: "header",
+          type: "string",
+          required: false,
+          rule: "rest.identity.register.field.kinetixClient"
+        },
         {
           name: "email",
           in: "body",
@@ -271,7 +332,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
             principalId: "0f8b6c1e-5a2d-4c3b-9e7f-1a2b3c4d5e6f"
           }
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 92, 106)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 127, 143)
       },
       {
         status: 400,
@@ -285,6 +346,16 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         source: restSource("identity", "src/infrastructure/http/http_pipeline.ts", 7, 13)
       },
       {
+        status: 400,
+        when: "rest.identity.register.case.unknownClient",
+        json: {
+          error: "UNKNOWN_CLIENT",
+          message: "X-Kinetix-Client names a client identity does not know.",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/client_gate.service.ts", 184, 188)
+      },
+      {
         status: 409,
         when: "rest.identity.register.case.emailTaken",
         json: {
@@ -293,7 +364,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 94, 97)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 131, 134)
       },
       {
         status: 429,
@@ -304,10 +375,10 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           message: "ThrottlerException: Too Many Requests",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 39, 45)
+        source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 52, 62)
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 39, 45)
+    source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 52, 62)
   },
   {
     id: "identity.refresh",
@@ -322,6 +393,13 @@ export const identityEndpoints: readonly RestEndpoint[] = [
     },
     request: {
       fields: [
+        {
+          name: "X-Kinetix-Client",
+          in: "header",
+          type: "string",
+          required: false,
+          rule: "rest.identity.refresh.field.kinetixClient"
+        },
         {
           name: "refreshToken",
           in: "body",
@@ -351,7 +429,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
             principalId: "0f8b6c1e-5a2d-4c3b-9e7f-1a2b3c4d5e6f"
           }
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 108, 128)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 145, 198)
       },
       {
         status: 400,
@@ -365,6 +443,16 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         source: restSource("identity", "src/infrastructure/http/http_pipeline.ts", 7, 13)
       },
       {
+        status: 400,
+        when: "rest.identity.refresh.case.unknownClient",
+        json: {
+          error: "UNKNOWN_CLIENT",
+          message: "X-Kinetix-Client names a client identity does not know.",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/client_gate.service.ts", 184, 188)
+      },
+      {
         status: 401,
         when: "rest.identity.refresh.case.invalidToken",
         json: {
@@ -373,7 +461,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/token.service.ts", 302, 325)
+        source: restSource("identity", "src/application/services/token.service.ts", 376, 399)
       },
       {
         status: 401,
@@ -384,7 +472,18 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/token.service.ts", 177, 183)
+        source: restSource("identity", "src/application/services/token.service.ts", 241, 247)
+      },
+      {
+        status: 401,
+        when: "rest.identity.refresh.case.clientMismatch",
+        json: {
+          error: "CLIENT_MISMATCH",
+          message:
+            "This session was started by another client, so this one cannot renew it. Nothing was changed; sign in again from this app.",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/client_gate.service.ts", 204, 210)
       },
       {
         status: 401,
@@ -395,7 +494,18 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 110, 113)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 154, 157)
+      },
+      {
+        status: 401,
+        when: "rest.identity.refresh.case.twoFactorRequired",
+        json: {
+          error: "TWO_FACTOR_REQUIRED",
+          message:
+            "An admin account must use two-factor authentication, so this session has ended. Sign in again to set it up.",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 159, 167)
       },
       {
         status: 401,
@@ -406,7 +516,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/token.service.ts", 199, 201)
+        source: restSource("identity", "src/application/services/token.service.ts", 263, 265)
       },
       {
         status: 401,
@@ -417,7 +527,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/token.service.ts", 203, 205)
+        source: restSource("identity", "src/application/services/token.service.ts", 267, 269)
       },
       {
         status: 401,
@@ -428,7 +538,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/token.service.ts", 207, 210)
+        source: restSource("identity", "src/application/services/token.service.ts", 271, 274)
       },
       {
         status: 429,
@@ -439,10 +549,10 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           message: "ThrottlerException: Too Many Requests",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 47, 53)
+        source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 64, 74)
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 47, 53)
+    source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 64, 74)
   },
   {
     id: "identity.verifyTwoFactor",
@@ -457,6 +567,13 @@ export const identityEndpoints: readonly RestEndpoint[] = [
     },
     request: {
       fields: [
+        {
+          name: "X-Kinetix-Client",
+          in: "header",
+          type: "string",
+          required: false,
+          rule: "rest.identity.verifyTwoFactor.field.kinetixClient"
+        },
         {
           name: "challengeToken",
           in: "body",
@@ -494,7 +611,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
             principalId: "0f8b6c1e-5a2d-4c3b-9e7f-1a2b3c4d5e6f"
           }
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 82, 89)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 113, 124)
       },
       {
         status: 400,
@@ -508,6 +625,16 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         source: restSource("identity", "src/infrastructure/http/http_pipeline.ts", 7, 13)
       },
       {
+        status: 400,
+        when: "rest.identity.verifyTwoFactor.case.unknownClient",
+        json: {
+          error: "UNKNOWN_CLIENT",
+          message: "X-Kinetix-Client names a client identity does not know.",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/client_gate.service.ts", 184, 188)
+      },
+      {
         status: 401,
         when: "rest.identity.verifyTwoFactor.case.invalidChallenge",
         json: {
@@ -516,7 +643,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/token.service.ts", 302, 325)
+        source: restSource("identity", "src/application/services/token.service.ts", 376, 399)
       },
       {
         status: 401,
@@ -527,7 +654,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/token.service.ts", 169, 175)
+        source: restSource("identity", "src/application/services/token.service.ts", 233, 239)
       },
       {
         status: 401,
@@ -538,7 +665,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 68, 71)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 88, 91)
       },
       {
         status: 401,
@@ -549,7 +676,18 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 73, 75)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 93, 95)
+      },
+      {
+        status: 401,
+        when: "rest.identity.verifyTwoFactor.case.challengeExhausted",
+        json: {
+          message: "This challenge allows no more attempts; sign in again",
+          error: "Unauthorized",
+          statusCode: 401,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 99, 102)
       },
       {
         status: 401,
@@ -560,7 +698,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 77, 80)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 104, 111)
       },
       {
         status: 401,
@@ -571,7 +709,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/token.service.ts", 157, 167)
+        source: restSource("identity", "src/application/services/token.service.ts", 221, 231)
       },
       {
         status: 401,
@@ -582,7 +720,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 84, 87)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 115, 122)
       },
       {
         status: 429,
@@ -593,10 +731,23 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           message: "ThrottlerException: Too Many Requests",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 31, 37)
+        source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 40, 50)
+      },
+      {
+        status: 429,
+        when: "rest.identity.verifyTwoFactor.case.delayed",
+        headers: ["Retry-After: 8"],
+        json: {
+          error: "SIGN_IN_DELAYED",
+          message:
+            "Too many unsuccessful sign-in attempts for this account. Nothing was checked; try again after the number of seconds in Retry-After.",
+          retryAfterSeconds: 8,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/infrastructure/observability/unhandled_exception_filter.ts", 54, 75)
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 31, 37)
+    source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 40, 50)
   },
   {
     id: "identity.logout",
@@ -628,7 +779,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         status: 204,
         when: "rest.identity.logout.case.signedOut",
         headers: ["X-RateLimit-Limit: 10", "X-RateLimit-Remaining: 9", "X-RateLimit-Reset: 60"],
-        source: restSource("identity", "src/application/services/token.service.ts", 233, 240)
+        source: restSource("identity", "src/application/services/token.service.ts", 307, 314)
       },
       {
         status: 400,
@@ -650,7 +801,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/token.service.ts", 302, 325)
+        source: restSource("identity", "src/application/services/token.service.ts", 376, 399)
       },
       {
         status: 401,
@@ -661,7 +812,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/token.service.ts", 177, 183)
+        source: restSource("identity", "src/application/services/token.service.ts", 241, 247)
       },
       {
         status: 403,
@@ -672,7 +823,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 403,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 134, 136)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 203, 206)
       },
       {
         status: 429,
@@ -686,7 +837,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         source: restSource("identity", "src/infrastructure/http/throttle_policy.ts", 3, 6)
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 55, 59)
+    source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 76, 80)
   },
   {
     id: "identity.me",
@@ -712,9 +863,9 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           userId: 42,
           email: "buyer@example.com",
           role: "customer",
-          expiresAt: "2026-10-22T03:30:00.000Z"
+          expiresAt: "2026-10-27T03:30:00.000Z"
         },
-        source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 61, 71)
+        source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 82, 92)
       },
       {
         status: 429,
@@ -728,7 +879,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         source: restSource("identity", "src/infrastructure/http/throttle_policy.ts", 3, 6)
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 61, 71)
+    source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 82, 92)
   },
   {
     id: "identity.setupTwoFactor",
@@ -749,21 +900,63 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           type: "integer",
           required: true,
           rule: "rest.identity.setupTwoFactor.field.id"
+        },
+        {
+          name: "password",
+          in: "body",
+          type: "string",
+          required: false,
+          rule: "rest.identity.setupTwoFactor.field.password"
         }
-      ]
+      ],
+      json: {
+        password: "correct horse battery staple"
+      }
     },
     cases: [
       {
         status: 200,
         when: "rest.identity.setupTwoFactor.case.secretIssued",
-        headers: ["X-RateLimit-Limit: 10", "X-RateLimit-Remaining: 9", "X-RateLimit-Reset: 60"],
+        headers: ["X-RateLimit-Limit: 5", "X-RateLimit-Remaining: 4", "X-RateLimit-Reset: 60"],
         json: {
           twoFactorSecret: "<32 base32 characters>",
           qrCodeUrl:
             "otpauth://totp/Kinetix%3Abuyer%40example.com?secret=<32 base32 characters>&issuer=Kinetix&algorithm=SHA1&digits=6&period=30",
           enabled: false
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 152, 157)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 231, 236)
+      },
+      {
+        status: 400,
+        when: "rest.identity.setupTwoFactor.case.invalid",
+        json: {
+          message: ["password must not be empty when it is sent"],
+          error: "Bad Request",
+          statusCode: 400,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/infrastructure/http/http_pipeline.ts", 7, 13)
+      },
+      {
+        status: 400,
+        when: "rest.identity.setupTwoFactor.case.passwordRequired",
+        json: {
+          error: "PASSWORD_REQUIRED",
+          message: "Changing the second factor from a signed-in session needs the account's current password.",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 363, 376)
+      },
+      {
+        status: 401,
+        when: "rest.identity.setupTwoFactor.case.wrongPassword",
+        json: {
+          message: "Invalid email or password credentials",
+          error: "Unauthorized",
+          statusCode: 401,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 378, 392)
       },
       {
         status: 403,
@@ -785,7 +978,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 404,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 144, 147)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 355, 358)
       },
       {
         status: 409,
@@ -796,7 +989,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 148, 150)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 227, 229)
       },
       {
         status: 429,
@@ -807,10 +1000,23 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           message: "ThrottlerException: Too Many Requests",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/infrastructure/http/throttle_policy.ts", 3, 6)
+        source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 94, 107)
+      },
+      {
+        status: 429,
+        when: "rest.identity.setupTwoFactor.case.delayed",
+        headers: ["Retry-After: 8"],
+        json: {
+          error: "SIGN_IN_DELAYED",
+          message:
+            "Too many unsuccessful sign-in attempts for this account. Nothing was checked; try again after the number of seconds in Retry-After.",
+          retryAfterSeconds: 8,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/infrastructure/observability/unhandled_exception_filter.ts", 54, 75)
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 73, 79)
+    source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 94, 107)
   },
   {
     id: "identity.enableTwoFactor",
@@ -838,10 +1044,18 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           type: "string",
           required: true,
           rule: "rest.identity.enableTwoFactor.field.code"
+        },
+        {
+          name: "password",
+          in: "body",
+          type: "string",
+          required: false,
+          rule: "rest.identity.enableTwoFactor.field.password"
         }
       ],
       json: {
-        code: "492039"
+        code: "492039",
+        password: "correct horse battery staple"
       }
     },
     cases: [
@@ -852,7 +1066,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         json: {
           enabled: true
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 160, 173)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 257, 269)
       },
       {
         status: 400,
@@ -867,6 +1081,16 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       },
       {
         status: 400,
+        when: "rest.identity.enableTwoFactor.case.passwordRequired",
+        json: {
+          error: "PASSWORD_REQUIRED",
+          message: "Changing the second factor from a signed-in session needs the account's current password.",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 363, 376)
+      },
+      {
+        status: 400,
         when: "rest.identity.enableTwoFactor.case.noSecret",
         json: {
           message: "Request a two-factor secret before enabling it",
@@ -874,7 +1098,18 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 400,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 162, 164)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 253, 255)
+      },
+      {
+        status: 401,
+        when: "rest.identity.enableTwoFactor.case.wrongPassword",
+        json: {
+          message: "Invalid email or password credentials",
+          error: "Unauthorized",
+          statusCode: 401,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 378, 392)
       },
       {
         status: 403,
@@ -896,7 +1131,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 404,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 213, 216)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 355, 358)
       },
       {
         status: 422,
@@ -907,7 +1142,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 422,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 222, 225)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 401, 408)
       },
       {
         status: 422,
@@ -918,7 +1153,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 422,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 227, 230)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 410, 417)
       },
       {
         status: 429,
@@ -929,10 +1164,23 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           message: "ThrottlerException: Too Many Requests",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 81, 92)
+        source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 109, 122)
+      },
+      {
+        status: 429,
+        when: "rest.identity.enableTwoFactor.case.delayed",
+        headers: ["Retry-After: 8"],
+        json: {
+          error: "SIGN_IN_DELAYED",
+          message:
+            "Too many unsuccessful sign-in attempts for this account. Nothing was checked; try again after the number of seconds in Retry-After.",
+          retryAfterSeconds: 8,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/infrastructure/observability/unhandled_exception_filter.ts", 54, 75)
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 81, 92)
+    source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 109, 122)
   },
   {
     id: "identity.disableTwoFactor",
@@ -960,10 +1208,18 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           type: "string",
           required: true,
           rule: "rest.identity.disableTwoFactor.field.code"
+        },
+        {
+          name: "password",
+          in: "body",
+          type: "string",
+          required: true,
+          rule: "rest.identity.disableTwoFactor.field.password"
         }
       ],
       json: {
-        code: "730581"
+        code: "730581",
+        password: "correct horse battery staple"
       }
     },
     cases: [
@@ -974,18 +1230,29 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         json: {
           enabled: false
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 175, 189)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 287, 300)
       },
       {
         status: 400,
         when: "rest.identity.disableTwoFactor.case.invalid",
         json: {
-          message: ["code must be six digits"],
+          message: ["password is required"],
           error: "Bad Request",
           statusCode: 400,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
         source: restSource("identity", "src/infrastructure/http/http_pipeline.ts", 7, 13)
+      },
+      {
+        status: 401,
+        when: "rest.identity.disableTwoFactor.case.wrongPassword",
+        json: {
+          message: "Invalid email or password credentials",
+          error: "Unauthorized",
+          statusCode: 401,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 378, 392)
       },
       {
         status: 403,
@@ -1007,7 +1274,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 404,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 213, 216)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 355, 358)
       },
       {
         status: 409,
@@ -1018,7 +1285,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 177, 179)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 283, 285)
       },
       {
         status: 422,
@@ -1029,7 +1296,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 422,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 222, 225)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 401, 408)
       },
       {
         status: 422,
@@ -1040,7 +1307,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 422,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 227, 230)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 410, 417)
       },
       {
         status: 429,
@@ -1051,10 +1318,23 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           message: "ThrottlerException: Too Many Requests",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 94, 105)
+        source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 124, 136)
+      },
+      {
+        status: 429,
+        when: "rest.identity.disableTwoFactor.case.delayed",
+        headers: ["Retry-After: 8"],
+        json: {
+          error: "SIGN_IN_DELAYED",
+          message:
+            "Too many unsuccessful sign-in attempts for this account. Nothing was checked; try again after the number of seconds in Retry-After.",
+          retryAfterSeconds: 8,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/infrastructure/observability/unhandled_exception_filter.ts", 54, 75)
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 94, 105)
+    source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 124, 136)
   },
   {
     id: "identity.getProfile",
@@ -1131,7 +1411,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         source: restSource("identity", "src/application/services/user_profile_usecase.service.ts", 19, 21)
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/user_profile.controller.ts", 13, 17)
+    source: restSource("identity", "src/adapters/controllers/user_profile.controller.ts", 14, 19)
   },
   {
     id: "identity.updateProfile",
@@ -1191,7 +1471,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         {
           name: "avatarUrl",
           in: "body",
-          type: "string",
+          type: "string or null",
           required: false,
           rule: "rest.identity.updateProfile.field.avatarUrl"
         }
@@ -1219,7 +1499,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           avatarUrl: null,
           latitude: -6.2615,
           longitude: 106.8106,
-          geocodedAt: "2026-10-22T03:15:00.274Z"
+          geocodedAt: "2026-10-27T03:15:00.274Z"
         },
         source: restSource("identity", "src/application/services/user_profile_usecase.service.ts", 25, 58)
       },
@@ -1290,7 +1570,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         )
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/user_profile.controller.ts", 19, 26)
+    source: restSource("identity", "src/adapters/controllers/user_profile.controller.ts", 21, 29)
   },
   {
     id: "identity.listSellerApplications",
@@ -1337,6 +1617,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
             {
               applicationId: 12,
               userId: 57,
+              principalId: "5d2a7c3e-8b14-4f6a-9e21-7c0b3d4e5f60",
               email: "toko.kenari@example.com",
               storeName: "Toko Kopi Kenari",
               businessRegistrationNumber: "9120301234567",
@@ -1353,8 +1634,8 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "identity",
           "src/infrastructure/persistence/adapters/typeorm_merchant_verification_repository.adapter.ts",
-          62,
-          96
+          63,
+          99
         )
       },
       {
@@ -1377,10 +1658,10 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 403,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/adapters/guards/roles.guard.ts", 23, 28)
+        source: restSource("identity", "src/adapters/guards/roles.guard.ts", 23, 29)
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/seller_onboarding.controller.ts", 18, 25)
+    source: restSource("identity", "src/adapters/controllers/seller_onboarding.controller.ts", 23, 31)
   },
   {
     id: "identity.getSellerApplication",
@@ -1418,9 +1699,10 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           verifiedAt: null,
           streetAddress: "Jalan Flamboyan No. 8",
           city: "Jakarta Pusat",
-          postalCode: "10330"
+          postalCode: "10330",
+          principalId: "5d2a7c3e-8b14-4f6a-9e21-7c0b3d4e5f60"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 112, 119)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 114, 130)
       },
       {
         status: 400,
@@ -1453,10 +1735,10 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 404,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 114, 116)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 118, 125)
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/seller_onboarding.controller.ts", 27, 32)
+    source: restSource("identity", "src/adapters/controllers/seller_onboarding.controller.ts", 33, 39)
   },
   {
     id: "identity.onboardSeller",
@@ -1545,7 +1827,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           city: "Jakarta Pusat",
           postalCode: "10330"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 45, 75)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 39, 78)
       },
       {
         status: 400,
@@ -1589,7 +1871,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 404,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 38, 41)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 40, 43)
       },
       {
         status: 409,
@@ -1600,7 +1882,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 47, 50)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 49, 52)
       },
       {
         status: 409,
@@ -1611,7 +1893,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 208, 216)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 219, 227)
       },
       {
         status: 409,
@@ -1626,12 +1908,12 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "identity",
           "src/infrastructure/persistence/adapters/typeorm_merchant_verification_repository.adapter.ts",
-          50,
-          55
+          51,
+          56
         )
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/seller_onboarding.controller.ts", 34, 43)
+    source: restSource("identity", "src/adapters/controllers/seller_onboarding.controller.ts", 41, 51)
   },
   {
     id: "identity.verifySeller",
@@ -1667,15 +1949,16 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           businessRegistrationNumber: "9120301234567",
           taxId: "01.234.567.8-012.000",
           status: "verified",
-          verifiedAt: "2026-10-22T03:15:00.412Z",
+          verifiedAt: "2026-10-27T03:15:00.412Z",
           streetAddress: "Jalan Flamboyan No. 8",
           city: "Jakarta Pusat",
           postalCode: "10330",
           latitude: -6.1912,
           longitude: 106.8389,
-          geocodedAt: "2026-10-22T03:15:00.415Z"
+          geocodedAt: "2026-10-27T03:15:00.415Z",
+          principalId: "5d2a7c3e-8b14-4f6a-9e21-7c0b3d4e5f60"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 135, 195)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 146, 206)
       },
       {
         status: 400,
@@ -1697,7 +1980,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 403,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/adapters/guards/roles.guard.ts", 23, 28)
+        source: restSource("identity", "src/adapters/guards/roles.guard.ts", 23, 29)
       },
       {
         status: 404,
@@ -1708,7 +1991,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 404,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 114, 116)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 118, 125)
       },
       {
         status: 409,
@@ -1719,7 +2002,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 197, 206)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 208, 217)
       },
       {
         status: 409,
@@ -1730,7 +2013,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 208, 216)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 219, 227)
       },
       {
         status: 409,
@@ -1750,7 +2033,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         )
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/seller_onboarding.controller.ts", 45, 51)
+    source: restSource("identity", "src/adapters/controllers/seller_onboarding.controller.ts", 53, 60)
   },
   {
     id: "identity.rejectSeller",
@@ -1788,9 +2071,10 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           verifiedAt: null,
           streetAddress: "Jalan Flamboyan No. 8",
           city: "Jakarta Pusat",
-          postalCode: "10330"
+          postalCode: "10330",
+          principalId: "5d2a7c3e-8b14-4f6a-9e21-7c0b3d4e5f60"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 127, 133)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 138, 144)
       },
       {
         status: 400,
@@ -1812,7 +2096,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 403,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/adapters/guards/roles.guard.ts", 23, 28)
+        source: restSource("identity", "src/adapters/guards/roles.guard.ts", 23, 29)
       },
       {
         status: 404,
@@ -1823,7 +2107,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 404,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 114, 116)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 118, 125)
       },
       {
         status: 409,
@@ -1834,10 +2118,10 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 197, 206)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 208, 217)
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/seller_onboarding.controller.ts", 53, 59)
+    source: restSource("identity", "src/adapters/controllers/seller_onboarding.controller.ts", 62, 69)
   },
   {
     id: "identity.registerCourier",
@@ -1852,6 +2136,13 @@ export const identityEndpoints: readonly RestEndpoint[] = [
     },
     request: {
       fields: [
+        {
+          name: "X-Kinetix-Client",
+          in: "header",
+          type: "string",
+          required: false,
+          rule: "rest.identity.registerCourier.field.kinetixClient"
+        },
         {
           name: "email",
           in: "body",
@@ -1895,6 +2186,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           rule: "rest.identity.registerCourier.field.capacityKg"
         }
       ],
+      headers: ["X-Kinetix-Client: courier-app"],
       json: {
         email: "kurir.budi@example.com",
         password: "motor bebek merah tua",
@@ -1922,7 +2214,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           },
           driverId: 118
         },
-        source: restSource("identity", "src/application/services/courier_registration_usecase.service.ts", 39, 62)
+        source: restSource("identity", "src/application/services/courier_registration_usecase.service.ts", 41, 64)
       },
       {
         status: 400,
@@ -1937,6 +2229,16 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       },
       {
         status: 400,
+        when: "rest.identity.registerCourier.case.unknownClient",
+        json: {
+          error: "UNKNOWN_CLIENT",
+          message: "X-Kinetix-Client names a client identity does not know.",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/client_gate.service.ts", 184, 188)
+      },
+      {
+        status: 400,
         when: "rest.identity.registerCourier.case.fleetRefused",
         json: {
           error: "REGISTRATION_REFUSED",
@@ -1948,8 +2250,8 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "identity",
           "src/application/services/courier_registration_usecase.service.ts",
-          137,
-          146
+          156,
+          165
         )
       },
       {
@@ -1961,7 +2263,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 94, 97)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 131, 134)
       },
       {
         status: 409,
@@ -1972,7 +2274,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/courier_registration_usecase.service.ts", 77, 84)
+        source: restSource("identity", "src/application/services/courier_registration_usecase.service.ts", 79, 86)
       },
       {
         status: 409,
@@ -1984,7 +2286,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/courier_registration_usecase.service.ts", 86, 91)
+        source: restSource("identity", "src/application/services/courier_registration_usecase.service.ts", 88, 93)
       },
       {
         status: 409,
@@ -1996,7 +2298,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/courier_registration_usecase.service.ts", 93, 98)
+        source: restSource("identity", "src/application/services/courier_registration_usecase.service.ts", 95, 100)
       },
       {
         status: 429,
@@ -2007,7 +2309,37 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           message: "ThrottlerException: Too Many Requests",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/adapters/controllers/courier_onboarding.controller.ts", 33, 39)
+        source: restSource("identity", "src/adapters/controllers/courier_onboarding.controller.ts", 37, 47)
+      },
+      {
+        status: 429,
+        when: "rest.identity.registerCourier.case.delayed",
+        headers: ["Retry-After: 8"],
+        json: {
+          error: "SIGN_IN_DELAYED",
+          message:
+            "Too many unsuccessful sign-in attempts for this account. Nothing was checked; try again after the number of seconds in Retry-After.",
+          retryAfterSeconds: 8,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/infrastructure/observability/unhandled_exception_filter.ts", 54, 75)
+      },
+      {
+        status: 502,
+        when: "rest.identity.registerCourier.case.fleetFault",
+        json: {
+          error: "FLEET_FAULT",
+          message:
+            "Your account exists, but identity could not file your vehicle because of a fault on its own side. Nothing was filed. Submit the same details again later with the same email and password; the account will be reused.",
+          accountExists: true,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource(
+          "identity",
+          "src/application/services/courier_registration_usecase.service.ts",
+          140,
+          154
+        )
       },
       {
         status: 503,
@@ -2022,12 +2354,12 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "identity",
           "src/application/services/courier_registration_usecase.service.ts",
-          148,
-          154
+          167,
+          173
         )
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/courier_onboarding.controller.ts", 33, 39)
+    source: restSource("identity", "src/adapters/controllers/courier_onboarding.controller.ts", 37, 47)
   },
   {
     id: "identity.listCourierApplications",
@@ -2079,7 +2411,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
               email: "kurir.budi@example.com",
               driverId: 118,
               status: "pending",
-              filedAt: "2026-10-21T07:42:10.226Z",
+              filedAt: "2026-10-26T07:42:10.226Z",
               approvedAt: null
             }
           ],
@@ -2112,7 +2444,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 403,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/adapters/guards/roles.guard.ts", 23, 28)
+        source: restSource("identity", "src/adapters/guards/roles.guard.ts", 23, 29)
       },
       {
         status: 429,
@@ -2126,7 +2458,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         source: restSource("identity", "src/infrastructure/http/throttle_policy.ts", 3, 6)
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/courier_onboarding.controller.ts", 41, 48)
+    source: restSource("identity", "src/adapters/controllers/courier_onboarding.controller.ts", 49, 57)
   },
   {
     id: "identity.approveCourier",
@@ -2173,7 +2505,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 400,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/adapters/controllers/courier_onboarding.controller.ts", 54, 56)
+        source: restSource("identity", "src/adapters/controllers/courier_onboarding.controller.ts", 64, 66)
       },
       {
         status: 403,
@@ -2184,7 +2516,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 403,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/adapters/guards/roles.guard.ts", 23, 28)
+        source: restSource("identity", "src/adapters/guards/roles.guard.ts", 23, 29)
       },
       {
         status: 404,
@@ -2233,6 +2565,17 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       },
       {
         status: 502,
+        when: "rest.identity.approveCourier.case.fleetFault",
+        json: {
+          error: "FLEET_PERMISSION_DENIED",
+          message:
+            "identity could not ask the fleet to activate this driver (FLEET_PERMISSION_DENIED); the fault lies between identity and the fleet, not with the account. Nothing was changed.",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 133, 145)
+      },
+      {
+        status: 502,
         when: "rest.identity.approveCourier.case.fleetRefused",
         json: {
           error: "REGISTRATION_REFUSED",
@@ -2240,7 +2583,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
             "The fleet refused to activate this driver (REGISTRATION_REFUSED: the fleet row could not be written: %{vehicle_plate: [\"can't be blank\"]}). Nothing was changed.",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 133, 139)
+        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 147, 154)
       },
       {
         status: 503,
@@ -2251,10 +2594,10 @@ export const identityEndpoints: readonly RestEndpoint[] = [
             "The account is now a courier, but the fleet could not be told to activate the driver. Approve again once the fleet is reachable; nothing will be duplicated.",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 142, 147)
+        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 156, 161)
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/courier_onboarding.controller.ts", 50, 58)
+    source: restSource("identity", "src/adapters/controllers/courier_onboarding.controller.ts", 59, 68)
   },
   {
     id: "identity.jwks",

@@ -16,11 +16,13 @@ link to internal ones, because every reader of this site would get a dead link.
   paths, CI variable names.
 - Key material of any kind, SOPS/age or PKI operating detail, real costs, runbooks.
 
-One argued exception to hostnames, ruled by the user on 2026-10-22: the two public addresses clients connect to,
-the API host `api.wildanfrananda.my.id` and the storage host `storage.wildanfrananda.my.id`, may appear, and the REST
-reference uses them as its base URLs. They are public anyway (DNS, Certificate Transparency, the courier app's build
-configuration), so hiding them protects nothing. Everything behind them stays out: machine names, IPs, container
-names, ports, bucket names. If `DOCS_DENYLIST` lists the domain, the CI `leaks` job turns red until those two
+One argued exception to hostnames, ruled by the user on 2026-10-22 ("semua base url jangan pake example"): the
+public addresses clients connect to may appear, and the REST reference uses them as its base URLs — the API host
+`api.wildanfrananda.my.id`, the storage host `storage.wildanfrananda.my.id`, and since 2026-10-26 the two web apps'
+hosts, `seller.wildanfrananda.my.id` and `backoffice.wildanfrananda.my.id`, where the browser reaches the edge under
+`/bff/`. They are public anyway (DNS, Certificate Transparency, the courier app's build configuration), so hiding
+them protects nothing. Everything behind them stays out: machine names, IPs, container names, ports, bucket names,
+the staff network's addresses. If `DOCS_DENYLIST` lists the domain, the CI `leaks` job turns red until those
 addresses are allowed there.
 
 `bun run check:leaks` enforces what a pattern can catch; concrete values are kept in the
@@ -193,6 +195,26 @@ each feature as the calls in the order the application makes them, with every re
   `<RestEndpoint id="…" />`. An endpoint used by several applications (sign-in is in all four) is rendered
   from the same data on each page. `tests/rest_pages.test.ts` refuses an unknown id, an endpoint on no page,
   and an Indonesian page whose endpoints differ from its English twin's.
+- **Web apps call through the edge** (since 2026-10-26, edge v1.0.0 in production: the user's cookie request). The
+  seller web and the backoffice never hold a token: the browser keeps the `HttpOnly` cookie `__Host-kx_session` on
+  its own host, and `kinetix-edge-service` adds the bearer token. So every endpoint on a `seller-web/` or
+  `backoffice/` page is written `<RestEndpoint id="…" via="seller-web" />` (or `via="backoffice"`): the same data
+  renders with the app's host, `/bff` before the path, `Cookie` instead of `Authorization`, `Origin` on
+  state-changing methods, and a link to the edge's answers. The edge's own endpoints (`endpoints/edge.ts`, ids
+  `edge.*`, paths `/bff/…`) appear only with `via`. Mobile pages never use `via`. `tests/rest_pages.test.ts` refuses
+  a web page without the right `via`, `via` anywhere else, and a call the edge refuses (`src/site/rest/bff.ts`
+  mirrors the edge's `config/forwarding.tl`; move it with the edge's pin).
+- **WebSockets are data too** (the user's request, 2026-10-27: "rapihin yang wss seperti http"). A socket is
+  `RestSocket` data in `src/site/rest/sockets/<service>.ts` (path, fixed query, the headers the client sets, the
+  handshake answers), rendered by `<RestSocket id="…" />` with its `wss://` address in the Endpoint block; each
+  channel message is `RestSocketMessage` data (who sends it, topic template, the Phoenix frame, one reply per answer),
+  rendered by `<RestSocketMessage id="…" />`. Phoenix's own behaviour links Phoenix at the version matching's
+  `mix.lock` pins (`src/site/rest/phoenix_release.ts`). `tests/rest_sockets.test.ts` refuses unpinned links and
+  malformed frames; `tests/rest_pages.test.ts` refuses a socket on no page and any `/ws/` path written without
+  `wss://` (never an HTTP `GET … HTTP/1.1`). Only sockets a client can use are written: the merchant socket is not
+  (the seller web holds no token and the edge forwards no WebSocket).
+- **Shared look.** `src/styles/rest.css` holds the styles of every REST component (endpoint, case, socket), so a
+  socket looks exactly like an endpoint; `RestFields.astro` renders a field list for both.
 - **Pinned.** `src/site/rest/rest_releases.ts` holds each service's production tag and commit, read from the
   deploy pins. `tests/rest_endpoints.test.ts` refuses a link to any other commit, a path that no gateway
   route serves, a `{name}` in the path that is not a path field (or the reverse), and cases out of status
@@ -201,8 +223,7 @@ each feature as the calls in the order the application makes them, with every re
 - **No open defect.** Writing the inventory for this section in session 32 found about 130 defects; the
   section waited until they were fixed and deployed (2026-10-22). A case that is wrong is never written as
   behaviour: it goes to the internal register, is fixed, and is documented once deployed.
-- **Examples** use the real public hosts, `api.wildanfrananda.my.id` and `storage.wildanfrananda.my.id` (see "What
-  may never appear here"), `example.com` addresses, invented ids and the bucket placeholder `example-bucket`.
+- **Examples** use the real public hosts (see "What may never appear here"), `example.com` addresses, invented ids and the bucket placeholder `example-bucket`.
   Tokens are written `eyJ…<claims>.<signature>`. A value after a key-like word (`Idempotency-Key`, `secret`,
   `token`, `password`) is a visibly fake, low-entropy placeholder such as `11111111-2222-4333-8444-555555555555` or
   `0x5e5e…`: CI's gitleaks (`generic-api-key`) flags a random-looking one, and the fix is the example, never an

@@ -3,36 +3,41 @@ title: Penerimaan stok
 description: Cara staf mencari merchant pemilik sebuah kiriman di catalog, lalu membuat bin dan membukukan barang masuk dan keluar bin itu di warehouse.
 sidebar:
   order: 6
-sourceHash: "a7c281e1d1db"
+sourceHash: "1b282274dfb0"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
 
 Barang tiba di gudang atas nama sebuah merchant, dan staf membukukannya ke rak. Merchant itu menjual produknya di
 catalog, dan catalog baru mengizinkannya setelah admin menyetujui penjualnya
-([Pengajuan penjual](/id/apis/rest/backoffice/seller-applications/)). Setelah masuk seperti di
-[Masuk](/id/apis/rest/backoffice/sign-in/), admin mencari pemilik setiap SKU di catalog, membuat bin tempat barang
-disimpan, membukukan kiriman, dan kemudian menyesuaikan jumlahnya untuk barang rusak, hilang atau salah hitung. Ketiga
-endpoint warehouse butuh access token admin, yang diperiksa warehouse sendiri.
+([Pengajuan penjual](/id/apis/rest/backoffice/seller-applications/)). Setelah masuk dari jaringan staf Kinetix seperti
+di [Masuk](/id/apis/rest/backoffice/sign-in/), admin mencari pemilik setiap SKU di catalog, membuat bin tempat barang
+disimpan, membukukan kiriman, dan kemudian menyesuaikan jumlahnya untuk barang rusak, hilang atau salah hitung.
+Warehouse memeriksa token admin sendiri di ketiga endpoint-nya, dan mencatat setiap panggilan bersama akun admin dan
+hasilnya.
+
+Warehouse membaca setiap field dengan ketat: field teks harus berupa string JSON, dan angka harus bilangan bulat dalam
+rentangnya, dikirim sebagai integer JSON atau sebagai string berisi digit; tidak ada yang dibulatkan atau dipotong.
+Nilai dengan tipe yang salah, di luar rentang atau terlalu panjang dijawab `422` dan tidak mengubah apa pun.
 
 ## 1. Cari pemilik barang
 
 Baca produk dengan `sku` yang tertera di kiriman dan simpan `merchant_principal_id`-nya, yaitu principal identity milik
 merchant yang menjualnya, yang dikirim di langkah 3 dan 4. Harus merchant itu: warehouse menyimpan stok per merchant
 dan SKU
-([bin_stock_service_handler.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/a0eafe367f060d4f99aec06a07017d86b8bd046f/app/rpc/bin_stock_service_handler.rb#L32-L44)),
+([bin_stock_service_handler.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/cc5ff5ff80b6342e2cafdb262f931e2e03dedf50/app/rpc/bin_stock_service_handler.rb#L32-L44)),
 dan catalog menanyakan stok milik merchant produk itu sendiri
-([product_service.py](https://github.com/WildanFrananda/kinetix-catalog-service/blob/95cabdb917607026a290b7d24e91b7121a0631d3/core/application/services/product_service.py#L92-L98)).
+([product_service.py](https://github.com/WildanFrananda/kinetix-catalog-service/blob/1348c6ea4f80448bba710e83b20c5551d10fa3e0/core/application/services/product_service.py#L113-L119)).
 Jawaban `404` berarti tidak ada produk dengan SKU itu yang sedang dijual.
 
-<RestEndpoint id="catalog.getProduct" />
+<RestEndpoint id="catalog.getProduct" via="backoffice" />
 
 ## 2. Buat bin
 
 Barang dibukukan ke sebuah bin lewat `bin_code`-nya, jadi bin itu harus ada lebih dulu. Bin dibuat sekali, bukan per
 kiriman: request yang sama dengan `bin_code` yang sudah ada justru memperbarui zona dan tingkat rak bin itu.
 
-<RestEndpoint id="warehouse.upsertBin" />
+<RestEndpoint id="warehouse.upsertBin" via="backoffice" />
 
 ## 3. Bukukan kiriman
 
@@ -40,9 +45,13 @@ Kirim `bin_code` dari langkah 2, `sku`, jumlah unit yang dihitung sebagai `quant
 langkah 1, dan `idempotency_key` yang dibuat client untuk kiriman yang satu ini dan disimpan sampai mendapat jawaban
 akhir. Key itu ada di body; endpoint ini tidak membaca header `Idempotency-Key`. Setelah timeout, `500` atau `503`,
 kirim body yang sama dengan key yang sama: kiriman yang sudah dibukukan menjawab `200` dengan `replayed: true` dan
-tidak dibukukan dua kali.
+tidak dibukukan dua kali. Jawaban `400` atau `422` tidak membukukan apa pun dan membiarkan key itu belum terpakai, jadi
+body yang sudah dikoreksi bisa dikirim dengan key itu
+([receive_stock_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/cc5ff5ff80b6342e2cafdb262f931e2e03dedf50/app/services/inventory/receive_stock_service.rb#L64-L132)).
+`422` `STOCK_LIMIT_EXCEEDED` berarti bin itu tidak bisa menghitung unit SKU itu sebanyak itu: bukukan sisanya ke bin
+lain.
 
-<RestEndpoint id="warehouse.receiveStock" />
+<RestEndpoint id="warehouse.receiveStock" via="backoffice" />
 
 ## 4. Sesuaikan stok
 
@@ -52,4 +61,4 @@ tempat stok itu dibukukan. Setiap penyesuaian memakai `idempotency_key` baru, de
 Pengurangan yang akan memakan unit yang sudah dicadangkan untuk pesanan menjawab `409` dengan `max_reduction`,
 pengurangan terbesar yang mungkin saat ini; pengurangan yang lebih kecil adalah penyesuaian baru dengan key baru.
 
-<RestEndpoint id="warehouse.adjustStock" />
+<RestEndpoint id="warehouse.adjustStock" via="backoffice" />

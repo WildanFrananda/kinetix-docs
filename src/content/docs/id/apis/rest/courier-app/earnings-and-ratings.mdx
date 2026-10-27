@@ -3,7 +3,7 @@ title: Pendapatan dan rating
 description: Kurir membaca wallet driver dari payment, tempat ongkos kirim ditahan lalu dicairkan, dan rating yang diberikan pembeli dari review; aplikasi kurir belum memanggil keduanya.
 sidebar:
   order: 5
-sourceHash: "bb3f7e9ee7d2"
+sourceHash: "ed30c673a396"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -11,9 +11,9 @@ import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
 Dua pembacaan yang dilakukan client kurir tentang akun kurir itu sendiri: wallet driver di payment, tempat ongkos
 kirim ditahan lalu dicairkan ke kurir, dan rating yang diberikan pembeli kepada kurir di review. Keduanya tidak
 saling bergantung, dan keduanya dilakukan setelah [masuk](/id/apis/rest/courier-app/sign-in/). Aplikasi kurir di
-commit `86dd282` belum memanggil keduanya: satu-satunya request HTTP-nya ke Kinetix adalah panggilan ke identity
+commit `29a96d3` belum memanggil keduanya: satu-satunya request HTTP-nya ke Kinetix adalah panggilan ke identity
 dan matching di API client-nya
-([driver_api.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/services/auth/driver_api.dart#L8-L36))
+([driver_api.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/auth/driver_api.dart#L8-L48))
 dan upload foto di [Mulai bertugas dan mengantar](/id/apis/rest/courier-app/deliver/).
 
 ## 1. Baca wallet driver

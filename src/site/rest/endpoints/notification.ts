@@ -6,6 +6,7 @@ const deviceApi = "src/main/scala/com/kinetix/notification/infrastructure/http/D
 const httpApi = "src/main/scala/com/kinetix/notification/infrastructure/http/HttpApi.scala";
 const deviceRegistry = "src/main/scala/com/kinetix/notification/infrastructure/persistence/PostgresDeviceRegistry.scala";
 const verifyDevice = "src/main/scala/com/kinetix/notification/application/VerifyDevice.scala";
+const deviceChallenge = "src/main/scala/com/kinetix/notification/domain/DeviceChallenge.scala";
 const handsetToken = "f7Kq2mXr0Ts:APA91bG3exampleHandsetRegistrationTokenK9vL2pQ8wR4tY6uI0oP3aS5dF7gH1jK";
 
 export const notificationAnswers: readonly RestCase[] = [
@@ -15,7 +16,7 @@ export const notificationAnswers: readonly RestCase[] = [
     json: {
       error: "MALFORMED_BODY"
     },
-    source: restSource("notification", deviceApi, 100, 110)
+    source: restSource("notification", deviceApi, 107, 117)
   },
   {
     status: 401,
@@ -24,7 +25,7 @@ export const notificationAnswers: readonly RestCase[] = [
     json: {
       error: "UNAUTHENTICATED"
     },
-    source: restSource("notification", deviceApi, 83, 98)
+    source: restSource("notification", deviceApi, 90, 105)
   },
   {
     status: 404,
@@ -49,22 +50,22 @@ export const notificationAnswers: readonly RestCase[] = [
     json: {
       error: "BODY_TOO_LARGE"
     },
-    source: restSource("notification", deviceApi, 100, 106)
+    source: restSource("notification", deviceApi, 107, 113)
   },
   {
     status: 500,
     when: "rest.notification.answers.internal",
     headers: ["Content-Length: 0"],
-    source: restSource("notification", "src/main/scala/com/kinetix/notification/Main.scala", 175, 185)
+    source: restSource("notification", "src/main/scala/com/kinetix/notification/Main.scala", 184, 194)
   },
   {
     status: 503,
     when: "rest.notification.answers.database",
     json: {
       error: "STORE_UNAVAILABLE",
-      message: "the delivery record could not be reached"
+      message: "the device registry could not be reached; try again later"
     },
-    source: restSource("notification", deviceApi, 126, 130)
+    source: restSource("notification", deviceApi, 133, 138)
   },
   {
     status: 503,
@@ -72,7 +73,7 @@ export const notificationAnswers: readonly RestCase[] = [
     json: {
       error: "TOKEN_UNVERIFIABLE"
     },
-    source: restSource("notification", deviceApi, 95, 97)
+    source: restSource("notification", deviceApi, 102, 104)
   }
 ];
 
@@ -118,7 +119,7 @@ export const notificationEndpoints: readonly RestEndpoint[] = [
           registered: true,
           already_registered: false
         },
-        source: restSource("notification", deviceRegistry, 83, 94)
+        source: restSource("notification", deviceRegistry, 106, 117)
       },
       {
         status: 200,
@@ -137,7 +138,7 @@ export const notificationEndpoints: readonly RestEndpoint[] = [
           state: "DEVICE_VERIFICATION_PENDING",
           expires_at: "2026-10-22T03:25:00.481236Z"
         },
-        source: restSource("notification", deviceApi, 52, 60)
+        source: restSource("notification", deviceApi, 59, 67)
       },
       {
         status: 400,
@@ -146,7 +147,7 @@ export const notificationEndpoints: readonly RestEndpoint[] = [
           error: "INVALID_DEVICE_TOKEN",
           message: "device_token is required and at most 512 characters"
         },
-        source: restSource("notification", deviceApi, 43, 44)
+        source: restSource("notification", deviceApi, 50, 51)
       },
       {
         status: 400,
@@ -155,10 +156,60 @@ export const notificationEndpoints: readonly RestEndpoint[] = [
           error: "INVALID_PLATFORM",
           message: "platform must be ANDROID or IOS"
         },
-        source: restSource("notification", deviceApi, 43, 45)
+        source: restSource("notification", deviceApi, 50, 52)
+      },
+      {
+        status: 422,
+        when: "rest.notification.registerDevice.case.addressGone",
+        json: {
+          error: "ADDRESS_GONE",
+          message:
+            "the push provider says this device token no longer exists; get a fresh FCM token and register it again"
+        },
+        source: restSource("notification", deviceApi, 144, 146)
+      },
+      {
+        status: 429,
+        when: "rest.notification.registerDevice.case.alreadyPending",
+        headers: ["Retry-After: 413"],
+        json: {
+          error: "VERIFICATION_ALREADY_PENDING",
+          message:
+            "a proof was already sent to this device for this principal; echo its nonce, or register again after 2026-10-22T03:25:00.481236Z"
+        },
+        source: restSource("notification", deviceApi, 160, 170)
+      },
+      {
+        status: 429,
+        when: "rest.notification.registerDevice.case.limitReached",
+        headers: ["Retry-After: 1878"],
+        json: {
+          error: "VERIFICATION_LIMIT_REACHED",
+          message: "this device was sent 3 proofs within an hour; register again after 2026-10-22T04:02:17.903114Z"
+        },
+        source: restSource("notification", deviceChallenge, 35, 43)
+      },
+      {
+        status: 502,
+        when: "rest.notification.registerDevice.case.senderRejected",
+        json: {
+          error: "SENDER_REJECTED",
+          message: "the push provider refused the message; repeating the request unchanged does not help"
+        },
+        source: restSource("notification", deviceApi, 141, 141)
+      },
+      {
+        status: 503,
+        when: "rest.notification.registerDevice.case.senderUnavailable",
+        json: {
+          error: "SENDER_UNAVAILABLE",
+          message:
+            "the push provider did not answer; 3 attempts were made, with 200 ms and 600 ms back-off; try again later"
+        },
+        source: restSource("notification", deviceApi, 149, 158)
       }
     ],
-    source: restSource("notification", deviceApi, 40, 60)
+    source: restSource("notification", deviceApi, 47, 67)
   },
   {
     id: "notification.verifyDevice",
@@ -201,7 +252,7 @@ export const notificationEndpoints: readonly RestEndpoint[] = [
           registered: true,
           already_registered: false
         },
-        source: restSource("notification", deviceRegistry, 105, 112)
+        source: restSource("notification", deviceRegistry, 134, 141)
       },
       {
         status: 400,
@@ -210,7 +261,7 @@ export const notificationEndpoints: readonly RestEndpoint[] = [
           error: "INVALID_DEVICE_TOKEN",
           message: "device_token is required and at most 512 characters"
         },
-        source: restSource("notification", deviceApi, 65, 66)
+        source: restSource("notification", deviceApi, 72, 73)
       },
       {
         status: 400,
@@ -219,7 +270,7 @@ export const notificationEndpoints: readonly RestEndpoint[] = [
           error: "INVALID_NONCE",
           message: "nonce is required and at most 128 characters"
         },
-        source: restSource("notification", deviceApi, 65, 67)
+        source: restSource("notification", deviceApi, 72, 74)
       },
       {
         status: 422,
@@ -237,10 +288,10 @@ export const notificationEndpoints: readonly RestEndpoint[] = [
           error: "VERIFICATION_FAILED",
           message: "the nonce does not match the one sent to this device; 4 attempt(s) left"
         },
-        source: restSource("notification", deviceRegistry, 114, 120)
+        source: restSource("notification", deviceRegistry, 143, 149)
       }
     ],
-    source: restSource("notification", deviceApi, 62, 71)
+    source: restSource("notification", deviceApi, 69, 78)
   },
   {
     id: "notification.forgetDevice",
@@ -271,7 +322,7 @@ export const notificationEndpoints: readonly RestEndpoint[] = [
       {
         status: 204,
         when: "rest.notification.forgetDevice.case.forgotten",
-        source: restSource("notification", deviceApi, 78, 81)
+        source: restSource("notification", deviceApi, 85, 88)
       },
       {
         status: 400,
@@ -280,9 +331,9 @@ export const notificationEndpoints: readonly RestEndpoint[] = [
           error: "INVALID_DEVICE_TOKEN",
           message: "device_token is required and at most 512 characters"
         },
-        source: restSource("notification", deviceApi, 76, 77)
+        source: restSource("notification", deviceApi, 83, 84)
       }
     ],
-    source: restSource("notification", deviceApi, 73, 81)
+    source: restSource("notification", deviceApi, 80, 88)
   }
 ];

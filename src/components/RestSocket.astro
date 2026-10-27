@@ -1,0 +1,70 @@
+---
+import { Code } from "@astrojs/starlight/components";
+import "../styles/rest.css";
+import { localeOf } from "../diagrams/engine/locale_of";
+import { messageHeaders } from "../site/rest/message_headers";
+import { releaseTree } from "../site/rest/release_tree";
+import { restCatalogueFor } from "../site/rest/rest_catalogue";
+import { restReleases } from "../site/rest/rest_releases";
+import { restSocket } from "../site/rest/rest_sockets";
+import { servicePage } from "../site/rest/service_page";
+import { socketUrl } from "../site/rest/socket_url";
+import type { RestSocketProps } from "../site/types/rest_socket_props.type";
+import RestCaseBlock from "./RestCaseBlock.astro";
+import RestFields from "./RestFields.astro";
+import RestText from "./RestText.astro";
+
+type Props = RestSocketProps;
+
+const { id } = Astro.props;
+const locale = localeOf(Astro.locals.starlightRoute.entryMeta.lang);
+const text = restCatalogueFor(locale);
+const prefix = locale === "en" ? "" : `/${locale}`;
+const socket = restSocket(id);
+const release = restReleases[socket.service];
+const page = servicePage(socket.service);
+const headers = messageHeaders(socket.request);
+const token = text[`rest.common.token.${socket.access.token}`];
+const gateway =
+  socket.access.token === "none"
+    ? undefined
+    : socket.access.gatewayVerifies
+      ? text["rest.common.gateway.verifies"]
+      : text["rest.common.gateway.passes"];
+---
+
+<section class="rest-endpoint not-content">
+  <p class="rest-line">
+    <span class="rest-method rest-tone-blue">WSS</span>
+    <code class="rest-path">{socket.path.split("/").map((part, index) => (<>{index > 0 && <>/<wbr /></>}{part}</>))}</code>
+  </p>
+  <p class="rest-summary"><RestText text={text[socket.summary]} /></p>
+  <dl class="rest-facts">
+    <dt>{text["rest.common.access"]}</dt>
+    <dd>
+      {token}
+      {gateway !== undefined && <> <RestText text={gateway} /></>}
+      {" "}
+      <RestText text={text[socket.access.who]} />
+    </dd>
+    <dt>{text["rest.common.handler"]}</dt>
+    <dd>
+      {page === undefined ? socket.service : <a href={`${prefix}${page}`}>{socket.service}</a>}{" "}
+      <a href={releaseTree(socket.service)}>{release.tag}</a>
+      {" · "}
+      <a class="rest-source" href={socket.source.href}>{socket.source.label}</a>
+    </dd>
+  </dl>
+  <p class="rest-label">{text["rest.common.request"]}</p>
+  <RestFields fields={socket.request.fields} />
+  <div class="rest-parts">
+    <Code code={socketUrl(socket)} lang="text" title={text["rest.common.part.endpoint"]} />
+    {headers.length > 0 && <Code code={headers.join("\n")} lang="http" title={text["rest.common.part.headers"]} />}
+  </div>
+  <p class="rest-label">{text["rest.common.socket.handshake"]}</p>
+  {socket.cases.map((entry) => <RestCaseBlock entry={entry} />)}
+  <p class="rest-also">
+    {text["rest.common.also"]}{" "}
+    <a href={`${prefix}/apis/rest/#gateway-answers`}>{text["rest.common.also.gateway"]}</a>
+  </p>
+</section>

@@ -1,4 +1,5 @@
 import { gatewayAnswers } from "./endpoints/gateway";
+import { edgeAnswers } from "./endpoints/edge";
 import { identityAnswers } from "./endpoints/identity";
 import { catalogAnswers } from "./endpoints/catalog";
 import { searchAnswers } from "./endpoints/search";
@@ -15,6 +16,7 @@ import type { RestService } from "../types/rest_service.type";
 
 export const restAnswers: Readonly<Record<RestService, readonly RestCase[]>> = {
   gateway: gatewayAnswers,
+  edge: edgeAnswers,
   identity: identityAnswers,
   catalog: catalogAnswers,
   search: searchAnswers,

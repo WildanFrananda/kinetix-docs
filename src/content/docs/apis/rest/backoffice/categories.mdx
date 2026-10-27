@@ -9,36 +9,40 @@ import RestEndpoint from "../../../../../components/RestEndpoint.astro";
 
 Catalog keeps the platform's product categories, and only an admin changes them: a seller files each product under a
 category's `id`, and pricing's category discounts name a category's `slug`
-([Platform promotions](/apis/rest/backoffice/platform-promotions/)). The admin, signed in as on
-[Sign in](/apis/rest/backoffice/sign-in/), lists the categories, reads one, and creates, renames or deletes them. The
-two reads are public; the three writes need the admin's access token, which catalog checks itself.
+([Platform promotions](/apis/rest/backoffice/platform-promotions/)). The admin, signed in from Kinetix's staff network
+as on [Sign in](/apis/rest/backoffice/sign-in/), lists the categories, reads one, and creates, renames or deletes them.
+Catalog serves the two reads to anyone and checks the token itself on the three writes, where it must be an admin's;
+each write that passes that check goes into catalog's audit log under the admin's account.
 
 ## 1. List the categories
 
 Every category comes back in one answer, with no paging. Each one's `id` is the value the later steps take in the
 path.
 
-<RestEndpoint id="catalog.listCategories" />
+<RestEndpoint id="catalog.listCategories" via="backoffice" />
 
 ## 2. Read one category
 
 Read a category by the `id` from step 1, for example to show it before an edit.
 
-<RestEndpoint id="catalog.getCategory" />
+<RestEndpoint id="catalog.getCategory" via="backoffice" />
 
 ## 3. Create a category
 
 Send a `name` and a `slug`; both must be unused by every other category. Keep the `id` of the answer: it is what sellers
 send as `category_id` when they create a product.
 
-<RestEndpoint id="catalog.createCategory" />
+<RestEndpoint id="catalog.createCategory" via="backoffice" />
 
 ## 4. Rename a category
 
 The update replaces both values, so send `name` and `slug` together, the unchanged one as it is, with `id` from step 1
-or 3 in the path.
+or 3 in the path. Catalog's own product filter uses a new slug at once. Search follows at its next sync: a change of
+name or slug marks every product filed under the category, in the same transaction, to be sent to search again
+([0010_category_changes_stamp_their_products.py](https://github.com/WildanFrananda/kinetix-catalog-service/blob/1348c6ea4f80448bba710e83b20c5551d10fa3e0/core/migrations/0010_category_changes_stamp_their_products.py#L13-L28)).
+Nothing more is asked of the client.
 
-<RestEndpoint id="catalog.updateCategory" />
+<RestEndpoint id="catalog.updateCategory" via="backoffice" />
 
 ## 5. Delete a category
 
@@ -46,4 +50,4 @@ A category can be deleted only while no product is filed under it, withdrawn pro
 count in `product_count`; those products' merchants have to move them to another category before the admin can delete
 it.
 
-<RestEndpoint id="catalog.deleteCategory" />
+<RestEndpoint id="catalog.deleteCategory" via="backoffice" />

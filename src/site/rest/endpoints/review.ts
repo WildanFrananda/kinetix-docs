@@ -11,7 +11,7 @@ export const reviewAnswers: readonly RestCase[] = [
       message: "Malformed URL.",
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("review", "bootstrap/app.php", 66, 76)
+    source: restSource("review", "bootstrap/app.php", 100, 110)
   },
   {
     status: 401,
@@ -41,7 +41,7 @@ export const reviewAnswers: readonly RestCase[] = [
       message: "The route api/v1/reviews/orders could not be found.",
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("review", "bootstrap/app.php", 66, 76)
+    source: restSource("review", "bootstrap/app.php", 100, 110)
   },
   {
     status: 405,
@@ -52,7 +52,7 @@ export const reviewAnswers: readonly RestCase[] = [
       message: "The GET method is not supported for route api/v1/reviews/products. Supported methods: POST.",
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("review", "bootstrap/app.php", 66, 76)
+    source: restSource("review", "bootstrap/app.php", 100, 110)
   },
   {
     status: 413,
@@ -62,7 +62,7 @@ export const reviewAnswers: readonly RestCase[] = [
       message: "The POST data is too large.",
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("review", "bootstrap/app.php", 66, 76)
+    source: restSource("review", "bootstrap/app.php", 100, 110)
   },
   {
     status: 422,
@@ -77,7 +77,7 @@ export const reviewAnswers: readonly RestCase[] = [
       },
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("review", "bootstrap/app.php", 54, 64)
+    source: restSource("review", "bootstrap/app.php", 76, 86)
   },
   {
     status: 500,
@@ -87,7 +87,17 @@ export const reviewAnswers: readonly RestCase[] = [
       message: "something went wrong handling this request. No review was saved unless a previous response said so.",
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("review", "bootstrap/app.php", 78, 95)
+    source: restSource("review", "bootstrap/app.php", 132, 140)
+  },
+  {
+    status: 503,
+    when: "rest.review.answers.databaseUnavailable",
+    json: {
+      error: "SERVICE_UNAVAILABLE",
+      message: "the review database could not be reached, so this request could not be completed. Try again later.",
+      traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+    },
+    source: restSource("review", "bootstrap/app.php", 112, 130)
   },
   {
     status: 503,
@@ -196,6 +206,7 @@ export const reviewEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "REQUEST_REFUSED",
           message: "this product from this order has already been reviewed. Nothing was saved.",
+          review_id: "019a0b4e-6f2d-7c3a-9b1e-4d5f6a7b8c9d",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
         source: restSource("review", "app/Repositories/EloquentProductReviewRepository.php", 14, 20)
@@ -208,7 +219,7 @@ export const reviewEndpoints: readonly RestEndpoint[] = [
           message: "The product id field is required. (and 1 more error)",
           errors: {
             product_id: ["The product id field is required."],
-            rating: ["The rating field must not be greater than 5."]
+            rating: ["The rating field must be an integer."]
           },
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
@@ -328,6 +339,7 @@ export const reviewEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "REQUEST_REFUSED",
           message: "the courier of this order has already been rated. Nothing was saved.",
+          review_id: "019a0b4f-0a1b-7c2d-8e3f-5a6b7c8d9e0f",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
         source: restSource("review", "app/Repositories/EloquentDriverRatingRepository.php", 14, 20)
@@ -472,7 +484,7 @@ export const reviewEndpoints: readonly RestEndpoint[] = [
           current_page: 1,
           last_page: 1
         },
-        source: restSource("review", "app/Repositories/EloquentProductReviewRepository.php", 22, 36)
+        source: restSource("review", "app/Repositories/EloquentProductReviewRepository.php", 22, 37)
       }
     ],
     source: restSource("review", "app/Http/Controllers/ProductReviewController.php", 45, 49)
@@ -559,7 +571,7 @@ export const reviewEndpoints: readonly RestEndpoint[] = [
           current_page: 1,
           last_page: 1
         },
-        source: restSource("review", "app/Repositories/EloquentProductReviewRepository.php", 38, 52)
+        source: restSource("review", "app/Repositories/EloquentProductReviewRepository.php", 39, 54)
       }
     ],
     source: restSource("review", "app/Http/Controllers/ProductReviewController.php", 51, 55)
@@ -635,7 +647,7 @@ export const reviewEndpoints: readonly RestEndpoint[] = [
           current_page: 1,
           last_page: 1
         },
-        source: restSource("review", "app/Repositories/EloquentDriverRatingRepository.php", 22, 36)
+        source: restSource("review", "app/Repositories/EloquentDriverRatingRepository.php", 22, 37)
       }
     ],
     source: restSource("review", "app/Http/Controllers/DriverRatingController.php", 44, 48)

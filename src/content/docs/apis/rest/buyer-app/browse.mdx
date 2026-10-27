@@ -39,7 +39,7 @@ adds the description and the stock warehouse holds for it. The app keeps `sku` f
 
 The same `sku` as step 3. A `null` body means no sale is open for it now. Checkout uses the flash price only
 when it is below the product's price, and then gives that unit no discount
-([pricing_service.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/d3020a29ca7ac6fcc2d5a7e472a6b234cc783d0d/src/services/pricing_service.rs#L157-L191)).
+([pricing_service.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0ed7db4cd6fb8d40375cab26dd7ac56ebce16a8a/src/services/pricing_service.rs#L157-L191)).
 
 <RestEndpoint id="pricing.getFlashSale" />
 
@@ -48,10 +48,10 @@ when it is below the product's price, and then gives that unit no discount
 One unpaged list of every discount in force, which the app matches to products itself. A discount concerns a
 product when its `target_product_id` is the product's `sku`, its `target_category_id` is the product's
 `category_slug`, or it names neither
-([default_discount_evaluator.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/d3020a29ca7ac6fcc2d5a7e472a6b234cc783d0d/src/traits/default_discount_evaluator.rs#L10-L25),
-[CatalogProductDirectory.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a9473a17c546faa7e41be843343b0bd882435964/Infrastructure/Grpc/CatalogProductDirectory.cs#L55-L64)),
+([default_discount_evaluator.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0ed7db4cd6fb8d40375cab26dd7ac56ebce16a8a/src/traits/default_discount_evaluator.rs#L10-L25),
+[CatalogProductDirectory.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Infrastructure/Grpc/CatalogProductDirectory.cs#L55-L64)),
 and its `merchant_principal_id` is `null` or the product's merchant
-([pricing_service.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/d3020a29ca7ac6fcc2d5a7e472a6b234cc783d0d/src/services/pricing_service.rs#L137-L146)).
+([pricing_service.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0ed7db4cd6fb8d40375cab26dd7ac56ebce16a8a/src/services/pricing_service.rs#L137-L146)).
 
 <RestEndpoint id="pricing.listDiscounts" />
 

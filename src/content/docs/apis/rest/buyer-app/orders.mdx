@@ -13,7 +13,8 @@ one (step 2). The order that [checkout](/apis/rest/buyer-app/checkout/) placed i
 ## 1. List the orders
 
 Newest first. `status` narrows the list to one status. The app asks for the next `page` while `page` ×
-`pageSize` is below `totalCount`. Each item's `id` opens the order in step 2.
+`pageSize` is below `totalCount`, up to `page` 10,000, the last one order serves (`maxPage`). Each item's `id`
+opens the order in step 2.
 
 <RestEndpoint id="order.listMyOrders" />
 

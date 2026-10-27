@@ -3,6 +3,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { restAnswers } from "../src/site/rest/rest_answers";
 import { restEndpoints } from "../src/site/rest/rest_endpoints";
+import { restSocketMessages, restSockets } from "../src/site/rest/rest_sockets";
 
 const root = join(import.meta.dir, "../src/catalogue/rest");
 const files = readdirSync(join(root, "en")).filter((name) => name.endsWith(".json"));
@@ -29,6 +30,18 @@ function usedKeys(): Set<string> {
   }
 
   Object.values(restAnswers).forEach((cases) => cases.forEach((entry) => keys.add(entry.when)));
+
+  for (const socket of restSockets) {
+    keys.add(socket.summary);
+    keys.add(socket.access.who);
+    socket.request.fields.forEach((field) => keys.add(field.rule));
+    socket.cases.forEach((entry) => keys.add(entry.when));
+  }
+
+  for (const message of restSocketMessages) {
+    keys.add(message.summary);
+    message.replies.forEach((reply) => keys.add(reply.when));
+  }
 
   return keys;
 }

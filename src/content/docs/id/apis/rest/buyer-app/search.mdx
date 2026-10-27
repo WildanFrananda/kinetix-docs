@@ -3,7 +3,7 @@ title: Pencarian
 description: Menyarankan judul produk selagi pembeli mengetik dan menjawab hasil berperingkat dengan hitungan per kategori, dari service search, lalu membuka produk dari catalog.
 sidebar:
   order: 6
-sourceHash: "5734292f20c4"
+sourceHash: "175ae77e12d4"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -12,7 +12,7 @@ Search menjawab dari indeksnya sendiri atas produk-produk catalog, yang dijaga t
 sync, dan tidak membaca token. Aplikasi pembeli menyarankan judul selagi pembeli mengetik (langkah 1),
 menjawab kueri dengan hasil berperingkat (langkah 2), dan membuka hit yang dipilih dari catalog (langkah 3).
 Path-nya berada di bawah `/api/v1/products/`, tetapi Kong mengirimnya ke service search, bukan ke catalog
-([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/2b38bcc9a795dac8a6a3088b6d67f297fcfa9f5c/config/gateway.pkl#L94-L107)).
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/6747ebc0ae2b8d5203539aab21f428f4b03784f7/config/gateway.pkl#L290-L303)).
 
 ## 1. Menyarankan judul saat pembeli mengetik
 
@@ -35,7 +35,7 @@ hit itu mungkin sudah tidak terkini.
 ## 3. Membuka produk
 
 `id` sebuah hit adalah SKU produk, key yang dipakai search saat mengindeksnya
-([convert.go](https://github.com/WildanFrananda/kinetix-search-service/blob/bb71585106395dbdcaf4dbf8dfabc62c2266498a/internal/catalogclient/convert.go#L64-L95)).
+([convert.go](https://github.com/WildanFrananda/kinetix-search-service/blob/ba054100e0e91fd9640842c0035b514d923f674e/internal/catalogclient/convert.go#L64-L95)).
 Halaman produk membacanya dari catalog dengan `GET /api/v1/products/{sku}`, seperti di
 [langkah 3 Menjelajah katalog](/id/apis/rest/buyer-app/browse/#3-membaca-satu-produk), yang menjawab harga
 dan stok terkini; sisa halaman itu (flash sale, diskon, ulasan) berlanjut dari sana. `price_minor` sebuah hit

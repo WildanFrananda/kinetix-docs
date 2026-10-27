@@ -5,7 +5,7 @@ import { restSource } from "../rest_source";
 
 const traceId: string = "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b";
 
-const photoSha256: string = "bb3b2962c01de34b467fc7ea8ba66d2a142f992f03a6d51c78c690eb883cf18c";
+const photoSha256: string = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 
 const pendingJob: JsonValue = {
   id: 4813,
@@ -90,7 +90,7 @@ export const matchingAnswers: readonly RestCase[] = [
       errors: { detail: "Bad Request" },
       traceId
     },
-    source: restSource("matching", "lib/fleet_pulse_web/endpoint.ex", 34, 37)
+    source: restSource("matching", "lib/fleet_pulse_web/endpoint.ex", 35, 38)
   },
   {
     status: 401,
@@ -114,7 +114,7 @@ export const matchingAnswers: readonly RestCase[] = [
       errors: { detail: "Not Found" },
       traceId
     },
-    source: restSource("matching", "lib/fleet_pulse_web/controllers/error_json.ex", 25, 27)
+    source: restSource("matching", "lib/fleet_pulse_web/controllers/error_json.ex", 16, 18)
   },
   {
     status: 406,
@@ -132,7 +132,7 @@ export const matchingAnswers: readonly RestCase[] = [
       errors: { detail: "Request Entity Too Large" },
       traceId
     },
-    source: restSource("matching", "lib/fleet_pulse_web/endpoint.ex", 34, 37)
+    source: restSource("matching", "lib/fleet_pulse_web/endpoint.ex", 35, 38)
   },
   {
     status: 500,
@@ -140,11 +140,11 @@ export const matchingAnswers: readonly RestCase[] = [
     json: {
       errors: {
         detail:
-          "something went wrong handling this request. No dispatch, assignment or location was changed unless a previous response said so."
+          "something went wrong handling this request. It may have taken effect before it failed: read the current state before repeating it."
       },
       traceId
     },
-    source: restSource("matching", "lib/fleet_pulse_web/controllers/error_json.ex", 17, 23)
+    source: restSource("matching", "lib/fleet_pulse_web/controllers/error_json.ex", 9, 14)
   },
   {
     status: 503,
@@ -235,10 +235,10 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
         json: {
           data: [busyCourier, idleCourier, unplacedCourier]
         },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 39, 49)
+        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 41, 51)
       }
     ],
-    source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 12, 15)
+    source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 14, 17)
   },
   {
     id: "matching.nearbyDrivers",
@@ -304,16 +304,16 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
             }
           ]
         },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 51, 53)
+        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 53, 55)
       },
       {
         status: 400,
         when: "rest.matching.nearbyDrivers.case.invalidQuery",
         json: { error: "invalid_nearby_query" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 34, 35)
+        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 67, 92)
       }
     ],
-    source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 27, 37)
+    source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 29, 39)
   },
   {
     id: "matching.getDriver",
@@ -342,22 +342,22 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
         status: 200,
         when: "rest.matching.getDriver.case.found",
         json: { data: busyCourier },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 39, 49)
+        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 41, 51)
       },
       {
         status: 400,
         when: "rest.matching.getDriver.case.invalidId",
         json: { error: "invalid_id" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 23, 23)
+        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 25, 25)
       },
       {
         status: 404,
         when: "rest.matching.getDriver.case.notTracked",
         json: { error: "not_found" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 22, 22)
+        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 24, 24)
       }
     ],
-    source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 17, 25)
+    source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 19, 27)
   },
   {
     id: "matching.listDispatches",
@@ -881,7 +881,7 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
           rule: "rest.matching.uploadProofPhoto.field.photo"
         }
       ],
-      headers: ["If-None-Match: *", "x-amz-checksum-sha256: uzspYsAd40tGf8fqi6ZtKhQvmS8DptUceMaQ64g88Yw="],
+      headers: ["If-None-Match: *", "x-amz-checksum-sha256: u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7s="],
       contentType: "image/jpeg",
       raw: "<the JPEG's bytes>"
     },

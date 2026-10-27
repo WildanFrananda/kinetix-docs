@@ -11,7 +11,7 @@ export const catalogAnswers: readonly RestCase[] = [
       message: "JSON parse error - Expecting ',' delimiter: line 1 column 23 (char 22)",
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("catalog", "core/api/exception_handler.py", 83, 86)
+    source: restSource("catalog", "core/api/exception_handler.py", 125, 128)
   },
   {
     status: 400,
@@ -23,6 +23,16 @@ export const catalogAnswers: readonly RestCase[] = [
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
     source: restSource("catalog", "core/api/request_body.py", 8, 13)
+  },
+  {
+    status: 400,
+    when: "rest.catalog.answers.tooManyFields",
+    json: {
+      error: "TOO_MANY_FIELDS",
+      message: "this request carries more than 1000 query or form fields, so it was not read",
+      traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+    },
+    source: restSource("catalog", "core/api/exception_handler.py", 106, 107)
   },
   {
     status: 401,
@@ -65,7 +75,7 @@ export const catalogAnswers: readonly RestCase[] = [
       message: "Method \"POST\" not allowed.",
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("catalog", "core/api/exception_handler.py", 83, 86)
+    source: restSource("catalog", "core/api/exception_handler.py", 125, 128)
   },
   {
     status: 406,
@@ -75,7 +85,17 @@ export const catalogAnswers: readonly RestCase[] = [
       message: "Could not satisfy the request Accept header.",
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("catalog", "core/api/exception_handler.py", 83, 86)
+    source: restSource("catalog", "core/api/exception_handler.py", 125, 128)
+  },
+  {
+    status: 413,
+    when: "rest.catalog.answers.bodyTooLarge",
+    json: {
+      error: "BODY_TOO_LARGE",
+      message: "the request body is larger than 2621440 bytes, so it was not read",
+      traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+    },
+    source: restSource("catalog", "core/api/exception_handler.py", 99, 104)
   },
   {
     status: 415,
@@ -85,7 +105,7 @@ export const catalogAnswers: readonly RestCase[] = [
       message: "Unsupported media type \"text/plain\" in request.",
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("catalog", "core/api/exception_handler.py", 83, 86)
+    source: restSource("catalog", "core/api/exception_handler.py", 125, 128)
   },
   {
     status: 500,
@@ -95,7 +115,18 @@ export const catalogAnswers: readonly RestCase[] = [
       message: "something went wrong handling this request. No product or stock was changed unless a previous response said so.",
       traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
     },
-    source: restSource("catalog", "core/api/exception_handler.py", 40, 45)
+    source: restSource("catalog", "core/api/exception_handler.py", 56, 61)
+  },
+  {
+    status: 503,
+    when: "rest.catalog.answers.databaseUnavailable",
+    headers: ["Retry-After: 15"],
+    json: {
+      error: "DATABASE_UNAVAILABLE",
+      message: "the catalogue could not reach its database, so this request could not be answered. Try again shortly.",
+      traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+    },
+    source: restSource("catalog", "core/api/exception_handler.py", 112, 122)
   },
   {
     status: 503,
@@ -194,7 +225,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
             }
           ]
         },
-        source: restSource("catalog", "core/application/services/product_service.py", 62, 90)
+        source: restSource("catalog", "core/application/services/product_service.py", 63, 91)
       },
       {
         status: 200,
@@ -253,6 +284,116 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
     source: restSource("catalog", "core/api/views/product_collection_view.py", 13, 18)
   },
   {
+    id: "catalog.listMyProducts",
+    service: "catalog",
+    method: "GET",
+    path: "/api/v1/products/mine",
+    summary: "rest.catalog.listMyProducts.summary",
+    access: {
+      token: "required",
+      gatewayVerifies: false,
+      who: "rest.catalog.listMyProducts.who"
+    },
+    request: {
+      fields: [
+        {
+          name: "category",
+          in: "query",
+          type: "string",
+          required: false,
+          rule: "rest.catalog.listMyProducts.field.category"
+        },
+        {
+          name: "q",
+          in: "query",
+          type: "string",
+          required: false,
+          rule: "rest.catalog.listMyProducts.field.q"
+        },
+        {
+          name: "page",
+          in: "query",
+          type: "integer",
+          required: false,
+          rule: "rest.catalog.listMyProducts.field.page"
+        },
+        {
+          name: "page_size",
+          in: "query",
+          type: "integer",
+          required: false,
+          rule: "rest.catalog.listMyProducts.field.page_size"
+        }
+      ]
+    },
+    cases: [
+      {
+        status: 200,
+        when: "rest.catalog.listMyProducts.case.listed",
+        json: {
+          count: 14,
+          page: 1,
+          page_size: 2,
+          results: [
+            {
+              id: 42,
+              sku: "KAOS-HITAM-M",
+              title: "Kaos Polos Hitam M",
+              description: "Kaos katun combed 30s, potongan reguler.",
+              category: "Pakaian",
+              category_slug: "pakaian",
+              category_id: 3,
+              price: "89000.00",
+              currency: "IDR",
+              image_url: "https://images.example.com/kaos-hitam-m.jpg",
+              merchant_principal_id: "3b2f8c1d-6e4a-4f7b-9c2d-5a1e8f0b7c3d",
+              weight_grams: 250,
+              is_active: true
+            },
+            {
+              id: 40,
+              sku: "KAOS-HITAM-S",
+              title: "Kaos Polos Hitam S",
+              description: "",
+              category: "Pakaian",
+              category_slug: "pakaian",
+              category_id: 3,
+              price: "85000.00",
+              currency: "IDR",
+              image_url: "",
+              merchant_principal_id: "3b2f8c1d-6e4a-4f7b-9c2d-5a1e8f0b7c3d",
+              weight_grams: null,
+              is_active: false
+            }
+          ]
+        },
+        source: restSource("catalog", "core/application/services/product_service.py", 93, 111)
+      },
+      {
+        status: 400,
+        when: "rest.catalog.listMyProducts.case.invalid",
+        json: {
+          error: "INVALID_INPUT",
+          message: "must be a positive whole number",
+          field: "page",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("catalog", "core/application/services/product_filter_parser.py", 26, 47)
+      },
+      {
+        status: 403,
+        when: "rest.catalog.listMyProducts.case.notSeller",
+        json: {
+          error: "SELLER_REQUIRED",
+          message: "only a seller account has products of its own",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("catalog", "core/api/caller.py", 15, 20)
+      }
+    ],
+    source: restSource("catalog", "core/api/views/merchant_product_collection_view.py", 15, 23)
+  },
+  {
     id: "catalog.getProduct",
     service: "catalog",
     method: "GET",
@@ -298,7 +439,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
             stock_status: "in_stock"
           }
         },
-        source: restSource("catalog", "core/application/services/product_service.py", 92, 125)
+        source: restSource("catalog", "core/application/services/product_service.py", 113, 146)
       },
       {
         status: 200,
@@ -460,7 +601,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           field: "category_id",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/application/services/product_service.py", 199, 203)
+        source: restSource("catalog", "core/application/services/product_service.py", 220, 224)
       },
       {
         status: 403,
@@ -470,7 +611,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           message: "identity knows no merchant for this account",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/application/services/product_service.py", 127, 130)
+        source: restSource("catalog", "core/application/services/product_service.py", 148, 151)
       },
       {
         status: 403,
@@ -480,7 +621,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           message: "identity does not permit this merchant to trade (standing: pending)",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/application/services/product_service.py", 132, 136)
+        source: restSource("catalog", "core/application/services/product_service.py", 153, 157)
       },
       {
         status: 409,
@@ -490,7 +631,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           message: "another product already uses the SKU KAOS-HITAM-M",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/infrastructure/repositories/django_product_repository.py", 175, 178)
+        source: restSource("catalog", "core/infrastructure/repositories/django_product_repository.py", 202, 205)
       },
       {
         status: 503,
@@ -501,7 +642,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           message: "we could not check this merchant account right now, so the request was not applied. Nothing was created, changed or deleted.",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/api/exception_handler.py", 73, 78)
+        source: restSource("catalog", "core/api/exception_handler.py", 89, 94)
       }
     ],
     source: restSource("catalog", "core/api/views/product_create_view.py", 14, 22)
@@ -614,14 +755,14 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           weight_grams: 260,
           is_active: true
         },
-        source: restSource("catalog", "core/application/services/product_service.py", 158, 185)
+        source: restSource("catalog", "core/application/services/product_service.py", 179, 206)
       },
       {
         status: 400,
         when: "rest.catalog.updateProduct.case.invalid",
         json: {
           error: "INVALID_INPUT",
-          message: "must have at most two decimal places",
+          message: "must be at most 9999999999.99",
           field: "price",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
@@ -636,7 +777,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           field: "category_id",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/application/services/product_service.py", 199, 203)
+        source: restSource("catalog", "core/application/services/product_service.py", 220, 224)
       },
       {
         status: 400,
@@ -647,7 +788,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           field: "sku",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/application/services/product_service.py", 170, 171)
+        source: restSource("catalog", "core/application/services/product_service.py", 191, 192)
       },
       {
         status: 403,
@@ -657,7 +798,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           message: "identity knows no merchant for this account",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/application/services/product_service.py", 127, 130)
+        source: restSource("catalog", "core/application/services/product_service.py", 148, 151)
       },
       {
         status: 403,
@@ -667,7 +808,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           message: "identity does not permit this merchant to trade (standing: suspended)",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/application/services/product_service.py", 132, 136)
+        source: restSource("catalog", "core/application/services/product_service.py", 153, 157)
       },
       {
         status: 403,
@@ -677,7 +818,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           message: "Product does not belong to this merchant",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/application/services/product_service.py", 167, 168)
+        source: restSource("catalog", "core/application/services/product_service.py", 188, 189)
       },
       {
         status: 404,
@@ -698,7 +839,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           message: "we could not check this merchant account right now, so the request was not applied. Nothing was created, changed or deleted.",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/api/exception_handler.py", 73, 78)
+        source: restSource("catalog", "core/api/exception_handler.py", 89, 94)
       }
     ],
     source: restSource("catalog", "core/api/views/product_manage_view.py", 18, 28)
@@ -729,7 +870,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
       {
         status: 204,
         when: "rest.catalog.deleteProduct.case.withdrawn",
-        source: restSource("catalog", "core/infrastructure/repositories/django_product_repository.py", 181, 185)
+        source: restSource("catalog", "core/infrastructure/repositories/django_product_repository.py", 208, 212)
       },
       {
         status: 403,
@@ -739,7 +880,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           message: "identity knows no merchant for this account",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/application/services/product_service.py", 127, 130)
+        source: restSource("catalog", "core/application/services/product_service.py", 148, 151)
       },
       {
         status: 403,
@@ -749,7 +890,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           message: "identity does not permit this merchant to trade (standing: closed)",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/application/services/product_service.py", 132, 136)
+        source: restSource("catalog", "core/application/services/product_service.py", 153, 157)
       },
       {
         status: 403,
@@ -759,7 +900,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           message: "Product does not belong to this merchant",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/application/services/product_service.py", 194, 195)
+        source: restSource("catalog", "core/application/services/product_service.py", 215, 216)
       },
       {
         status: 404,
@@ -780,7 +921,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           message: "we could not check this merchant account right now, so the request was not applied. Nothing was created, changed or deleted.",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/api/exception_handler.py", 73, 78)
+        source: restSource("catalog", "core/api/exception_handler.py", 89, 94)
       }
     ],
     source: restSource("catalog", "core/api/views/product_manage_view.py", 30, 39)
@@ -815,10 +956,10 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
             slug: "aksesori"
           }
         ],
-        source: restSource("catalog", "core/api/views/category_collection_view.py", 15, 19)
+        source: restSource("catalog", "core/api/views/category_collection_view.py", 16, 20)
       }
     ],
-    source: restSource("catalog", "core/api/views/category_collection_view.py", 15, 19)
+    source: restSource("catalog", "core/api/views/category_collection_view.py", 16, 20)
   },
   {
     id: "catalog.getCategory",
@@ -851,7 +992,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           name: "Pakaian",
           slug: "pakaian"
         },
-        source: restSource("catalog", "core/api/views/category_detail_view.py", 18, 23)
+        source: restSource("catalog", "core/api/views/category_detail_view.py", 19, 24)
       },
       {
         status: 404,
@@ -861,10 +1002,10 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           message: "no category with this id",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/api/views/category_detail_view.py", 20, 21)
+        source: restSource("catalog", "core/api/views/category_detail_view.py", 21, 22)
       }
     ],
-    source: restSource("catalog", "core/api/views/category_detail_view.py", 18, 23)
+    source: restSource("catalog", "core/api/views/category_detail_view.py", 19, 24)
   },
   {
     id: "catalog.createCategory",
@@ -908,7 +1049,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           name: "Pakaian",
           slug: "pakaian"
         },
-        source: restSource("catalog", "core/api/views/category_collection_view.py", 21, 26)
+        source: restSource("catalog", "core/api/views/category_collection_view.py", 22, 27)
       },
       {
         status: 400,
@@ -929,7 +1070,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           message: "this account may not manage categories",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/api/caller.py", 15, 20)
+        source: restSource("catalog", "core/api/caller.py", 23, 28)
       },
       {
         status: 409,
@@ -939,10 +1080,10 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           message: "another category already uses the name Pakaian or the slug pakaian",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/infrastructure/repositories/django_product_repository.py", 208, 209)
+        source: restSource("catalog", "core/infrastructure/repositories/django_product_repository.py", 235, 236)
       }
     ],
-    source: restSource("catalog", "core/api/views/category_collection_view.py", 21, 26)
+    source: restSource("catalog", "core/api/views/category_collection_view.py", 22, 27)
   },
   {
     id: "catalog.updateCategory",
@@ -993,7 +1134,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           name: "Pakaian Pria",
           slug: "pakaian-pria"
         },
-        source: restSource("catalog", "core/api/views/category_detail_view.py", 25, 36)
+        source: restSource("catalog", "core/api/views/category_detail_view.py", 26, 37)
       },
       {
         status: 400,
@@ -1014,7 +1155,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           message: "this account may not manage categories",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/api/caller.py", 15, 20)
+        source: restSource("catalog", "core/api/caller.py", 23, 28)
       },
       {
         status: 404,
@@ -1024,7 +1165,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           message: "no category with this id",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/api/views/category_detail_view.py", 33, 34)
+        source: restSource("catalog", "core/api/views/category_detail_view.py", 34, 35)
       },
       {
         status: 409,
@@ -1034,10 +1175,10 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           message: "another category already uses the name Pakaian Pria or the slug pakaian-pria",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/infrastructure/repositories/django_product_repository.py", 208, 209)
+        source: restSource("catalog", "core/infrastructure/repositories/django_product_repository.py", 235, 236)
       }
     ],
-    source: restSource("catalog", "core/api/views/category_detail_view.py", 25, 36)
+    source: restSource("catalog", "core/api/views/category_detail_view.py", 26, 37)
   },
   {
     id: "catalog.deleteCategory",
@@ -1065,7 +1206,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
       {
         status: 204,
         when: "rest.catalog.deleteCategory.case.deleted",
-        source: restSource("catalog", "core/api/views/category_detail_view.py", 38, 44)
+        source: restSource("catalog", "core/api/views/category_detail_view.py", 39, 45)
       },
       {
         status: 403,
@@ -1075,7 +1216,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           message: "this account may not manage categories",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/api/caller.py", 15, 20)
+        source: restSource("catalog", "core/api/caller.py", 23, 28)
       },
       {
         status: 404,
@@ -1085,7 +1226,7 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           message: "no category with this id",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/api/views/category_detail_view.py", 41, 42)
+        source: restSource("catalog", "core/api/views/category_detail_view.py", 42, 43)
       },
       {
         status: 409,
@@ -1096,9 +1237,9 @@ export const catalogEndpoints: readonly RestEndpoint[] = [
           product_count: 12,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("catalog", "core/infrastructure/repositories/django_product_repository.py", 212, 215)
+        source: restSource("catalog", "core/infrastructure/repositories/django_product_repository.py", 239, 242)
       }
     ],
-    source: restSource("catalog", "core/api/views/category_detail_view.py", 38, 44)
+    source: restSource("catalog", "core/api/views/category_detail_view.py", 39, 45)
   }
 ];

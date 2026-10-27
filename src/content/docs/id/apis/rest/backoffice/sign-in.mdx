@@ -1,60 +1,107 @@
 ---
 title: Masuk
-description: Cara backoffice memasukkan seorang staf, menjawab challenge dua faktor, menjaga pasangan token tetap segar dan keluar, semuanya ke identity.
+description: Cara backoffice memasukkan seorang admin lewat edge, dengan faktor kedua atau dengan mendaftarkannya lebih dulu, menemukan kembali session saat halaman dimuat, dan keluar.
 sidebar:
   order: 1
-sourceHash: "9cbce26e5d90"
+sourceHash: "1a209e41bf93"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
 
-Backoffice adalah aplikasi web yang diharapkan API untuk dipakai staf Kinetix. Aplikasi ini untuk akun yang `role`-nya
-`admin`: endpoint staf di halaman-halaman berikutnya menjawab `403` untuk role lain. Staf masuk dengan email dan
-password, menjawab challenge dua faktor bila akunnya mengaktifkan autentikasi dua faktor, lalu aplikasi menjaga
-pasangan token tetap segar sampai staf itu keluar. Karena berjalan di browser, backoffice tunduk pada CORS dan
-mengautentikasi diri hanya dengan bearer token, tidak pernah dengan cookie; lihat [Browser](/id/apis/rest/#browser).
+Backoffice adalah aplikasi web yang diharapkan API untuk dipakai staf Kinetix, di `backoffice.wildanfrananda.my.id`.
+Aplikasi ini tidak pernah memegang token. Browser hanya memanggil host-nya sendiri, di bawah `/bff/`, tempat edge
+menyimpan session: edge memasukkan admin lewat identity, menyimpan pasangan token, menambahkan access token ke setiap
+panggilan `/bff/api/` yang diteruskannya ke API, dan memperbarui pasangan itu sendiri ketika sebuah panggilan
+mendapati access token kurang dari satu menit dari kedaluwarsa
+([timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/config/timing.tl#L4)).
+Browser hanya memegang cookie `HttpOnly` `__Host-kx_session`, yang tidak bisa dibaca skrip halaman dan dikirim balik
+oleh browser dengan sendirinya, jadi halaman ini tidak punya langkah refresh. Apa yang dikirim dan diterima setiap
+panggilan lewat edge ada di [Edge](/id/apis/rest/#edge).
 
-## 1. Masuk dengan email dan password
+Backoffice hanya menerima akun yang `role`-nya `admin`, dan hanya dengan faktor kedua: admin yang belum punya
+dituntun mendaftarkannya sebelum session apa pun dimulai. Host ini hanya menjawab dari jaringan staf Kinetix; dari
+tempat lain Kong menolak setiap request di bawah `/bff/`, termasuk sign-in, dengan `403`
+([jawaban Kong](/id/apis/rest/#jawaban-kong)).
 
-Email dan password yang diketik staf dikirim ke identity dalam satu request. Jawaban `200` yang membawa `accessToken`
-memulai sesi: simpan `accessToken`, `refreshToken` dan `expiresIn`, lalu baca `user.role`, karena akun yang role-nya
-bukan `admin` bisa masuk di sini tetapi ditolak oleh setiap endpoint staf. Jawaban `200` yang membawa `mfaRequired`
-belum memulai sesi apa pun: simpan `challengeToken` dan lanjut ke langkah 2.
+## 1. Cari session
 
-<RestEndpoint id="identity.login" />
+Setiap kali halaman dimuat, sebelum menampilkan formulir masuk, tanyakan ke edge apakah browser ini sudah masuk.
+`authenticated: true` berarti aplikasi boleh ditampilkan: `role`-nya `admin`, dan `expiresAt` adalah saat session
+berakhir bila admin tidak melakukan apa-apa. `authenticated: false` berarti langkah 2. Membaca session tidak dihitung
+sebagai pemakaian, jadi memanggilnya berulang-ulang tidak membuat apa pun tetap hidup.
 
-## 2. Jawab challenge dua faktor
+<RestEndpoint id="edge.session" via="backoffice" />
 
-Hanya akun yang mengaktifkan autentikasi dua faktor yang sampai di sini. Akun mana pun, termasuk akun admin,
-mengaktifkannya dengan panggilan di halaman [Autentikasi dua faktor](/id/apis/rest/buyer-app/two-factor/) milik
-aplikasi pembeli. Kirim `challengeToken` dari langkah 1 dan enam digit yang ditampilkan aplikasi autentikator staf,
-dalam `expiresIn` detik milik challenge itu. Jawaban `200` adalah pasangan token yang sama seperti di langkah 1 dan
-disimpan dengan cara yang sama; jawaban `401` mengembalikan staf ke langkah 1.
+## 2. Masuk dengan email dan password
 
-<RestEndpoint id="identity.verifyTwoFactor" />
+Email dan password yang diketik admin dikirim ke edge, yang menanyakannya ke identity. Di backoffice, password saja
+tidak pernah memulai session, jadi jawaban `200` membawa salah satu dari dua penanda, dan dengan keduanya edge
+memasang cookie `HttpOnly` `__Host-kx_pending`, yang menyimpan sign-in yang sedang berjalan:
 
-## 3. Pulihkan sesi dari token yang tersimpan
+- `mfaRequired`: akun itu punya faktor kedua. Lanjut ke langkah 3 dalam 300 detik, di browser yang sama.
+- `mfaEnrolmentRequired`: akun itu admin yang belum punya faktor kedua. Lanjut ke langkah 4 dan 5 dalam 600 detik,
+  lalu masuk lagi di sini.
 
-Ketika aplikasi dimuat ulang dengan access token yang tersimpan, panggilan ini menyebutkan milik siapa token itu,
-dengan `role` apa, dan kapan kedaluwarsa (`expiresAt`), tanpa meminta password. Field-nya berasal dari token itu
-sendiri. Jawaban `401`, dari Kong maupun dari identity, berarti access token itu tidak bisa dipakai lagi: langkah 4
-menukar refresh token dengan pasangan baru.
+Jawaban `403` `ROLE_REFUSED`, di sini atau di langkah 3, berarti akun itu bukan admin dan tidak bisa memakai
+backoffice; edge sudah mencabut token-nya di identity. Setelah `429`, tunggu detik di `Retry-After` sebelum
+percobaan berikutnya.
 
-<RestEndpoint id="identity.me" />
+<RestEndpoint id="edge.login" via="backoffice" />
 
-## 4. Perbarui pasangan token
+## 3. Jawab challenge dua faktor
 
-Setelah `expiresIn` detik berlalu, atau setelah `401` karena access token kedaluwarsa, tukar `refreshToken` dengan
-pasangan baru dan ganti kedua token yang tersimpan sekaligus. Refresh token yang dikirim langsung terpakai, dan
-mengirimnya untuk kedua kali mengakhiri sesi, jadi backoffice yang terbuka di beberapa tab browser harus memastikan
-hanya satu tab yang melakukan refresh pada satu waktu dan membagikan pasangan barunya ke tab lain. Jawaban `401` apa
-pun di sini berarti masuk lagi dari langkah 1.
+Setelah `mfaRequired`, kirim enam digit yang ditampilkan aplikasi authenticator admin; browser mengirim
+`__Host-kx_pending` dari langkah 2 dengan sendirinya. Jawaban `200` memulai session: edge memasang
+`__Host-kx_session`, mengedaluwarsakan cookie pending, dan menjawab tampilan yang sama seperti langkah 1.
 
-<RestEndpoint id="identity.refresh" />
+Session berakhir setelah 15 menit tanpa panggilan `/bff/api/`, atau 8 jam setelah langkah ini, mana yang lebih dulu
+([lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/config/lifetimes.tl#L5)),
+dan cookie-nya tidak punya `Max-Age`, jadi session itu juga berakhir saat browser ditutup
+([apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/config/apps.tl#L15-L26),
+[lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/src/http/lifetimes.tl#L38-L44)).
+Sesudah itu, setiap panggilan `/bff/api/` menjawab `401` `SESSION_ENDED`, dan admin masuk lagi dari langkah 2. Bila
+akun itu tidak lagi admin, pembaruan token berikutnya oleh edge mengakhiri session dengan `403` `ROLE_REFUSED`.
 
-## 5. Keluar
+Pada `401` `CODE_REFUSED`, sign-in itu masih tertunda: minta kode berikutnya, dan bila jawaban itu berulang, mulai lagi
+dari langkah 2. Pada `401` `SIGN_IN_REQUIRED`, sudah tidak ada sign-in yang tertunda: kembali ke langkah 2.
 
-Kirim access token di `Authorization` dan `refreshToken` milik sesi itu di body; hilangkan `refreshToken` untuk
-mengakhiri semua sesi akun itu. Buang kedua token yang tersimpan setelah jawaban `204`.
+<RestEndpoint id="edge.verifyTwoFactor" via="backoffice" />
 
-<RestEndpoint id="identity.logout" />
+## 4. Daftarkan faktor kedua: ambil secret
+
+Hanya setelah `mfaEnrolmentRequired` di langkah 2. Request-nya tanpa body: cookie pending yang menunjuk pendaftaran
+itu. Tampilkan `qrCodeUrl` sebagai kode QR untuk aplikasi authenticator admin, dan `twoFactorSecret` untuk diketik
+manual. Memanggil ini lagi mengganti secret-nya, jadi hanya kode dari secret terbaru yang lolos di langkah 5. Jawaban
+`409` berarti akun itu sudah mendapat faktor kedua lewat sign-in lain sementara itu: kembali ke langkah 2, yang
+sekarang menjawab `mfaRequired`. Jawaban `401` `SIGN_IN_REQUIRED` berarti pendaftaran itu sudah berakhir, misalnya
+karena 600 detiknya sudah lewat: mulai lagi dari langkah 2.
+
+<RestEndpoint id="edge.setupTwoFactor" via="backoffice" />
+
+## 5. Daftarkan faktor kedua: konfirmasi kode
+
+Kirim kode yang ditampilkan aplikasi authenticator untuk secret dari langkah 4. Jawaban `200` mengaktifkan
+autentikasi dua faktor tetapi tidak memulai session: identity mengakhiri setiap session milik akun itu dan menghabiskan
+pendaftarannya, dan edge mengedaluwarsakan `__Host-kx_pending`. Kembali ke langkah 2: sign-in sekarang menjawab
+`mfaRequired`, dan langkah 3 memulai session. Pada `401` `CODE_REFUSED`, kirim kode berikutnya; pada `401`
+`SIGN_IN_REQUIRED`, pendaftaran itu sudah berakhir seperti di langkah 4, jadi mulai lagi dari langkah 2.
+
+<RestEndpoint id="edge.enableTwoFactor" via="backoffice" />
+
+## 6. Baca akun yang sedang masuk
+
+Langkah ini opsional. Langkah 1 menyebut `role` dan `principalId` milik session, tetapi tidak `email` maupun `userId`
+akunnya; panggilan ini menyebutnya, diteruskan edge ke identity dengan access token milik session. `expiresAt`-nya
+adalah milik access token itu, yang diperbarui edge sendiri: akhir session itu sendiri adalah `expiresAt` dari
+langkah 1. Berbeda dengan langkah 1, panggilan ini dihitung sebagai pemakaian session dan memundurkan akhir idle-nya.
+
+<RestEndpoint id="identity.me" via="backoffice" />
+
+## 7. Keluar
+
+Edge mengakhiri session di identity dan di penyimpanannya sendiri, lalu mengedaluwarsakan kedua cookie. Request-nya
+tanpa body dan aman diulang, jadi bisa dikirim apa pun jawaban terakhir langkah 1. Setelah `204`, tampilkan formulir
+masuk. Jawaban `503` berarti identity tidak bisa diberi tahu dan admin masih dalam keadaan masuk: kirim lagi request
+keluar itu.
+
+<RestEndpoint id="edge.logout" via="backoffice" />

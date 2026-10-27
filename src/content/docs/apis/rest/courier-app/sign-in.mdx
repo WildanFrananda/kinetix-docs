@@ -16,10 +16,25 @@ from [registration](/apis/rest/courier-app/register/).
 ## 1. Sign in with email and password
 
 The courier app sends the email without surrounding spaces and the password as typed
-([login_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/viewmodels/login_view_model.dart#L32-L46),
-[session_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/session_repository_impl.dart#L69-L118)).
+([login_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/viewmodels/login_view_model.dart#L33-L35),
+[session_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/session_repository_impl.dart#L97-L155)).
+On this call, as on the code step, registration and every refresh, it also sends two headers:
+`X-Kinetix-Client: courier-app`, and `X-Firebase-AppCheck` with a Firebase App Check token from the phone
+([driver_api.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/auth/driver_api.dart#L12-L38),
+[client_proof.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/attestation/client_proof.dart#L14-L49)).
+identity knows the name `courier-app` and binds the session's tokens to it. As production is configured, it
+asks the courier app for no proof, so it does not read `X-Firebase-AppCheck`
+([client_gate.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/application/services/client_gate.service.ts#L60-L85)).
+
 A `200` carrying `mfaRequired` goes to step 2 with its `challengeToken`; a `200` carrying the token pair goes
-to step 3. For an approved courier, `user.role` is `courier`.
+to step 3. For an approved courier, `user.role` is `courier`. A `200` carrying `mfaEnrolmentRequired` comes only
+to an admin account: the courier app answers that it is for couriers, keeps nothing and asks matching nothing
+([session_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/session_repository_impl.dart#L119-L123)).
+On a `429`, the courier app takes the wait from `retryAfterSeconds`, or from `Retry-After`, counts it down on the
+screen and sends nothing until it has passed
+([identity_error.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/auth/identity_error.dart#L52-L74),
+[sign_in_delay_mixin.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/mixins/sign_in_delay_mixin.dart#L7-L54),
+[login_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/viewmodels/login_view_model.dart#L124-L133)).
 
 <RestEndpoint id="identity.login" />
 
@@ -28,18 +43,28 @@ to step 3. For an approved courier, `user.role` is `courier`.
 Only when step 1 answered `mfaRequired`. Send `challengeToken` from that answer and the six digits the courier's
 authenticator app shows, within `expiresIn` seconds of step 1. The courier app notes that deadline when the
 challenge arrives, and once it has passed asks the courier to sign in again instead of sending the code
-([login_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/viewmodels/login_view_model.dart#L65-L79),
-[#L110-L118](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/viewmodels/login_view_model.dart#L110-L118)).
-The `200` carries the same token pair as a sign-in without a second factor; go on to step 3.
+([login_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/viewmodels/login_view_model.dart#L70-L83),
+[#L114-L122](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/viewmodels/login_view_model.dart#L114-L122)).
+It sends the same two headers as in step 1, and waits out a `429` the same way, keeping the challenge. The `200`
+carries the same token pair as a sign-in without a second factor; go on to step 3. The challenge is spent by
+then, so a `200` the courier app cannot read sends the courier back to the password
+([session_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/session_repository_impl.dart#L157-L195)).
 
 <RestEndpoint id="identity.verifyTwoFactor" />
 
 ## 3. Read the courier record
 
 Send the access token from step 1 or step 2. `data.id` is the driver id: the courier's channel on the driver
-socket is `driver:<data.id>`. The courier app keeps it with the token pair, then opens the socket
-([session_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/repositories/session_repository_impl.dart#L229-L238)).
-A `403` with `pending_approval` means an admin has not approved the courier yet, and a `404` means the account
-has filed no vehicle; [registration](/apis/rest/courier-app/register/) covers both.
+socket is `driver:<data.id>`. A `403` with `pending_approval` means an admin has not approved the courier yet,
+and a `404` means the account has filed no vehicle; [registration](/apis/rest/courier-app/register/) covers
+both. The courier app decides what to keep from this answer
+([session_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/session_repository_impl.dart#L316-L354)):
+
+- on `200` it stores the token pair with `data.id`, then opens the socket;
+- on `403` `pending_approval` it stores the pair without a driver id and shows the waiting screen; the next read
+  of this record after approval fills the id in;
+- on any other answer, or none, it sends the new pair to
+  [sign-out](/apis/rest/courier-app/stay-signed-in/), waiting at most five seconds, and stores nothing, so no
+  refresh token is left valid on the server and forgotten on the phone.
 
 <RestEndpoint id="matching.driverMe" />

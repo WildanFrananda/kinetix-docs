@@ -11,7 +11,9 @@ A buyer gets a session from identity in one of two ways: a new account (step 1),
 one (step 2), followed by a two-factor challenge when the account has it on (step 3). Every account created
 here has the role `customer`, which the wallet endpoints require. A buyer app that kept the tokens of an
 earlier run checks them with step 4 instead of asking the buyer again. Keeping the session alive and ending
-it are on [Stay signed in and sign out](/apis/rest/buyer-app/stay-signed-in/).
+it are on [Stay signed in and sign out](/apis/rest/buyer-app/stay-signed-in/). A buyer app sends no
+`X-Kinetix-Client` header, on these calls or on the refresh: identity accepts a request that names no client
+([Tokens](/apis/rest/#tokens)).
 
 ## 1. Create an account
 
@@ -20,7 +22,7 @@ The buyer types an email and a password. The `201` is a session, the same as a s
 `user`. `user.id` is the account id that identity's own paths take, such as the
 [profile](/apis/rest/buyer-app/profile/) and [two-factor](/apis/rest/buyer-app/two-factor/) endpoints.
 `user.principalId` is the `sub` of every token identity issues
-([token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/token.service.ts#L74-L87)),
+([token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/application/services/token.service.ts#L90-L125)),
 the id the other services know the buyer by. A `409` means the email already has an account: sign in with
 step 2.
 
@@ -28,20 +30,32 @@ step 2.
 
 ## 2. Sign in
 
-The buyer types the email and password of an existing account. Both `200` answers share the status, and the
-`mfaRequired` field tells them apart
-([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/auth_usecase.service.ts#L36-L49)).
-Without it, the answer is a session: keep it as in step 1. With `mfaRequired: true` there is no session yet;
-keep `challengeToken` and its `expiresIn` for step 3.
+The buyer types the email and password of an existing account. A `200` is one of three answers, told apart by
+their fields
+([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/application/services/auth_usecase.service.ts#L48-L68)).
+Without `mfaRequired`, the answer is a session: keep it as in step 1. With `mfaRequired: true` there is no
+session yet; keep `challengeToken` and its `expiresIn` for step 3. The third, with `mfaEnrolmentRequired`, comes
+only to an `admin` account that has not set up two-factor authentication, and opens no session a buyer app
+can use.
+
+Two answers make the buyer wait, both `429` with `Retry-After`: one counts the attempts from the client's
+address, the other, `SIGN_IN_DELAYED`, counts the checks of this account's password and codes from every
+device. After five checks in a row the account's wait grows from 1 second to at most 60, and it never locks
+the account
+([sign_in_attempt_policy.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/domain/sign_in_attempt_policy.ts#L3-L35)).
+The app shows the wait and lets the buyer try again once `Retry-After` seconds have passed.
 
 <RestEndpoint id="identity.login" />
 
 ## 3. Answer the two-factor challenge
 
 Only after a sign-in that answered `mfaRequired`. The app sends `challengeToken` from step 2 and the six
-digits the buyer reads from the authenticator app, before the challenge's `expiresIn` seconds have passed.
-A `200` is a session: keep it as in step 1. On any other answer the app starts again at step 2, which issues a
-new challenge; after a `429`, it waits `Retry-After` seconds first.
+digits the buyer reads from the authenticator app. A `200` is a session: keep it as in step 1. A challenge
+lasts its `expiresIn` seconds and takes at most five codes. A wrong code leaves it open: the buyer types the
+code the authenticator shows now, and the app sends it with the same `challengeToken`. After a `429` the app
+waits `Retry-After` seconds, then sends the code again with the same challenge while it lasts. Every other
+`401` means the challenge cannot be answered any more: it has expired, taken its five codes or been used. The
+app then starts again at step 2, which asks for the password and issues a new challenge.
 
 <RestEndpoint id="identity.verifyTwoFactor" />
 

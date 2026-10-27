@@ -2,64 +2,69 @@
 title: Promotions
 description: How a seller creates discounts, vouchers and flash sales in pricing and reads them back.
 sidebar:
-  order: 5
+  order: 6
 ---
 
 import RestEndpoint from "../../../../../components/RestEndpoint.astro";
 
 A seller's promotions live in pricing: discounts on unit prices, vouchers that buyers type at checkout, and
 flash sales of one product. Each is created, then read back; once created, a promotion cannot be changed or
-ended early. Every create takes an access token whose role is `seller`, for a merchant identity lets trade, and
-an `Idempotency-Key` header with a new key for each promotion. After a timeout, a `500` or a `503`, the client
-sends the same body again with the same key: pricing records the key in the same transaction as the promotion,
-so one key creates at most one promotion
-([discount_repository.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/d3020a29ca7ac6fcc2d5a7e472a6b234cc783d0d/src/repositories/discount_repository.rs#L45-L98),
-[promotion_creation_ledger.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/d3020a29ca7ac6fcc2d5a7e472a6b234cc783d0d/src/repositories/promotion_creation_ledger.rs#L21-L62)).
-A browser may send `Idempotency-Key` and read `Idempotent-Replayed` ([Browsers](/apis/rest/#browsers)).
+ended early. Every create needs a session whose role is `seller`, for a merchant identity lets trade, and an
+`Idempotency-Key` header with a new key for each promotion, which the edge passes on, as it passes
+`Idempotent-Replayed` back
+([forwarding.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/config/forwarding.tl#L11-L19)).
+Pricing looks the key up before it checks the promotion's terms or asks identity and catalog, and records it in
+the same transaction as the promotion, so one key creates at most one promotion
+([discount_routes.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0ed7db4cd6fb8d40375cab26dd7ac56ebce16a8a/src/routes/discount_routes.rs#L22-L51),
+[promotion_creation_ledger.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0ed7db4cd6fb8d40375cab26dd7ac56ebce16a8a/src/repositories/promotion_creation_ledger.rs#L21-L82)).
+After a timeout, a `500`, a `503` or the edge's `503` `API_UNAVAILABLE`, the client sends the same body again with
+the same key: the answer is the promotion the first request created, marked `Idempotent-Replayed: true`, whatever
+has changed since. A `422` `UNPROCESSABLE` means the key was used for another body, so a new promotion needs a new
+key.
 
 ## 1. Create a discount
 
 A discount takes a percentage or a fixed amount off the unit price between `start_time` and `end_time`. It
 targets one of the seller's products by its SKU in `target_product_id`
-([Products](/apis/rest/seller-web/products/), step 2), a category by its `slug` in `target_category_id`
-(Products, step 1), or, with neither, every product of the seller's. Keep `id`.
+([Products](/apis/rest/seller-web/products/), step 1), a category by its `slug` in `target_category_id`
+(Products, step 2), or, with neither, every product of the seller's. Keep `id`.
 
-<RestEndpoint id="pricing.createDiscount" />
+<RestEndpoint id="pricing.createDiscount" via="seller-web" />
 
 ## 2. Read the discounts in force
 
 The list holds every discount in force: the platform's and every merchant's. The seller's own carry its
-`user.principalId` in `merchant_principal_id`
-([identity_grpc.controller.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/adapters/controllers/identity_grpc.controller.ts#L240-L242)).
+`principalId` ([Sign in](/apis/rest/seller-web/sign-in/), step 3) in `merchant_principal_id`
+([identity_grpc.controller.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/adapters/controllers/identity_grpc.controller.ts#L240-L242)).
 A discount is listed only between its `start_time` and its `end_time`, so one that starts later is not listed
 yet.
 
-<RestEndpoint id="pricing.listDiscounts" />
+<RestEndpoint id="pricing.listDiscounts" via="seller-web" />
 
 ## 3. Create a voucher
 
 The seller chooses the `code` buyers will type and the voucher's terms. The voucher applies only to carts of
 the seller's goods. Keep `code` as the answer gives it, in upper case.
 
-<RestEndpoint id="pricing.createVoucher" />
+<RestEndpoint id="pricing.createVoucher" via="seller-web" />
 
 ## 4. Read a voucher
 
-By the `code` from step 3, with the seller's access token, so that the answer includes `quota` and
+By the `code` from step 3. The edge sends the seller's access token with it, so the answer includes `quota` and
 `used_count`.
 
-<RestEndpoint id="pricing.getVoucher" />
+<RestEndpoint id="pricing.getVoucher" via="seller-web" />
 
 ## 5. Create a flash sale
 
 A flash sale sells a limited number of units of one of the seller's products at `flash_price`. `product_id` is
-the product's SKU (Products, step 2). Keep `id`.
+the product's SKU (Products, step 1). Keep `id`.
 
-<RestEndpoint id="pricing.createFlashSale" />
+<RestEndpoint id="pricing.createFlashSale" via="seller-web" />
 
 ## 6. Read the flash sale
 
 By the product's SKU: the sale a buyer of that product gets now, and the units left at its price. A sale that
 has not reached its `start_time` is not shown yet.
 
-<RestEndpoint id="pricing.getFlashSale" />
+<RestEndpoint id="pricing.getFlashSale" via="seller-web" />

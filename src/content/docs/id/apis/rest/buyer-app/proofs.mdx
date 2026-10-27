@@ -3,7 +3,7 @@ title: Proof atas utang Kinetix
 description: Mengambil proof milik pembeli dari notary, atas saldo wallet yang terutang Kinetix dan atas riwayat sebuah order atau ulasan, serta mendaftarkan alamat wallet untuk statement di chain.
 sidebar:
   order: 12
-sourceHash: "094ae242617d"
+sourceHash: "5eb3fbb79861"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -17,8 +17,9 @@ Aplikasi mengambil proof saldo (langkah 1), bisa mendaftarkan alamat wallet untu
 
 ## 1. Mengambil proof saldo
 
-`{epoch}` adalah `latest`, atau nomor epoch sebelumnya. Setiap dokumen di `proofs` utuh sebagaimana adanya:
-aplikasi menyimpannya atau meneruskannya tanpa diubah ke verifier, seperti yang ada di
+`{epoch}` adalah `latest`, atau nomor epoch sebelumnya yang ditulis seperti jawaban-jawaban menuliskannya:
+digit desimal, tanpa nol di depan. Setiap dokumen di `proofs` utuh sebagaimana adanya: aplikasi menyimpannya
+atau meneruskannya tanpa diubah ke verifier, seperti yang ada di
 [Memverifikasi proof of liabilities](/id/verify/proof-of-liabilities/). `proofs` yang kosong berarti Kinetix
 tidak berutang apa pun kepada pembeli pada epoch itu.
 
@@ -47,16 +48,18 @@ meminta wallet menandatangani hasilnya sebagai typed data, dengan `eth_signTyped
 }
 ```
 
-Notary menyusun ulang message itu dengan principal dari access token, memeriksa bahwa `issuedAt` masih baru,
-dan memulihkan penandatangannya, yang harus `holder`
-([registrations.go](https://github.com/WildanFrananda/kinetix-notary-service/blob/9fd693869d307376552916d84443899272f1d775/internal/httpapi/registrations.go#L64-L81),
-[registrar.go](https://github.com/WildanFrananda/kinetix-notary-service/blob/9fd693869d307376552916d84443899272f1d775/internal/registering/registrar.go#L209-L247)).
+Notary menyusun ulang message itu dengan principal dari access token, memeriksa `issuedAt` terhadap jamnya
+sendiri, dan memulihkan penandatangannya, yang harus `holder`
+([registrations.go](https://github.com/WildanFrananda/kinetix-notary-service/blob/8446176813c354716d77ca6591038633871bcda5/internal/httpapi/registrations.go#L64-L81),
+[registrar.go](https://github.com/WildanFrananda/kinetix-notary-service/blob/8446176813c354716d77ca6591038633871bcda5/internal/registering/registrar.go#L209-L258)).
 
 ## 4. Mendaftarkan alamat
 
 Dalam 5 menit sejak `issuedAt`, aplikasi mengirim `holder`, `issuedAt` sebagai string desimal, dan
-`signature` dari wallet. Aplikasi menyimpan setiap registrasi di jawabannya secara utuh: wallet menunjukkan
-`digest` dan `signature`-nya kepada court di chain.
+`signature` dari wallet. `issuedAt` yang lebih dari satu menit di depan jam notary juga ditolak, jadi aplikasi
+membaca waktu dari jam yang benar, dan setelah salah satu penolakan itu menandatangani template lagi dengan
+waktu saat ini. Aplikasi menyimpan setiap registrasi di jawabannya secara utuh: wallet menunjukkan `digest` dan
+`signature`-nya kepada court di chain.
 
 <RestEndpoint id="notary.register" />
 
@@ -71,8 +74,8 @@ di [Memverifikasi evidence](/id/verify/evidence/).
 
 ## 6. Mengambil evidence ulasan
 
-`{review}` adalah `id` yang dijawab review ketika pembeli menulis ulasan atau rating-nya
-([Mengulas order](/id/apis/rest/buyer-app/reviews/)). `pending` bernilai `1` sampai catatannya masuk batch
-final. Dokumennya diserahkan ke verifier yang sama seperti di langkah 5.
+`{review}` adalah id yang dijawab review ketika pembeli menulis ulasan atau rating-nya: `id` dari `201`-nya,
+atau `review_id` dari `409`-nya ([Mengulas order](/id/apis/rest/buyer-app/reviews/)). `pending` bernilai `1`
+sampai catatannya masuk batch final. Dokumennya diserahkan ke verifier yang sama seperti di langkah 5.
 
 <RestEndpoint id="notary.reviewEvidence" />

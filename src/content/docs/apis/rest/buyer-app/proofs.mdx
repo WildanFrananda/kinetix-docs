@@ -15,7 +15,8 @@ for statements on chain (steps 2 to 4), and fetches the evidence of an order (st
 
 ## 1. Fetch the balance proofs
 
-`{epoch}` is `latest`, or the number of an earlier epoch. Each document in `proofs` is whole as it comes: the
+`{epoch}` is `latest`, or the number of an earlier epoch written as the answers write it: decimal digits, with
+no leading zero. Each document in `proofs` is whole as it comes: the
 app saves it or passes it unchanged to a verifier, such as the one on
 [Verify a proof of liabilities](/verify/proof-of-liabilities/). An empty `proofs` means Kinetix owed the
 buyer nothing at that epoch.
@@ -45,16 +46,18 @@ the wallet to sign the result as typed data, with `eth_signTypedData_v4`:
 }
 ```
 
-The notary rebuilds that message with the principal of the access token, checks that `issuedAt` is recent,
-and recovers the signer, which must be `holder`
-([registrations.go](https://github.com/WildanFrananda/kinetix-notary-service/blob/9fd693869d307376552916d84443899272f1d775/internal/httpapi/registrations.go#L64-L81),
-[registrar.go](https://github.com/WildanFrananda/kinetix-notary-service/blob/9fd693869d307376552916d84443899272f1d775/internal/registering/registrar.go#L209-L247)).
+The notary rebuilds that message with the principal of the access token, checks `issuedAt` against its own
+clock, and recovers the signer, which must be `holder`
+([registrations.go](https://github.com/WildanFrananda/kinetix-notary-service/blob/8446176813c354716d77ca6591038633871bcda5/internal/httpapi/registrations.go#L64-L81),
+[registrar.go](https://github.com/WildanFrananda/kinetix-notary-service/blob/8446176813c354716d77ca6591038633871bcda5/internal/registering/registrar.go#L209-L258)).
 
 ## 4. Register the address
 
 Within 5 minutes of `issuedAt`, the app sends `holder`, `issuedAt` as a decimal string and the wallet's
-`signature`. It keeps every registration of the answer whole: the wallet presents its `digest` and
-`signature` to the court on chain.
+`signature`. An `issuedAt` more than a minute ahead of the notary's clock is refused too, so the app reads the
+time from a clock that is right, and after either refusal signs the template again with the current time. It
+keeps every registration of the answer whole: the wallet presents its `digest` and `signature` to the court on
+chain.
 
 <RestEndpoint id="notary.register" />
 
@@ -69,8 +72,8 @@ final batch yet, and the app asks again later. The documents in `proofs` go to t
 
 ## 6. Fetch a review's evidence
 
-`{review}` is the `id` that review answered when the buyer wrote the review or the rating
-([Review an order](/apis/rest/buyer-app/reviews/)). `pending` is `1` until the record is in a final batch.
-The document goes to the same verifier as in step 5.
+`{review}` is the id review answered when the buyer wrote the review or the rating: `id` from its `201`, or
+`review_id` from its `409` ([Review an order](/apis/rest/buyer-app/reviews/)). `pending` is `1` until the record
+is in a final batch. The document goes to the same verifier as in step 5.
 
 <RestEndpoint id="notary.reviewEvidence" />

@@ -7,15 +7,22 @@ sidebar:
 
 import RestEndpoint from "../../../../../components/RestEndpoint.astro";
 
-A promotion an admin creates belongs to the platform rather than to one merchant: its `merchant_principal_id` is
-`null`, and it applies to every cart. The admin, signed in as on [Sign in](/apis/rest/backoffice/sign-in/), creates a
-discount, a voucher or a flash sale, and reads a voucher back to follow its use. Pricing checks the admin's token
-itself. No endpoint changes or ends a promotion once it is created, so a create cannot be corrected afterwards.
+A promotion an admin creates belongs to the platform rather than to one merchant: its `merchant_principal_id` is `null`,
+and it applies to every cart. The admin, signed in from Kinetix's staff network as on
+[Sign in](/apis/rest/backoffice/sign-in/), creates a discount, a voucher or a flash sale, and reads a voucher back to
+follow its use. Pricing checks the admin's token itself, and writes each create and each voucher read made with it to
+its admin audit log. No endpoint changes or ends a promotion once it is created, so a create cannot be corrected
+afterwards.
 
-Every create takes an `Idempotency-Key` header. Make a new key for each promotion and keep it with the request until
-it has a final answer; after a timeout, a `500` or a `503`, send the same body with the same key, and a promotion the
-first attempt created comes back with `Idempotent-Replayed: true` instead of being created twice. Kong lets a browser
-send `Idempotency-Key` and read `Idempotent-Replayed` ([Browsers](/apis/rest/#browsers)).
+Every create takes an `Idempotency-Key` header, which the edge passes on to pricing, and the edge passes
+`Idempotent-Replayed` back to the page
+([forwarding.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/89c12d3cdc0aa4aee974d4b32490128b10385656/config/forwarding.tl#L11-L38)).
+Make a new key for each promotion and keep it with the request until it has a final answer. After a timeout, a `500`
+or a `503`, the edge's included, send the same body with the same key: a promotion the first attempt created comes
+back with `Idempotent-Replayed: true` instead of being created twice. Pricing looks the key up before anything else,
+so the replay comes back even if the promotion's window has closed or catalog has dropped its product since. A `422`
+`UNPROCESSABLE` means the key was already used for another body, and the request needs a new one; any other refusal
+created nothing and left the key unused, so the corrected request can go out with it.
 
 ## 1. Create a discount
 
@@ -24,26 +31,26 @@ A discount takes a percentage or an amount off the unit price between two times.
 [Categories](/apis/rest/backoffice/categories/) list; or at every product by leaving both out. Keep `id` from the
 answer.
 
-<RestEndpoint id="pricing.createDiscount" />
+<RestEndpoint id="pricing.createDiscount" via="backoffice" />
 
 ## 2. Create a voucher
 
 A voucher is a code buyers enter, with a minimum spend, an optional cap, a quota of orders and an expiry. The code is
 unique across every merchant's vouchers and is stored in upper case; keep `code` from the answer for step 3.
 
-<RestEndpoint id="pricing.createVoucher" />
+<RestEndpoint id="pricing.createVoucher" via="backoffice" />
 
 ## 3. Read a voucher's use
 
-Read the voucher by its `code` with the admin's token, which shows `quota` and `used_count` as well as the terms
-buyers see. The voucher is found only while it can still be used: once it has expired or its quota is used up, the
-answer is `404`.
+Read the voucher by its `code`. The edge sends the admin's token, so the answer shows `quota` and `used_count` as well
+as the terms buyers see. The voucher is found only while it can still be used: once it has expired or its quota is
+used up, the answer is `404`.
 
-<RestEndpoint id="pricing.getVoucher" />
+<RestEndpoint id="pricing.getVoucher" via="backoffice" />
 
 ## 4. Create a flash sale
 
 A flash sale sells a limited number of units of one product at a fixed price between two times. `product_id` is the
 product's `sku` in catalog, which pricing checks with catalog for an admin too. Keep `id` from the answer.
 
-<RestEndpoint id="pricing.createFlashSale" />
+<RestEndpoint id="pricing.createFlashSale" via="backoffice" />

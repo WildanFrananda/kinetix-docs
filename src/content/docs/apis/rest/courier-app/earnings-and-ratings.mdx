@@ -10,8 +10,8 @@ import RestEndpoint from "../../../../../components/RestEndpoint.astro";
 Two reads a courier client makes about the courier's own account: the driver wallet in payment, where delivery
 fees are held and then released to the courier, and the ratings buyers gave the courier in review. Neither
 depends on the other, and both follow [signing in](/apis/rest/courier-app/sign-in/). The courier app at commit
-`86dd282` calls neither: its only HTTP requests to Kinetix are the identity and matching calls of its API client
-([driver_api.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/86dd282a2b13ef4a4335ac9dba311f313cefea02/lib/services/auth/driver_api.dart#L8-L36))
+`29a96d3` calls neither: its only HTTP requests to Kinetix are the identity and matching calls of its API client
+([driver_api.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/auth/driver_api.dart#L8-L48))
 and the photo upload of [Go on duty and deliver](/apis/rest/courier-app/deliver/).
 
 ## 1. Read the driver wallet

@@ -1,30 +1,34 @@
 ---
 title: Tetap masuk dan keluar
-description: Menukar refresh token dengan pasangan baru ketika access token kedaluwarsa, dan mengakhiri sesi di identity ketika pembeli keluar.
+description: Menukar refresh token dengan pasangan baru ketika access token kedaluwarsa, dan mengakhiri session di identity ketika pembeli keluar.
 sidebar:
   order: 2
-sourceHash: "a1fa7c4acf1b"
+sourceHash: "9ba5ed4a7678"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
 
 Access token kedaluwarsa `expiresIn` detik setelah identity menerbitkannya. Aplikasi pembeli yang memegang
-sesi dari [Daftar dan masuk](/id/apis/rest/buyer-app/sign-up-and-sign-in/) menjaganya tetap hidup dengan
+session dari [Daftar dan masuk](/id/apis/rest/buyer-app/sign-up-and-sign-in/) menjaganya tetap hidup dengan
 menukar refresh token-nya (langkah 1) setiap kali access token habis. Ketika pembeli keluar, aplikasi lebih
-dulu menghentikan push notification ke ponselnya (langkah 2), lalu mengakhiri sesi di identity (langkah 3).
+dulu menghentikan push notification ke ponselnya (langkah 2), lalu mengakhiri session di identity (langkah 3).
 Kedua token dijelaskan di [ikhtisar](/id/apis/rest/#token).
 
 ## 1. Refresh pasangan token
 
 Aplikasi melakukan refresh begitu `expiresIn` detik sudah lewat, atau ketika sebuah request ditolak dengan
-`401` karena access token kedaluwarsa, lalu mengulang request itu dengan access token yang baru. Pada `200`,
-aplikasi mengganti kedua token yang tersimpan sekaligus. Refresh token berotasi: setiap penukaran menghabiskan
-token yang dikirim, dan token yang sudah terpakai bila dikirim lagi dianggap dicuri, sehingga seluruh sesi
-berakhir
-([token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/token.service.ts#L185-L231)).
+`401` dan `exp` milik access token sudah lewat, lalu mengulang request itu dengan access token yang baru.
+`401` selagi token masih berlaku tidak diselesaikan dengan refresh: endpoint dua faktor milik identity,
+misalnya, menjawab password yang salah dengan `401`
+([Autentikasi dua faktor](/id/apis/rest/buyer-app/two-factor/)). Seperti saat masuk, refresh tidak membawa
+`X-Kinetix-Client`: session yang dimulai tanpa header itu diperpanjang tanpa header itu pula. Pada `200`,
+aplikasi mengganti kedua token yang tersimpan sekaligus. Refresh token berotasi: setiap penukaran
+menghabiskan token yang dikirim, dan token yang sudah terpakai bila dikirim lagi dianggap dicuri, sehingga
+seluruh session berakhir
+([token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/application/services/token.service.ts#L249-L305)).
 Karena itu aplikasi tidak pernah mengirim refresh token dua kali, dan tidak pernah dalam dua request
 sekaligus: request yang mendapati access token kedaluwarsa selagi refresh sedang berjalan menunggu refresh
-itu, bukan memulai refresh sendiri. `401` di sini berarti sesi sudah berakhir: pembeli masuk lagi.
+itu, bukan memulai refresh sendiri. `401` di sini berarti session sudah berakhir: pembeli masuk lagi.
 
 <RestEndpoint id="identity.refresh" />
 
@@ -37,11 +41,11 @@ pernah mendaftarkan ponselnya langsung ke langkah 3.
 
 ## 3. Keluar
 
-Aplikasi mengirim access token-nya dan, di body, `refreshToken` milik sesi ini. identity lalu mencabut access
-token itu dan mengakhiri sesi ini saja. Tanpa `refreshToken`, identity mengakhiri semua sesi akun itu, di
-semua perangkat tempat pembeli masuk
-([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/auth_usecase.service.ts#L130-L141),
-[token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4b8eb5e5f70f05a8a5f9b6bd0d04b2bf88cc8b7f/src/application/services/token.service.ts#L233-L240)).
+Aplikasi mengirim access token-nya dan, di body, `refreshToken` milik session ini. identity lalu mencabut
+access token itu dan mengakhiri session ini saja. Bila field itu dihilangkan, identity mengakhiri semua session
+akun itu, di semua perangkat tempat pembeli masuk; `null` ditolak, bukan dibaca dengan cara itu
+([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/application/services/auth_usecase.service.ts#L200-L211),
+[token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/application/services/token.service.ts#L307-L314)).
 Kong memeriksa access token di route ini, jadi token yang kedaluwarsa ditolak sebelum sampai ke identity:
 aplikasi melakukan refresh (langkah 1) lalu keluar dengan pasangan yang baru. Setelah `204`, aplikasi membuang
 kedua token.

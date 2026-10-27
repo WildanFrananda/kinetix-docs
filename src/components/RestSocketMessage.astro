@@ -1,0 +1,55 @@
+---
+import { Code } from "@astrojs/starlight/components";
+import "../styles/rest.css";
+import { localeOf } from "../diagrams/engine/locale_of";
+import { restCatalogueFor } from "../site/rest/rest_catalogue";
+import { restSocketMessage } from "../site/rest/rest_sockets";
+import { frameCode, replyFrame } from "../site/rest/socket_frame";
+import type { RestSocketMessageProps } from "../site/types/rest_socket_message_props.type";
+import RestText from "./RestText.astro";
+
+type Props = RestSocketMessageProps;
+
+const { id } = Astro.props;
+const text = restCatalogueFor(localeOf(Astro.locals.starlightRoute.entryMeta.lang));
+const message = restSocketMessage(id);
+const sends = message.direction === "send";
+---
+
+<section class="rest-endpoint rest-socket-message not-content">
+  <p class="rest-line">
+    <span class={`rest-method rest-tone-${sends ? "green" : "blue"}`}>
+      {sends ? text["rest.common.socket.send"] : text["rest.common.socket.receive"]}
+    </span>
+    <code class="rest-path">{message.frame[3]}</code>
+  </p>
+  <p class="rest-summary"><RestText text={text[message.summary]} /></p>
+  <dl class="rest-facts">
+    <dt>{text["rest.common.socket.topic"]}</dt>
+    <dd><code>{message.topic}</code></dd>
+    <dt>{text["rest.common.handler"]}</dt>
+    <dd><a class="rest-source" href={message.source.href}>{message.source.label}</a></dd>
+  </dl>
+  <div class="rest-parts">
+    <Code code={frameCode(message.frame)} lang="json" title={text["rest.common.part.frame"]} />
+  </div>
+  {
+    message.replies.length > 0 && (
+      <>
+        <p class="rest-label">{text["rest.common.socket.replies"]}</p>
+        {message.replies.map((reply) => (
+          <div class="rest-case">
+            <p class="rest-case-head">
+              <span class={`rest-status rest-tone-${reply.status === "ok" ? "green" : "red"}`}>{reply.status}</span>
+              <a class="rest-source" href={reply.source.href}>{reply.source.label}</a>
+            </p>
+            <p class="rest-when"><RestText text={text[reply.when]} /></p>
+            <div class="rest-parts">
+              <Code code={frameCode(replyFrame(message, reply))} lang="json" title={text["rest.common.part.frame"]} />
+            </div>
+          </div>
+        ))}
+      </>
+    )
+  }
+</section>

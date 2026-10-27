@@ -1,8 +1,8 @@
 ---
 title: Returns
-description: How a seller opens a return for a delivered order and reports the goods when they come back, through the warehouse, which passes both to order.
+description: How a seller finds the task of a delivered order, opens a return for it and reports the goods when they come back, through the warehouse, which passes both to order.
 sidebar:
-  order: 7
+  order: 8
 ---
 
 import RestEndpoint from "../../../../../components/RestEndpoint.astro";
@@ -10,22 +10,30 @@ import RestEndpoint from "../../../../../components/RestEndpoint.astro";
 The seller opens a return for a delivered order while its return window is open, then reports the goods when
 they are back; order records both and works out the buyer's refund. Order learns of a delivery from matching,
 which reports each one when the courier completes it
-([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L671-L676)),
-and the merchant socket shows the job `delivered` ([Pack orders](/apis/rest/seller-web/packing/), step 8). Both
-calls take an access token whose role is `seller`.
+([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/dispatch.ex#L686-L691)),
+and opens a return only for an order it knows as delivered. The calls need a session whose role is `seller`.
 
-## 1. Open a return
+## 1. Find the task
 
-`fulfillment_task_id` is the task's `id`, which the queue lists while the task is on it
-([Pack orders](/apis/rest/seller-web/packing/), step 2). `reason` is the seller's account of why the goods are
-coming back. Keep `return_number` from the answer.
+A return is opened on the order's fulfillment task, and by the time an order is delivered its task has usually
+left the queue, which drops a task once its label is printed ([Pack orders](/apis/rest/seller-web/packing/), step 7). The seller types or
+picks the order's number, and the answer holds the seller's task for that order, in any state. Keep its `id`. An
+empty list means the seller has no task for that number.
 
-<RestEndpoint id="warehouse.openReturn" />
+<RestEndpoint id="warehouse.findTask" via="seller-web" />
 
-## 2. Report the goods back
+## 2. Open a return
 
-When the parcel arrives, send the `return_number` from step 1, the SKUs and quantities that came back, which are
+`fulfillment_task_id` is the task's `id` from step 1. `reason` is the seller's account of why the goods are
+coming back. Keep `return_number` from the answer. A `502` carries order's refusal in `message`, for an order that
+is not delivered yet or whose return window has closed; the same request gets the same answer.
+
+<RestEndpoint id="warehouse.openReturn" via="seller-web" />
+
+## 3. Report the goods back
+
+When the parcel arrives, send the `return_number` from step 2, the SKUs and quantities that came back, which are
 among the task's `lines`, and the `bin_code` where they were put. The goods are not added to stock: units fit
 to sell again are booked through the backoffice's [stock intake](/apis/rest/backoffice/stock-intake/).
 
-<RestEndpoint id="warehouse.receiveReturnedGoods" />
+<RestEndpoint id="warehouse.receiveReturnedGoods" via="seller-web" />

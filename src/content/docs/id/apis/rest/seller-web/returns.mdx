@@ -1,9 +1,9 @@
 ---
 title: Retur
-description: Cara penjual membuka retur untuk pesanan yang sudah terkirim dan melaporkan barang yang kembali, lewat warehouse, yang meneruskan keduanya ke order.
+description: Cara penjual menemukan task milik pesanan yang sudah terkirim, membuka retur untuknya dan melaporkan barang yang kembali, lewat warehouse, yang meneruskan keduanya ke order.
 sidebar:
-  order: 7
-sourceHash: "13eb344f02a8"
+  order: 8
+sourceHash: "8f402988c748"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -11,22 +11,33 @@ import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
 Penjual membuka retur untuk pesanan yang sudah terkirim selama jangka waktu returnya masih terbuka, lalu
 melaporkan barangnya saat sudah kembali; order mencatat keduanya dan menghitung refund untuk pembeli. Order
 mengetahui sebuah pengiriman dari matching, yang melaporkan setiap pengiriman saat kurir menyelesaikannya
-([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/676e43e0e37879210560fcf7a4dd2f869cae98a5/lib/fleet_pulse/dispatch.ex#L671-L676)),
-dan socket merchant menampilkan job itu `delivered` ([Mengemas pesanan](/id/apis/rest/seller-web/packing/),
-langkah 8). Kedua panggilan memerlukan access token dengan role `seller`.
+([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/93ae2712c382e6dc74e7cf2501b006ccf90c7817/lib/fleet_pulse/dispatch.ex#L686-L691)),
+dan membuka retur hanya untuk pesanan yang diketahuinya sudah terkirim. Panggilan-panggilan ini memerlukan session
+dengan role `seller`.
 
-## 1. Membuka retur
+## 1. Menemukan task
 
-`fulfillment_task_id` adalah `id` task, yang dicantumkan antrean selama task itu ada di sana
-([Mengemas pesanan](/id/apis/rest/seller-web/packing/), langkah 2). `reason` adalah penjelasan penjual tentang
-alasan barang dikembalikan. Simpan `return_number` dari jawabannya.
+Retur dibuka atas task fulfillment milik pesanan itu, dan saat sebuah pesanan sudah terkirim task-nya biasanya
+sudah keluar dari antrean, yang mengeluarkan task begitu labelnya dicetak
+([Mengemas pesanan](/id/apis/rest/seller-web/packing/), langkah 7). Penjual mengetik atau memilih nomor pesanan,
+dan jawabannya memuat task milik penjual untuk pesanan itu, dalam status apa pun. Simpan `id`-nya. Daftar kosong
+berarti penjual tidak punya task untuk nomor itu.
 
-<RestEndpoint id="warehouse.openReturn" />
+<RestEndpoint id="warehouse.findTask" via="seller-web" />
 
-## 2. Melaporkan barang yang kembali
+## 2. Membuka retur
 
-Saat paketnya tiba, kirim `return_number` dari langkah 1, SKU dan jumlah yang kembali, yang termasuk di antara
+`fulfillment_task_id` adalah `id` task dari langkah 1. `reason` adalah penjelasan penjual tentang alasan barang
+dikembalikan. Simpan `return_number` dari jawabannya. Jawaban `502` membawa penolakan order di `message`, untuk
+pesanan yang belum terkirim atau yang jangka waktu returnya sudah tertutup; request yang sama mendapat jawaban yang
+sama.
+
+<RestEndpoint id="warehouse.openReturn" via="seller-web" />
+
+## 3. Melaporkan barang yang kembali
+
+Saat paketnya tiba, kirim `return_number` dari langkah 2, SKU dan jumlah yang kembali, yang termasuk di antara
 `lines` task itu, dan `bin_code` tempat barang itu diletakkan. Barangnya tidak ditambahkan ke stok: unit yang
 layak dijual lagi dicatat lewat [penerimaan stok](/id/apis/rest/backoffice/stock-intake/) di backoffice.
 
-<RestEndpoint id="warehouse.receiveReturnedGoods" />
+<RestEndpoint id="warehouse.receiveReturnedGoods" via="seller-web" />

@@ -1,5 +1,6 @@
 export type RestService =
   | "gateway"
+  | "edge"
   | "identity"
   | "catalog"
   | "search"

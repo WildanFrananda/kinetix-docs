@@ -1,7 +1,9 @@
 ---
 import { Code } from "@astrojs/starlight/components";
+import "../styles/rest.css";
 import { localeOf } from "../diagrams/engine/locale_of";
 import { messagePayload } from "../site/rest/message_payload";
+import { bff } from "../site/rest/bff";
 import { methodTone } from "../site/rest/method_tone";
 import { releaseTree } from "../site/rest/release_tree";
 import { requestHeaders } from "../site/rest/request_headers";
@@ -12,21 +14,25 @@ import { restReleases } from "../site/rest/rest_releases";
 import { servicePage } from "../site/rest/service_page";
 import type { RestEndpointProps } from "../site/types/rest_endpoint_props.type";
 import RestCaseBlock from "./RestCaseBlock.astro";
+import RestFields from "./RestFields.astro";
 import RestText from "./RestText.astro";
 
 type Props = RestEndpointProps;
 
-const { id } = Astro.props;
+const { id, via } = Astro.props;
 const locale = localeOf(Astro.locals.starlightRoute.entryMeta.lang);
 const text = restCatalogueFor(locale);
 const prefix = locale === "en" ? "" : `/${locale}`;
 const endpoint = restEndpoint(id);
 const release = restReleases[endpoint.service];
-const headers = requestHeaders(endpoint);
+const page = servicePage(endpoint.service);
+const headers = requestHeaders(endpoint, via);
 const payload = messagePayload(endpoint.request);
-const token = text[`rest.common.token.${endpoint.access.token}`];
+const throughEdge = via !== undefined && endpoint.service !== "edge";
+const toIdentity = throughEdge && bff.identityPaths.some((path) => endpoint.path.startsWith(`${path}/`));
+const token = throughEdge ? text["rest.common.token.session"] : text[`rest.common.token.${endpoint.access.token}`];
 const gateway =
-  endpoint.access.token === "none"
+  endpoint.access.token === "none" || toIdentity
     ? undefined
     : endpoint.access.gatewayVerifies
       ? text["rest.common.gateway.verifies"]
@@ -49,35 +55,16 @@ const gateway =
     </dd>
     <dt>{text["rest.common.handler"]}</dt>
     <dd>
-      <a href={`${prefix}${servicePage(endpoint.service)}`}>{endpoint.service}</a>{" "}
+      {page === undefined ? endpoint.service : <a href={`${prefix}${page}`}>{endpoint.service}</a>}{" "}
       <a href={releaseTree(endpoint.service)}>{release.tag}</a>
       {" · "}
       <a class="rest-source" href={endpoint.source.href}>{endpoint.source.label}</a>
     </dd>
   </dl>
   <p class="rest-label">{text["rest.common.request"]}</p>
-  {
-    endpoint.request.fields.length === 0 ? (
-      <p class="rest-none">{text["rest.common.noFields"]}</p>
-    ) : (
-      <ul class="rest-fields">
-        {endpoint.request.fields.map((field) => (
-          <li>
-            <p class="rest-field-head">
-              <code>{field.name}</code>
-              <span class="rest-field-meta">
-                {text[`rest.common.in.${field.in}`]} · {field.type} ·{" "}
-                {field.required ? text["rest.common.required"] : text["rest.common.optional"]}
-              </span>
-            </p>
-            <p class="rest-field-rule"><RestText text={text[field.rule]} /></p>
-          </li>
-        ))}
-      </ul>
-    )
-  }
+  <RestFields fields={endpoint.request.fields} />
   <div class="rest-parts">
-    <Code code={requestLine(endpoint)} lang="http" title={text["rest.common.part.endpoint"]} />
+    <Code code={requestLine(endpoint, via)} lang="http" title={text["rest.common.part.endpoint"]} />
     {headers.length > 0 && <Code code={headers.join("\n")} lang="http" title={text["rest.common.part.headers"]} />}
     {payload !== undefined && <Code code={payload.code} lang={payload.lang} title={text["rest.common.part.body"]} />}
   </div>
@@ -86,6 +73,12 @@ const gateway =
   <p class="rest-also">
     {text["rest.common.also"]}{" "}
     <a href={`${prefix}/apis/rest/#${endpoint.service}-answers`}>{text["rest.common.also.service"]}</a>
+    {via !== undefined && endpoint.service !== "edge" && (
+      <>
+        {" · "}
+        <a href={`${prefix}/apis/rest/#edge-answers`}>{text["rest.common.also.edge"]}</a>
+      </>
+    )}
     {endpoint.service !== "gateway" && (
       <>
         {" · "}
@@ -94,167 +87,3 @@ const gateway =
     )}
   </p>
 </section>
-
-<style>
-  a {
-    color: var(--sl-color-white);
-    text-decoration: underline;
-    text-decoration-color: var(--sl-color-accent);
-    text-decoration-thickness: 1px;
-    text-underline-offset: 0.22em;
-  }
-
-  a:hover {
-    color: var(--sl-color-accent);
-  }
-
-  .rest-endpoint {
-    margin: 1.25rem 0 2rem;
-    padding-top: 0.75rem;
-    border-top: 2px solid var(--sl-color-white);
-  }
-
-  .rest-line {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.25rem 0.75rem;
-    margin: 0;
-    font-family: var(--sl-font-mono);
-  }
-
-  .rest-method {
-    font-size: var(--sl-text-sm);
-    font-weight: 600;
-    letter-spacing: 0.04em;
-  }
-
-  .rest-tone-green {
-    color: var(--kx-lane-b);
-  }
-
-  .rest-tone-blue {
-    color: var(--kx-lane-a);
-  }
-
-  .rest-tone-orange {
-    color: var(--sl-color-accent);
-  }
-
-  .rest-tone-red {
-    color: var(--sl-color-red);
-  }
-
-  .rest-parts {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.625rem;
-    margin-top: 0.625rem;
-    min-width: 0;
-  }
-
-  .rest-path {
-    padding: 0;
-    background: none;
-    border: 0;
-    font-size: var(--sl-text-base);
-    color: var(--sl-color-white);
-  }
-
-  .rest-summary {
-    margin: 0.5rem 0 0;
-  }
-
-  .rest-facts {
-    display: grid;
-    grid-template-columns: max-content 1fr;
-    gap: 0.375rem 1rem;
-    margin: 0.75rem 0 0;
-    padding: 0.625rem 0;
-    border-top: 1px solid var(--kx-rule);
-    border-bottom: 1px solid var(--kx-rule);
-    font-size: var(--sl-text-sm);
-  }
-
-  .rest-facts dt {
-    font-family: var(--sl-font-mono);
-    font-size: var(--sl-text-xs);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--sl-color-gray-3);
-  }
-
-  .rest-facts dd {
-    margin: 0;
-    min-width: 0;
-  }
-
-  .rest-source {
-    font-family: var(--sl-font-mono);
-    font-size: var(--sl-text-xs);
-    overflow-wrap: anywhere;
-  }
-
-  .rest-label {
-    margin: 1.25rem 0 0;
-    font-family: var(--sl-font-mono);
-    font-size: var(--sl-text-xs);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--sl-color-gray-3);
-  }
-
-  .rest-also {
-    margin: 0;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--kx-rule);
-    font-size: var(--sl-text-sm);
-    color: var(--sl-color-gray-3);
-  }
-
-  .rest-none {
-    margin: 0.375rem 0 0;
-    color: var(--sl-color-gray-3);
-  }
-
-  .rest-fields {
-    margin: 0.375rem 0 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .rest-fields li {
-    padding: 0.5rem 0;
-    border-bottom: 1px solid var(--kx-rule);
-  }
-
-  .rest-field-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.125rem 0.75rem;
-    margin: 0;
-  }
-
-  .rest-field-meta {
-    font-family: var(--sl-font-mono);
-    font-size: var(--sl-text-xs);
-    color: var(--sl-color-gray-3);
-  }
-
-  .rest-field-rule {
-    margin: 0.25rem 0 0;
-    font-size: var(--sl-text-sm);
-  }
-
-  @media (max-width: 30rem) {
-    .rest-facts {
-      grid-template-columns: 1fr;
-      gap: 0.125rem;
-    }
-
-    .rest-facts dd + dt {
-      margin-top: 0.375rem;
-    }
-  }
-</style>

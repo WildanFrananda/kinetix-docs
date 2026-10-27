@@ -11,6 +11,7 @@ const locale = localeOf(Astro.locals.starlightRoute.entryMeta.lang);
 const text = restCatalogueFor(locale);
 const prefix = locale === "en" ? "" : `/${locale}`;
 const services = Object.keys(restReleases) as RestService[];
+const pages = services.map((service) => ({ service, page: servicePage(service) }));
 ---
 
 <table class="rest-releases">
@@ -23,11 +24,9 @@ const services = Object.keys(restReleases) as RestService[];
   </thead>
   <tbody>
     {
-      services.map((service) => (
+      pages.map(({ service, page }) => (
         <tr>
-          <td>
-            <a href={`${prefix}${servicePage(service)}`}>{service}</a>
-          </td>
+          <td>{page === undefined ? service : <a href={`${prefix}${page}`}>{service}</a>}</td>
           <td>{restReleases[service].tag}</td>
           <td>
             <a href={releaseTree(service)}>

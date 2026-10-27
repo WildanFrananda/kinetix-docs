@@ -120,15 +120,30 @@ export const paymentAnswers: readonly RestCase[] = [
   },
   {
     status: 401,
-    when: "rest.payment.answers.tokenRefused",
+    when: "rest.payment.answers.tokenMissing",
+    headers: ["WWW-Authenticate: Bearer"],
     json: {
       error: "a valid access token from identity is required"
     },
     source: restSource(
       "payment",
       "modules/api/src/main/java/com/kinetix/payment/api/security/AuthenticationRefusals.java",
-      28,
-      36
+      37,
+      46
+    )
+  },
+  {
+    status: 401,
+    when: "rest.payment.answers.tokenRefused",
+    headers: ['WWW-Authenticate: Bearer error="invalid_token"'],
+    json: {
+      error: "a valid access token from identity is required"
+    },
+    source: restSource(
+      "payment",
+      "modules/api/src/main/java/com/kinetix/payment/api/security/AuthenticationRefusals.java",
+      67,
+      85
     )
   },
   {
@@ -220,8 +235,8 @@ export const paymentAnswers: readonly RestCase[] = [
     source: restSource(
       "payment",
       "modules/api/src/main/java/com/kinetix/payment/api/security/AuthenticationRefusals.java",
-      38,
-      58
+      48,
+      65
     )
   }
 ];
@@ -345,8 +360,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          333,
-          351
+          347,
+          365
         )
       },
       {
@@ -357,8 +372,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          421,
-          430
+          435,
+          444
         )
       },
       {
@@ -396,8 +411,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          447,
-          491
+          472,
+          516
         )
       },
       {
@@ -422,8 +437,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          395,
-          404
+          409,
+          418
         )
       },
       {
@@ -437,8 +452,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          462,
-          468
+          487,
+          493
         )
       },
       {
@@ -453,8 +468,24 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          432,
-          445
+          446,
+          465
+        )
+      },
+      {
+        status: 422,
+        when: "rest.payment.customerTopUp.case.walletFullAwaitingPayment",
+        json: {
+          error:
+            "with IDR 250,000 in top-ups still awaiting payment, this top-up would bring the wallet to IDR 2,150,000, above the IDR 2,000,000 a customer wallet may hold; a top-up that expires or fails stops counting",
+          code: "WALLET_BALANCE_LIMIT_EXCEEDED",
+          limit: "2000000"
+        },
+        source: restSource(
+          "payment",
+          "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
+          446,
+          470
         )
       },
       {
@@ -467,8 +498,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          352,
-          373
+          366,
+          387
         )
       },
       {
@@ -482,8 +513,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          374,
-          386
+          388,
+          400
         )
       },
       {
@@ -497,8 +528,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          406,
-          412
+          420,
+          426
         )
       }
     ],
@@ -540,8 +571,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          111,
-          121
+          121,
+          131
         )
       },
       {
@@ -552,8 +583,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          424,
-          430
+          438,
+          444
         )
       },
       {
@@ -578,8 +609,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          111,
-          119
+          121,
+          129
         )
       }
     ],
@@ -804,8 +835,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          164,
-          167
+          174,
+          177
         )
       },
       {
@@ -819,8 +850,8 @@ export const paymentEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "payment",
           "modules/application/src/main/java/com/kinetix/payment/application/TopUpService.java",
-          172,
-          190
+          182,
+          200
         )
       }
     ],

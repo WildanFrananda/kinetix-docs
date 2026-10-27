@@ -1,6 +1,6 @@
 ---
 title: Two-factor authentication
-description: Turn on a second factor for the buyer's own account with an authenticator app, and turn it off again, at identity.
+description: Turn on a second factor for the buyer's own account with an authenticator app, and turn it off again, at identity, confirming each change with the account's password.
 sidebar:
   order: 3
 ---
@@ -14,25 +14,37 @@ A signed-in buyer turns on two-factor authentication for its own account in two 
 on, every sign-in answers a challenge first, which the app answers as in
 [step 3 of Sign up and sign in](/apis/rest/buyer-app/sign-up-and-sign-in/#3-answer-the-two-factor-challenge).
 
+Every call here takes the account's password in `password` besides the access token, so that a stolen access
+token alone cannot change the second factor
+([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/9c54cf64d0a2b4d8315c7573be0992cb9b5d687d/src/application/services/auth_usecase.service.ts#L363-L376)).
+The app asks the buyer for it at each step and does not keep it. A `401` for a wrong password concerns the
+password, not the session: the app keeps its tokens and asks again. Each call also counts as a check of the
+account towards the sign-in wait, as a sign-in does; on `429 SIGN_IN_DELAYED` the app waits `Retry-After`
+seconds and sends the same request again.
+
 ## 1. Get a new secret
 
-The answer's `qrCodeUrl` is an `otpauth://` URI: the app shows it as a QR code for the authenticator app to
-scan, and shows `twoFactorSecret` for a buyer who types it in instead. Nothing is in force yet. Asking again
-before step 2 replaces the secret, so the authenticator must hold the latest one.
+The buyer types the account's password; a request without it is answered `400 PASSWORD_REQUIRED`. The
+answer's `qrCodeUrl` is an `otpauth://` URI: the app shows it as a QR code for the authenticator app to scan,
+and shows `twoFactorSecret` for a buyer who types it in instead. Nothing is in force yet. Asking again before
+step 2 replaces the secret, so the authenticator must hold the latest one. A `409` means two-factor
+authentication is on already: step 3 turns it off first.
 
 <RestEndpoint id="identity.setupTwoFactor" />
 
 ## 2. Confirm with a code
 
-The buyer types the six digits the authenticator app shows now. A `200` with `enabled: true` puts the second
-factor in force for every later sign-in. This session keeps its tokens; every other session of the account
-ends, and those devices sign in again.
+The buyer types the six digits the authenticator app shows now, and the password again. A `200` with
+`enabled: true` puts the second factor in force for every later sign-in. This session keeps its tokens; every
+other session of the account ends, and those devices sign in again. A `422` is a code that does not match or
+was already used: nothing changed, and the buyer types the next code.
 
 <RestEndpoint id="identity.enableTwoFactor" />
 
 ## 3. Turn it off
 
-The buyer types a current code from the same authenticator app. A `200` with `enabled: false` deletes the
-secret, and later sign-ins answer a session at once. As in step 2, every other session of the account ends.
+The buyer types the password and a current code from the same authenticator app. A `200` with
+`enabled: false` deletes the secret, and later sign-ins answer a session at once. As in step 2, every other
+session of the account ends.
 
 <RestEndpoint id="identity.disableTwoFactor" />

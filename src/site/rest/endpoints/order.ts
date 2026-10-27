@@ -52,14 +52,12 @@ export const orderAnswers: readonly RestCase[] = [
       title: "One or more validation errors occurred.",
       status: 400,
       errors: {
-        request: ["The request field is required."],
-        "$.quantity": [
-          "The JSON value could not be converted to System.Int32. Path: $.quantity | LineNumber: 0 | BytePositionInLine: 48."
-        ]
+        "$.quantity": ["The input was not valid."],
+        request: ["The request field is required."]
       },
       traceId: traceContext
     },
-    source: restSource("order", "Program.cs", 307, 311)
+    source: restSource("order", "Infrastructure/Http/OrderControllers.cs", 3, 5)
   },
   {
     status: 400,
@@ -75,46 +73,52 @@ export const orderAnswers: readonly RestCase[] = [
       },
       traceId: traceContext
     },
-    source: restSource("order", "Program.cs", 307, 311)
+    source: restSource("order", "Program.cs", 283, 287)
   },
   {
     status: 401,
     when: "rest.order.answers.tokenMissing",
     headers: ["WWW-Authenticate: Bearer"],
-    source: restSource("order", "Security/AccessTokenValidation.cs", 15, 18)
+    source: restSource("order", "Security/AccessTokenValidation.cs", 51, 54)
   },
   {
     status: 401,
     when: "rest.order.answers.tokenExpired",
-    headers: [
-      "WWW-Authenticate: Bearer error=\"invalid_token\", error_description=\"The token expired at '10/22/2026 03:15:00'\""
-    ],
-    source: restSource("order", "Security/AccessTokenValidation.cs", 27, 40)
+    headers: ["WWW-Authenticate: Bearer error=\"invalid_token\""],
+    source: restSource("order", "Security/AccessTokenValidation.cs", 28, 56)
   },
   {
     status: 401,
     when: "rest.order.answers.tokenInvalid",
-    headers: [
-      "WWW-Authenticate: Bearer error=\"invalid_token\", error_description=\"The signature key was not found\""
-    ],
-    source: restSource("order", "Security/AccessTokenValidation.cs", 27, 40)
+    headers: ["WWW-Authenticate: Bearer error=\"invalid_token\""],
+    source: restSource("order", "Security/AccessTokenValidation.cs", 28, 56)
   },
   {
     status: 401,
     when: "rest.order.answers.notAccessToken",
     headers: ["WWW-Authenticate: Bearer error=\"invalid_token\""],
-    source: restSource("order", "Security/AccessTokenValidation.cs", 41, 48)
+    source: restSource("order", "Security/AccessTokenValidation.cs", 44, 56)
   },
   {
     status: 404,
     when: "rest.order.answers.unknownPath",
-    source: restSource("order", "Program.cs", 390, 392)
+    source: restSource("order", "Program.cs", 368, 370)
   },
   {
     status: 405,
     when: "rest.order.answers.methodNotAllowed",
     headers: ["Allow: POST"],
-    source: restSource("order", "Program.cs", 390, 392)
+    source: restSource("order", "Program.cs", 368, 370)
+  },
+  {
+    status: 413,
+    when: "rest.order.answers.bodyTooLarge",
+    json: {
+      error: "REQUEST_BODY_TOO_LARGE",
+      message: "the request body is larger than this service accepts, so nothing was done",
+      traceId: requestId
+    },
+    source: restSource("order", "Infrastructure/Http/UnhandledExceptionHandler.cs", 16, 28)
   },
   {
     status: 415,
@@ -126,7 +130,7 @@ export const orderAnswers: readonly RestCase[] = [
       status: 415,
       traceId: traceContext
     },
-    source: restSource("order", "Program.cs", 307, 311)
+    source: restSource("order", "Program.cs", 283, 287)
   },
   {
     status: 500,
@@ -137,7 +141,18 @@ export const orderAnswers: readonly RestCase[] = [
         "something went wrong handling this request, and whether any of it took effect is not known here. Check before repeating it; repeat a checkout only with the same Idempotency-Key, which cannot charge twice.",
       traceId: requestId
     },
-    source: restSource("order", "Infrastructure/Http/UnhandledExceptionHandler.cs", 13, 36)
+    source: restSource("order", "Infrastructure/Http/UnhandledExceptionHandler.cs", 54, 75)
+  },
+  {
+    status: 503,
+    when: "rest.order.answers.databaseUnavailable",
+    json: {
+      error: "DATABASE_UNAVAILABLE",
+      message:
+        "order could not reach its database, so whether any of this request took effect is not known here. Try again shortly; repeat a checkout only with the same Idempotency-Key, which cannot charge twice.",
+      traceId: requestId
+    },
+    source: restSource("order", "Infrastructure/Http/UnhandledExceptionHandler.cs", 30, 52)
   },
   {
     status: 503,
@@ -147,7 +162,7 @@ export const orderAnswers: readonly RestCase[] = [
       message:
         "your sign-in cannot be checked right now: identity's signing keys could not be fetched. Nothing was done; try again shortly."
     },
-    source: restSource("order", "Security/AccessTokenValidation.cs", 49, 66)
+    source: restSource("order", "Security/AccessTokenValidation.cs", 51, 70)
   }
 ];
 
@@ -266,13 +281,13 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           subtotal: 0,
           updatedAt: "2026-10-22T03:15:07.4829137Z"
         },
-        source: restSource("order", "Infrastructure/Redis/RedisCartStore.cs", 36, 41)
+        source: restSource("order", "Infrastructure/Redis/RedisCartStore.cs", 45, 50)
       },
       {
         status: 503,
         when: "rest.order.getCart.case.cartUnavailable",
         json: cartUnavailable,
-        source: restSource("order", "Controllers/CartController.cs", 157, 166)
+        source: restSource("order", "Controllers/CartController.cs", 165, 174)
       }
     ],
     source: restSource("order", "Controllers/CartController.cs", 22, 29)
@@ -334,6 +349,16 @@ export const orderEndpoints: readonly RestEndpoint[] = [
       },
       {
         status: 400,
+        when: "rest.order.addCartItem.case.productIdRequired",
+        json: {
+          error: "PRODUCT_ID_REQUIRED",
+          field: "productId",
+          message: "name the product to add to the cart"
+        },
+        source: restSource("order", "Controllers/CartController.cs", 37, 43)
+      },
+      {
+        status: 400,
         when: "rest.order.addCartItem.case.quantityOutOfRange",
         json: {
           error: "QUANTITY_OUT_OF_RANGE",
@@ -343,7 +368,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           maxQuantity: 999,
           message: "a quantity of 0 for 'KOPI-ARABIKA-250' is outside 1 to 999"
         },
-        source: restSource("order", "Controllers/CartController.cs", 124, 132)
+        source: restSource("order", "Controllers/CartController.cs", 132, 140)
       },
       {
         status: 404,
@@ -353,13 +378,13 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           productId: "KOPI-ARABIKA-250",
           message: "catalog has no product 'KOPI-ARABIKA-250', so there is no price to charge for it"
         },
-        source: restSource("order", "Controllers/CartController.cs", 104, 105)
+        source: restSource("order", "Controllers/CartController.cs", 112, 113)
       },
       {
         status: 409,
         when: "rest.order.addCartItem.case.cartBusy",
         json: cartBusy,
-        source: restSource("order", "Controllers/CartController.cs", 149, 150)
+        source: restSource("order", "Controllers/CartController.cs", 157, 158)
       },
       {
         status: 422,
@@ -369,7 +394,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           productId: "KOPI-ARABIKA-250",
           message: "catalog states no chargeable price for 'KOPI-ARABIKA-250': the product carries no price"
         },
-        source: restSource("order", "Controllers/CartController.cs", 106, 111)
+        source: restSource("order", "Controllers/CartController.cs", 114, 119)
       },
       {
         status: 422,
@@ -379,7 +404,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           productId: "KOPI-ARABIKA-250",
           message: "catalog names no merchant for 'KOPI-ARABIKA-250', so there is nobody to pay or to ship from"
         },
-        source: restSource("order", "Controllers/CartController.cs", 112, 117)
+        source: restSource("order", "Controllers/CartController.cs", 120, 125)
       },
       {
         status: 422,
@@ -389,7 +414,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           productId: "KOPI-ARABIKA-250",
           message: "this product is sold by your own account, and a seller cannot buy its own product"
         },
-        source: restSource("order", "Controllers/CartController.cs", 118, 123)
+        source: restSource("order", "Controllers/CartController.cs", 126, 131)
       },
       {
         status: 422,
@@ -402,7 +427,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           maxQuantity: 999,
           message: "the cart would hold 1001 of 'KOPI-ARABIKA-250', and a line holds 1 to 999"
         },
-        source: restSource("order", "Controllers/CartController.cs", 133, 141)
+        source: restSource("order", "Controllers/CartController.cs", 141, 149)
       },
       {
         status: 503,
@@ -412,16 +437,16 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           productId: "KOPI-ARABIKA-250",
           message: "catalog did not answer for 'KOPI-ARABIKA-250', so its price cannot be established"
         },
-        source: restSource("order", "Controllers/CartController.cs", 151, 156)
+        source: restSource("order", "Controllers/CartController.cs", 159, 164)
       },
       {
         status: 503,
         when: "rest.order.addCartItem.case.cartUnavailable",
         json: cartUnavailable,
-        source: restSource("order", "Controllers/CartController.cs", 157, 166)
+        source: restSource("order", "Controllers/CartController.cs", 165, 174)
       }
     ],
-    source: restSource("order", "Controllers/CartController.cs", 31, 38)
+    source: restSource("order", "Controllers/CartController.cs", 31, 46)
   },
   {
     id: "order.updateCartItem",
@@ -485,22 +510,22 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           maxQuantity: 999,
           message: "a quantity of 1200 for 'KOPI-ARABIKA-250' is outside 0 to 999"
         },
-        source: restSource("order", "Controllers/CartController.cs", 124, 132)
+        source: restSource("order", "Controllers/CartController.cs", 132, 140)
       },
       {
         status: 409,
         when: "rest.order.updateCartItem.case.cartBusy",
         json: cartBusy,
-        source: restSource("order", "Controllers/CartController.cs", 149, 150)
+        source: restSource("order", "Controllers/CartController.cs", 157, 158)
       },
       {
         status: 503,
         when: "rest.order.updateCartItem.case.cartUnavailable",
         json: cartUnavailable,
-        source: restSource("order", "Controllers/CartController.cs", 157, 166)
+        source: restSource("order", "Controllers/CartController.cs", 165, 174)
       }
     ],
-    source: restSource("order", "Controllers/CartController.cs", 40, 49)
+    source: restSource("order", "Controllers/CartController.cs", 48, 57)
   },
   {
     id: "order.removeCartItem",
@@ -540,16 +565,16 @@ export const orderEndpoints: readonly RestEndpoint[] = [
         status: 409,
         when: "rest.order.removeCartItem.case.cartBusy",
         json: cartBusy,
-        source: restSource("order", "Controllers/CartController.cs", 149, 150)
+        source: restSource("order", "Controllers/CartController.cs", 157, 158)
       },
       {
         status: 503,
         when: "rest.order.removeCartItem.case.cartUnavailable",
         json: cartUnavailable,
-        source: restSource("order", "Controllers/CartController.cs", 157, 166)
+        source: restSource("order", "Controllers/CartController.cs", 165, 174)
       }
     ],
-    source: restSource("order", "Controllers/CartController.cs", 51, 58)
+    source: restSource("order", "Controllers/CartController.cs", 59, 66)
   },
   {
     id: "order.applyCartVoucher",
@@ -590,7 +615,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           error: "VOUCHER_CODE_REQUIRED",
           message: "name the voucher to apply; DELETE /api/v1/cart/voucher takes one off"
         },
-        source: restSource("order", "Controllers/CartController.cs", 66, 71)
+        source: restSource("order", "Controllers/CartController.cs", 74, 79)
       },
       {
         status: 400,
@@ -601,22 +626,22 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           maxLength: 50,
           message: "voucherCode is longer than the 50 characters an order can record"
         },
-        source: restSource("order", "Controllers/CartController.cs", 142, 148)
+        source: restSource("order", "Controllers/CartController.cs", 150, 156)
       },
       {
         status: 409,
         when: "rest.order.applyCartVoucher.case.cartBusy",
         json: cartBusy,
-        source: restSource("order", "Controllers/CartController.cs", 149, 150)
+        source: restSource("order", "Controllers/CartController.cs", 157, 158)
       },
       {
         status: 503,
         when: "rest.order.applyCartVoucher.case.cartUnavailable",
         json: cartUnavailable,
-        source: restSource("order", "Controllers/CartController.cs", 157, 166)
+        source: restSource("order", "Controllers/CartController.cs", 165, 174)
       }
     ],
-    source: restSource("order", "Controllers/CartController.cs", 60, 75)
+    source: restSource("order", "Controllers/CartController.cs", 68, 83)
   },
   {
     id: "order.removeCartVoucher",
@@ -647,16 +672,16 @@ export const orderEndpoints: readonly RestEndpoint[] = [
         status: 409,
         when: "rest.order.removeCartVoucher.case.cartBusy",
         json: cartBusy,
-        source: restSource("order", "Controllers/CartController.cs", 149, 150)
+        source: restSource("order", "Controllers/CartController.cs", 157, 158)
       },
       {
         status: 503,
         when: "rest.order.removeCartVoucher.case.cartUnavailable",
         json: cartUnavailable,
-        source: restSource("order", "Controllers/CartController.cs", 157, 166)
+        source: restSource("order", "Controllers/CartController.cs", 165, 174)
       }
     ],
-    source: restSource("order", "Controllers/CartController.cs", 77, 84)
+    source: restSource("order", "Controllers/CartController.cs", 85, 92)
   },
   {
     id: "order.clearCart",
@@ -676,16 +701,16 @@ export const orderEndpoints: readonly RestEndpoint[] = [
       {
         status: 204,
         when: "rest.order.clearCart.case.cleared",
-        source: restSource("order", "Controllers/CartController.cs", 92, 98)
+        source: restSource("order", "Controllers/CartController.cs", 100, 106)
       },
       {
         status: 503,
         when: "rest.order.clearCart.case.cartUnavailable",
         json: cartUnavailable,
-        source: restSource("order", "Controllers/CartController.cs", 94, 95)
+        source: restSource("order", "Controllers/CartController.cs", 102, 103)
       }
     ],
-    source: restSource("order", "Controllers/CartController.cs", 86, 99)
+    source: restSource("order", "Controllers/CartController.cs", 94, 107)
   },
   {
     id: "order.checkout",
@@ -775,7 +800,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           field: "recipientPhone",
           message: "recipientPhone is required: a parcel needs an address and a person to hand it to"
         },
-        source: restSource("order", "Controllers/OrderController.cs", 38, 39)
+        source: restSource("order", "Controllers/OrderController.cs", 41, 42)
       },
       {
         status: 400,
@@ -786,27 +811,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           maxLength: 500,
           message: "shippingAddress is longer than the 500 characters an order can record"
         },
-        source: restSource("order", "Controllers/OrderController.cs", 40, 46)
-      },
-      {
-        status: 400,
-        when: "rest.order.checkout.case.cartEmpty",
-        json: {
-          error: "CART_EMPTY",
-          message: "this cart has no items, so there is nothing to check out"
-        },
-        source: restSource("order", "Controllers/OrderController.cs", 149, 150)
-      },
-      {
-        status: 400,
-        when: "rest.order.checkout.case.twoMerchants",
-        json: {
-          error: "CART_SPANS_TWO_MERCHANTS",
-          merchantCount: 2,
-          message:
-            "this cart holds items from 2 merchants, and an order belongs to one; check out each merchant's items separately"
-        },
-        source: restSource("order", "Controllers/OrderController.cs", 164, 169)
+        source: restSource("order", "Controllers/OrderController.cs", 43, 49)
       },
       {
         status: 400,
@@ -817,7 +822,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           requestedTier: "KINETIX_EXPRESS",
           availableTiers: ["KINETIX_INSTANT", "KINETIX_SAMEDAY", "KINETIX_REGULAR"]
         },
-        source: restSource("order", "Controllers/OrderController.cs", 126, 132)
+        source: restSource("order", "Controllers/OrderController.cs", 129, 135)
       },
       {
         status: 404,
@@ -827,7 +832,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           productId: "GULA-AREN-500",
           message: "catalog has no product 'GULA-AREN-500', so there is no price to charge for it"
         },
-        source: restSource("order", "Controllers/OrderController.cs", 170, 171)
+        source: restSource("order", "Controllers/OrderController.cs", 173, 174)
       },
       {
         status: 409,
@@ -838,7 +843,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           message:
             "the checkout this Idempotency-Key started has not finished yet. Repeat the same request with the same key shortly to learn how it ended."
         },
-        source: restSource("order", "Controllers/OrderController.cs", 54, 60)
+        source: restSource("order", "Controllers/OrderController.cs", 57, 63)
       },
       {
         status: 409,
@@ -847,7 +852,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           error: "MERCHANT_NOT_TRADING",
           message: `identity does not permit merchant ${merchant} to sell, so this cart cannot be bought now`
         },
-        source: restSource("order", "Controllers/OrderController.cs", 157, 158)
+        source: restSource("order", "Controllers/OrderController.cs", 160, 161)
       },
       {
         status: 409,
@@ -861,7 +866,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           message:
             "this checkout was refused, so it was not placed. Everything it had reserved or charged has been given back."
         },
-        source: restSource("order", "Controllers/OrderController.cs", 258, 264)
+        source: restSource("order", "Controllers/OrderController.cs", 261, 267)
       },
       {
         status: 409,
@@ -874,7 +879,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           message:
             "this checkout was refused, so it was not placed. Some of what it had reserved or charged is still being given back; that is retried automatically, and staff are alerted if it cannot be."
         },
-        source: restSource("order", "Controllers/OrderController.cs", 228, 264)
+        source: restSource("order", "Controllers/OrderController.cs", 231, 267)
       },
       {
         status: 409,
@@ -889,7 +894,27 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           message:
             "the checkout this Idempotency-Key started was not placed. Everything it had reserved or charged has been given back. A new attempt needs a new Idempotency-Key."
         },
-        source: restSource("order", "Controllers/OrderController.cs", 235, 245)
+        source: restSource("order", "Controllers/OrderController.cs", 238, 248)
+      },
+      {
+        status: 422,
+        when: "rest.order.checkout.case.cartEmpty",
+        json: {
+          error: "CART_EMPTY",
+          message: "this cart has no items, so there is nothing to check out"
+        },
+        source: restSource("order", "Controllers/OrderController.cs", 152, 153)
+      },
+      {
+        status: 422,
+        when: "rest.order.checkout.case.twoMerchants",
+        json: {
+          error: "CART_SPANS_TWO_MERCHANTS",
+          merchantCount: 2,
+          message:
+            "this cart holds items from 2 merchants, and an order belongs to one; check out each merchant's items separately"
+        },
+        source: restSource("order", "Controllers/OrderController.cs", 167, 172)
       },
       {
         status: 422,
@@ -900,7 +925,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           message:
             "this Idempotency-Key was already used for a checkout with a different request. Send a new key for a new checkout, or repeat the original request exactly."
         },
-        source: restSource("order", "Controllers/OrderController.cs", 47, 53)
+        source: restSource("order", "Controllers/OrderController.cs", 50, 56)
       },
       {
         status: 422,
@@ -911,7 +936,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           message:
             "this order cannot be priced as it stands, so it was not placed. Nothing has been charged or reserved."
         },
-        source: restSource("order", "Controllers/OrderController.cs", 61, 67)
+        source: restSource("order", "Controllers/OrderController.cs", 64, 70)
       },
       {
         status: 422,
@@ -921,7 +946,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           message:
             "this order comes to nothing, and an amount of zero cannot be charged or held, so it was not placed. Nothing has been charged or reserved."
         },
-        source: restSource("order", "Controllers/OrderController.cs", 68, 73)
+        source: restSource("order", "Controllers/OrderController.cs", 71, 76)
       },
       {
         status: 422,
@@ -932,7 +957,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           message:
             "this cart holds a product you sell yourself, and a seller cannot buy its own product. Remove it from the cart and check out again."
         },
-        source: restSource("order", "Controllers/OrderController.cs", 74, 80)
+        source: restSource("order", "Controllers/OrderController.cs", 77, 83)
       },
       {
         status: 422,
@@ -946,7 +971,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           message:
             "the cart would hold 0 of 'KOPI-ARABIKA-250', and a line holds 1 to 999. Change the quantity in the cart and check out again."
         },
-        source: restSource("order", "Controllers/OrderController.cs", 81, 89)
+        source: restSource("order", "Controllers/OrderController.cs", 84, 92)
       },
       {
         status: 422,
@@ -956,7 +981,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           productId: "GULA-AREN-500",
           message: "catalog names no merchant for 'GULA-AREN-500', so there is nobody to pay or to ship from"
         },
-        source: restSource("order", "Controllers/OrderController.cs", 151, 156)
+        source: restSource("order", "Controllers/OrderController.cs", 154, 159)
       },
       {
         status: 422,
@@ -966,7 +991,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           productId: "GULA-AREN-500",
           message: "catalog states no chargeable price for 'GULA-AREN-500': the product carries no price"
         },
-        source: restSource("order", "Controllers/OrderController.cs", 172, 177)
+        source: restSource("order", "Controllers/OrderController.cs", 175, 180)
       },
       {
         status: 422,
@@ -977,7 +1002,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           message:
             "a product in this cart has no weight, so its shipping cannot be priced and this order was not placed. Nothing has been charged or reserved. The merchant has to set the product's weight."
         },
-        source: restSource("order", "Controllers/OrderController.cs", 184, 191)
+        source: restSource("order", "Controllers/OrderController.cs", 187, 194)
       },
       {
         status: 422,
@@ -987,7 +1012,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           message:
             "the merchant's store address has no point on the map, so the distance to you cannot be measured and this order was not placed. Nothing has been charged or reserved."
         },
-        source: restSource("order", "Controllers/OrderController.cs", 192, 198)
+        source: restSource("order", "Controllers/OrderController.cs", 195, 201)
       },
       {
         status: 422,
@@ -998,7 +1023,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           message:
             "Your shipping address matches more than one place; add the area or postal code. This order was not placed, and nothing has been charged or reserved."
         },
-        source: restSource("order", "Controllers/OrderController.cs", 199, 205)
+        source: restSource("order", "Controllers/OrderController.cs", 202, 208)
       },
       {
         status: 422,
@@ -1011,7 +1036,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           availableTiers: ["KINETIX_SAMEDAY", "KINETIX_REGULAR"],
           rateCardReason: "Distance exceeds 15km limit"
         },
-        source: restSource("order", "Controllers/OrderController.cs", 116, 125)
+        source: restSource("order", "Controllers/OrderController.cs", 119, 128)
       },
       {
         status: 422,
@@ -1027,7 +1052,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           message:
             "no courier service can carry this parcel to this address, so this order was not placed. Nothing has been charged or reserved."
         },
-        source: restSource("order", "Controllers/OrderController.cs", 218, 224)
+        source: restSource("order", "Controllers/OrderController.cs", 221, 227)
       },
       {
         status: 502,
@@ -1037,7 +1062,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           message:
             "shipping could not be quoted for this order — the courier service answered with something this service cannot read — so this order was not placed. Nothing has been charged or reserved. This is a fault on our side and it has been logged; trying again is unlikely to help."
         },
-        source: restSource("order", "Controllers/OrderController.cs", 108, 115)
+        source: restSource("order", "Controllers/OrderController.cs", 111, 118)
       },
       {
         status: 502,
@@ -1047,7 +1072,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           message:
             "the shipping fee could not be confirmed against the courier quote, so this order was not placed. Nothing has been charged or reserved."
         },
-        source: restSource("order", "Controllers/OrderController.cs", 133, 138)
+        source: restSource("order", "Controllers/OrderController.cs", 136, 141)
       },
       {
         status: 502,
@@ -1057,7 +1082,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           message:
             "the amounts on this order do not add up to something that can be charged, so it was not placed. Nothing has been charged or reserved. This is a fault on our side and it has been logged; trying again is unlikely to help."
         },
-        source: restSource("order", "Controllers/OrderController.cs", 139, 146)
+        source: restSource("order", "Controllers/OrderController.cs", 142, 149)
       },
       {
         status: 503,
@@ -1067,7 +1092,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           message:
             "your cart cannot be read right now, so this order was not placed. Nothing has been charged or reserved — please try again shortly."
         },
-        source: restSource("order", "Controllers/OrderController.cs", 90, 95)
+        source: restSource("order", "Controllers/OrderController.cs", 93, 98)
       },
       {
         status: 503,
@@ -1077,7 +1102,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           productId: "KOPI-ARABIKA-250",
           message: "catalog did not answer for 'KOPI-ARABIKA-250', so its price cannot be established"
         },
-        source: restSource("order", "Controllers/OrderController.cs", 178, 183)
+        source: restSource("order", "Controllers/OrderController.cs", 181, 186)
       },
       {
         status: 503,
@@ -1087,7 +1112,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           message:
             `identity did not answer whether merchant ${merchant} may sell. Nothing has been charged or reserved; try again shortly.`
         },
-        source: restSource("order", "Controllers/OrderController.cs", 159, 163)
+        source: restSource("order", "Controllers/OrderController.cs", 162, 166)
       },
       {
         status: 503,
@@ -1097,7 +1122,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           message:
             "the merchant's store address cannot be looked up right now, so this order was not placed. Nothing has been charged or reserved — please try again shortly."
         },
-        source: restSource("order", "Controllers/OrderController.cs", 212, 217)
+        source: restSource("order", "Controllers/OrderController.cs", 215, 220)
       },
       {
         status: 503,
@@ -1107,7 +1132,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           message:
             "your address cannot be looked up right now, so this order was not placed. Nothing has been charged or reserved — please try again shortly."
         },
-        source: restSource("order", "Controllers/OrderController.cs", 206, 211)
+        source: restSource("order", "Controllers/OrderController.cs", 209, 214)
       },
       {
         status: 503,
@@ -1117,7 +1142,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           message:
             "shipping cannot be quoted right now, so this order was not placed. Nothing has been charged or reserved — please try again shortly."
         },
-        source: restSource("order", "Controllers/OrderController.cs", 102, 107)
+        source: restSource("order", "Controllers/OrderController.cs", 105, 110)
       },
       {
         status: 503,
@@ -1127,7 +1152,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           message:
             "prices cannot be confirmed right now, so this order was not placed. Nothing has been charged or reserved — please try again shortly."
         },
-        source: restSource("order", "Controllers/OrderController.cs", 96, 101)
+        source: restSource("order", "Controllers/OrderController.cs", 99, 104)
       },
       {
         status: 503,
@@ -1140,10 +1165,10 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           message:
             "a service this checkout depends on did not answer, so it was not placed. Everything it had reserved or charged has been given back. Try again shortly with a new Idempotency-Key."
         },
-        source: restSource("order", "Controllers/OrderController.cs", 247, 256)
+        source: restSource("order", "Controllers/OrderController.cs", 250, 259)
       }
     ],
-    source: restSource("order", "Controllers/OrderController.cs", 27, 37)
+    source: restSource("order", "Controllers/OrderController.cs", 30, 40)
   },
   {
     id: "order.listMyOrders",
@@ -1191,23 +1216,24 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           pageSize: 10,
           totalCount: 1
         },
-        source: restSource("order", "Controllers/OrderController.cs", 328, 334)
+        source: restSource("order", "Controllers/OrderController.cs", 335, 341)
       },
       {
         status: 400,
         when: "rest.order.listMyOrders.case.invalid",
         contentType: "application/problem+json",
         json: queryInvalid("page", "two"),
-        source: restSource("order", "Controllers/OrderController.cs", 290, 295)
+        source: restSource("order", "Controllers/OrderController.cs", 293, 298)
       },
       {
         status: 400,
         when: "rest.order.listMyOrders.case.pageOutOfRange",
         json: {
           error: "PAGE_OUT_OF_RANGE",
-          message: "page counts from 1"
+          maxPage: 10000,
+          message: "page is from 1 to 10000"
         },
-        source: restSource("order", "Controllers/OrderController.cs", 300, 302)
+        source: restSource("order", "Controllers/OrderController.cs", 303, 309)
       },
       {
         status: 400,
@@ -1217,7 +1243,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           maxPageSize: 100,
           message: "pageSize is from 1 to 100"
         },
-        source: restSource("order", "Controllers/OrderController.cs", 304, 310)
+        source: restSource("order", "Controllers/OrderController.cs", 311, 317)
       },
       {
         status: 400,
@@ -1227,10 +1253,10 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           allowedStatuses: allStatuses,
           message: "'SENT' is not an order status"
         },
-        source: restSource("order", "Controllers/OrderController.cs", 312, 323)
+        source: restSource("order", "Controllers/OrderController.cs", 319, 330)
       }
     ],
-    source: restSource("order", "Controllers/OrderController.cs", 290, 335)
+    source: restSource("order", "Controllers/OrderController.cs", 293, 342)
   },
   {
     id: "order.getOrder",
@@ -1268,10 +1294,10 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           error: "ORDER_NOT_FOUND",
           message: `Order '${orderId}' not found`
         },
-        source: restSource("order", "Controllers/OrderController.cs", 339, 348)
+        source: restSource("order", "Controllers/OrderController.cs", 369, 371)
       }
     ],
-    source: restSource("order", "Controllers/OrderController.cs", 337, 345)
+    source: restSource("order", "Controllers/OrderController.cs", 344, 374)
   },
   {
     id: "order.completeOrder",
@@ -1304,17 +1330,28 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           escrowReleased: true,
           detail: null
         },
-        source: restSource("order", "Application/Completion/OrderCompletion.cs", 44, 66)
+        source: restSource("order", "Application/Completion/OrderCompletion.cs", 71, 85)
       },
       {
         status: 200,
-        when: "rest.order.completeOrder.case.releasePending",
+        when: "rest.order.completeOrder.case.releaseRetried",
         json: {
           orderNumber,
           escrowReleased: false,
-          detail: "payment held nothing to release for this order"
+          detail:
+            "payment could not be asked to release the escrow; the release is retried until payment accepts it"
         },
-        source: restSource("order", "Application/Completion/OrderCompletion.cs", 69, 91)
+        source: restSource("order", "Application/Completion/OrderCompletion.cs", 91, 93)
+      },
+      {
+        status: 200,
+        when: "rest.order.completeOrder.case.releaseRefused",
+        json: {
+          orderNumber,
+          escrowReleased: false,
+          detail: "payment refused to release the escrow; the release is not retried and waits for staff"
+        },
+        source: restSource("order", "Application/Completion/OrderCompletion.cs", 86, 90)
       },
       {
         status: 403,
@@ -1328,16 +1365,17 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           error: "ORDER_NOT_FOUND",
           message: "no order carries that number"
         },
-        source: restSource("order", "Controllers/OrderCompletionController.cs", 41, 41)
+        source: restSource("order", "Controllers/OrderCompletionController.cs", 51, 51)
       },
       {
         status: 409,
         when: "rest.order.completeOrder.case.alreadyCompleted",
         json: {
           error: "ORDER_ALREADY_COMPLETED",
-          message: "the order is already complete; its escrow release is retried until payment accepts it"
+          message:
+            "the order is already complete, so its escrow is already owed to the merchant: released, retried while payment cannot be reached, or waiting for staff if payment refused it"
         },
-        source: restSource("order", "Controllers/OrderCompletionController.cs", 37, 40)
+        source: restSource("order", "Controllers/OrderCompletionController.cs", 46, 50)
       },
       {
         status: 409,
@@ -1346,7 +1384,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           error: "RETURN_UNRESOLVED",
           message: "a return against this order is not resolved, so the buyer may still be owed a refund"
         },
-        source: restSource("order", "Controllers/OrderCompletionController.cs", 42, 45)
+        source: restSource("order", "Controllers/OrderCompletionController.cs", 52, 55)
       },
       {
         status: 409,
@@ -1355,10 +1393,10 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           error: "ORDER_NOT_DELIVERED",
           message: "the order is PROCESSING_FULFILLMENT; only a delivered order can be completed"
         },
-        source: restSource("order", "Controllers/OrderCompletionController.cs", 46, 46)
+        source: restSource("order", "Controllers/OrderCompletionController.cs", 56, 56)
       }
     ],
-    source: restSource("order", "Controllers/OrderCompletionController.cs", 17, 48)
+    source: restSource("order", "Controllers/OrderCompletionController.cs", 19, 58)
   },
   {
     id: "order.listReturnsNeedingAttention",
@@ -1410,14 +1448,14 @@ export const orderEndpoints: readonly RestEndpoint[] = [
             lastRefundError: "payment held nothing to refund goods from"
           }
         ],
-        source: restSource("order", "Controllers/ReturnAdminController.cs", 29, 49)
+        source: restSource("order", "Controllers/ReturnAdminController.cs", 39, 63)
       },
       {
         status: 400,
         when: "rest.order.listReturnsNeedingAttention.case.invalid",
         contentType: "application/problem+json",
         json: queryInvalid("limit", "all"),
-        source: restSource("order", "Controllers/ReturnAdminController.cs", 23, 28)
+        source: restSource("order", "Controllers/ReturnAdminController.cs", 33, 36)
       },
       {
         status: 403,
@@ -1425,7 +1463,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
         source: restSource("order", "Security/OrderPolicies.cs", 11, 13)
       }
     ],
-    source: restSource("order", "Controllers/ReturnAdminController.cs", 23, 50)
+    source: restSource("order", "Controllers/ReturnAdminController.cs", 31, 64)
   },
   {
     id: "order.rejectReturn",
@@ -1472,7 +1510,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           error: "REASON_REQUIRED",
           message: "a rejection pays the merchant instead of refunding the buyer, so it must say why"
         },
-        source: restSource("order", "Controllers/ReturnAdminController.cs", 80, 83)
+        source: restSource("order", "Controllers/ReturnAdminController.cs", 101, 104)
       },
       {
         status: 403,
@@ -1486,7 +1524,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           error: "RETURN_NOT_FOUND",
           message: "no return carries that number"
         },
-        source: restSource("order", "Controllers/ReturnAdminController.cs", 76, 79)
+        source: restSource("order", "Controllers/ReturnAdminController.cs", 97, 100)
       },
       {
         status: 409,
@@ -1495,7 +1533,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           error: "RETURN_ALREADY_REJECTED",
           message: "that return was already rejected"
         },
-        source: restSource("order", "Controllers/ReturnAdminController.cs", 84, 87)
+        source: restSource("order", "Controllers/ReturnAdminController.cs", 105, 108)
       },
       {
         status: 409,
@@ -1504,10 +1542,10 @@ export const orderEndpoints: readonly RestEndpoint[] = [
           error: "GOODS_ALREADY_RECEIVED",
           message: "the goods came back, so the buyer is owed a refund and the return cannot be rejected"
         },
-        source: restSource("order", "Controllers/ReturnAdminController.cs", 88, 91)
+        source: restSource("order", "Controllers/ReturnAdminController.cs", 109, 112)
       }
     ],
-    source: restSource("order", "Controllers/ReturnAdminController.cs", 52, 93)
+    source: restSource("order", "Controllers/ReturnAdminController.cs", 66, 114)
   },
   {
     id: "order.listSagasNeedingAttention",
@@ -1567,14 +1605,14 @@ export const orderEndpoints: readonly RestEndpoint[] = [
             ]
           }
         ],
-        source: restSource("order", "Controllers/SagaAdminController.cs", 26, 72)
+        source: restSource("order", "Controllers/SagaAdminController.cs", 55, 106)
       },
       {
         status: 400,
         when: "rest.order.listSagasNeedingAttention.case.invalid",
         contentType: "application/problem+json",
         json: queryInvalid("limit", "all"),
-        source: restSource("order", "Controllers/SagaAdminController.cs", 21, 25)
+        source: restSource("order", "Controllers/SagaAdminController.cs", 25, 28)
       },
       {
         status: 403,
@@ -1582,7 +1620,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
         source: restSource("order", "Security/OrderPolicies.cs", 11, 13)
       }
     ],
-    source: restSource("order", "Controllers/SagaAdminController.cs", 21, 73)
+    source: restSource("order", "Controllers/SagaAdminController.cs", 24, 38)
   },
   {
     id: "order.countSagasNeedingAttention",
@@ -1603,7 +1641,7 @@ export const orderEndpoints: readonly RestEndpoint[] = [
         status: 200,
         when: "rest.order.countSagasNeedingAttention.case.count",
         json: 3,
-        source: restSource("order", "Controllers/SagaAdminController.cs", 75, 80)
+        source: restSource("order", "Controllers/SagaAdminController.cs", 40, 53)
       },
       {
         status: 403,
@@ -1611,6 +1649,6 @@ export const orderEndpoints: readonly RestEndpoint[] = [
         source: restSource("order", "Security/OrderPolicies.cs", 11, 13)
       }
     ],
-    source: restSource("order", "Controllers/SagaAdminController.cs", 75, 80)
+    source: restSource("order", "Controllers/SagaAdminController.cs", 40, 53)
   }
 ];

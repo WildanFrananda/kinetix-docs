@@ -3,13 +3,13 @@ title: Keranjang
 description: Menyimpan keranjang pembeli yang sedang masuk di order, serta memeriksa dan memasang voucher dengan pricing sebelum checkout.
 sidebar:
   order: 8
-sourceHash: "b1e1582e0d8f"
+sourceHash: "02abf7b309a0"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
 
 order menyimpan satu keranjang per pembeli yang sedang masuk, di bawah `sub` milik access token; keranjang
-butuh sesi dari [Daftar dan masuk](/id/apis/rest/buyer-app/sign-up-and-sign-in/). Setiap baris memegang harga
+butuh session dari [Daftar dan masuk](/id/apis/rest/buyer-app/sign-up-and-sign-in/). Setiap baris memegang harga
 catalog pada saat baris itu ditambahkan, sebuah perkiraan yang diganti [checkout](/id/apis/rest/buyer-app/checkout/)
 dengan hitungan harganya sendiri. Aplikasi membaca keranjang (langkah 1) dan mengubah baris-barisnya (langkah 2
 sampai 4). Kode voucher dibaca dan diperiksa di pricing (langkah 5 dan 6), lalu dipasang di keranjang atau
@@ -55,9 +55,9 @@ dengan keranjang ini adalah urusan langkah 6.
 
 Sebuah pratinjau: `code` seperti yang diketik pembeli, `cart_subtotal`, dan `merchant_principal_id` dari
 `merchantPrincipalId` di baris-baris keranjang. `subtotal` keranjang memakai harga catalog
-([CustomerCart.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a9473a17c546faa7e41be843343b0bd882435964/Domain/Entities/CustomerCart.cs#L7)),
+([CustomerCart.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Domain/Entities/CustomerCart.cs#L7)),
 sedangkan checkout membandingkan `min_spend` dengan subtotal setelah flash sale dan diskon
-([pricing_service.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/d3020a29ca7ac6fcc2d5a7e472a6b234cc783d0d/src/services/pricing_service.rs#L151-L219)).
+([pricing_service.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0ed7db4cd6fb8d40375cab26dd7ac56ebce16a8a/src/services/pricing_service.rs#L151-L219)).
 Bila dikirim dengan `subtotal` keranjang, pratinjau bisa menerima kode yang tidak akan diberikan checkout;
 `appliedVoucher` di order menyatakan apa yang diberikan checkout.
 
@@ -79,7 +79,12 @@ order.
 
 ## 9. Mengosongkan keranjang
 
-Hanya untuk aksi "kosongkan keranjang" yang eksplisit. Order yang berhasil dibuat mengosongkan keranjang
-dengan sendirinya, jadi setelah checkout aplikasi membaca keranjang lagi alih-alih mengosongkannya.
+Hanya untuk aksi "kosongkan keranjang" yang eksplisit. Order yang berhasil dibuat mengeluarkan dari keranjang
+baris-baris yang dibelinya, sebanyak jumlah yang dibelinya, beserta kode voucher bila kodenya masih yang dipakai
+saat checkout; baris yang ditambahkan selagi checkout berjalan tetap ada
+([CartService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/97118d2d78819ef98b74a21efb4ebc4c8247e4e8/Application/Services/CartService.cs#L115-L152)).
+Jadi setelah checkout aplikasi membaca keranjang lagi
+([langkah 4 Checkout](/id/apis/rest/buyer-app/checkout/#4-membaca-keranjang-lagi)) dan tidak pernah
+mengosongkannya.
 
 <RestEndpoint id="order.clearCart" />
