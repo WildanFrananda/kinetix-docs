@@ -1,7 +1,7 @@
 import type { RestMessage } from "../types/rest_message.type";
 import type { RestSocket } from "../types/rest_socket.type";
 import { bff } from "./bff";
-import { restHosts } from "./rest_hosts";
+import { restOrigins } from "./rest_origins";
 import { webAppHosts } from "./web_app_hosts";
 
 export function messageHeaders(message: RestMessage): readonly string[] {
@@ -25,7 +25,7 @@ export function socketHeaders(socket: RestSocket): readonly string[] {
 
   return [
     `Cookie: ${bff.sessionCookie}=<session>`,
-    `Origin: https://${restHosts[webAppHosts[socket.via]]}`,
+    `Origin: ${restOrigins[webAppHosts[socket.via]]}`,
     ...messageHeaders(socket.request)
   ];
 }

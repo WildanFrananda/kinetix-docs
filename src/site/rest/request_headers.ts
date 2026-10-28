@@ -3,12 +3,12 @@ import type { RestWebApp } from "../types/rest_web_app.type";
 import { bff } from "./bff";
 import { changesState } from "./changes_state";
 import { messageHeaders } from "./message_headers";
-import { restHosts } from "./rest_hosts";
+import { restOrigins } from "./rest_origins";
 import { webAppHosts } from "./web_app_hosts";
 
 function browserHeaders(endpoint: RestEndpoint, via: RestWebApp): readonly string[] {
   const cookie = endpoint.service === "edge" ? [] : [`Cookie: ${bff.sessionCookie}=<session>`];
-  const origin = changesState(endpoint.method) ? [`Origin: https://${restHosts[webAppHosts[via]]}`] : [];
+  const origin = changesState(endpoint.method) ? [`Origin: ${restOrigins[webAppHosts[via]]}`] : [];
 
   return [...cookie, ...origin];
 }

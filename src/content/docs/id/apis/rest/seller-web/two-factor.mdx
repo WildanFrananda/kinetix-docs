@@ -3,7 +3,7 @@ title: Autentikasi dua faktor
 description: Cara penjual yang sudah masuk menyalakan faktor kedua untuk akunnya sendiri dengan aplikasi authenticator, lalu mematikannya lagi, di identity lewat edge.
 sidebar:
   order: 2
-sourceHash: "0031bbd0dc64"
+sourceHash: "e41459877e25"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -19,7 +19,7 @@ penjual lebih dulu menjawab `mfaRequired`, yang dijawab aplikasi seperti di
 
 `401` dari identity pada panggilan-panggilan ini menyangkut password, bukan session: edge meneruskan jawaban
 identity apa adanya dan tidak mengusik session-nya
-([forward.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/src/http/forward.tl#L74-L81)),
+([forward.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/forward.tl#L74-L81)),
 jadi aplikasi meminta password lagi, bukan meminta masuk ulang. `429` `SIGN_IN_DELAYED` berarti terlalu banyak
 pemeriksaan password atau kode akun itu berturut-turut: aplikasi menunggu sejumlah detik di `Retry-After`.
 

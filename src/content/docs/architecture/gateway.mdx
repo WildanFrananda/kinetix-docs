@@ -1,6 +1,6 @@
 ---
 title: Gateway
-description: The one door into Kinetix from outside. Kong, configured declaratively from Pkl, answers four public hosts over TLS only, sends each path to the service that owns it, checks tokens on some routes as a first lock, keeps the admin-only routes to the staff network, and limits, labels and counts every request.
+description: The one door into Kinetix from outside. Kong, configured declaratively from Pkl, answers three public hosts over TLS only and the backoffice at two unpublished addresses, sends each path to the service that owns it, checks tokens on some routes as a first lock, keeps the admin-only routes to the staff network, and limits, labels and counts every request.
 sidebar:
   order: 4
 ---
@@ -9,55 +9,61 @@ import GatewayRoutes from "../../../components/GatewayRoutes.astro";
 
 Everything a browser, an integration or the courier app asks of Kinetix arrives at one place: Kong, running
 without a database, with its whole configuration written in
-[Pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl)
+[Pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl)
 and rendered to Kong's declarative format. This page is checked against the gateway
-[v1.6.0](https://github.com/WildanFrananda/kinetix-api-gateway/tree/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d),
+[v1.7.0](https://github.com/WildanFrananda/kinetix-api-gateway/tree/0d06d2eb845d0a32d79cb710f4829c19963ef60e),
 the version in production, on
 [Kong 3.9.4](https://github.com/Kong/kong/tree/ddc85be461165c9eb4506669343aa0d0c627e687), the version the
-image's [pinned digest](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/Dockerfile#L57-L60)
+image's [pinned digest](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/Dockerfile#L61-L64)
 carries. What a client sends and gets back is in the [REST reference](/apis/rest/); this page is about why
 the gateway is built the way it is.
 
-## Four hosts
+## Hosts
 
-Kong answers four public hosts, and each serves something different:
+Kong answers three public hosts and the backoffice's two unpublished addresses, and each serves something
+different:
 
 - **`api.wildanfrananda.my.id`** serves the API: every route under `/api/v1/`, identity's signing keys, matching's
   two WebSockets, and two answers Kong gives itself.
 - **`storage.wildanfrananda.my.id`** holds uploaded files. Every path on it goes to the object store,
-  [with the `Host` header kept and 16 MB a request](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L458-L480):
+  [with the `Host` header kept and 16 MB a request](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L507-L529):
   an upload's URL is signed over the host the phone sends, so a rewritten host would fail every signature.
-- **`seller.wildanfrananda.my.id`** and **`backoffice.wildanfrananda.my.id`** are the two web apps' hosts. On
-  them Kong sends
-  [`/bff/` and everything under it to the edge](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L191-L212),
+- **`seller.wildanfrananda.my.id`** is the seller web app's host. On it Kong sends
+  [`/bff/` and everything under it to the edge](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L243-L249),
   path and `Host` unchanged, so that the [edge](/services/edge/) can tell the apps apart by host.
-  [Every other path on them](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L214-L228)
+  [Every other path on it](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L251-L257)
   is answered by Kong with
-  [`404 Not found`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L141-L147),
+  [`404 Not found`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L171-L177),
   `/api/v1/` included.
+- **The backoffice** has no public host. Staff reach it at two addresses that are not published: a Tor onion
+  service, which comes into Kong on [a listener of its own](#tls-outside-and-two-listeners-inside), and an address
+  on Kinetix's staff network behind [the staff gate](#the-staff-gate). At both, Kong sends
+  [`/bff/` to the edge](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L227-L241) with `Host` unchanged, and
+  [every other path to the backoffice's static app](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L261-L279).
 
-The last rule matters more than it looks. The API's routes name no host, so without it they would answer on
-the web apps' hosts too, and an API answer served under a web app's origin is content on the origin that
-holds that app's session cookie. A web app reaches the API only through `/bff/`, where the edge decides what
+The last rule for the seller web matters more than it looks. The API's routes name no host, so without it they
+would answer on the seller web's host too, and an API answer served under a web app's origin is content on the
+origin that holds that app's session cookie. On the backoffice's addresses the app's own route takes every path
+outside `/bff/` for the same reason. A web app reaches the API only through `/bff/`, where the edge decides what
 to forward. The [REST reference](/apis/rest/#address-and-transport) gives every host with an example request.
 
-## TLS outside, and one listener inside
+## TLS outside, and two listeners inside
 
 The gateway has
-[two listeners](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/Dockerfile#L83-L87),
+[three listeners](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/Dockerfile#L87-L91),
 and only the one that speaks TLS faces the internet. Nothing answers plain HTTP from outside: a port that
 still answers in plaintext is a port clients keep using, and every token the gateway checks would cross the
 network in clear on its way to being checked. The container
-[refuses to start without a certificate](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/bin/entrypoint.sh#L144-L148).
+[refuses to start without a certificate](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/bin/entrypoint.sh#L150-L154).
 So a client always speaks `https://`, and a WebSocket from a client is always `wss://`.
 
 The second listener exists only inside Kinetix's network, and only the edge uses it: when a web app's call
 under `/bff/api/` has to reach a service, or the seller web opens its socket, the edge sends it there. Every API
 route is written once and
-[rendered twice](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L109-L139):
+[rendered twice](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L130-L160):
 the route the TLS listener serves, and a twin with the same paths, methods, service, path rewrite and token
 check, which the internal listener serves.
-[A guard on every twin](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L100-L107)
+[A guard on every twin](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L112-L119)
 refuses a request that did not arrive in plain HTTP on that listener, reading the connection rather than a
 header, so a request from outside that names a twin's host is refused before anything else runs.
 
@@ -69,6 +75,13 @@ socket has one, for the edge, as [WebSockets](#websockets) explains. Behind both
 the private network, Kong reaches each service over plain HTTP. Calls between services take a different path
 altogether: gRPC over mutual TLS, described in [Who is calling?](/learn/who-is-calling/).
 
+The third listener exists for the backoffice's onion service alone. Tor carries the browser's connection,
+encrypted and authenticated end to end, to a Tor process inside Kinetix's network, which hands it to this listener
+in plain HTTP; nothing outside that network reaches the port. Only the backoffice's two onion routes answer there,
+each behind [a guard of the same kind](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L121-L128), and the onion address named on the TLS
+listener gets `421`. Those routes carry the rate limit but not the staff gate: their peer is always the Tor
+process, and Tor's client authorization has already decided who may connect.
+
 ## Where each path goes
 
 Generated from the same verified data as the [system map](/architecture/system-map/):
@@ -77,20 +90,20 @@ Generated from the same verified data as the [system map](/architecture/system-m
 
 A route is a path prefix. Most services receive the path exactly as the client sent it; a few have the
 prefix rewritten to their own — catalog's `/api/v1/products` arrives as
-[`/api/products`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L283-L293),
+[`/api/products`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L332-L342),
 warehouse's `/api/v1/warehouse` as
-[`/api/v1`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L330-L340).
+[`/api/v1`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L379-L389).
 `/bff/` is routed on the two web apps' hosts only.
 
 Three more things Kong serves are not on the map:
 
 - `/health` and `/.well-known/security.txt`, which
-  [Kong answers itself](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L152-L189)
+  [Kong answers itself](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L182-L219)
   without reaching any service. `/health` says only `{"status":"ok"}`; `security.txt` is the
-  [RFC 9116 contact](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L40-L47)
+  [RFC 9116 contact](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L52-L59)
   that points to [how to report a vulnerability](/reference/report-a-vulnerability/).
 - The payment provider's notifications,
-  [`POST` only](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L537-L553).
+  [`POST` only](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L586-L602).
   They carry no token, because the provider has none to send; payment verifies each notification's
   signature instead, as the [payment page](/services/payment/) describes.
 - The storage host, every path of which goes to the object store.
@@ -98,7 +111,7 @@ Three more things Kong serves are not on the map:
 ## WebSockets
 
 Two sockets, both served by matching:
-[`/ws/v1/matching/driver` and `/ws/v1/matching/merchant`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L426-L456),
+[`/ws/v1/matching/driver` and `/ws/v1/matching/merchant`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L475-L505),
 each also with `/websocket` after it, the form Phoenix's JavaScript client dials. A WebSocket starts as an
 ordinary HTTP request asking to upgrade, so Kong routes it like any other request and then passes the
 upgraded connection through. The access token travels with the connection request, and matching checks it
@@ -115,14 +128,14 @@ The seller web holds no token, so it cannot open the merchant socket on the API 
 opens its own. It asks the edge instead, on its own host, and the edge opens the socket to matching for it with
 the session's access token, as the [edge](/services/edge/#the-seller-webs-merchant-socket) describes. That
 connection goes through the internal listener, so the merchant socket's route is
-[written like an API route](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L441-L456)
+[written like an API route](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L490-L505)
 and rendered with a twin: the same two paths and the same service, the guard first, and no staff gate, rate
 limit or token check at Kong, because matching checks the token and the role itself. Kong passes an
 upgrade through a plain-HTTP route as it does through a TLS one, so
-[the twin needs nothing the API's twins lack](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/CLAUDE.md#L242-L249).
+[the twin needs nothing the API's twins lack](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/CLAUDE.md#L249-L256).
 
 The twin stays inside the way every twin does.
-[It names only the gateway's internal host, over plain HTTP](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L120-L135),
+[It names only the gateway's internal host, over plain HTTP](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L141-L156),
 and its guard refuses with `421` anything that did not arrive in plain HTTP on the internal listener, which
 nothing outside Kinetix's network can reach. A plain-HTTP request for the same path that names any other host
 matches no twin and gets Kong's `426`. The courier's socket has no twin at all: the courier app dials the TLS
@@ -135,7 +148,7 @@ Phoenix
 and its JavaScript client
 [sends a heartbeat every 30](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/assets/js/phoenix/socket.js#L174).
 The edge waits
-[90 seconds](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/nginx/nginx.conf#L102-L105)
+[90 seconds](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/nginx/nginx.conf#L102-L105)
 on a quiet merchant socket, so that the proxy is never what ends a socket Phoenix still holds. Kong, by default,
 [gives up after 60 seconds](https://github.com/Kong/kong/blob/ddc85be461165c9eb4506669343aa0d0c627e687/kong/db/schema/entities/services.lua#L40-L42)
 without reading from or writing to a service, and the seller web's socket passes Kong twice: on `/bff/`, between
@@ -143,8 +156,8 @@ the browser and the edge, and on the twin, between the edge and matching. Left a
 quiet socket before either end meant to. So both of Kong's services on that path, the edge's, which takes
 `/bff/` on both web apps' hosts, and the merchant socket's, which takes its public route and its twin, read
 and write for 90 seconds
-([the edge's](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L191-L195),
-[the socket's](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L441-L445)).
+([the edge's](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L221-L225),
+[the socket's](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L490-L494)).
 Connecting still times out at Kong's default, and every other service keeps Kong's defaults. The price is paid
 where something stalls: a `/bff/` call or a merchant socket, the public route included, that hears nothing now
 waits 90 seconds for Kong's `504` or close instead of 60.
@@ -153,9 +166,9 @@ waits 90 seconds for Kong's `504` or close instead of 60.
 
 On five groups of routes — identity's signed-in routes, matching's REST API, payment, notary and
 notification's handset registration — Kong
-[checks the access token before the request moves on](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L49-L58).
+[checks the access token before the request moves on](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L61-L70).
 It knows
-[one signer: identity, by its issuer, with identity's public key and RS256](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L601-L613),
+[one signer: identity, by its issuer, with identity's public key and RS256](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L650-L662),
 and it checks the signature and that the token has not expired. A token from anyone else, unsigned, or
 signed with another algorithm is refused at the door with `401`.
 
@@ -164,7 +177,7 @@ Kong reads the token from `Authorization` and nowhere else. Its `jwt` plugin
 and
 [its default reads a query parameter named `jwt`](https://github.com/Kong/kong/blob/ddc85be461165c9eb4506669343aa0d0c627e687/kong/plugins/jwt/schema.lua#L12-L23).
 A token in a URL ends up in access logs, in browser history and in the `Referer` of the next page, so
-[Kinetix names no query parameter and no cookie](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L54-L55).
+[Kinetix names no query parameter and no cookie](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L66-L67).
 A token sent anywhere but `Authorization: Bearer …` is a missing token, and the request gets
 [`401` with `{"message":"Unauthorized"}`](https://github.com/Kong/kong/blob/ddc85be461165c9eb4506669343aa0d0c627e687/kong/plugins/jwt/handler.lua#L160-L166)
 before it leaves the gateway. The sockets carry no Kong token check: matching reads their token itself.
@@ -181,100 +194,102 @@ the edge holds the tokens.
 
 The routes only an admin may call answer only Kinetix's staff network. Each has a route of its own carrying
 Kong's
-[`ip-restriction`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L60-L67),
+[`ip-restriction`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L72-L79),
 which admits only the address ranges the environment names when the container starts:
 
 - identity's lists of seller and courier applications, and approving or rejecting one
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L266-L279));
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L315-L328));
 - catalog's category writes; reading the categories stays public
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L320-L326));
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L369-L375));
 - warehouse's bins, stock receipts and stock adjustments
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L342-L379));
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L391-L428));
 - matching's drivers and its backoffice API
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L394-L424));
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L443-L473));
 - order's sagas, the returns that need attention, rejecting a return and completing an order
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L507-L518));
-- and the whole backoffice: every call under `/bff/` on its host, sign-in included
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L197-L204)).
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L556-L567));
+- and the whole backoffice at its staff-network address: the app and every call under `/bff/`, sign-in included
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L227-L234), [L265-L271](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L265-L271)).
+  Its onion service has no staff gate: there, Tor's client authorization decides who connects.
 
 The gate reads
 [the address of the connection](https://github.com/Kong/kong/blob/ddc85be461165c9eb4506669343aa0d0c627e687/kong/plugins/ip-restriction/handler.lua#L67-L92),
 not a header a client could write, and anyone else gets `403` with a fixed message that does not repeat the
 caller's address. On identity's and matching's admin routes
-[Kong's token check runs first](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/CLAUDE.md#L77-L82),
+[Kong's token check runs first](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/CLAUDE.md#L79-L84),
 so a request with no valid token gets the `401` before the gate is asked.
 
 The gate is a second lock behind the services' own role checks, not a replacement for them.
-[An endpoint that a user or an admin may call](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/CLAUDE.md#L51-L54),
+[An endpoint that a user or an admin may call](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/CLAUDE.md#L53-L56),
 such as reading a seller's application, is not fenced: a network cannot tell the two callers apart, so the
 service decides. The ranges themselves are configuration, not code;
-[the container refuses to start without them](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/bin/entrypoint.sh#L31-L34),
+[the container refuses to start without them](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/bin/entrypoint.sh#L31-L34),
 and the Pkl
-[refuses an empty list and a range that admits every address](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L16-L18).
+[refuses an empty list and a range that admits every address](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L16-L18).
 
 ## Limits, labels and counts
 
 Every request:
 
 - is limited, on the routes the TLS listener serves, to
-  [100 requests a minute from one client address](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L69-L77)
+  [100 requests a minute from one client address](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L81-L89)
   on each route, counted on the gateway itself. The limit is
-  [added to every route on the TLS listener](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L112-L118)
+  [added to every route on the TLS listener](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L133-L139)
   rather than once for the whole gateway,
-  [because Kong cannot leave a route out of a global plugin](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/CLAUDE.md#L180-L186)
+  [because Kong cannot leave a route out of a global plugin](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/CLAUDE.md#L187-L193)
   and the twins must carry none; Kong
   [keeps a route's count under that route](https://github.com/Kong/kong/blob/ddc85be461165c9eb4506669343aa0d0c627e687/kong/plugins/rate-limiting/policies/init.lua#L68-L73),
   so one address has a budget on each route. A route is one service's group of paths, and `/bff/` on a web
   app's host is one route: a browser's sign-in and all its calls through the edge share it. The payment
   provider's notifications have
-  [a limit of their own, 600 a minute](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L537-L553),
+  [a limit of their own, 600 a minute](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L586-L602),
   so a burst of payments is not throttled by the limit meant for people. The [REST reference](/apis/rest/#limits)
   lists which paths count together;
-- carries an [`X-Request-Id`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L616-L623):
+- carries an [`X-Request-Id`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L665-L672):
   the client's if it sent one, a new UUID if not, echoed back in the response so a support request can
   name the exact call;
-- is [counted for Prometheus](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L624-L633)
+- is [counted for Prometheus](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L673-L682)
   by status, latency and upstream health.
 
 ## Browsers
 
 Kong adds its `cors` plugin to a route
-[only when the environment names browser origins](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L112-L118),
+[only when the environment names browser origins](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L133-L139),
 and never to `/bff/`
-([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L137-L139)).
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L158-L160)).
 Production names none, so in production Kong answers no CORS preflight and adds no `Access-Control-*` header.
 A preflight to the API host goes to the service like any other request:
-[Kong's token check skips `OPTIONS`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L49-L58).
+[Kong's token check skips `OPTIONS`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L61-L70).
 
 The web apps need no CORS. A page calls `/bff/` on its own host, the same origin as the page, and the edge
 calls the API for it with a token the page never sees; the [edge](/services/edge/) explains why. The courier
 app is not a browser and sends no `Origin`. The [REST reference](/apis/rest/#browsers) says what this means for
 a client. Where an environment does name origins, as a lab may, the plugin
-[never allows credentials](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L79-L98),
+[never allows credentials](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L91-L110),
 and a `*` beside a named origin
-[does not even evaluate](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L13-L14).
+[does not even evaluate](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L13-L14).
 
 ## One image for every environment
 
 The image carries the Pkl, not a rendered configuration. When the container starts it
-[renders the configuration](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/bin/entrypoint.sh#L17-L85)
+[renders the configuration](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/bin/entrypoint.sh#L17-L91)
 from the environment's own values — identity's public key, the issuer to trust, the browser origins (which
-may be none, but must be stated), the staff ranges and the hosts — refuses to start if any is missing, and
-checks that the result contains a key to verify tokens with, the staff gate, and a guard on every twin: a
-gateway with no verification key would route everything and authenticate nothing. The digest CI scanned is
-therefore the digest that runs everywhere.
+may be none, but must be stated), the staff ranges and the hosts, the onion address among them — refuses to start
+if any is missing, and checks that the result contains a key to verify tokens with, the staff gate, and a guard on
+every twin and on both onion routes: a gateway with no verification key would route everything and authenticate
+nothing. The digest CI scanned is therefore the digest that runs everywhere.
 
 Every change is evaluated before it merges.
-[CI renders the Pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/.github/workflows/ci.yml#L44-L164)
+[CI renders the Pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/.github/workflows/ci.yml#L46-L182)
 with a throwaway key and proves that an empty origin list leaves CORS out and that `*` beside a named origin
 is refused; that a render without staff ranges, or with a range that admits everyone, is refused, and that the
-gate sits on nine routes; that `/bff/` on the two web apps' hosts goes to the edge, nothing else does, and
-every API route and the merchant socket have their twins; and that
-[no `jwt` plugin reads a query or a cookie, and only the edge's and the merchant socket's services wait 90 seconds](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/test/config_invariants.jq#L36-L46).
+gate sits on ten routes; that `/bff/` on the two web apps' hosts goes to the edge, the rest of the backoffice's
+host to its app, and nothing else answers there; that the onion address has exactly its two guarded plaintext
+routes; that every API route and the merchant socket have their twins; and that
+[no `jwt` plugin reads a query or a cookie, and only the edge's and the merchant socket's services wait 90 seconds](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/test/config_invariants.jq#L40-L50).
 The image build
-[renders it once more](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/Dockerfile#L16-L55),
+[renders it once more](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/Dockerfile#L16-L59),
 and then
-[a probe runs the image itself](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/.github/workflows/ci.yml#L200-L204)
+[a probe runs the image itself](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/.github/workflows/ci.yml#L218-L222)
 from addresses inside and outside a staff range, through both listeners, and
-[sends a valid token in the query and in a cookie](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/test/edge_probe/checks.sh#L81-L98)
+[sends a valid token in the query and in a cookie](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/test/edge_probe/checks.sh#L81-L98)
 to every route Kong checks, which must answer as if it carried none.

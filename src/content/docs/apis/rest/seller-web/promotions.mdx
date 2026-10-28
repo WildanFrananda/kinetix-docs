@@ -12,7 +12,7 @@ flash sales of one product. Each is created, then read back; once created, a pro
 ended early. Every create needs a session whose role is `seller`, for a merchant identity lets trade, and an
 `Idempotency-Key` header with a new key for each promotion, which the edge passes on, as it passes
 `Idempotent-Replayed` back
-([forwarding.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/config/forwarding.tl#L11-L19)).
+([forwarding.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/forwarding.tl#L11-L19)).
 Pricing looks the key up before it checks the promotion's terms or asks identity and catalog, and records it in
 the same transaction as the promotion, so one key creates at most one promotion
 ([discount_routes.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0ed7db4cd6fb8d40375cab26dd7ac56ebce16a8a/src/routes/discount_routes.rs#L22-L51),

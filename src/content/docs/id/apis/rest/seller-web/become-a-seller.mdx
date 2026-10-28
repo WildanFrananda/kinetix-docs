@@ -3,7 +3,7 @@ title: Menjadi penjual
 description: Cara sebuah akun dibuat di web penjual, mengajukan diri untuk berjualan, menunggu keputusan admin dan mendapat role penjual di session-nya, lewat identity melalui edge.
 sidebar:
   order: 3
-sourceHash: "e07951910202"
+sourceHash: "246fb741a4d8"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -19,7 +19,7 @@ Penjual mengetik email dan password. Edge meminta identity membuat akun itu, yan
 `customer` seperti setiap akun baru
 ([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/auth_usecase.service.ts#L139-L154)),
 dan memulai session-nya dalam jawaban yang sama, seperti saat masuk
-([sign_up.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/src/http/sign_up.tl#L30-L49)).
+([sign_up.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sign_up.tl#L30-L49)).
 Jawaban `201` adalah session itu: browser memegang `__Host-kx_session`, dan karena akun baru belum punya faktor
 kedua, tidak ada proses masuk maupun kode yang menyusul. Setelah `409` `EMAIL_TAKEN` akun itu sudah ada, dan
 aplikasi masuk sebagai gantinya ([Masuk](/id/apis/rest/seller-web/sign-in/), langkah 1 dan 2). Akun yang sudah
@@ -60,12 +60,12 @@ identity menerbitkannya
 ([token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/token.service.ts#L90-L104)),
 dan edge menyimpan role dari token terbaru milik session. Edge memperbarui token session pada panggilan
 `/bff/api/` pertama, atau pembukaan socket merchant, yang dibuat setelah access token tinggal kurang dari 60 detik
-([session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/src/http/session_use.tl#L48-L55),
-[timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/config/timing.tl#L4)).
+([session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/session_use.tl#L48-L55),
+[timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/timing.tl#L4)).
 identity membaca role dari akun untuk pasangan token yang baru
 ([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/auth_usecase.service.ts#L157-L210)),
 dan edge menyimpannya sebagai role session
-([sessions.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/src/http/sessions.tl#L418-L432)).
+([sessions.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sessions.tl#L418-L432)).
 Access token dari identity berlaku 15 menit (`expiresIn` 900), jadi aplikasi yang terus memanggil `/bff/api/`
 mendapat role `seller` dalam sekitar 15 menit setelah persetujuan, di `GET /bff/session`
 ([Masuk](/id/apis/rest/seller-web/sign-in/), langkah 3) maupun di setiap service. Sebelum itu, endpoint penjual

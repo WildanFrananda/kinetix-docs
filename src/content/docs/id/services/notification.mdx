@@ -1,7 +1,7 @@
 ---
 title: notification
 description: Push dan email untuk orang-orang yang berkepentingan dengan sebuah order. notification memiliki device token milik handset dan catatan setiap pesan yang ia terima; sebuah service hanya boleh memintanya mengirim template yang diberikan kepadanya, dan sebuah handset hanya mendaftarkan dirinya sendiri.
-sourceHash: "6186b4aeeb6b"
+sourceHash: "be8281469177"
 ---
 
 import ServiceCalls from "../../../../components/ServiceCalls.astro";
@@ -29,7 +29,7 @@ memberi tahu para pemegang bahwa statement atas saldo mereka sudah siap. Route u
 ## Apa yang dilayaninya
 
 Lewat HTTP, melalui gateway,
-[satu route](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L586-L598):
+[satu route](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L635-L647):
 `POST /api/v1/notifications/devices` mendaftarkan handset pemanggil untuk push, `POST` di
 `/api/v1/notifications/devices/verify` menyelesaikan pendaftaran yang harus dibuktikan dulu, dan `DELETE`
 melupakan sebuah handset. Ketiganya memerlukan access token, yang diperiksa gateway lalu diperiksa lagi oleh

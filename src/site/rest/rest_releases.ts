@@ -4,13 +4,13 @@ import type { RestService } from "../types/rest_service.type";
 export const restReleases: Readonly<Record<RestService, RestRelease>> = {
   gateway: {
     repository: "kinetix-api-gateway",
-    tag: "v1.6.0",
-    commit: "45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d"
+    tag: "v1.7.0",
+    commit: "0d06d2eb845d0a32d79cb710f4829c19963ef60e"
   },
   edge: {
     repository: "kinetix-edge-service",
-    tag: "v1.1.0",
-    commit: "cddf1d4069472c90eb5ccc9f22b287be98417d12"
+    tag: "v1.2.0",
+    commit: "400b6e95f432defbf2b52a81ab3096d4b5cf77ca"
   },
   identity: {
     repository: "kinetix-identity-service",

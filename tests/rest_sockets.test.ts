@@ -2,10 +2,11 @@ import { describe, expect, test } from "bun:test";
 import { bff } from "../src/site/rest/bff";
 import { messageHeaders, socketHeaders } from "../src/site/rest/message_headers";
 import { phoenixRelease } from "../src/site/rest/phoenix_release";
-import { restHosts } from "../src/site/rest/rest_hosts";
+import { restOrigins } from "../src/site/rest/rest_origins";
 import { restReleases } from "../src/site/rest/rest_releases";
 import { restSocket, restSocketMessages, restSockets } from "../src/site/rest/rest_sockets";
 import { frameCode } from "../src/site/rest/socket_frame";
+import { socketOrigin } from "../src/site/rest/socket_origin";
 import { socketUrl } from "../src/site/rest/socket_url";
 import { statusReasons } from "../src/site/rest/status_reasons";
 import { webAppHosts } from "../src/site/rest/web_app_hosts";
@@ -85,6 +86,12 @@ describe("socket frames", () => {
 });
 
 describe("socket addresses and headers", () => {
+  test("a socket opens on its page's origin with the matching scheme, and an unpublished origin stays a placeholder", () => {
+    expect(socketOrigin("https://seller.wildanfrananda.my.id")).toBe("wss://seller.wildanfrananda.my.id");
+    expect(socketOrigin("http://example.onion")).toBe("ws://example.onion");
+    expect(socketOrigin(restOrigins.backoffice)).toBe("<backoffice origin>");
+  });
+
   test("a socket the client opens directly is on its host, with only the headers it sets", () => {
     const direct = probe(undefined);
 
@@ -94,7 +101,7 @@ describe("socket addresses and headers", () => {
 
   test("a socket a web app opens through its edge is on the app's host under /bff, with the cookie and Origin", () => {
     expect(socketUrl(probe("seller-web"))).toBe("wss://seller.wildanfrananda.my.id/bff/ws/v1/example?vsn=2.0.0");
-    expect(socketUrl(probe("backoffice"))).toBe("wss://backoffice.wildanfrananda.my.id/bff/ws/v1/example?vsn=2.0.0");
+    expect(socketUrl(probe("backoffice"))).toBe("<backoffice origin>/bff/ws/v1/example?vsn=2.0.0");
     expect(socketHeaders(probe("seller-web"))).toEqual([
       "Cookie: __Host-kx_session=<session>",
       "Origin: https://seller.wildanfrananda.my.id",
@@ -108,7 +115,7 @@ describe("socket addresses and headers", () => {
 
       test("it opens on its web app's host, never one of its own", () => {
         expect(socket.host).toBeUndefined();
-        expect(socketUrl(socket).startsWith(`wss://${restHosts[webAppHosts[via]]}${bff.prefix}/ws/`)).toBe(true);
+        expect(socketUrl(socket).startsWith(`${socketOrigin(restOrigins[webAppHosts[via]])}${bff.prefix}/ws/`)).toBe(true);
       });
 
       test("the browser sends the session cookie and never a token", () => {

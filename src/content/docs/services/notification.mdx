@@ -26,7 +26,7 @@ tells holders that a statement of their balance is ready. The handset routes are
 ## What it serves
 
 Over HTTP, through the gateway,
-[one route](https://github.com/WildanFrananda/kinetix-api-gateway/blob/45fea5cd0e07d5bdbe372b63fb0bdac773f64c5d/config/gateway.pkl#L586-L598):
+[one route](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L635-L647):
 `POST /api/v1/notifications/devices` registers the calling handset for push, `POST` on
 `/api/v1/notifications/devices/verify` finishes a registration that had to be proved, and `DELETE` forgets
 a handset. All three need an access token, which the gateway checks and notification checks again.

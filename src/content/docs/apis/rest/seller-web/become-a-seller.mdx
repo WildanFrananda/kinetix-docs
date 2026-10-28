@@ -18,7 +18,7 @@ The seller types an email and a password. The edge has identity create the accou
 `customer` like every new account
 ([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/auth_usecase.service.ts#L139-L154)),
 and starts its session in the same answer, as a sign-in does
-([sign_up.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/src/http/sign_up.tl#L30-L49)).
+([sign_up.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sign_up.tl#L30-L49)).
 A `201` is that session: the browser holds `__Host-kx_session`, and since a new account has no second factor, no
 sign-in and no code follow. After `409` `EMAIL_TAKEN` the account exists already, and the application signs in
 instead ([Sign in](/apis/rest/seller-web/sign-in/), steps 1 and 2). An account that already buys on Kinetix also
@@ -58,12 +58,12 @@ identity issued it
 ([token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/token.service.ts#L90-L104)),
 and the edge keeps the role of the session's latest token. The edge renews the session's tokens on the first
 `/bff/api/` call, or opening of the merchant socket, made once the access token has less than 60 seconds left
-([session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/src/http/session_use.tl#L48-L55),
-[timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/config/timing.tl#L4)).
+([session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/session_use.tl#L48-L55),
+[timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/timing.tl#L4)).
 identity reads the role from the account for the new pair
 ([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/auth_usecase.service.ts#L157-L210)),
 and the edge stores it as the session's role
-([sessions.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/cddf1d4069472c90eb5ccc9f22b287be98417d12/src/http/sessions.tl#L418-L432)).
+([sessions.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sessions.tl#L418-L432)).
 identity's access tokens last 15 minutes (`expiresIn` 900), so an application that keeps calling `/bff/api/` has
 the `seller` role within about 15 minutes of the approval, in `GET /bff/session`
 ([Sign in](/apis/rest/seller-web/sign-in/), step 3) as in every service. Until then the seller endpoints that read

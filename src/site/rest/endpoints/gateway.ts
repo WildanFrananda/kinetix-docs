@@ -173,10 +173,10 @@ export const gatewayEndpoints: readonly RestEndpoint[] = [
         when: "rest.gateway.health.case.up",
         contentType: "application/json",
         raw: '{"status":"ok"}',
-        source: restSource("gateway", "config/gateway.pkl", 162, 169)
+        source: restSource("gateway", "config/gateway.pkl", 192, 199)
       }
     ],
-    source: restSource("gateway", "config/gateway.pkl", 157, 171)
+    source: restSource("gateway", "config/gateway.pkl", 187, 201)
   },
   {
     id: "gateway.securityTxt",
@@ -198,9 +198,9 @@ export const gatewayEndpoints: readonly RestEndpoint[] = [
         when: "rest.gateway.securityTxt.case.served",
         contentType: plain,
         raw: securityTxt,
-        source: restSource("gateway", "config/gateway.pkl", 40, 47)
+        source: restSource("gateway", "config/gateway.pkl", 52, 59)
       }
     ],
-    source: restSource("gateway", "config/gateway.pkl", 173, 187)
+    source: restSource("gateway", "config/gateway.pkl", 203, 217)
   }
 ];

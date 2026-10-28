@@ -18,11 +18,16 @@ link to internal ones, because every reader of this site would get a dead link.
 
 One argued exception to hostnames, ruled by the user on 2026-10-22 ("semua base url jangan pake example"): the
 public addresses clients connect to may appear, and the REST reference uses them as its base URLs — the API host
-`api.wildanfrananda.my.id`, the storage host `storage.wildanfrananda.my.id`, and since 2026-10-26 the two web apps'
-hosts, `seller.wildanfrananda.my.id` and `backoffice.wildanfrananda.my.id`, where the browser reaches the edge under
-`/bff/`. They are public anyway (DNS, Certificate Transparency, the courier app's build configuration), so hiding
-them protects nothing. Everything behind them stays out: machine names, IPs, container names, ports, bucket names,
-the staff network's addresses. If `DOCS_DENYLIST` lists the domain, the CI `leaks` job turns red until those
+`api.wildanfrananda.my.id`, the storage host `storage.wildanfrananda.my.id`, and since 2026-10-26 the seller web's
+host, `seller.wildanfrananda.my.id`, where the browser reaches the edge under `/bff/`. They are public anyway (DNS,
+Certificate Transparency, the courier app's build configuration), so hiding them protects nothing. Everything
+behind them stays out: machine names, IPs, container names, ports, bucket names, the staff network's addresses.
+
+The backoffice is not one of them. Since 2026-10-28 it has no public host: staff reach it as a Tor onion service
+with client authorization, or at an address on the staff network when Tor misbehaves. Its former name
+`backoffice.wildanfrananda.my.id` no longer resolves and is not written here; the REST reference writes its origin
+`<backoffice origin>` (`src/site/rest/rest_origins.ts`), and neither the onion address nor the staff network's
+address ever appears. If `DOCS_DENYLIST` lists the domain, the CI `leaks` job turns red until those
 addresses are allowed there.
 
 `bun run check:leaks` enforces what a pattern can catch; concrete values are kept in the
@@ -201,8 +206,9 @@ each feature as the calls in the order the application makes them, with every re
   seller web and the backoffice never hold a token: the browser keeps the `HttpOnly` cookie `__Host-kx_session` on
   its own host, and `kinetix-edge-service` adds the bearer token. So every endpoint on a `seller-web/` or
   `backoffice/` page is written `<RestEndpoint id="…" via="seller-web" />` (or `via="backoffice"`): the same data
-  renders with the app's host, `/bff` before the path, `Cookie` instead of `Authorization`, `Origin` on
-  state-changing methods, and a link to the edge's answers. The edge's own endpoints (`endpoints/edge.ts`, ids
+  renders with the app's origin (`src/site/rest/rest_origins.ts`; the backoffice's is the placeholder
+  `<backoffice origin>`, and a socket's scheme follows the page's, `socket_origin.ts`), `/bff` before the path,
+  `Cookie` instead of `Authorization`, `Origin` on state-changing methods, and a link to the edge's answers. The edge's own endpoints (`endpoints/edge.ts`, ids
   `edge.*`, paths `/bff/…`) appear only with `via`. Mobile pages never use `via`. `tests/rest_pages.test.ts` refuses
   a web page without the right `via`, `via` anywhere else, and a call the edge refuses (`src/site/rest/bff.ts`
   mirrors the edge's `config/forwarding.tl`; move it with the edge's pin).
