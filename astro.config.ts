@@ -30,6 +30,7 @@ export default defineConfig({
         "@fontsource/ibm-plex-mono/400.css",
         "@fontsource/ibm-plex-mono/500.css",
         "@fontsource/ibm-plex-mono/600.css",
+        "./src/styles/kx-tokens.css",
         "./src/styles/theme.css"
       ],
       components: {

@@ -330,9 +330,12 @@ Do not bring any of it back.
 - Paper and ink with one accent: off-white `#f7f5f0` and near-black `#171614` in light mode, warm
   charcoal in dark, and signal orange (`--sl-color-accent`) for links, the current page and the
   hero kicker. No gradients, no shadows, no glow, no hover lift.
-- Tokens are in `src/styles/theme.css`: Starlight's colour variables for both themes, plus `--kx-rule`,
-  `--kx-rule-strong`, `--kx-surface`, `--kx-tile`, `--kx-lane-a`, `--kx-lane-b`, `--kx-radius` (3px).
-  Components use these and Starlight's variables, never literal colours.
+- Tokens are in `src/styles/kx-tokens.css`, for both themes: the three font stacks, the contrast scale
+  `--kx-fg`, `--kx-gray-1`…`--kx-gray-7`, `--kx-bg`, the accent trio, `--kx-rule`, `--kx-rule-strong`,
+  `--kx-surface`, `--kx-tile`, `--kx-lane-a`, `--kx-lane-b` and `--kx-radius` (3px). It names no framework,
+  because the backoffice copies it byte for byte with a lock (infra `docs/BACKOFFICE.md` §5); a change here is a
+  change to the backoffice's look. `src/styles/theme.css` maps Starlight's variables onto it and loads after it
+  (`customCss` order). Components use the `--kx-*` and Starlight's variables, never literal colours.
 - Type: Source Serif 4 for headings, IBM Plex Sans for text, IBM Plex Mono for code and for small
   uppercase labels. All self-hosted from Fontsource.
 - Structure is drawn with rules: a 2px ink rule over a list or table, 1px rules between rows, a rule
