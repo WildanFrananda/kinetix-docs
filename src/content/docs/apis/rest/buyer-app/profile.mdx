@@ -20,8 +20,8 @@ so the profile is where a buyer app keeps them to fill [that request](/apis/rest
 The first `PUT` creates the profile; a later one changes only the fields it sends, and a field left out keeps
 its value. The app sends only what the buyer changed, and never `null`, except as `avatarUrl: null`, which
 removes the avatar: `null` in any other field is a `400`, and nothing is saved
-([update_profile_input.dto.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/dto/update_profile_input.dto.ts#L4-L37),
-[user_profile_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/user_profile_usecase.service.ts#L40-L47)).
+([update_profile_input.dto.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/dto/update_profile_input.dto.ts#L4-L37),
+[user_profile_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/user_profile_usecase.service.ts#L40-L47)).
 When the address changes, identity places it on the map before it answers, which can take a few seconds. The
 `200` carries the whole profile, so the app shows it without reading it again.
 

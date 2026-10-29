@@ -3,7 +3,7 @@ title: Mengemas pesanan
 description: Cara penjual mengerjakan antrean pengemasan di warehouse, dari pesanan yang dibayar sampai label pengiriman tercetak, dan mendengar dari socket merchant milik matching kapan sebuah paket mendapat kurir.
 sidebar:
   order: 7
-sourceHash: "8293ccefd9f4"
+sourceHash: "af3fb244e814"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -37,8 +37,8 @@ mengirim cookie session dan `Origin` bersama upgrade-nya dengan sendirinya, dan 
 `phoenix` atau tidak sama sekali, tidak pernah token. Edge memeriksa session seperti untuk panggilan `/bff/api/`,
 jadi membuka socket terhitung sebagai pemakaian session dan bisa lebih dulu memperbarui token-nya; edge hanya
 menerima `seller`, lalu membuka socket matching dengan access token milik session
-([merchant_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/merchant_socket.tl#L45-L83),
-[session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/session_use.tl#L22-L70)).
+([merchant_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/merchant_socket.tl#L45-L83),
+[session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/session_use.tl#L22-L70)).
 matching memverifikasi token itu lagi dan hanya mengizinkan socket join ke channel yang dinamai menurut
 `principalId` di token
 ([merchant_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/merchant_socket.ex#L24-L45),

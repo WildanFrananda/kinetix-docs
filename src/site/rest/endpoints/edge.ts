@@ -82,7 +82,7 @@ export const edgeAnswers: readonly RestCase[] = [
       message: "Nothing is served at this path.",
       requestId
     },
-    source: restSource("edge", "src/http/forward.tl", 85, 88)
+    source: restSource("edge", "src/http/forward.tl", 81, 84)
   },
   {
     status: 405,
@@ -193,7 +193,7 @@ export const edgeAnswers: readonly RestCase[] = [
         "The API could not be reached, and it is not known whether the request took effect. Read the current state first.",
       requestId
     },
-    source: restSource("edge", "src/http/forward.tl", 65, 72)
+    source: restSource("edge", "src/http/forward.tl", 61, 68)
   }
 ];
 

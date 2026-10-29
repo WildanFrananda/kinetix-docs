@@ -14,7 +14,7 @@ never holds a token. The browser calls only its own origin, under `/bff/`, where
 separate one at each of the two addresses: it signs the admin in with identity, keeps the token pair, adds the access
 token to every `/bff/api/` call it passes on to the API, and renews the pair by itself when a call finds the access
 token under a minute from expiry
-([timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/timing.tl#L4)).
+([timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/timing.tl#L4)).
 The browser holds only the `HttpOnly` cookie `__Host-kx_session`, which page scripts cannot read and the browser sends
 back by itself, so this page has no refresh step. What every call through the edge sends and gets back is in
 [The edge](/apis/rest/#the-edge).
@@ -57,20 +57,20 @@ from step 2 by itself. A `200` starts the session: the edge sets `__Host-kx_sess
 answers the same view as step 1.
 
 The session ends after 15 minutes without a `/bff/api/` call, or 8 hours after this step, whichever comes first
-([lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/lifetimes.tl#L5)),
+([lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/lifetimes.tl#L5)),
 and its cookie has no `Max-Age`, so it also ends when the browser closes
-([apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/apps.tl#L19-L35),
-[lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/lifetimes.tl#L38-L44)).
+([apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/apps.tl#L19-L35),
+[lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/lifetimes.tl#L38-L44)).
 After that, every `/bff/api/` call answers `401` `SESSION_ENDED`, and the admin signs in again at step 2. If the
 account stops being an admin, the edge's next renewal of the tokens ends the session with `403` `ROLE_REFUSED`.
 
 On `401` `CODE_REFUSED` the code was wrong and the sign-in is still pending: ask for the next code. identity allows
 five codes per challenge
-([sign_in_attempt_policy.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/domain/sign_in_attempt_policy.ts#L7)),
+([sign_in_attempt_policy.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/domain/sign_in_attempt_policy.ts#L7)),
 so after the fifth refusal the next code answers `401` `SIGN_IN_REQUIRED`. That answer means there is no pending
 sign-in any more: its 300 seconds have passed, it was answered from another tab, or identity has ended the challenge,
 and the edge has dropped it and expired `__Host-kx_pending`
-([sign_in.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sign_in.tl#L243-L250)).
+([sign_in.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sign_in.tl#L243-L250)).
 Go back to step 2, and in step 3 send the code the authenticator shows next.
 
 <RestEndpoint id="edge.verifyTwoFactor" via="backoffice" />

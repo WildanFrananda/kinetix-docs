@@ -3,7 +3,7 @@ title: Profil pengiriman
 description: Menyimpan nama, nomor telepon dan alamat pembeli di identity, yang menempatkan alamat itu di peta.
 sidebar:
   order: 4
-sourceHash: "27f20d9cd25a"
+sourceHash: "0e81d7bee69c"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -23,8 +23,8 @@ jadi profil adalah tempat aplikasi pembeli menyimpan data itu untuk mengisi
 dikirim tetap bernilai seperti sebelumnya. Aplikasi hanya mengirim apa yang diubah pembeli, dan tidak pernah
 mengirim `null`, kecuali sebagai `avatarUrl: null`, yang menghapus avatar: `null` di field lain dijawab `400`,
 dan tidak ada yang disimpan
-([update_profile_input.dto.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/dto/update_profile_input.dto.ts#L4-L37),
-[user_profile_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/user_profile_usecase.service.ts#L40-L47)).
+([update_profile_input.dto.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/dto/update_profile_input.dto.ts#L4-L37),
+[user_profile_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/user_profile_usecase.service.ts#L40-L47)).
 Ketika alamat berubah, identity menempatkannya di peta sebelum menjawab, yang bisa memakan beberapa detik.
 `200` membawa profil lengkap, jadi aplikasi menampilkannya tanpa membacanya lagi.
 

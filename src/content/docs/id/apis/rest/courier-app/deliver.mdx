@@ -3,7 +3,7 @@ title: Mulai bertugas dan mengantar
 description: Kurir membuka driver socket milik matching, mulai bertugas dan melaporkan posisi, menerima job yang ditugaskan matching, mengambil paketnya, meng-upload foto bukti ke storage, dan melaporkan pengantaran.
 sidebar:
   order: 4
-sourceHash: "9d26e10f302a"
+sourceHash: "de91beffe0e5"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -26,7 +26,7 @@ dengan access token menggantikan placeholder-nya; header upgrade ditambahkan ole
 meneruskan path ini, dan path yang sama berakhiran `/websocket`, yang dipakai client JavaScript milik Phoenix, ke
 matching tanpa memeriksa token-nya, dan menghitung setiap koneksi terhadap
 [batas per alamat](/id/apis/rest/#batas) milik route itu
-([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L475-L488)).
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L475-L488)).
 
 <RestSocket id="matching.driverSocket" />
 

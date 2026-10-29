@@ -34,8 +34,8 @@ then on is missed. It takes the same `seller` session as the warehouse calls: th
 and `Origin` with the upgrade by itself, and the page offers the subprotocol `phoenix` or none, never a token. The
 edge checks the session as it does for a `/bff/api/` call, so opening the socket counts as a use of the session and
 may renew its tokens first; it admits only a `seller`, then opens matching's socket with the session's access token
-([merchant_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/merchant_socket.tl#L45-L83),
-[session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/session_use.tl#L22-L70)).
+([merchant_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/merchant_socket.tl#L45-L83),
+[session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/session_use.tl#L22-L70)).
 matching verifies the token again and lets the socket join only the channel named after the token's
 `principalId`
 ([merchant_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/merchant_socket.ex#L24-L45),

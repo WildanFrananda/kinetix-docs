@@ -26,7 +26,7 @@ tells holders that a statement of their balance is ready. The handset routes are
 ## What it serves
 
 Over HTTP, through the gateway,
-[one route](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L635-L647):
+[one route](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L635-L647):
 `POST /api/v1/notifications/devices` registers the calling handset for push, `POST` on
 `/api/v1/notifications/devices/verify` finishes a registration that had to be proved, and `DELETE` forgets
 a handset. All three need an access token, which the gateway checks and notification checks again.
@@ -208,7 +208,7 @@ read is reported as a store failure, never read as a guess.
   reflection, and nothing else.
   [The handshake requires a client certificate](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/ServiceIdentity.scala#L10-L21).
 - **To read an email address**, notification presents a certificate naming notification. identity
-  [lets it read a profile and make no other call](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/infrastructure/mesh/peer_allow_list.ts#L48-L63);
+  [lets it read a profile and make no other call](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/infrastructure/mesh/peer_allow_list.ts#L48-L63);
   see [Who is calling?](/learn/who-is-calling/).
 
 ## Operating it

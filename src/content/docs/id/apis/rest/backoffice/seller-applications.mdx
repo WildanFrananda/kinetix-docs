@@ -1,9 +1,9 @@
 ---
 title: Pengajuan penjual
-description: Cara admin meninjau pengajuan untuk berjualan di identity, membaca detail pemohon, lalu menyetujui atau menolak setiap pengajuan.
+description: Cara admin meninjau pengajuan untuk berjualan di identity, membaca detail pemohon, menyetujui atau menolak setiap pengajuan, lalu menghitung keputusan dalam suatu periode.
 sidebar:
   order: 2
-sourceHash: "298ba8365f38"
+sourceHash: "8dbbaeb64217"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -15,8 +15,8 @@ menanyakan merchant milik penjual ke identity sebelum menerima produk atau promo
 ([product_service.py](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/application/services/product_service.py#L148-L159),
 [promotion_service.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0ed7db4cd6fb8d40375cab26dd7ac56ebce16a8a/src/services/promotion_service.rs#L43-L51)),
 dan identity baru mengizinkan sebuah merchant berdagang setelah tokonya `verified` atau `active`
-([merchant_standing.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/domain/merchant_standing.ts#L1-L5),
-[identity_grpc.controller.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/adapters/controllers/identity_grpc.controller.ts#L237-L258)).
+([merchant_standing.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/domain/merchant_standing.ts#L1-L5),
+[identity_grpc.controller.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/adapters/controllers/identity_grpc.controller.ts#L237-L258)).
 Admin yang sudah masuk dari jaringan staf Kinetix seperti di [Masuk](/id/apis/rest/backoffice/sign-in/) mendaftar
 pengajuan yang menunggu, membaca salah satunya dan, bila perlu, profil pemohonnya, lalu menyetujui atau menolaknya.
 Identity mencatat setiap panggilan ini bersama admin yang melakukannya.
@@ -60,7 +60,20 @@ setelah mengajukan tidak bisa disetujui: jawaban `409`-nya membiarkan pengajuan 
 
 ## 5. Tolak pengajuan
 
-Menolak, sebagai ganti menyetujui, dengan `id` yang sama, menandai pengajuan itu `rejected`. Akun itu tetap dengan
-role-nya dan boleh mengajukan versi yang sudah diperbaiki dari aplikasi web penjual.
+Menolak, sebagai ganti menyetujui, dengan `id` yang sama, menandai pengajuan itu `rejected` dan mencatat waktunya di
+`rejectedAt`. Akun itu tetap dengan role-nya dan boleh mengajukan versi yang sudah diperbaiki dari aplikasi web
+penjual, yang mengembalikannya ke `pending` dan menghapus `rejectedAt`
+([seller_onboarding_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/seller_onboarding_usecase.service.ts#L50-L64)).
 
 <RestEndpoint id="identity.rejectSeller" via="backoffice" />
+
+## 6. Hitung keputusannya
+
+Backoffice menampilkan berapa pengajuan yang disetujui dan ditolak hari ini, minggu ini dan bulan ini, dan meminta
+sekali untuk setiap periode, dengan `since` diisi awal periode itu di zona waktu admin sendiri, beserta offset-nya.
+Identity menghitung pengajuan menurut keadaannya saat ini: pengajuan yang ditolak lalu diajukan ulang berstatus
+`pending` dan keluar dari hitungan
+([typeorm_merchant_verification_repository.adapter.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/infrastructure/persistence/adapters/typeorm_merchant_verification_repository.adapter.ts#L104-L116)).
+Minta lagi setelah keputusan di langkah 4 atau 5 untuk melihatnya terhitung.
+
+<RestEndpoint id="identity.sellerApplicationsTally" via="backoffice" />

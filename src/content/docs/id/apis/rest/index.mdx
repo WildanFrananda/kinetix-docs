@@ -4,7 +4,7 @@ description: Setiap endpoint HTTP yang dipanggil aplikasi Kinetix, dikelompokkan
 sidebar:
   label: Ikhtisar
   order: 0
-sourceHash: "83aac2fd1766"
+sourceHash: "bec4d550d327"
 ---
 
 import RestEndpoint from "../../../../../components/RestEndpoint.astro";
@@ -39,24 +39,24 @@ Kinetix menjawab di empat host publik:
   WebSocket milik matching, `wss://api.wildanfrananda.my.id/ws/v1/matching/driver?vsn=2.0.0` dan
   `wss://api.wildanfrananda.my.id/ws/v1/matching/merchant?vsn=2.0.0`. Setiap socket juga menjawab bila path-nya
   diberi akhiran `/websocket`, bentuk yang dipanggil client JavaScript milik Phoenix
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L475-L505)).
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L475-L505)).
 - `storage.wildanfrananda.my.id` menyimpan file yang di-upload. Client mengirim file ke sana di URL yang sudah
   ditandatangani service untuknya; bucket di URL itu ditulis `example-bucket` dalam contoh-contohnya
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L507-L529)).
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L507-L529)).
 - `seller.wildanfrananda.my.id` melayani panggilan aplikasi web penjual di bawah `/bff/`, yang diteruskan Kong ke
   edge, dan di bawah `/bff/` juga socket merchant milik matching untuk halamannya ([Realtime](#realtime)). Path lain
   di host ini, termasuk path `/api/v1/`, mendapat `404 Not found` dari Kong
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L243-L257)).
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L243-L257)).
 - Backoffice tidak punya host publik. Staf membukanya di alamat yang tidak dipublikasikan, ditulis
   `<backoffice origin>` di referensi ini: onion service Tor yang hanya menyambungkan browser yang memegang kunci
   klien, atau, ketika Tor tidak tersedia, alamat di jaringan staf Kinetix. Di keduanya, Kong meneruskan `/bff/` ke
   edge dan setiap path lain ke aplikasi statis backoffice sendiri
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L221-L279)).
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L221-L279)).
 
 Setiap host publik hanya menjawab lewat HTTPS, dan socket lewat `wss://`. Tidak ada yang menjawab HTTP biasa: port 80
 tertutup, jadi client yang keliru memanggil alamat `http://` tidak tersambung dan tidak mengirim apa pun, termasuk
 token
-([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L133-L139)).
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L133-L139)).
 Request ke host API:
 
 ```http
@@ -83,7 +83,7 @@ Authorization: Bearer <access token>
 
 Kong membaca token hanya dari header ini. Token di parameter query `jwt` atau di cookie bukan token bagi Kong: di
 route yang token-nya diperiksa Kong, request seperti itu mendapat `401` dari Kong dan tidak pernah sampai ke service
-([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L61-L70)).
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L61-L70)).
 
 Token diperiksa di salah satu dari dua tempat:
 
@@ -106,7 +106,7 @@ Tiga aturan identity berlaku untuk setiap aplikasi:
   diterima, dan di produksi tidak diminta bukti bahwa aplikasi yang disebut memang asli; nama yang tidak dikenal
   identity ditolak dengan `400` `UNKNOWN_CLIENT`. Token yang diterbitkan untuk aplikasi bernama hanya bisa
   diperbarui oleh request yang menyebut aplikasi yang sama; selain itu refresh menjawab `401` `CLIENT_MISMATCH`
-  ([client_gate.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/client_gate.service.ts#L60-L105)).
+  ([client_gate.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/client_gate.service.ts#L60-L105)).
   Aplikasi tanpa nama terdaftar, seperti aplikasi pembeli, tidak mengirim header itu.
 - **Autentikasi dua faktor untuk setiap `admin`.** Akun admin yang belum memakainya tidak mendapat pasangan token
   saat masuk, melainkan `enrolmentToken` yang berlaku sepuluh menit dan hanya bisa dipakai di endpoint yang
@@ -114,18 +114,18 @@ Tiga aturan identity berlaku untuk setiap aplikasi:
   `TWO_FACTOR_ENROLMENT_ONLY` ([jawaban identity](#identity)). Setelah autentikasi dua faktor aktif, admin
   masuk lagi, dengan password lalu kode. Refresh untuk admin yang tidak lagi memakainya mengakhiri session dengan
   `401` `TWO_FACTOR_REQUIRED`
-  ([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/auth_usecase.service.ts#L63-L65),
-  [L171-L179](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/auth_usecase.service.ts#L171-L179)).
+  ([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L63-L65),
+  [L171-L179](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L171-L179)).
   Di backoffice, edge yang menjalankan pendaftaran itu.
 - **`SIGN_IN_DELAYED`.** identity menghitung setiap pemeriksaan password atau kode dua faktor sebuah akun, benar
   maupun salah, dari alamat mana pun. Lima yang pertama langsung lolos; sesudahnya, masing-masing harus datang 1, 2,
   4, 8, 16, 32 dan paling lama 60 detik setelah yang sebelumnya. Request di dalam jeda itu ditolak dengan `429`, kode
   `SIGN_IN_DELAYED` dan `Retry-After`, dan tidak ada yang diperiksa. Cukup menunggu: akun tidak pernah dikunci,
   masuk yang berhasil mengosongkan hitungannya, dan hitungan itu dilupakan satu jam setelah pemeriksaan terakhir
-  ([sign_in_attempt_policy.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/domain/sign_in_attempt_policy.ts#L3-L35)).
+  ([sign_in_attempt_policy.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/domain/sign_in_attempt_policy.ts#L3-L35)).
   Kode yang dikirim pada challenge yang sudah diakhiri identity tidak dihitung: kode itu mendapat `401` milik
   challenge tersebut, termasuk di dalam jeda
-  ([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/auth_usecase.service.ts#L86-L111)).
+  ([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L86-L111)).
   Edge meneruskan kode yang sama ke aplikasi web.
 
 Halaman masuk menampilkan panggilan-panggilan ini secara berurutan:
@@ -150,15 +150,15 @@ script di halaman tidak bisa membacanya.
 
 Cookie-nya `__Host-kx_session`, nilai acak 43 karakter, dipasang dengan
 `Path=/; Secure; HttpOnly; SameSite=Strict`
-([cookies.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/cookies.tl#L6-L17)).
+([cookies.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/cookies.tl#L6-L17)).
 Awalan `__Host-` membuat browser menyimpannya hanya untuk host persis yang memasangnya; `HttpOnly` menyembunyikannya
 dari script; `SameSite=Strict` mencegah browser mengirimkannya bersama request yang dimulai situs lain. Proses masuk
 yang masih menunggu kode dua faktor, atau pendaftaran dua faktor seorang admin, disimpan di balik cookie kedua,
 `__Host-kx_pending`, dengan atribut yang sama, selama 300 atau 600 detik.
 
 Setiap aplikasi menerima role-nya sendiri dan mengakhiri session-nya menurut jamnya sendiri
-([apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/apps.tl#L16-L54),
-[lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/lifetimes.tl#L4-L7)):
+([apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/apps.tl#L16-L54),
+[lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/lifetimes.tl#L4-L7)):
 
 | Aplikasi | Role | Batas idle | Batas absolut | Cookie |
 | --- | --- | --- | --- | --- |
@@ -167,28 +167,28 @@ Setiap aplikasi menerima role-nya sendiri dan mengakhiri session-nya menurut jam
 
 Hanya web penjual yang menawarkan pendaftaran akun, `POST /bff/register`, dan socket merchant, untuk `seller`; di
 backoffice keduanya menjawab `404`
-([apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/apps.tl#L29-L30),
-[L46-L47](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/apps.tl#L46-L47),
-[router.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/router.tl#L223-L227)).
+([apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/apps.tl#L29-L30),
+[L46-L47](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/apps.tl#L46-L47),
+[router.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/router.tl#L223-L227)).
 
 Batas idle dihitung dari panggilan terakhir di bawah `/bff/api/` atau pembukaan socket merchant terakhir; membaca
 `GET /bff/session` tidak dihitung
-([session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/session_use.tl#L37-L46)).
+([session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/session_use.tl#L37-L46)).
 Role diperiksa saat masuk dan saat mendaftar, dan lagi setiap kali edge memperbarui token: akun yang role-nya tidak
 diterima aplikasi itu tidak mendapat session, atau kehilangan session yang dimilikinya, dengan `403` `ROLE_REFUSED`
-([sign_in.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sign_in.tl#L99-L110),
-[sessions.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sessions.tl#L418-L425)).
+([sign_in.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sign_in.tl#L99-L110),
+[sessions.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L418-L425)).
 Di alamat backoffice pada jaringan staf, setiap panggilan di bawah `/bff/` dari luar jaringan itu, termasuk masuk,
 mendapat `403` dari Kong; onion service-nya tidak butuh gerbang seperti itu, karena Tor hanya menyambungkan browser
 yang memegang kunci klien
-([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L227-L234)).
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L227-L234)).
 
 Edge memperbarui pasangan token sendiri. Ketika sebuah panggilan di bawah `/bff/api/`, atau pembukaan socket merchant,
 mendapati access token kurang dari 60 detik lagi kedaluwarsa, edge menukar refresh token di identity sebelum
 melanjutkan, sekali per session walaupun beberapa panggilan datang bersamaan
-([timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/timing.tl#L4-L6),
-[session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/session_use.tl#L48-L69),
-[sessions.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sessions.tl#L492-L513)).
+([timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/timing.tl#L4-L6),
+[session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/session_use.tl#L48-L69),
+[sessions.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L492-L513)).
 Halaman tidak pernah melakukan refresh, dan memang tidak bisa. Bila identity menolak pembaruan itu, session berakhir
 dengan `401` `SESSION_ENDED`; bila identity belum bisa memperbaruinya sekarang, session tetap disimpan dan panggilan
 itu mendapat `503` `IDENTITY_UNAVAILABLE`. Role yang diberikan sesudah session dimulai, misalnya customer yang
@@ -202,23 +202,23 @@ disetujui menjadi seller, sampai ke session pada pembaruan pertama sesudahnya.
   host-nya; tanpa `Origin`, `Sec-Fetch-Site: same-origin` juga lolos. Browser mengirim keduanya sendiri pada `fetch`
   dari halaman aplikasi itu. Request lain yang mengubah sesuatu ditolak dengan `403` `CSRF_REFUSED` sebelum session
   dibaca
-  ([csrf.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/csrf.tl#L12-L30)).
+  ([csrf.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/csrf.tl#L12-L30)).
   Handshake socket merchant berupa `GET` dan diperiksa lebih ketat: handshake itu harus membawa `Origin`, persis
   origin web penjual
-  ([merchant_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/merchant_socket.tl#L53-L57)).
+  ([merchant_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/merchant_socket.tl#L53-L57)).
 - **Hanya body JSON**, dikirim dengan `Content-Type: application/json`; `fetch` mengirim body berupa string sebagai
   `text/plain` kecuali diberi tahu lain. Body jenis lain, termasuk form HTML dan `multipart/form-data`, ditolak
   dengan `415` `JSON_REQUIRED`
-  ([router.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/router.tl#L161-L185)),
+  ([router.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/router.tl#L161-L185)),
   dan body lebih dari 1 MiB dengan `413`
-  ([nginx.conf](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/nginx/nginx.conf#L39-L40)).
+  ([nginx.conf](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/nginx/nginx.conf#L39-L40)).
 
 ### Bagaimana panggilan sampai ke API
 
 `/bff/api/<path>` di host sebuah aplikasi adalah `/api/<path>` di API, dengan method dan query string yang sama
-([api_path.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/api_path.tl#L7-L30)).
+([api_path.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/api_path.tl#L7-L30)).
 Edge menerima `GET`, `HEAD`, `POST`, `PUT`, `PATCH` dan `DELETE`
-([forwarding.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/forwarding.tl#L9)).
+([forwarding.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/forwarding.tl#L9)).
 Request dari web penjual ini sampai ke catalog sebagai `POST /api/v1/products/create`, dengan
 `Authorization: Bearer <access token>`:
 
@@ -231,8 +231,8 @@ Content-Type: application/json
 ```
 
 Di perjalanan, edge menulis ulang header-nya
-([forwarding.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/forwarding.tl#L11-L38),
-[forward_headers.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/forward_headers.tl#L27-L49)):
+([forwarding.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/forwarding.tl#L11-L38),
+[forward_headers.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/forward_headers.tl#L27-L49)):
 
 - Dari halaman, edge hanya meneruskan `Accept`, `Accept-Language`, `Content-Type`, `Idempotency-Key`, `If-Match`,
   `If-None-Match` dan `User-Agent`. Header lain tertahan di edge, termasuk cookie, `Authorization` yang dipasang
@@ -240,15 +240,15 @@ Di perjalanan, edge menulis ulang header-nya
 - Edge menambahkan `Authorization` berisi access token milik session, `X-Request-Id`, `X-Forwarded-For` berisi
   alamat browser, dan, di bawah `/api/v1/auth` dan `/api/v1/couriers`, `X-Kinetix-Client` berisi nama aplikasinya,
   `seller-web` atau `backoffice`
-  ([forward.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/forward.tl#L40-L48)).
+  ([forward.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/forward.tl#L36-L44)).
 - Jawabannya mempertahankan status, body dan header dari API, kecuali `Set-Cookie`, `Server`, `X-Powered-By`, header
   caching dan header yang menggambarkan koneksi. Setiap jawaban dari edge membawa `Cache-Control: no-store`, jadi
   tidak ada cache yang menyimpannya
-  ([response_headers.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/response_headers.tl#L4-L6)).
+  ([response_headers.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/response_headers.tl#L4-L6)).
 - Bila sebuah service mati di belakang Kong, halaman mendapat `502`, `503` atau `504` milik Kong sendiri, yang
   diteruskan seperti jawaban lain. Edge menjawab `503` `API_UNAVAILABLE` sendiri hanya bila tidak bisa menjangkau API,
   atau identity untuk `/api/v1/auth` dan `/api/v1/couriers`, atau tidak mendapat jawaban dalam 60 detik
-  ([forward.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/forward.tl#L65-L81)).
+  ([forward.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/forward.tl#L61-L77)).
 
 ### Realtime
 
@@ -258,11 +258,11 @@ jawaban handshake-nya, dan pesan-pesannya sesuai urutan yang dipakai web penjual
 bersama handshake, dan halaman tidak mengirim token. Edge memeriksa session seperti untuk panggilan di bawah
 `/bff/api/`, hanya menerima `seller`, lalu membuka socket matching dengan access token milik session; `101` yang
 diteruskannya kembali ke halaman tidak membawa token maupun cookie
-([merchant_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/merchant_socket.tl#L45-L103)).
+([merchant_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/merchant_socket.tl#L45-L103)).
 Halaman dan matching lalu bertukar frame Phoenix lewat edge. Seperti pada panggilan, jawaban dari belakang edge
 kembali dengan status-nya, termasuk jawaban Kong sendiri bila matching mati; edge menjawab `503` `API_UNAVAILABLE`
 sendiri hanya bila tidak bisa menjangkau API atau tidak mendapat jawaban handshake dalam 90 detik
-([nginx.conf](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/nginx/nginx.conf#L102-L108)).
+([nginx.conf](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/nginx/nginx.conf#L102-L108)).
 Backoffice tidak punya socket.
 
 ### Panggilan yang ditolak edge
@@ -270,7 +270,7 @@ Backoffice tidak punya socket.
 Enam path milik identity ditolak dengan `404`, dalam huruf besar atau kecil apa pun dan beserta semua yang ada di
 bawahnya: `/bff/api/v1/auth/login`, `/register`, `/refresh`, `/logout`, `/2fa/verify` dan
 `/bff/api/v1/couriers/register`
-([forwarding.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/forwarding.tl#L40-L47)).
+([forwarding.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/forwarding.tl#L40-L47)).
 Jawabannya membawa token, yang tidak boleh dipegang halaman. Di web penjual, akun baru dibuat dengan
 `POST /bff/register`, yang langsung memulai session-nya; aplikasi web masuk dengan `POST /bff/login` dan, bila kode
 diperlukan, `POST /bff/2fa/verify`; admin tanpa autentikasi dua faktor mendaftar lewat `POST /bff/2fa/setup` dan
@@ -290,7 +290,7 @@ jawaban lainnya di halaman masuk; jawaban dari API diteruskan dengan status dan 
 
 Kong memberi setiap request header `X-Request-Id`: milik client sendiri bila client mengirimnya, atau UUID
 baru. Service menerimanya, dan Kong mengembalikannya di response
-([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L665-L672)).
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L665-L672)).
 Kirim id sendiri bila nanti ingin mencari request itu di log. Beberapa service mengulangnya di body error,
 misalnya `traceId` milik identity. matching juga mengulangnya sebagai `traceId`, termasuk di jawaban handshake kedua
 socket-nya, bila id itu 20 sampai 200 karakter; id yang lebih pendek atau lebih panjang, yang hanya bisa dikirim
@@ -301,24 +301,24 @@ Body error milik Kong sendiri membawa nilai lain, `request_id`, yaitu id
 internal Kong untuk request itu; Kong juga mengembalikannya di header `X-Kong-Request-Id`
 ([nilai bawaan Kong](https://github.com/Kong/kong/blob/ddc85be461165c9eb4506669343aa0d0c627e687/kong/templates/kong_defaults.lua#L71)).
 Access log gateway mencatat keduanya, dan mencatat path tanpa query string-nya
-([access_log.conf](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/access_log.conf#L1-L8)).
+([access_log.conf](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/access_log.conf#L1-L8)).
 
 Lewat edge, id yang sama ikut berjalan: edge mengirimnya ke API, termasuk di handshake socket merchant, dan
 mengulangnya sebagai `requestId` di body error miliknya, asalkan berupa 1 sampai 128 huruf, angka atau `.-_:#@`; bila
 tidak, edge memakai id miliknya sendiri
-([context.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/context.tl#L44-L51),
-[request_id.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/request_id.tl#L4-L14)).
+([context.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/context.tl#L44-L51),
+[request_id.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/request_id.tl#L4-L14)).
 
 ## Browser
 
 Kong tidak memercayai origin browser mana pun. Produksi tidak mengonfigurasi satu pun, jadi Kong tidak memasang
 plugin `cors`-nya di route mana pun dan tidak menaruh header `Access-Control-*` di jawabannya
-([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L133-L139)).
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L133-L139)).
 Tidak ada service di belakang Kong yang menambahkan header `Access-Control-*` sendiri; review, yang framework-nya akan
 melakukannya, mematikannya
 ([bootstrap/app.php](https://github.com/WildanFrananda/kinetix-review-service/blob/e3ca897c68947dd7ba4a47f04355e5e91da9afa8/bootstrap/app.php#L34)).
 Kong tidak memeriksa token pada request `OPTIONS`
-([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L61-L70),
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L61-L70),
 [plugin jwt Kong](https://github.com/Kong/kong/blob/ddc85be461165c9eb4506669343aa0d0c627e687/kong/plugins/jwt/handler.lua#L306-L310))
 dan selebihnya memperlakukannya seperti request lain.
 
@@ -330,29 +330,29 @@ mereka.
 ## Batas
 
 - **100 request per menit** dari satu alamat client ke setiap route Kong
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L81-L89),
-  [L112-L118](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L133-L139)).
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L81-L89),
+  [L112-L118](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L133-L139)).
   Satu route memuat path milik satu service, kadang beberapa prefiks darinya: `/api/v1/cart` dan `/api/v1/orders`
   berbagi satu hitungan, misalnya. Setiap route khusus admin, `/health`, `/.well-known/security.txt`, setiap socket,
   host storage, dan `/bff/` di host setiap aplikasi web dihitung sendiri-sendiri; di aplikasi web, setiap panggilan
   browser di bawah `/bff/`, termasuk masuk dan handshake socket merchant, berbagi satu hitungan itu. Route notifikasi
   Midtrans mengizinkan 600 per menit
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L586-L602)).
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L586-L602)).
   Lewat dari batas itu, Kong menjawab `429` dengan `Retry-After`.
 - **Waktu tunggu.** Kong menunggu sebuah service 60 detik, dan 90 detik di `/bff/` pada host kedua aplikasi web serta
   di socket merchant milik matching; service yang lebih lama dari itu membuat client mendapat `504` dari Kong
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L29),
-  [L191-L196](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L221-L226),
-  [L441-L446](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L490-L495)).
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L29),
+  [L191-L196](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L221-L226),
+  [L441-L446](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L490-L495)).
   Di `/bff/`, edge biasanya berhenti menunggu lebih dulu: panggilan di bawah `/bff/api/` yang tidak dijawab dalam 60
   detik, atau panggilan edge sendiri ke identity yang tidak dijawab dalam 5 detik, mendapat `503` dari edge
-  ([timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/timing.tl#L12-L17),
+  ([timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/timing.tl#L12-L17),
   [jawaban edge](#jawaban-edge)).
 - **Ukuran body.** Kong tidak menetapkan batasnya sendiri di host API
   ([nilai bawaan Kong](https://github.com/Kong/kong/blob/ddc85be461165c9eb4506669343aa0d0c627e687/kong/templates/kong_defaults.lua#L90));
   service yang membatasi body mencantumkan `413` miliknya di antara jawabannya. Host storage menerima **16 MB** per
   upload
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L517-L524)),
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L517-L524)),
   dan edge **1 MiB** per request.
 - Beberapa endpoint punya batas sendiri yang lebih ketat, ditetapkan oleh service-nya, misalnya lima percobaan
   masuk per menit dari satu alamat. Batas itu tertulis di endpoint-nya. Penundaan per akun dari identity dijelaskan

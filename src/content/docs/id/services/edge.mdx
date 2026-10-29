@@ -1,7 +1,7 @@
 ---
 title: edge
 description: Sesi milik web app — service yang login dan mendaftar ke identity atas nama browser, menyimpan token di Redis di balik cookie HttpOnly yang opak, dan menambahkan token itu ke setiap panggilan dan ke socket web penjual, sehingga tidak ada token yang pernah sampai ke JavaScript.
-sourceHash: "23256a5fadcb"
+sourceHash: "6a1a86fd81f0"
 ---
 
 import ServiceCalls from "../../../../components/ServiceCalls.astro";
@@ -20,7 +20,7 @@ hanya mengirimnya ke host app itu sendiri, dan cookie itu tidak berarti apa-apa 
 Tabel-tabel di halaman ini dihasilkan dari data terverifikasi yang sama dengan
 [peta sistem](/id/architecture/system-map/), pada commit yang ditautkan dari setiap baris. Prosanya
 diperiksa terhadap edge
-[v1.2.0](https://github.com/WildanFrananda/kinetix-edge-service/tree/400b6e95f432defbf2b52a81ab3096d4b5cf77ca),
+[v1.2.1](https://github.com/WildanFrananda/kinetix-edge-service/tree/eb13db007a21ca985ca33eca49e44dacf43e6354),
 versi yang berjalan di production. Apa yang dikirim halaman dan setiap jawaban yang bisa ia terima ada di
 [referensi REST](/id/apis/rest/#edge); halaman ini membahas mengapa edge bekerja seperti ini.
 
@@ -29,18 +29,18 @@ versi yang berjalan di production. Apa yang dikirim halaman dan setiap jawaban y
 <ServiceFacts service="edge" />
 
 Edge ditulis dalam Teal, dialek Lua yang bertipe,
-[dikompilasi ke Lua 5.1](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/bin/build#L10-L28)
+[dikompilasi ke Lua 5.1](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/bin/build#L10-L28)
 untuk LuaJIT di dalam OpenResty, yaitu nginx dengan Lua yang berjalan di fase-fase request-nya. Build-nya
-[menolak Lua hasil generate yang memanggil apa yang tidak dimiliki LuaJIT](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/bin/build#L25-L28),
+[menolak Lua hasil generate yang memanggil apa yang tidak dimiliki LuaJIT](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/bin/build#L25-L28),
 dan image-nya
-[hanya membawa Lua hasil generate](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/Dockerfile#L15-L44).
+[hanya membawa Lua hasil generate](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/Dockerfile#L15-L44).
 
 ## Yang dipanggil
 
 Kong mengirim ke edge
-[panggilan di bawah `/bff/` di alamat web app](https://github.com/WildanFrananda/kinetix-api-gateway/blob/0d06d2eb845d0a32d79cb710f4829c19963ef60e/config/gateway.pkl#L221-L249),
+[panggilan di bawah `/bff/` di alamat web app](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L221-L249),
 dan
-[gateway adalah satu-satunya lawan bicaranya](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/CLAUDE.md#L137-L141).
+[gateway adalah satu-satunya lawan bicaranya](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/CLAUDE.md#L137-L141).
 Edge tidak melayani gRPC dan tidak dipanggil service lain. Ia memanggil identity langsung untuk semua yang
 menerbitkan, memperbarui, atau mengakhiri token, termasuk pendaftaran, dan untuk route akun identity lainnya.
 Setiap panggilan lain kembali lewat gateway, ke listener yang hanya ada di dalam jaringan Kinetix, seperti
@@ -52,60 +52,60 @@ socket web penjual ke matching.
 ## Browser memegang cookie, edge memegang token
 
 Web app login dengan `POST /bff/login`. Edge
-[bertanya ke identity](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/adapters/identity_client.tl#L36-L40),
+[bertanya ke identity](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/adapters/identity_client.tl#L36-L40),
 menyimpan pasangan yang dikembalikan identity, lalu menjawab halaman dengan
-[gambaran sesinya](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sign_in.tl#L120-L132)
+[gambaran sesinya](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sign_in.tl#L120-L132)
 — apakah sudah login, role-nya, principal-nya, dan kapan sesi berakhir — serta sebuah cookie. Tidak ada jawaban
 edge yang membawa token, dan halaman tidak bisa menjangkau route identity yang menerbitkan token lewat edge: login,
 registrasi, refresh, logout, pemeriksaan two-factor, dan registrasi kurir
-[ditolak di bawah `/bff/api/`](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/forwarding.tl#L40-L47)
+[ditolak di bawah `/bff/api/`](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/forwarding.tl#L40-L47)
 dengan `404`, karena masing-masing menjawab dengan token. Sebagai gantinya edge menyediakan panggilan login,
 pendaftaran, two-factor, dan logout miliknya sendiri, yang ditunjukkan berurutan di halaman login
 [web penjual](/id/apis/rest/seller-web/sign-in/) dan [backoffice](/id/apis/rest/backoffice/sign-in/), dan ia
 memperbarui token sendiri.
 
 **Pendaftaran adalah login yang lebih dulu membuat akunnya.** Di web penjual, dan
-[hanya di sana](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/apps.tl#L16-L54),
+[hanya di sana](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/apps.tl#L16-L54),
 `POST /bff/register` menerima email dan password lalu
-[meminta identity mendaftarkannya](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/adapters/identity_client.tl#L42-L46).
+[meminta identity mendaftarkannya](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/adapters/identity_client.tl#L42-L46).
 identity
-[membuat akunnya sebagai `customer`](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/auth_usecase.service.ts#L139-L155)
+[membuat akunnya sebagai `customer`](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L139-L155)
 dan menjawab dengan pasangan token, jadi edge
-[memulai sesinya lewat kode yang sama dengan login](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sign_up.tl#L30-L49):
+[memulai sesinya lewat kode yang sama dengan login](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sign_up.tl#L30-L49):
 gerbang role, sesi baru, cookie, dan `201` dengan gambaran sesinya. Alamat yang sudah terdaftar mendapat `409`
 `EMAIL_TAKEN`, dan nilai yang ditolak identity mendapat `400` `INVALID_REQUEST`
-[dengan kata-kata identity sendiri di pesannya](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sign_up.tl#L19-L28),
+[dengan kata-kata identity sendiri di pesannya](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sign_up.tl#L19-L28),
 agar form bisa menyebut apa yang perlu diperbaiki. Seorang customer menjadi seller dengan mengajukan diri,
 seperti dijelaskan [Menjadi seller](/id/apis/rest/seller-web/become-a-seller/). Backoffice tidak menyediakan
 pendaftaran: di sana path itu `404`.
 
 Cookie-nya adalah `__Host-kx_session`:
-[32 byte dari sumber acak yang kuat, base64url, 43 karakter](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/adapters/secure_random.tl#L8-L17),
+[32 byte dari sumber acak yang kuat, base64url, 43 karakter](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/adapters/secure_random.tl#L8-L17),
 dipasang dengan
-[`Path=/; Secure; HttpOnly; SameSite=Strict`](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/cookies.tl#L6-L17).
+[`Path=/; Secure; HttpOnly; SameSite=Strict`](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/cookies.tl#L6-L17).
 Prefix `__Host-` membuat browser menyimpannya hanya untuk host persis yang memasangnya, sehingga host saudara tidak
 bisa memasang atau menimpanya; `HttpOnly` menyembunyikannya dari script; `SameSite=Strict` menjauhkannya dari
 request yang dimulai situs lain. Login yang masih menunggu kode two-factor, atau enrolment seorang admin, ditahan
 di balik cookie kedua, `__Host-kx_pending`, selama challenge identity berlaku dan
-[tidak pernah lebih dari sepuluh menit](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sessions.tl#L290-L327).
+[tidak pernah lebih dari sepuluh menit](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L290-L327).
 
 Edge membaca cookie dengan ketat.
-[Nilai yang bukan 43 karakter base64url, atau nama cookie yang dikirim dua kali, dibaca sebagai tidak ada cookie](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/cookies.tl#L15-L39):
+[Nilai yang bukan 43 karakter base64url, atau nama cookie yang dikirim dua kali, dibaca sebagai tidak ada cookie](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/cookies.tl#L15-L39):
 salinan kedua, yang ditanam extension atau bug, tidak boleh ikut menentukan sesi mana yang dipakai.
 
 ## Sesi
 
 Sesi adalah sebuah hash di Redis
-[dengan key berupa SHA-256 dari cookie](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sessions.tl#L75-L81),
+[dengan key berupa SHA-256 dari cookie](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L75-L81),
 tidak pernah cookie itu sendiri, sehingga membaca store-nya tidak menghasilkan nilai yang bisa dipakai browser.
 Isinya pasangan token, kapan access token kedaluwarsa, app, role, principal, dan tiga waktu: kapan sesi dimulai,
 kapan terakhir dipakai, dan kapan harus berakhir. Sesi
-[ditulis bersama masa berlakunya, dalam satu transaksi](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/adapters/redis_store.tl#L96-L131),
+[ditulis bersama masa berlakunya, dalam satu transaksi](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/adapters/redis_store.tl#L96-L131),
 sehingga tidak ada key tanpa masa berlaku.
 
 Setiap app mengakhiri sesinya menurut jamnya sendiri
-([lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/lifetimes.tl#L4-L7),
-[apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/apps.tl#L16-L54)):
+([lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/lifetimes.tl#L4-L7),
+[apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/apps.tl#L16-L54)):
 
 | App | Batas idle | Batas absolut | Cookie |
 | --- | --- | --- | --- |
@@ -113,38 +113,38 @@ Setiap app mengakhiri sesinya menurut jamnya sendiri
 | web penjual | 7 hari | 30 hari | `Max-Age` 30 hari |
 
 Backoffice adalah yang ketat. Cookie web penjual
-[berlaku selama batas absolutnya](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/lifetimes.tl#L38-L44),
+[berlaku selama batas absolutnya](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/lifetimes.tl#L38-L44),
 karena tanpa itu batas idle tujuh hari tidak berarti apa-apa begitu browser ditutup. Apa pun cookie-nya, Redis
 yang memutuskan apakah sebuah sesi masih hidup.
 
 **Membaca sesi bukan memakainya.** `GET /bff/session`
-[melaporkan sesi dan tidak pernah memperpanjangnya](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/session_endpoint.tl#L14-L47);
+[melaporkan sesi dan tidak pernah memperpanjangnya](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/session_endpoint.tl#L14-L47);
 tanpa itu, app yang terus menanyakannya akan menjaga sesi backoffice tetap hidup selama delapan jam penuh. Setiap
 panggilan di bawah `/bff/api/`, dan setiap pembukaan socket merchant, adalah pemakaian, dan
-[menggeser masa idle-nya](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sessions.tl#L190-L206)
+[menggeser masa idle-nya](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L190-L206)
 ke batas idle atau akhir absolut, mana yang lebih dulu
-([lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/lifetimes.tl#L11-L19)).
+([lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/lifetimes.tl#L11-L19)).
 Akhir absolut juga
-[diperiksa di setiap pencarian](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sessions.tl#L179-L185),
+[diperiksa di setiap pencarian](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L179-L185),
 dan sebuah sesi hanya diakui di app yang membuatnya. Sebuah sesi bisa melewati akhir absolutnya di sela antara
 pencarian dan pemakaian itu; pemakaian itu lalu
-[mengakhirinya persis seperti yang akan dilakukan pencarian](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sessions.tl#L190-L195),
+[mengakhirinya persis seperti yang akan dilakukan pencarian](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L190-L195),
 dan panggilannya mendapat
-[`401` `SESSION_ENDED`](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/session_use.tl#L39-L42)
+[`401` `SESSION_ENDED`](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/session_use.tl#L39-L42)
 dengan cookie yang dibuat kedaluwarsa, bukan `503` yang akan membuat halaman terus mencoba ulang.
 
 **Login selalu memulai sesi baru.** Login
-[menghapus sesi yang dibawa browser dan menerbitkan cookie baru](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sessions.tl#L233-L263),
+[menghapus sesi yang dibawa browser dan menerbitkan cookie baru](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L233-L263),
 sehingga cookie yang ditanam seseorang sebelum login tidak pernah menjadi sesi yang sudah login. Pendaftaran
 melakukan hal yang sama.
 
 **Sesi yang digantikan di-logout di identity, tidak hanya dihapus.** Menghapus sesi dari Redis melupakan
 token-nya, tetapi identity masih akan menerimanya. Karena itu sesi yang
-[digantikan](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sessions.tl#L265-L271)
+[digantikan](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L265-L271)
 oleh login atau pendaftaran baru, dan sesi yang
-[didapati edge sudah melewati akhir absolutnya](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sessions.tl#L144-L155)
+[didapati edge sudah melewati akhir absolutnya](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L144-L155)
 saat membacanya, juga
-[di-logout di identity](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/revocation.tl#L50-L101).
+[di-logout di identity](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/revocation.tl#L50-L101).
 Itu berjalan setelah request, di sebuah timer, sehingga tidak pernah menunda atau menolak login yang
 memicunya. Logout di identity memerlukan access token yang masih hidup, jadi sesi yang access token-nya tersisa
 kurang dari satu menit diperbarui dulu dan pasangan barunya yang di-logout; pembaruan yang ditolak identity
@@ -154,7 +154,7 @@ berarti token-nya memang sudah mati. Setiap hasilnya dihitung, dan kegagalan dic
 
 Access token identity berumur pendek, jadi edge memperbarui pasangannya sambil berjalan: ketika sebuah panggilan
 di bawah `/bff/api/` mendapati
-[sisa waktunya kurang dari 60 detik](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/timing.tl#L3-L7),
+[sisa waktunya kurang dari 60 detik](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/timing.tl#L3-L7),
 edge menukar refresh token di identity sebelum meneruskan panggilan itu. Halaman tidak pernah melakukan refresh,
 dan memang tidak bisa.
 
@@ -162,21 +162,21 @@ Dua panggilan dari sesi yang sama bisa tiba bersamaan — dua tab, atau halaman 
 sekaligus — dan refresh token identity
 [hanya berlaku sekali](/id/learn/tokens-that-can-be-taken-back/): refresh token yang diajukan dua kali dianggap
 dicuri, dan seluruh sesinya dicabut. Karena itu edge melakukan refresh sekali per sesi.
-[Panggilan pertama mengambil lock](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sessions.tl#L492-L513)
+[Panggilan pertama mengambil lock](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L492-L513)
 di Redis yang kedaluwarsa sendiri setelah 15 detik, lebih lama daripada jawaban identity paling lambat yang
 ditunggu;
-[membaca ulang sesinya](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sessions.tl#L370-L384)
+[membaca ulang sesinya](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L370-L384)
 dan hanya melakukan refresh bila sesi itu masih basi, sehingga panggilan yang membaca sesi sebelum panggilan lain
 memperbaruinya tidak pernah mengajukan token yang sudah terpakai. Panggilan lainnya
-[menunggu lock itu lepas](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sessions.tl#L458-L490),
+[menunggu lock itu lepas](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L458-L490),
 memeriksa setiap 25 milidetik sampai sembilan detik, lalu memakai pasangan yang baru. Pembaruan
-[hanya menulis field yang ia ubah](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sessions.tl#L427-L455),
+[hanya menulis field yang ia ubah](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L427-L455),
 tidak pernah seluruh sesi: menulis ulang dari salinan lama bisa mengembalikan refresh token yang baru saja
 dipakai oleh pembaruan yang berjalan bersamaan.
 
 Jawaban identity menentukan nasib sesinya
-([sessions.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sessions.tl#L386-L425),
-[session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/session_use.tl#L52-L69)):
+([sessions.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L386-L425),
+[session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/session_use.tl#L52-L69)):
 
 - **Pasangan baru** disimpan, dan panggilan berlanjut dengannya.
 - **Penolakan** mengakhiri sesi: panggilan mendapat `401` `SESSION_ENDED` dan cookie-nya dibuat kedaluwarsa.
@@ -189,12 +189,12 @@ Jawaban identity menentukan nasib sesinya
 ## Gerbang role
 
 Setiap app menerima role-nya sendiri:
-[backoffice hanya `admin`, web penjual `seller` dan `customer`](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/apps.tl#L16-L54).
+[backoffice hanya `admin`, web penjual `seller` dan `customer`](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/apps.tl#L16-L54).
 Edge tidak menentukan role; ia membaca role dari jawaban identity saat login dan lagi
-[di setiap pembaruan](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sessions.tl#L418-L425).
+[di setiap pembaruan](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L418-L425).
 Akun yang role-nya tidak diterima app tidak mendapat sesi, atau kehilangan sesi yang dimilikinya, dengan `403`
 `ROLE_REFUSED`, dan
-[pasangan yang baru diterbitkan identity di-logout di identity](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sign_in.tl#L99-L110),
+[pasangan yang baru diterbitkan identity di-logout di identity](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sign_in.tl#L99-L110),
 sehingga tidak ada token yang hidup lebih lama daripada penolakannya. Karena identity
 [membaca role dari akun di setiap refresh](/id/services/identity/#sign-in-dan-token), role yang diberikan setelah
 login sampai ke sesi pada pembaruan berikutnya: customer yang disetujui sebagai seller menjadi seller, dan customer
@@ -202,21 +202,21 @@ yang disetujui sebagai kurir kehilangan web penjual.
 
 identity [mewajibkan setiap admin punya faktor kedua](/id/apis/rest/#token), dan memberi admin yang belum punya
 sebuah enrolment alih-alih token. Backoffice
-[menjalankan enrolment itu](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sign_in.tl#L298-L396),
+[menjalankan enrolment itu](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sign_in.tl#L298-L396),
 setelah itu admin login lagi dengan kode. Web penjual, tempat admin tidak boleh login,
-[menolak enrolment](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sign_in.tl#L199-L206)
+[menolak enrolment](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sign_in.tl#L199-L206)
 dengan `ROLE_REFUSED`. Login yang tertunda
-[terikat pada jenis dan app-nya](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sessions.tl#L329-L350):
+[terikat pada jenis dan app-nya](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L329-L350):
 enrolment tidak bisa menjawab challenge two-factor, dan login tertunda milik satu app tidak berarti apa-apa di app
 lain.
 
 identity
-[menyebut alasannya menolak sebuah kode](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/auth_usecase.service.ts#L86-L134),
+[menyebut alasannya menolak sebuah kode](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L86-L134),
 dan edge
-[bertindak menurut alasan itu](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sign_in.tl#L238-L251).
+[bertindak menurut alasan itu](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sign_in.tl#L238-L251).
 Kode yang salah adalah `401` `CODE_REFUSED`, dan login yang tertunda tetap ada untuk kode berikutnya. Challenge
 yang dinyatakan identity sudah habis jatahnya, sudah terpakai, atau tidak dikenal
-([`CHALLENGE_EXHAUSTED`, `CHALLENGE_SPENT`, `CHALLENGE_INVALID`](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/identity_answers.tl#L16-L20))
+([`CHALLENGE_EXHAUSTED`, `CHALLENGE_SPENT`, `CHALLENGE_INVALID`](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/identity_answers.tl#L16-L20))
 tidak akan pernah berhasil, jadi edge menghapus login yang tertunda itu, membuat cookie-nya kedaluwarsa, dan
 menjawab `401` `SIGN_IN_REQUIRED`: halaman kembali ke password alih-alih meminta kode yang tidak mungkin berhasil.
 
@@ -225,39 +225,39 @@ menjawab `401` `SIGN_IN_REQUIRED`: halaman kembali ke password alih-alih meminta
 Cookie yang dikirim browser dengan sendirinya adalah yang memungkinkan cross-site request forgery: halaman di situs
 lain membuat browser mengirim request, dan browser menambahkan cookie-nya. `SameSite=Strict` sudah menjauhkan
 cookie dari request semacam itu; edge tidak bergantung padanya saja. Setiap request yang dilayaninya
-[melewati pemeriksaan yang sama, dengan urutan ini](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/router.tl#L202-L235),
+[melewati pemeriksaan yang sama, dengan urutan ini](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/router.tl#L202-L235),
 sebelum store sesi disentuh: path yang dikenal, method yang diterima path itu, app yang disebut header `Host`,
 alamat browser, path yang disediakan app itu, lalu dua pemeriksaan terhadap pemalsuan.
 
 - **Dari mana asalnya.** Request yang mengubah sesuatu harus membawa
-  [`Origin` yang sama dengan milik app itu](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/csrf.tl#L12-L30),
+  [`Origin` yang sama dengan milik app itu](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/csrf.tl#L12-L30),
   `https://` dan host-nya, atau, tanpa `Origin`, `Sec-Fetch-Site: same-origin`. Keduanya header yang tidak bisa
   dipasang halaman: browser yang menulisnya.
 - **Apa yang dibawanya.** Body
-  [harus `application/json`](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/router.tl#L161-L185),
+  [harus `application/json`](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/router.tl#L161-L185),
   atau ditolak dengan `415` `JSON_REQUIRED`. Form HTML di situs lain hanya bisa mengirim encoding form atau teks
   biasa; body JSON dari origin lain memerlukan preflight CORS, yang ditolak edge.
 
 Alamat browser adalah
-[entri terakhir `X-Forwarded-For`](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/client_address.tl#L27-L47),
+[entri terakhir `X-Forwarded-For`](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/client_address.tl#L27-L47),
 yang ditambahkan Kong, dan tidak ada yang sebelumnya dibaca: entri yang lebih awal adalah apa pun yang dipilih
 client untuk dikirim.
 
 ## Meneruskan panggilan
 
 `/bff/api/<path>` di host sebuah app
-[menjadi `/api/<path>`](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/api_path.tl#L9-L30)
+[menjadi `/api/<path>`](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/api_path.tl#L9-L30)
 di API, dibangun dari path nginx yang sudah dinormalisasi dengan setiap segmennya di-escape lagi, sehingga daftar
 path yang ditolak melihat persis apa yang dikirim, dan segmen `.` atau `..` tidak ditemukan. Penolakannya diperiksa
-[sebelum sesi bahkan dibaca](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/forward.tl#L84-L93),
+[sebelum sesi bahkan dibaca](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/forward.tl#L80-L89),
 tanpa memedulikan huruf besar-kecil. [Referensi REST](/id/apis/rest/#bagaimana-panggilan-sampai-ke-api) menunjukkan
 request yang diteruskan.
 
 **Ke mana perginya.** Panggilan di bawah `/api/v1/auth` dan `/api/v1/couriers`
-[langsung ke identity](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/forward.tl#L40-L48);
+[langsung ke identity](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/forward.tl#L36-L44);
 selebihnya ke listener internal gateway, tempat Kong memeriksa token di route yang memang selalu ia periksa.
 Alasannya adalah batas identity untuk percobaan login dan registrasi, yang dihitung per alamat, dan identity
-[memercayai tepat satu hop di depannya](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/infrastructure/http/gateway_hop.ts#L11-L22)
+[memercayai tepat satu hop di depannya](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/infrastructure/http/gateway_hop.ts#L11-L22)
 untuk menyebut alamat itu. Lewat gateway, hop itu adalah edge, dan semua pengguna web akan berbagi satu hitungan.
 Dipanggil langsung, identity diberi tahu alamat browser sebagai satu-satunya entri; ia memverifikasi setiap token
 sendiri, dan panggilan backoffice sudah melewati gerbang staf atau otorisasi klien Tor saat masuk. Login dan
@@ -265,33 +265,33 @@ pendaftaran sampai ke
 identity dengan cara yang sama.
 
 **Apa yang dibawanya.** Dari halaman, edge hanya meneruskan
-[daftar pendek header](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/forwarding.tl#L11-L19);
+[daftar pendek header](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/forwarding.tl#L11-L19);
 cookie, `Authorization` yang dipasang halaman, dan setiap header `X-Kinetix-*` tertinggal. Edge
-[menambahkan access token milik sesi](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/forward_headers.tl#L27-L49),
+[menambahkan access token milik sesi](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/forward_headers.tl#L27-L49),
 request id, dan alamat browser. Dari jawabannya edge
-[membuang](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/forwarding.tl#L21-L38)
+[membuang](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/forwarding.tl#L21-L38)
 `Set-Cookie`, header caching, dan header yang menggambarkan koneksi, sehingga tidak ada service yang bisa memasang
 cookie di host app, dan
-[setiap jawaban yang dikirim edge membawa `Cache-Control: no-store`](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/response_headers.tl#L4-L6):
+[setiap jawaban yang dikirim edge membawa `Cache-Control: no-store`](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/response_headers.tl#L4-L6):
 apa yang dilihat pengguna yang sudah login tidak boleh disimpan cache mana pun. Panggilan di bawah `/bff/api/`
 tidak pernah menjadi WebSocket: `Upgrade`
-[tidak diteruskan ke sana maupun dikembalikan](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/forwarding.tl#L11-L38).
+[tidak diteruskan ke sana maupun dikembalikan](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/forwarding.tl#L11-L38).
 Satu-satunya socket yang dibawa edge punya path dan pemeriksaannya sendiri, di bawah.
 
 **Ketika API tidak menjawab.** API diberi
-[dua detik untuk tersambung, tiga puluh untuk menerima request, dan enam puluh untuk jawabannya dibaca](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/timing.tl#L15-L17).
+[dua detik untuk tersambung, tiga puluh untuk menerima request, dan enam puluh untuk jawabannya dibaca](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/timing.tl#L15-L17).
 Lewat dari itu, halaman mendapat `503` `API_UNAVAILABLE`, yang pesannya menyatakan
-[tidak diketahui apakah request itu berlaku](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/errors.tl#L77-L81):
+[tidak diketahui apakah request itu berlaku](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/errors.tl#L77-L81):
 panggilan itu mungkin sudah sampai ke service, dan hanya membaca keadaan terkini yang bisa memastikannya.
 
 ## Socket merchant milik web penjual
 
 matching memberi tahu seorang seller tentang job-nya lewat sebuah WebSocket, socket merchant, dan membukanya
 memerlukan access token. Web penjual tidak memegang token, jadi edge yang membukakan socket itu untuknya:
-[`/bff/ws/v1/matching/merchant`](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/router.tl#L105-L122),
+[`/bff/ws/v1/matching/merchant`](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/router.tl#L105-L122),
 dan path yang sama dengan `/websocket` di belakangnya, yang dipanggil client JavaScript Phoenix. Hanya web penjual
 yang menyediakannya; di backoffice path itu `404`. Sebelum apa pun sampai ke matching, edge
-[memeriksa, berurutan](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/merchant_socket.tl#L45-L83):
+[memeriksa, berurutan](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/merchant_socket.tl#L45-L83):
 
 - **Sebuah upgrade.** Request yang tidak meminta WebSocket mendapat `426` `WEBSOCKET_REQUIRED`.
 - **Origin milik app itu sendiri.** `Origin` harus sama dengan milik web penjual, dan request tanpanya juga
@@ -300,7 +300,7 @@ yang menyediakannya; di backoffice path itu `404`. Sebelum apa pun sampai ke mat
   `SameSite` saja untuk mencegah halaman di situs lain membuka socket itu dengan cookie milik seller.
 - **Sesi yang bisa dipakai**, dicari, dipakai, dan diperbarui persis seperti untuk panggilan di bawah `/bff/api/`.
 - **Seorang seller.** Web penjual menerima customer, tetapi
-  [hanya `seller` yang membuka socket itu](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/config/apps.tl#L37-L51);
+  [hanya `seller` yang membuka socket itu](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/apps.tl#L37-L51);
   selain itu mendapat `403` `SELLER_REQUIRED` dan tetap memegang sesinya, karena seorang pemohon masih boleh
   memakai app itu.
 
@@ -312,20 +312,20 @@ sebagai entri
 dan matching
 [membacanya dari sana](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/socket_token.ex#L1-L13).
 Edge
-[menulis entri itu dengan access token milik sesi](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/socket_handshake.tl#L67-L69)
+[menulis entri itu dengan access token milik sesi](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/socket_handshake.tl#L67-L69)
 dan
-[tidak mengirim apa pun lagi milik browser ke matching](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/nginx/nginx.conf#L84-L113)
+[tidak mengirim apa pun lagi milik browser ke matching](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/nginx/nginx.conf#L84-L113)
 selain header handshake itu sendiri dan user agent: tanpa cookie dan tanpa `Origin`, dengan alamat browser dan
 request id ditambahkan. matching lalu memeriksa token dan role-nya seperti untuk client mana pun.
 
 Token itu tidak pernah kembali. Server menjawab handshake WebSocket dengan menyebut subprotocol yang ia pilih, dan
 edge
-[membuang apa pun yang disebut matching](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/merchant_socket.tl#L85-L103):
+[membuang apa pun yang disebut matching](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/merchant_socket.tl#L85-L103):
 browser dijawab `phoenix` bila ia menawarkan `phoenix`, dan tidak dijawab apa-apa bila tidak, karena browser
 menggagalkan handshake yang menyebut subprotocol yang tidak ia tawarkan. `Set-Cookie` juga dibuang. Jawaban selain
 upgrade, termasuk penolakan dari matching, diteruskan dengan status-nya; bila gateway sama sekali tidak bisa
 dijangkau, halaman mendapat `503` `API_UNAVAILABLE`. Edge
-[menahan socket yang diam selama 90 detik](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/nginx/nginx.conf#L102-L105),
+[menahan socket yang diam selama 90 detik](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/nginx/nginx.conf#L102-L105),
 lebih lama daripada yang diizinkan Phoenix bagi socket untuk diam;
 [gateway](/id/architecture/gateway/#sembilan-puluh-detik-untuk-socket-yang-diam) menunggu selama itu juga di
 kedua hop-nya.
@@ -334,16 +334,16 @@ kedua hop-nya.
 
 - **Redis.** Tanpa store sesi tidak ada yang bisa diperiksa, jadi setiap panggilan yang memerlukannya mendapat
   `503` `SESSION_STORE_UNAVAILABLE`, tidak pernah "sudah logout". Login atau pendaftaran
-  [membuka store sebelum bertanya ke identity](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sign_in.tl#L211-L226),
+  [membuka store sebelum bertanya ke identity](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sign_in.tl#L211-L226),
   sehingga login yang ditolak karena gangguan belum memakai satu percobaan dari hitungan akun di identity. Error
   yang dijawab Redis, misalnya perintah yang ia tolak, adalah
-  [kegagalan seperti koneksi yang putus](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/adapters/redis_store.tl#L17-L21),
+  [kegagalan seperti koneksi yang putus](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/adapters/redis_store.tl#L17-L21),
   tidak pernah keberhasilan, dan koneksinya ditutup alih-alih diserahkan ke request berikutnya.
 - **identity.** Login atau pendaftaran mendapat `503` `IDENTITY_UNAVAILABLE`; begitu pula pembaruan, dan sesinya
   dipertahankan. Logout
-  [menjawab `503` dan juga mempertahankan sesi](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/logout.tl#L76-L105):
+  [menjawab `503` dan juga mempertahankan sesi](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/logout.tl#L76-L105):
   "sudah logout" adalah jawaban pasti yang tidak bisa diberikan edge selama token-nya mungkin masih hidup. Logout
-  [berhasil begitu identity sudah mengakhiri token-nya](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/logout.tl#L96-L104),
+  [berhasil begitu identity sudah mengakhiri token-nya](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/logout.tl#L96-L104),
   entah identity menjawab sukses atau `401` atau `403`, yang berarti token-nya memang sudah mati: halaman
   mendapat `204` dan kedua cookie dibuat kedaluwarsa.
 
@@ -352,7 +352,7 @@ kedua hop-nya.
 Edge memiliki sesi: pasangan token mana yang diwakili sebuah cookie, login yang masih menunggu kode, dan kebijakan
 setiap app — role-nya, masa hidupnya, apakah ia menyediakan pendaftaran dan socket merchant, pemeriksaan terhadap
 pemalsuan. Kebijakannya adalah
-[kode, dikompilasi dan diperiksa tipenya bersama yang lain](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/README.md#L59),
+[kode, dikompilasi dan diperiksa tipenya bersama yang lain](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/README.md#L59),
 bukan konfigurasi.
 
 Edge tidak memiliki akun, password, maupun role. identity tetap satu-satunya service yang menerbitkan token; edge
@@ -375,7 +375,7 @@ di belakang Kong, yang memutuskan siapa boleh menjangkaunya.
 | `tests/` | unit, integration, dan mutation test |
 
 Edge tidak punya port dalam arti yang dipakai [service lain](/id/architecture/many-idioms/#pengecualiannya-edge):
-[sebuah modul langsung me-require adapter-nya](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sessions.tl#L1-L24),
+[sebuah modul langsung me-require adapter-nya](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L1-L24),
 dan test-nya mengganti identity, API, dan socket matching di level jaringan, dengan fake yang menjawab lewat HTTP
 dan WebSocket. Satu-satunya sambungan di dalamnya adalah koneksi Redis, yang diterima fungsi-fungsi sesi sebagai
 argumen, sehingga unit test bisa memberinya koneksi palsu.
@@ -383,13 +383,13 @@ argumen, sehingga unit test bisa memberinya koneksi palsu.
 ## Data
 
 Redis menyimpan
-[tiga jenis key](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/README.md#L68-L75),
+[tiga jenis key](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/README.md#L68-L75),
 masing-masing dinamai menurut SHA-256 sebuah cookie dan masing-masing punya masa berlaku: sesi, yang hidup sampai
 akhir idle atau akhir absolutnya; login tertunda, yang hidup selama challenge atau enrolment identity; dan lock
 pembaruan, yang hidup 15 detik. Edge tersambung sebagai user Redis miliknya sendiri,
-[yang hanya diizinkan memakai key di bawah prefix-nya dan hanya perintah yang ia pakai](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/README.md#L68-L72),
+[yang hanya diizinkan memakai key di bawah prefix-nya dan hanya perintah yang ia pakai](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/README.md#L68-L72),
 dan integration test
-[berjalan di bawah user yang sama](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/tests/integration/main/redis_acl_spec.tl#L12-L30),
+[berjalan di bawah user yang sama](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/tests/integration/main/redis_acl_spec.tl#L12-L30),
 sehingga perintah yang mulai dipakai edge tanpa dicantumkan menggagalkan sebuah test, bukan sebuah login. Tidak ada
 isi Redis yang diperlukan lama: kehilangannya mengeluarkan semua orang dari web app, dan tidak menghilangkan hal
 lain.
@@ -397,33 +397,33 @@ lain.
 ## Bagaimana ia diuji
 
 - **Build** menjalankan
-  [`tl check` di setiap file](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/bin/check#L17-L44),
+  [`tl check` di setiap file](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/bin/check#L17-L44),
   serta menolak tipe `any`, komentar, dan baris lebih dari 120 kolom.
 - **Unit test** menjalankan modul-modul murni — cookie, pemeriksaan pemalsuan, path, header, masa hidup, pembacaan
   jawaban identity, handshake WebSocket — dan store sesi terhadap koneksi Redis palsu, di bawah
-  [busted di dalam OpenResty](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/bin/unit#L11-L18).
+  [busted di dalam OpenResty](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/bin/unit#L11-L18).
 - **Integration test**
-  [menjalankan OpenResty sungguhan dengan Lua hasil generate dan `nginx.conf` production](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/bin/integration#L93-L141)
+  [menjalankan OpenResty sungguhan dengan Lua hasil generate dan `nginx.conf` production](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/bin/integration#L93-L141)
   terhadap Redis sungguhan di bawah user milik edge sendiri, dengan fake identity dan API yang menjawab dalam bentuk
   asli jawaban identity. Fake socket matching
-  [mengembalikan setiap subprotocol yang ditawarkan kepadanya](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/CLAUDE.md#L193-L195),
+  [mengembalikan setiap subprotocol yang ditawarkan kepadanya](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/CLAUDE.md#L200-L202),
   upstream paling sulit untuk menjaga token tetap di luar jawaban. Test itu berjalan tiga kali: sesuai
   konfigurasi, dengan masa hidup yang dipersingkat agar sesi kedaluwarsa di dalam test, dan dengan Redis yang
   tidak terjangkau. Setelah itu test
-  [memeriksa bahwa edge menolak start](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/bin/integration#L143-L166)
+  [memeriksa bahwa edge menolak start](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/bin/integration#L143-L166)
   tanpa setiap pengaturannya, dan
-  [mencari di log-nya](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/bin/integration#L168-L184)
+  [mencari di log-nya](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/bin/integration#L168-L184)
   setiap cookie, token, email, password, dan kode yang dilihat test.
 - **Mutation test** merusak
-  [setiap pemeriksaan keamanan](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/tests/mutation/catalogue.tl)
+  [setiap pemeriksaan keamanan](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/tests/mutation/catalogue.tl)
   sekali — 51 jumlahnya, dari pemeriksaan `Origin` sampai hashing key, gerbang role, dan token milik socket — lalu
   menjalankan test yang seharusnya menyadarinya. Perubahan yang tidak disadari test mana pun
-  [menggagalkan run-nya](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/bin/mutate#L74-L88),
+  [menggagalkan run-nya](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/bin/mutate#L74-L88),
   sehingga sebuah pemeriksaan keamanan tidak bisa diam-diam kehilangan test-nya.
 
-[CI menjalankan ketiganya di setiap perubahan](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/.github/workflows/ci.yml#L27-L35),
+[CI menjalankan ketiganya di setiap perubahan](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/.github/workflows/ci.yml#L27-L35),
 dan
-[memeriksa image-nya](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/.github/workflows/ci.yml#L60-L74):
+[memeriksa image-nya](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/.github/workflows/ci.yml#L60-L74):
 image berjalan sebagai user, bukan root, tidak membawa Teal, dan menolak start tanpa konfigurasinya.
 
 ## Siapa boleh melakukan apa
@@ -442,20 +442,20 @@ image berjalan sebagai user, bukan root, tidak membawa Teal, dan menolak start t
 ## Mengoperasikannya
 
 - `/health` menjawab ketika proses berjalan; `/health/ready`
-  [memerlukan Redis menjawab `PING` sebagai user milik edge](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/health.tl#L9-L27),
+  [memerlukan Redis menjawab `PING` sebagai user milik edge](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/health.tl#L9-L27),
   dan health check container
-  [menanyakannya](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/Dockerfile#L41-L42).
-- [Metrik](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/README.md#L77-L86),
+  [menanyakannya](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/Dockerfile#L41-L42).
+- [Metrik](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/README.md#L77-L86),
   di port tersendiri, menghitung request per template route — tidak pernah path mentah — sesi yang dimulai dan
   diakhiri beserta alasannya, pembaruan per hasilnya, penolakan karena pemalsuan, pembukaan socket per hasilnya,
   logout di identity untuk sesi yang diakhiri edge, dan kegagalan Redis, identity, serta API.
 - Setiap request menjadi
-  [satu baris JSON di standard error](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/access_log.tl#L7-L32):
+  [satu baris JSON di standard error](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/access_log.tl#L7-L32):
   method, template route, status, durasi, request id, app, dan
-  [delapan karakter hex dari hash cookie](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/http/sessions.tl#L83-L89),
+  [delapan karakter hex dari hash cookie](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L83-L89),
   cukup untuk mengikuti satu sesi di log, dan tidak pernah cookie itu sendiri.
 - Edge
-  [menolak start](https://github.com/WildanFrananda/kinetix-edge-service/blob/400b6e95f432defbf2b52a81ab3096d4b5cf77ca/src/adapters/environment.tl#L81-L165)
+  [menolak start](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/adapters/environment.tl#L81-L165)
   tanpa setiap pengaturannya, dengan origin backoffice yang bukan origin, memakai `http://` untuk selain host
   `.onion`, mengulang sebuah host atau menyebut host web penjual, dengan versi yang tidak menyebut sebuah build,
   atau dengan alamat API yang bukan `http://` biasa, yang memang dipakai listener internal gateway.

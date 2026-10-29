@@ -1,9 +1,9 @@
 ---
 title: Pengajuan kurir
-description: Cara admin mendaftar kurir yang menunggu persetujuan di identity dan menyetujui masing-masing, yang sekaligus mengaktifkan driver kurir itu di armada milik matching.
+description: Cara admin mendaftar kurir yang menunggu persetujuan di identity, menyetujui atau menolak masing-masing, yang saat disetujui sekaligus mengaktifkan driver kurir itu di armada milik matching, dan menghitung keputusan dalam suatu periode.
 sidebar:
   order: 3
-sourceHash: "f9a9b102b521"
+sourceHash: "bacf15146ef1"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -11,19 +11,19 @@ import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
 Seorang kurir mendaftar dari aplikasi kurir dengan `POST /api/v1/couriers/register`
 ([Daftar sebagai kurir](/id/apis/rest/courier-app/register/)). Identity mencatatkan kendaraannya ke armada milik
 matching, lalu mencatat pengajuannya sebagai `pending`
-([courier_registration_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/courier_registration_usecase.service.ts#L57-L63),
-[typeorm_courier_application_repository.adapter.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/infrastructure/persistence/adapters/typeorm_courier_application_repository.adapter.ts#L23-L45)).
+([courier_registration_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/courier_registration_usecase.service.ts#L57-L63),
+[typeorm_courier_application_repository.adapter.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/infrastructure/persistence/adapters/typeorm_courier_application_repository.adapter.ts#L24-L39)).
 Akun itu tetap `customer` sampai seorang admin, yang sudah masuk dari jaringan staf Kinetix seperti di
-[Masuk](/id/apis/rest/backoffice/sign-in/), mendaftar pengajuan yang menunggu dan menyetujuinya. Identity mencatat
-kedua panggilan itu bersama admin yang melakukannya.
+[Masuk](/id/apis/rest/backoffice/sign-in/), mendaftar pengajuan yang menunggu lalu menyetujui atau menolak
+masing-masing. Identity mencatat setiap panggilan itu bersama admin yang melakukannya.
 
 ## 1. Daftar pengajuan yang menunggu
 
 Minta `status=pending`, dan lanjutkan ke halaman berikutnya dengan `after` diisi `nextAfterId` selama nilainya berupa
-angka. Simpan `principalId` setiap pengajuan, yang dipakai di langkah 2. `driverId` adalah id driver yang diberikan
-matching kepada kurir itu saat kendaraannya dicatatkan
+angka. Simpan `principalId` setiap pengajuan, yang dipakai di langkah 2 dan 3. `driverId` adalah id driver yang
+diberikan matching kepada kurir itu saat kendaraannya dicatatkan
 ([fleet_registry_server.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/servers/fleet_registry_server.ex#L20-L38),
-[fleet_registry_grpc.adapter.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L44-L58)):
+[fleet_registry_grpc.adapter.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L44-L58)):
 yaitu `id` kurir itu di halaman [Armada dan dispatch](/id/apis/rest/backoffice/fleet-and-dispatch/).
 
 <RestEndpoint id="identity.listCourierApplications" via="backoffice" />
@@ -32,15 +32,42 @@ yaitu `id` kurir itu di halaman [Armada dan dispatch](/id/apis/rest/backoffice/f
 
 Setujui dengan `principalId` dari langkah 1. Identity menjadikan akun itu kurir, meminta matching mengaktifkan
 driver-nya, dan baru menandai pengajuannya `approved` setelah matching melakukannya
-([courier_onboarding_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/courier_onboarding_usecase.service.ts#L69-L91)).
+([courier_onboarding_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/courier_onboarding_usecase.service.ts#L82-L90)).
 Setelah jawaban `503`, akun itu sudah kurir tetapi pengajuannya masih terbaca `pending`: setujui lagi begitu armada
 menjawab. Setelah jawaban `502`, tidak ada yang berubah, termasuk role-nya: akun yang baru saja dijadikan kurir oleh
 request ini kembali menjadi `customer`
-([courier_onboarding_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/courier_onboarding_usecase.service.ts#L93-L117)),
+([courier_onboarding_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/courier_onboarding_usecase.service.ts#L154-L178)),
 dan menyetujui lagi tidak membantu sampai hal yang disebut `error` dibereskan. Untuk akun yang sudah kurir, identity
 tidak mengubah role apa pun; identity meminta matching mengaktifkan driver-nya lagi lalu mencatat persetujuannya
-([courier_onboarding_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/e1540249863f47b42f5409abdc396c06aadbb1e7/src/application/services/courier_onboarding_usecase.service.ts#L58-L61)),
+([courier_onboarding_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/courier_onboarding_usecase.service.ts#L71-L74)),
 dan matching membiarkan driver yang sudah aktif apa adanya
 ([tracking.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/tracking.ex#L180-L197)).
+Pengajuan yang ditolak di langkah 3 tidak bisa disetujui sampai kurir itu mendaftar lagi
+([courier_onboarding_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/courier_onboarding_usecase.service.ts#L63-L69)).
 
 <RestEndpoint id="identity.approveCourier" via="backoffice" />
+
+## 3. Tolak kurir
+
+Menolak alih-alih menyetujui, dengan `principalId` yang sama, menandai pengajuannya `rejected` dan tidak mengubah apa
+pun yang lain: akunnya tetap `customer` dan matching tidak dihubungi, jadi driver-nya tetap tidak aktif
+([courier_onboarding_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/courier_onboarding_usecase.service.ts#L92-L123)).
+Hanya pengajuan `pending` yang bisa ditolak. Persetujuan yang berhenti di tengah jalan, setelah jawaban `503` di
+langkah 2, sudah menjadikan akunnya kurir; menolaknya akan membiarkan role itu tetap ada, jadi identity menjawab `409`
+dan persetujuannya yang harus diselesaikan. Kurir yang ditolak lalu mendaftar lagi dengan data yang sama kembali
+`pending`, dengan `filedAt` yang baru
+([typeorm_courier_application_repository.adapter.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/infrastructure/persistence/adapters/typeorm_courier_application_repository.adapter.ts#L29-L37)),
+dan muncul lagi di langkah 1.
+
+<RestEndpoint id="identity.rejectCourier" via="backoffice" />
+
+## 4. Hitung keputusannya
+
+Backoffice menampilkan berapa pengajuan yang disetujui dan ditolak hari ini, minggu ini dan bulan ini, dan meminta
+sekali untuk setiap periode, dengan `since` diisi awal periode itu di zona waktu admin sendiri, beserta offset-nya.
+Identity menghitung pengajuan menurut keadaannya saat ini: kurir yang ditolak lalu mendaftar lagi berstatus `pending`
+dan keluar dari hitungan
+([typeorm_courier_application_repository.adapter.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/infrastructure/persistence/adapters/typeorm_courier_application_repository.adapter.ts#L100-L110)).
+Minta lagi setelah keputusan di langkah 2 atau 3 untuk melihatnya terhitung.
+
+<RestEndpoint id="identity.courierApplicationsTally" via="backoffice" />

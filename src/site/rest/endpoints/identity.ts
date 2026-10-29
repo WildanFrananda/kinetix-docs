@@ -1618,7 +1618,8 @@ export const identityEndpoints: readonly RestEndpoint[] = [
               city: "Jakarta Pusat",
               postalCode: "10330",
               status: "pending",
-              verifiedAt: null
+              verifiedAt: null,
+              rejectedAt: null
             }
           ],
           nextAfterId: null
@@ -1626,8 +1627,8 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "identity",
           "src/infrastructure/persistence/adapters/typeorm_merchant_verification_repository.adapter.ts",
-          63,
-          99
+          65,
+          102
         )
       },
       {
@@ -1653,7 +1654,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         source: restSource("identity", "src/adapters/guards/roles.guard.ts", 23, 29)
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/seller_onboarding.controller.ts", 23, 31)
+    source: restSource("identity", "src/adapters/controllers/seller_onboarding.controller.ts", 25, 33)
   },
   {
     id: "identity.getSellerApplication",
@@ -1694,7 +1695,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           postalCode: "10330",
           principalId: "5d2a7c3e-8b14-4f6a-9e21-7c0b3d4e5f60"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 114, 130)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 116, 132)
       },
       {
         status: 400,
@@ -1727,10 +1728,10 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 404,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 118, 125)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 120, 127)
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/seller_onboarding.controller.ts", 33, 39)
+    source: restSource("identity", "src/adapters/controllers/seller_onboarding.controller.ts", 43, 49)
   },
   {
     id: "identity.onboardSeller",
@@ -1819,7 +1820,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           city: "Jakarta Pusat",
           postalCode: "10330"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 39, 78)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 40, 80)
       },
       {
         status: 400,
@@ -1863,7 +1864,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 404,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 40, 43)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 41, 44)
       },
       {
         status: 409,
@@ -1874,7 +1875,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 49, 52)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 50, 53)
       },
       {
         status: 409,
@@ -1885,7 +1886,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 219, 227)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 226, 234)
       },
       {
         status: 409,
@@ -1900,12 +1901,12 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "identity",
           "src/infrastructure/persistence/adapters/typeorm_merchant_verification_repository.adapter.ts",
-          51,
-          56
+          53,
+          58
         )
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/seller_onboarding.controller.ts", 41, 51)
+    source: restSource("identity", "src/adapters/controllers/seller_onboarding.controller.ts", 51, 61)
   },
   {
     id: "identity.verifySeller",
@@ -1950,7 +1951,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           geocodedAt: "2026-10-27T03:15:00.415Z",
           principalId: "5d2a7c3e-8b14-4f6a-9e21-7c0b3d4e5f60"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 146, 206)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 153, 213)
       },
       {
         status: 400,
@@ -1983,7 +1984,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 404,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 118, 125)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 120, 127)
       },
       {
         status: 409,
@@ -1994,7 +1995,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 208, 217)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 215, 224)
       },
       {
         status: 409,
@@ -2005,7 +2006,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 219, 227)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 226, 234)
       },
       {
         status: 409,
@@ -2025,7 +2026,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         )
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/seller_onboarding.controller.ts", 53, 60)
+    source: restSource("identity", "src/adapters/controllers/seller_onboarding.controller.ts", 63, 70)
   },
   {
     id: "identity.rejectSeller",
@@ -2064,9 +2065,10 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           streetAddress: "Jalan Flamboyan No. 8",
           city: "Jakarta Pusat",
           postalCode: "10330",
+          rejectedAt: "2026-10-27T03:20:11.204Z",
           principalId: "5d2a7c3e-8b14-4f6a-9e21-7c0b3d4e5f60"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 138, 144)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 144, 151)
       },
       {
         status: 400,
@@ -2099,7 +2101,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 404,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 118, 125)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 120, 127)
       },
       {
         status: 409,
@@ -2110,10 +2112,73 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 208, 217)
+        source: restSource("identity", "src/application/services/seller_onboarding_usecase.service.ts", 215, 224)
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/seller_onboarding.controller.ts", 62, 69)
+    source: restSource("identity", "src/adapters/controllers/seller_onboarding.controller.ts", 72, 79)
+  },
+  {
+    id: "identity.sellerApplicationsTally",
+    service: "identity",
+    method: "GET",
+    path: "/api/v1/sellers/applications/tally",
+    summary: "rest.identity.sellerApplicationsTally.summary",
+    access: {
+      token: "required",
+      gatewayVerifies: true,
+      who: "rest.identity.sellerApplicationsTally.who"
+    },
+    request: {
+      fields: [
+        {
+          name: "since",
+          in: "query",
+          type: "string",
+          required: true,
+          rule: "rest.identity.sellerApplicationsTally.field.since"
+        }
+      ]
+    },
+    cases: [
+      {
+        status: 200,
+        when: "rest.identity.sellerApplicationsTally.case.counted",
+        json: {
+          since: "2026-10-28T17:00:00.000Z",
+          approved: 3,
+          rejected: 1
+        },
+        source: restSource(
+          "identity",
+          "src/infrastructure/persistence/adapters/typeorm_merchant_verification_repository.adapter.ts",
+          104,
+          116
+        )
+      },
+      {
+        status: 400,
+        when: "rest.identity.sellerApplicationsTally.case.invalid",
+        json: {
+          message: ["since must be an instant with its offset, such as 2026-10-29T00:00:00+07:00"],
+          error: "Bad Request",
+          statusCode: 400,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/dto/application_tally_query.dto.ts", 3, 11)
+      },
+      {
+        status: 403,
+        when: "rest.identity.sellerApplicationsTally.case.notAdmin",
+        json: {
+          message: "This account does not have access to this resource",
+          error: "Forbidden",
+          statusCode: 403,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/adapters/guards/roles.guard.ts", 23, 29)
+      }
+    ],
+    source: restSource("identity", "src/adapters/controllers/seller_onboarding.controller.ts", 35, 41)
   },
   {
     id: "identity.registerCourier",
@@ -2301,7 +2366,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           message: "ThrottlerException: Too Many Requests",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/adapters/controllers/courier_onboarding.controller.ts", 37, 47)
+        source: restSource("identity", "src/adapters/controllers/courier_onboarding.controller.ts", 38, 48)
       },
       {
         status: 429,
@@ -2351,7 +2416,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         )
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/courier_onboarding.controller.ts", 37, 47)
+    source: restSource("identity", "src/adapters/controllers/courier_onboarding.controller.ts", 38, 48)
   },
   {
     id: "identity.listCourierApplications",
@@ -2404,7 +2469,8 @@ export const identityEndpoints: readonly RestEndpoint[] = [
               driverId: 118,
               status: "pending",
               filedAt: "2026-10-26T07:42:10.226Z",
-              approvedAt: null
+              approvedAt: null,
+              rejectedAt: null
             }
           ],
           nextAfterId: null
@@ -2412,15 +2478,15 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         source: restSource(
           "identity",
           "src/infrastructure/persistence/adapters/typeorm_courier_application_repository.adapter.ts",
-          47,
-          99
+          76,
+          141
         )
       },
       {
         status: 400,
         when: "rest.identity.listCourierApplications.case.invalid",
         json: {
-          message: ["status must be one of the following values: pending, approved"],
+          message: ["status must be one of the following values: pending, approved, rejected"],
           error: "Bad Request",
           statusCode: 400,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
@@ -2450,7 +2516,82 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         source: restSource("identity", "src/infrastructure/http/throttle_policy.ts", 3, 6)
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/courier_onboarding.controller.ts", 49, 57)
+    source: restSource("identity", "src/adapters/controllers/courier_onboarding.controller.ts", 50, 58)
+  },
+  {
+    id: "identity.courierApplicationsTally",
+    service: "identity",
+    method: "GET",
+    path: "/api/v1/couriers/applications/tally",
+    summary: "rest.identity.courierApplicationsTally.summary",
+    access: {
+      token: "required",
+      gatewayVerifies: true,
+      who: "rest.identity.courierApplicationsTally.who"
+    },
+    request: {
+      fields: [
+        {
+          name: "since",
+          in: "query",
+          type: "string",
+          required: true,
+          rule: "rest.identity.courierApplicationsTally.field.since"
+        }
+      ]
+    },
+    cases: [
+      {
+        status: 200,
+        when: "rest.identity.courierApplicationsTally.case.counted",
+        headers: ["X-RateLimit-Limit: 10", "X-RateLimit-Remaining: 9", "X-RateLimit-Reset: 60"],
+        json: {
+          since: "2026-10-28T17:00:00.000Z",
+          approved: 3,
+          rejected: 1
+        },
+        source: restSource(
+          "identity",
+          "src/infrastructure/persistence/adapters/typeorm_courier_application_repository.adapter.ts",
+          100,
+          110
+        )
+      },
+      {
+        status: 400,
+        when: "rest.identity.courierApplicationsTally.case.invalid",
+        json: {
+          message: ["since must be an instant with its offset, such as 2026-10-29T00:00:00+07:00"],
+          error: "Bad Request",
+          statusCode: 400,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/dto/application_tally_query.dto.ts", 3, 11)
+      },
+      {
+        status: 403,
+        when: "rest.identity.courierApplicationsTally.case.notAdmin",
+        json: {
+          message: "This account does not have access to this resource",
+          error: "Forbidden",
+          statusCode: 403,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/adapters/guards/roles.guard.ts", 23, 29)
+      },
+      {
+        status: 429,
+        when: "rest.identity.courierApplicationsTally.case.throttled",
+        headers: ["Retry-After: 42"],
+        json: {
+          error: "REQUEST_REFUSED",
+          message: "ThrottlerException: Too Many Requests",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/infrastructure/http/throttle_policy.ts", 3, 6)
+      }
+    ],
+    source: restSource("identity", "src/adapters/controllers/courier_onboarding.controller.ts", 60, 66)
   },
   {
     id: "identity.approveCourier",
@@ -2486,7 +2627,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           driverId: 118,
           fleetActivated: true
         },
-        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 79, 91)
+        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 140, 152)
       },
       {
         status: 400,
@@ -2497,7 +2638,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 400,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/adapters/controllers/courier_onboarding.controller.ts", 64, 66)
+        source: restSource("identity", "src/adapters/controllers/courier_onboarding.controller.ts", 73, 75)
       },
       {
         status: 403,
@@ -2519,7 +2660,19 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 404,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 48, 56)
+        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 53, 61)
+      },
+      {
+        status: 409,
+        when: "rest.identity.approveCourier.case.rejected",
+        json: {
+          message:
+            "The courier application of principal 3c9e2a41-7b5d-4f08-9a1c-2d6e8f0b4c17 was rejected; it can be approved only after the courier registers the vehicle again",
+          error: "Conflict",
+          statusCode: 409,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 63, 69)
       },
       {
         status: 409,
@@ -2531,7 +2684,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 63, 67)
+        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 76, 80)
       },
       {
         status: 409,
@@ -2542,7 +2695,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
             "This account has filed no vehicle, so it cannot be approved as a courier. Nothing was changed; it must register a vehicle first.",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 124, 131)
+        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 185, 192)
       },
       {
         status: 429,
@@ -2564,7 +2717,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
             "identity could not ask the fleet to activate this driver (FLEET_PERMISSION_DENIED); the fault lies between identity and the fleet, not with the account. Nothing was changed.",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 133, 145)
+        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 194, 206)
       },
       {
         status: 502,
@@ -2575,7 +2728,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
             "The fleet refused to activate this driver (REGISTRATION_REFUSED: the fleet row could not be written: %{vehicle_plate: [\"can't be blank\"]}). Nothing was changed.",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 147, 154)
+        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 208, 215)
       },
       {
         status: 503,
@@ -2586,10 +2739,131 @@ export const identityEndpoints: readonly RestEndpoint[] = [
             "The account is now a courier, but the fleet could not be told to activate the driver. Approve again once the fleet is reachable; nothing will be duplicated.",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 156, 161)
+        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 217, 222)
       }
     ],
-    source: restSource("identity", "src/adapters/controllers/courier_onboarding.controller.ts", 59, 68)
+    source: restSource("identity", "src/adapters/controllers/courier_onboarding.controller.ts", 68, 77)
+  },
+  {
+    id: "identity.rejectCourier",
+    service: "identity",
+    method: "POST",
+    path: "/api/v1/couriers/{principalId}/reject",
+    summary: "rest.identity.rejectCourier.summary",
+    access: {
+      token: "required",
+      gatewayVerifies: true,
+      who: "rest.identity.rejectCourier.who"
+    },
+    request: {
+      fields: [
+        {
+          name: "principalId",
+          in: "path",
+          type: "string (uuid)",
+          required: true,
+          rule: "rest.identity.rejectCourier.field.principalId"
+        }
+      ]
+    },
+    cases: [
+      {
+        status: 200,
+        when: "rest.identity.rejectCourier.case.rejected",
+        headers: ["X-RateLimit-Limit: 10", "X-RateLimit-Remaining: 9", "X-RateLimit-Reset: 60"],
+        json: {
+          applicationId: 5,
+          principalId: "3c9e2a41-7b5d-4f08-9a1c-2d6e8f0b4c17",
+          userId: 63,
+          email: "kurir.budi@example.com",
+          driverId: 118,
+          status: "rejected",
+          filedAt: "2026-10-26T07:42:10.226Z",
+          approvedAt: null,
+          rejectedAt: "2026-10-27T03:20:11.204Z"
+        },
+        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 92, 123)
+      },
+      {
+        status: 400,
+        when: "rest.identity.rejectCourier.case.badPrincipal",
+        json: {
+          message: "Validation failed (uuid is expected)",
+          error: "Bad Request",
+          statusCode: 400,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/adapters/controllers/courier_onboarding.controller.ts", 84, 86)
+      },
+      {
+        status: 403,
+        when: "rest.identity.rejectCourier.case.notAdmin",
+        json: {
+          message: "This account does not have access to this resource",
+          error: "Forbidden",
+          statusCode: 403,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/adapters/guards/roles.guard.ts", 23, 29)
+      },
+      {
+        status: 404,
+        when: "rest.identity.rejectCourier.case.unknown",
+        json: {
+          message: "No account is registered under principal 3c9e2a41-7b5d-4f08-9a1c-2d6e8f0b4c17",
+          error: "Not Found",
+          statusCode: 404,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 93, 101)
+      },
+      {
+        status: 404,
+        when: "rest.identity.rejectCourier.case.noApplication",
+        json: {
+          message: "No courier application is filed under principal 3c9e2a41-7b5d-4f08-9a1c-2d6e8f0b4c17",
+          error: "Not Found",
+          statusCode: 404,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 125, 129)
+      },
+      {
+        status: 409,
+        when: "rest.identity.rejectCourier.case.notPending",
+        json: {
+          message: "The courier application of principal 3c9e2a41-7b5d-4f08-9a1c-2d6e8f0b4c17 is approved, not pending",
+          error: "Conflict",
+          statusCode: 409,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 131, 135)
+      },
+      {
+        status: 409,
+        when: "rest.identity.rejectCourier.case.halfApproved",
+        json: {
+          message:
+            "Account 3c9e2a41-7b5d-4f08-9a1c-2d6e8f0b4c17 is already a courier: an approval began and did not finish. Approve it again to finish it; a rejection would leave the courier role in place",
+          error: "Conflict",
+          statusCode: 409,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/courier_onboarding_usecase.service.ts", 105, 110)
+      },
+      {
+        status: 429,
+        when: "rest.identity.rejectCourier.case.throttled",
+        headers: ["Retry-After: 42"],
+        json: {
+          error: "REQUEST_REFUSED",
+          message: "ThrottlerException: Too Many Requests",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/infrastructure/http/throttle_policy.ts", 3, 6)
+      }
+    ],
+    source: restSource("identity", "src/adapters/controllers/courier_onboarding.controller.ts", 79, 88)
   },
   {
     id: "identity.jwks",
