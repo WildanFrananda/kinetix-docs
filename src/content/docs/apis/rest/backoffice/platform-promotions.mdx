@@ -29,7 +29,8 @@ created nothing and left the key unused, so the corrected request can go out wit
 A discount takes a percentage or an amount off the unit price between two times. Aim it at one product with
 `target_product_id`, the product's `sku` in catalog; at a category with `target_category_id`, a `slug` from the
 [Categories](/apis/rest/backoffice/categories/) list; or at every product by leaving both out. Keep `id` from the
-answer.
+answer. A category discount follows the slug, not the category: if the slug is changed later, the discount no longer
+applies to that category's products ([Categories](/apis/rest/backoffice/categories/), step 4).
 
 <RestEndpoint id="pricing.createDiscount" via="backoffice" />
 

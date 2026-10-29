@@ -44,8 +44,8 @@ export const restReleases: Readonly<Record<RestService, RestRelease>> = {
   },
   warehouse: {
     repository: "kinetix-warehouse-service",
-    tag: "v1.3.0",
-    commit: "ec17794d7551b0ccacc0ada5c31747f8d44526e3"
+    tag: "v1.4.0",
+    commit: "07fc2707413de029830bd1364e722a41b8285d81"
   },
   matching: {
     repository: "kinetix-matching-service",

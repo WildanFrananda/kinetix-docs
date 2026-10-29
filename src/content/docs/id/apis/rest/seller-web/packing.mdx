@@ -3,7 +3,7 @@ title: Mengemas pesanan
 description: Cara penjual mengerjakan antrean pengemasan di warehouse, dari pesanan yang dibayar sampai label pengiriman tercetak, dan mendengar dari socket merchant milik matching kapan sebuah paket mendapat kurir.
 sidebar:
   order: 7
-sourceHash: "af3fb244e814"
+sourceHash: "8c84af34f0bd"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -106,8 +106,8 @@ Kirim setiap kode yang dipindai pengemas, dengan `id` task-nya, sekali untuk set
 barisnya sudah dipindai, dan kecocokan pertama memindahkan task `received` ke `packing`. Pindaian yang cocok dengan
 baris terakhir yang belum dipindai menandai paket sudah dikemas dan memberi tahu order bahwa paket siap, lalu order
 memesan kurir
-([verify_scan_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/services/fulfillment/verify_scan_service.rb#L65-L99),
-[task_transitions.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/services/fulfillment/task_transitions.rb#L28-L35)).
+([verify_scan_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/services/fulfillment/verify_scan_service.rb#L65-L99),
+[task_transitions.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/services/fulfillment/task_transitions.rb#L28-L35)).
 `lines_remaining` menyebutkan berapa baris yang tersisa. Nomor pesanan atau nomor resi juga cocok tetapi tidak
 menandai baris mana pun, dan pindaian atas task yang sudah `packed` tidak mengubah apa pun dan tidak memberi tahu
 order apa pun. Kode yang tidak cocok dengan apa pun tidak memajukan apa pun.
@@ -118,11 +118,11 @@ order apa pun. Kode yang tidak cocok dengan apa pun tidak memajukan apa pun.
 
 Sebuah task baru menjadi `packed` setelah sebuah pindaian cocok dengan setiap baris: pada task `packing`, endpoint
 langkah 5 menolak `packed` selama masih ada baris yang belum dipindai
-([advance_task_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/services/fulfillment/advance_task_service.rb#L61-L64)).
+([advance_task_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/services/fulfillment/advance_task_service.rb#L61-L64)).
 Setelah task itu `packed`, mengirim `{"status": "packed"}` ke endpoint tersebut mengirim ulang laporannya ke order,
 dan untuk itulah kegunaannya: bila pindaian yang menandai paket sudah dikemas menjawab `order_notified` `false`
 dengan order yang tidak terjangkau, belum ada kurir yang dipesan
-([advance_task_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/services/fulfillment/advance_task_service.rb#L95-L118)).
+([advance_task_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/services/fulfillment/advance_task_service.rb#L95-L118)).
 Order menyimpan satu pemesanan kurir per pesanan, jadi laporan yang dikirim ulang tidak memesan kurir kedua
 ([FulfillmentPackedHandler.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Fulfillment/FulfillmentPackedHandler.cs#L62-L81)).
 
@@ -135,9 +135,9 @@ sampai saat itu order bertanya lagi nanti
 ([CourierDispatcher.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Fulfillment/CourierDispatcher.cs#L73-L109)).
 Dengan jawaban itu, order mencatat nomor resi di warehouse lewat gRPC
 ([CourierDispatcher.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Fulfillment/CourierDispatcher.cs#L121-L146),
-[fulfillment_task_service_handler.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/rpc/fulfillment_task_service_handler.rb#L80-L111)),
+[fulfillment_task_service_handler.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/rpc/fulfillment_task_service_handler.rb#L80-L111)),
 dan sejak saat itu kartu task di antrean membawanya sebagai `tracking_number`
-([task_queue_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/services/fulfillment/task_queue_service.rb#L54)).
+([task_queue_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/services/fulfillment/task_queue_service.rb#L54)).
 
 Halaman mencocokkan setiap push dengan sebuah task lewat `order_number`. Job `pending` belum punya kurir: halaman
 terus menunggu. Job `assigned` sudah punya, dan halaman membaca antrean lagi (langkah 4). Order baru mengetahui

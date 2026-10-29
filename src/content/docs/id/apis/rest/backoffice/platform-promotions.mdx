@@ -3,7 +3,7 @@ title: Promosi platform
 description: Cara admin membuat diskon, voucher dan flash sale milik platform sendiri di pricing, dan membaca kembali pemakaian sebuah voucher.
 sidebar:
   order: 5
-sourceHash: "6f76db4d17d4"
+sourceHash: "83712615a802"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -31,7 +31,9 @@ request yang sudah dikoreksi bisa dikirim dengan key itu.
 Diskon memotong persentase atau nominal tertentu dari harga satuan di antara dua waktu. Arahkan ke satu produk dengan
 `target_product_id`, yaitu `sku` produk itu di catalog; ke sebuah kategori dengan `target_category_id`, yaitu `slug`
 dari daftar di [Kategori](/id/apis/rest/backoffice/categories/); atau ke semua produk dengan menghilangkan keduanya.
-Simpan `id` dari jawabannya.
+Simpan `id` dari jawabannya. Diskon kategori mengikuti slug, bukan kategorinya: kalau slug-nya kemudian diganti,
+diskon itu tidak lagi berlaku untuk produk kategori tersebut ([Kategori](/id/apis/rest/backoffice/categories/), langkah
+4).
 
 <RestEndpoint id="pricing.createDiscount" via="backoffice" />
 

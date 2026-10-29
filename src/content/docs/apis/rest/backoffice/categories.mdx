@@ -40,7 +40,16 @@ The update replaces both values, so send `name` and `slug` together, the unchang
 or 3 in the path. Catalog's own product filter uses a new slug at once. Search follows at its next sync: a change of
 name or slug marks every product filed under the category, in the same transaction, to be sent to search again
 ([0010_category_changes_stamp_their_products.py](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/migrations/0010_category_changes_stamp_their_products.py#L13-L28)).
-Nothing more is asked of the client.
+
+Pricing is not told of a new slug. A category discount names the slug it was created with, and at checkout order reads
+each product from catalog again and prices it with the slug catalog gives it then
+([catalog_servicer.py](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/infrastructure/grpc/catalog_servicer.py#L106),
+[OrderService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/OrderService.cs#L62-L65),
+[CatalogProductDirectory.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Grpc/CatalogProductDirectory.cs#L55),
+[default_discount_evaluator.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0ed7db4cd6fb8d40375cab26dd7ac56ebce16a8a/src/traits/default_discount_evaluator.rs#L15-L19)).
+So a discount aimed at the old slug no longer applies to this category's products: before changing a slug, check the
+category discounts in [Platform promotions](/apis/rest/backoffice/platform-promotions/), and create the ones that
+should go on under the new slug. A change of name alone leaves them as they are.
 
 <RestEndpoint id="catalog.updateCategory" via="backoffice" />
 

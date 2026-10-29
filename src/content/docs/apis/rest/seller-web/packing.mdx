@@ -101,8 +101,8 @@ step can be left out: the first matching scan in step 6 does the same. The same 
 Send each code the packer scans, with the task's `id`, once for each line. A SKU marks its line as scanned, and the
 first match moves a `received` task to `packing`. The scan that matches the last unscanned line packs the parcel
 and tells order that it is ready, and order books a courier
-([verify_scan_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/services/fulfillment/verify_scan_service.rb#L65-L99),
-[task_transitions.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/services/fulfillment/task_transitions.rb#L28-L35)).
+([verify_scan_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/services/fulfillment/verify_scan_service.rb#L65-L99),
+[task_transitions.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/services/fulfillment/task_transitions.rb#L28-L35)).
 `lines_remaining` says how many lines are left. The order number or the tracking number matches too but marks no
 line, and a scan of a task that is already `packed` changes nothing and tells order nothing. A code that matches
 nothing moves nothing.
@@ -113,11 +113,11 @@ nothing moves nothing.
 
 A task becomes `packed` only once a scan has matched every line: on a `packing` task, step 5's endpoint refuses
 `packed` while a line is still unscanned
-([advance_task_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/services/fulfillment/advance_task_service.rb#L61-L64)).
+([advance_task_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/services/fulfillment/advance_task_service.rb#L61-L64)).
 Once the task is `packed`, sending `{"status": "packed"}` to that endpoint re-sends the report to order, and this
 is what it is for: when the scan that packed the parcel answered `order_notified` `false` with order unreachable,
 no courier has been booked yet
-([advance_task_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/services/fulfillment/advance_task_service.rb#L95-L118)).
+([advance_task_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/services/fulfillment/advance_task_service.rb#L95-L118)).
 Order keeps one courier booking per order, so a report sent again books no second courier
 ([FulfillmentPackedHandler.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Fulfillment/FulfillmentPackedHandler.cs#L62-L81)).
 
@@ -130,9 +130,9 @@ until then order asks again later
 ([CourierDispatcher.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Fulfillment/CourierDispatcher.cs#L73-L109)).
 With the answer, order records the tracking number in the warehouse over gRPC
 ([CourierDispatcher.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Fulfillment/CourierDispatcher.cs#L121-L146),
-[fulfillment_task_service_handler.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/rpc/fulfillment_task_service_handler.rb#L80-L111)),
+[fulfillment_task_service_handler.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/rpc/fulfillment_task_service_handler.rb#L80-L111)),
 and from then on the task's card in the queue carries it as `tracking_number`
-([task_queue_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/services/fulfillment/task_queue_service.rb#L54)).
+([task_queue_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/services/fulfillment/task_queue_service.rb#L54)).
 
 The page matches each push to a task by `order_number`. A `pending` job has no courier yet: the page keeps waiting.
 An `assigned` job has one, and the page reads the queue again (step 4). Order learns the tracking number only from

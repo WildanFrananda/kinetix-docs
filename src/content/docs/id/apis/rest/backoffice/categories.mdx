@@ -3,7 +3,7 @@ title: Kategori
 description: Cara admin mendaftar, membaca, membuat, mengganti nama dan menghapus kategori catalog tempat penjual menaruh produknya.
 sidebar:
   order: 4
-sourceHash: "ad9719979c3c"
+sourceHash: "0a992584d392"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -43,7 +43,17 @@ Update mengganti kedua nilai, jadi kirim `name` dan `slug` bersamaan, yang tidak
 sinkronisasi berikutnya: perubahan nama atau slug menandai setiap produk di bawah kategori itu, dalam transaksi yang
 sama, untuk dikirim ulang ke search
 ([0010_category_changes_stamp_their_products.py](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/migrations/0010_category_changes_stamp_their_products.py#L13-L28)).
-Client tidak perlu melakukan apa pun lagi.
+
+Pricing tidak diberi tahu tentang slug baru. Diskon kategori menyebut slug yang dipakai saat diskon itu dibuat, dan saat
+checkout order membaca ulang setiap produk dari catalog lalu menghitung harganya dengan slug yang diberikan catalog saat
+itu
+([catalog_servicer.py](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/infrastructure/grpc/catalog_servicer.py#L106),
+[OrderService.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Services/OrderService.cs#L62-L65),
+[CatalogProductDirectory.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Grpc/CatalogProductDirectory.cs#L55),
+[default_discount_evaluator.rs](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0ed7db4cd6fb8d40375cab26dd7ac56ebce16a8a/src/traits/default_discount_evaluator.rs#L15-L19)).
+Jadi diskon yang ditujukan ke slug lama tidak lagi berlaku untuk produk-produk kategori ini: sebelum mengganti slug,
+periksa diskon kategori di [Promosi platform](/id/apis/rest/backoffice/platform-promotions/), dan buat ulang dengan slug
+baru diskon yang harus tetap berjalan. Mengganti nama saja tidak mengubah apa pun pada diskon itu.
 
 <RestEndpoint id="catalog.updateCategory" via="backoffice" />
 

@@ -1,6 +1,6 @@
 ---
 title: Stock intake
-description: How staff find the merchant who owns a delivery in catalog, then create bins and book goods in and out of them in warehouse.
+description: How staff find the merchant who owns a delivery in catalog, then see the bins, book goods in and out of them, and read the stock and its ledger in warehouse.
 sidebar:
   order: 6
 ---
@@ -10,29 +10,41 @@ import RestEndpoint from "../../../../../components/RestEndpoint.astro";
 Goods reach the warehouse on a merchant's behalf, and staff book them onto a shelf. The merchant sells the product in
 catalog, which catalog allows only once an admin has approved the seller
 ([Seller applications](/apis/rest/backoffice/seller-applications/)). Signed in from Kinetix's staff network as on
-[Sign in](/apis/rest/backoffice/sign-in/), an admin finds the owner of each SKU in catalog, creates the bin the goods
-go into, books the delivery, and later adjusts the count for damage, loss or miscounts. Warehouse checks the admin's
-token itself on its three endpoints, and records each call with the admin's account and its outcome.
+[Sign in](/apis/rest/backoffice/sign-in/), an admin finds the owner of each SKU in catalog, chooses or creates the bin
+the goods go into, books the delivery, reads what is on the shelves, adjusts the count for damage, loss or miscounts,
+and reads back what was booked. Warehouse checks the admin's token itself on each of its endpoints. It records each
+write with the admin's account and its outcome; a read is not recorded.
 
 Warehouse reads every field strictly: a text field must be a JSON string, and a number a whole number within its
 range, sent as a JSON integer or as a string written in digits; nothing is rounded or cut short. A value of the wrong
-type, out of range or too long is answered `422` and changes nothing.
+type, out of range or too long is answered `422` and changes nothing. The reads take their parameters in the query and
+refuse one they cannot read with `400` and `INVALID_<PARAMETER>`
+([api_ledger_query.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/controllers/concerns/api_ledger_query.rb#L49-L94)). They page by
+keyset, never by offset: send the previous answer's cursor back, and stop when it is `null`.
 
 ## 1. Find the owner of the goods
 
 Read the product by the `sku` on the delivery and keep its `merchant_principal_id`, the identity principal of the
-merchant who sells it, which steps 3 and 4 send. It must be that merchant: warehouse keeps stock per merchant and SKU
-([bin_stock_service_handler.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/rpc/bin_stock_service_handler.rb#L32-L46)),
+merchant who sells it, which steps 3 and 5 send. It must be that merchant: warehouse keeps stock per merchant and SKU
+([bin_stock_service_handler.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/rpc/bin_stock_service_handler.rb#L32-L46)),
 and catalog asks it for the stock of the product's own merchant
 ([product_service.py](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/application/services/product_service.py#L113-L119)).
 A `404` means no product with this SKU is on sale.
 
 <RestEndpoint id="catalog.getProduct" via="backoffice" />
 
-## 2. Create the bin
+## 2. Choose or create the bin
 
-Goods are booked into a bin by its `bin_code`, so the bin must exist first. A bin is created once, not per delivery:
-the same request with a `bin_code` that exists updates that bin's zone and shelf level instead.
+Goods are booked into a bin by its `bin_code`, so the bin must exist first. List the bins to see their codes, zones and
+shelf levels, and how many SKUs and units each holds; page with `after` set to `next_after` while it is not `null`.
+
+<RestEndpoint id="warehouse.listBins" via="backoffice" />
+
+A bin is created once, not per delivery: the same request with a `bin_code` that exists updates that bin's zone and
+shelf level instead. A bin holds each SKU for one merchant only; a delivery of a SKU that the bin already holds for
+another merchant is refused with `409`
+([receive_stock_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/services/inventory/receive_stock_service.rb#L110-L113)), so read the bin's rows first
+(step 4, with `bin_code`) when it is not empty.
 
 <RestEndpoint id="warehouse.upsertBin" via="backoffice" />
 
@@ -44,17 +56,39 @@ in the body; this endpoint reads no `Idempotency-Key` header. After a timeout, a
 with the same key, once the seconds in `Retry-After` have passed when the answer gives them, as warehouse's
 `DATABASE_UNAVAILABLE` does: a delivery already booked answers `200` with `replayed: true` and is not booked twice.
 A `400` or a `422` booked nothing and left the key unused, so the corrected body can go out with it
-([receive_stock_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/services/inventory/receive_stock_service.rb#L64-L132)).
+([receive_stock_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/services/inventory/receive_stock_service.rb#L64-L132)).
 `422` `STOCK_LIMIT_EXCEEDED` means the bin cannot count that many units of the SKU: book the rest into another bin.
 
 <RestEndpoint id="warehouse.receiveStock" via="backoffice" />
 
-## 4. Adjust the stock
+## 4. Read what is on the shelves
+
+The stock is one row per bin and SKU, kept at zero once its units are gone. Narrow it with `sku` to find every bin that
+holds a product, with `bin_code` to see one bin, or with `merchant_principal_id` for one merchant's goods; the filters
+combine. Each row says what is on the shelf (`quantity`), what is held for orders (`reserved_quantity`) and what is
+free (`available_quantity`), which is the most an adjustment in step 5 can remove
+([adjust_stock_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/services/inventory/adjust_stock_service.rb#L106-L109)).
+Page with `after` set to `next_after_id` while it is not `null`.
+
+<RestEndpoint id="warehouse.listStock" via="backoffice" />
+
+## 5. Adjust the stock
 
 When goods are later found damaged, missing, miscounted, sent back to the supplier or expired, send the change as
 `quantity_delta` with the matching `reason`, for the `bin_code`, `sku` and `merchant_principal_id` the stock was booked
-under. Each adjustment takes a new `idempotency_key`, retried as in step 3. A removal that would cut into units
+under, as a row in step 4 shows them. Each adjustment takes a new `idempotency_key`, retried as in step 3. A removal that would cut into units
 reserved for orders answers `409` with `max_reduction`, the largest removal possible now; a smaller removal is a new
 adjustment with a new key.
 
 <RestEndpoint id="warehouse.adjustStock" via="backoffice" />
+
+## 6. Read the ledger
+
+Every receipt and adjustment stays on record, newest first, with the same three filters as step 4: a receipt says who
+booked how many units of which SKU into which bin for which merchant, an adjustment also the count before and after it
+and its `reason`. A delivery sent again with the same key was booked once, so it appears once. Page with `before` set
+to `next_before_id` while it is not `null`.
+
+<RestEndpoint id="warehouse.listReceipts" via="backoffice" />
+
+<RestEndpoint id="warehouse.listAdjustments" via="backoffice" />

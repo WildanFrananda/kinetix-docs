@@ -188,9 +188,9 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "order",
     kind: "grpc",
     calls: [
-      { operation: "order.v1.OrderService/FulfillmentPacked", source: { label: "grpc_client.rb:60", href: "https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/clients/order/grpc_client.rb#L60" } },
-      { operation: "order.v1.OrderService/OpenReturn", source: { label: "grpc_client.rb:86", href: "https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/clients/order/grpc_client.rb#L86" } },
-      { operation: "order.v1.OrderService/ReturnGoodsReceived", source: { label: "grpc_client.rb:119", href: "https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/clients/order/grpc_client.rb#L119" } }
+      { operation: "order.v1.OrderService/FulfillmentPacked", source: { label: "grpc_client.rb:60", href: "https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/clients/order/grpc_client.rb#L60" } },
+      { operation: "order.v1.OrderService/OpenReturn", source: { label: "grpc_client.rb:86", href: "https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/clients/order/grpc_client.rb#L86" } },
+      { operation: "order.v1.OrderService/ReturnGoodsReceived", source: { label: "grpc_client.rb:119", href: "https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/clients/order/grpc_client.rb#L119" } }
     ]
   },
   {
@@ -198,7 +198,7 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "identity",
     kind: "grpc",
     calls: [
-      { operation: "identity.v1.IdentityService/GetMerchantInfo", source: { label: "grpc_client.rb:41", href: "https://github.com/WildanFrananda/kinetix-warehouse-service/blob/ec17794d7551b0ccacc0ada5c31747f8d44526e3/app/clients/identity/grpc_client.rb#L41" } }
+      { operation: "identity.v1.IdentityService/GetMerchantInfo", source: { label: "grpc_client.rb:41", href: "https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/clients/identity/grpc_client.rb#L41" } }
     ]
   },
   {

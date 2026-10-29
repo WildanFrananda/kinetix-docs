@@ -85,7 +85,7 @@ export const warehouseAnswers: readonly RestCase[] = [
       status: 404,
       error: "Not Found"
     },
-    source: restSource("warehouse", "config/routes.rb", 1, 32)
+    source: restSource("warehouse", "config/routes.rb", 1, 33)
   },
   {
     status: 404,
@@ -1324,7 +1324,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           zone: "A",
           shelf_level: 3
         },
-        source: restSource("warehouse", "app/controllers/api/v1/bins_controller.rb", 53, 62)
+        source: restSource("warehouse", "app/controllers/api/v1/bins_controller.rb", 62, 71)
       },
       {
         status: 201,
@@ -1335,7 +1335,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           zone: "A",
           shelf_level: 3
         },
-        source: restSource("warehouse", "app/controllers/api/v1/bins_controller.rb", 53, 62)
+        source: restSource("warehouse", "app/controllers/api/v1/bins_controller.rb", 62, 71)
       },
       {
         status: 422,
@@ -1351,7 +1351,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "shelf_level must be a whole number from 0 to 2147483647, written in digits"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/bins_controller.rb", 29, 40)
+        source: restSource("warehouse", "app/controllers/api/v1/bins_controller.rb", 38, 49)
       },
       {
         status: 422,
@@ -1359,10 +1359,10 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "Bin code can't be blank, Zone can't be blank"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/bins_controller.rb", 48, 51)
+        source: restSource("warehouse", "app/controllers/api/v1/bins_controller.rb", 57, 60)
       }
     ],
-    source: restSource("warehouse", "app/controllers/api/v1/bins_controller.rb", 15, 63)
+    source: restSource("warehouse", "app/controllers/api/v1/bins_controller.rb", 24, 72)
   },
   {
     id: "warehouse.receiveStock",
@@ -1454,7 +1454,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           quantity_on_hand: 36,
           replayed: false
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 61, 72)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 84, 95)
       },
       {
         status: 400,
@@ -1462,7 +1462,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "idempotency_key is required"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 29, 42)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 52, 65)
       },
       {
         status: 400,
@@ -1470,7 +1470,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "merchant_principal_id must be a UUID"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 115, 116)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 138, 139)
       },
       {
         status: 409,
@@ -1479,7 +1479,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           error: "IDEMPOTENCY_KEY_CONFLICT",
           message: "that idempotency_key already booked a different receipt for this merchant"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 132, 139)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 155, 162)
       },
       {
         status: 409,
@@ -1487,7 +1487,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "that sku is already on this shelf under a different merchant"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 140, 144)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 163, 167)
       },
       {
         status: 422,
@@ -1505,7 +1505,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           error: "INVALID_QUANTITY",
           message: "quantity must be a whole number from 1 to 2147483647, written in digits"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 73, 81)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 96, 104)
       },
       {
         status: 422,
@@ -1514,7 +1514,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           error: "INVALID_IDEMPOTENCY_KEY",
           message: "idempotency_key must be at most 255 characters"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 82, 89)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 105, 112)
       },
       {
         status: 422,
@@ -1522,7 +1522,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "sku is required and must be at most 128 characters"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 117, 123)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 140, 146)
       },
       {
         status: 422,
@@ -1531,7 +1531,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           error: "INVALID_BIN_CODE",
           message: "bin_code must be at most 64 characters"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 90, 97)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 113, 120)
       },
       {
         status: 422,
@@ -1540,7 +1540,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           error: "INVALID_NOTE",
           message: "note must be at most 1000 characters"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 98, 105)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 121, 128)
       },
       {
         status: 422,
@@ -1549,7 +1549,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           error: "UNKNOWN_MERCHANT",
           message: "identity knows no merchant with that principal, so no goods can be booked for it"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 124, 131)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 147, 154)
       },
       {
         status: 422,
@@ -1557,7 +1557,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "no bin with that code — create it before booking goods into it"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 145, 149)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 168, 172)
       },
       {
         status: 422,
@@ -1567,10 +1567,10 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           message:
             "this receipt would put more than 2147483647 units of the sku in that bin, more than it can count; book the rest into another bin"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 106, 114)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 129, 137)
       }
     ],
-    source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 15, 56)
+    source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 24, 79)
   },
   {
     id: "warehouse.adjustStock",
@@ -1676,7 +1676,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           reserved_quantity: 4,
           replayed: false
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 62, 76)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 90, 104)
       },
       {
         status: 400,
@@ -1684,7 +1684,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "idempotency_key is required"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 29, 42)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 57, 70)
       },
       {
         status: 400,
@@ -1692,7 +1692,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "merchant_principal_id must be a UUID"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 130, 131)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 158, 159)
       },
       {
         status: 409,
@@ -1703,7 +1703,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           reserved_quantity: 4,
           max_reduction: 30
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 120, 129)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 148, 157)
       },
       {
         status: 409,
@@ -1712,7 +1712,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           error: "IDEMPOTENCY_KEY_CONFLICT",
           message: "that idempotency_key already made a different adjustment for this merchant"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 132, 139)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 160, 167)
       },
       {
         status: 409,
@@ -1720,7 +1720,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "that stock belongs to a different merchant"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 140, 141)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 168, 169)
       },
       {
         status: 409,
@@ -1728,7 +1728,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "that stock predates ownership — book it in again naming the merchant first"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 142, 146)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 170, 174)
       },
       {
         status: 422,
@@ -1746,7 +1746,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           error: "INVALID_DELTA",
           message: "quantity_delta must be a whole number other than 0, from -2147483648 to 2147483647, written in digits"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 77, 86)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 105, 114)
       },
       {
         status: 422,
@@ -1754,7 +1754,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "reason must be one of DAMAGE, SHRINKAGE, MISCOUNT, RETURN_TO_SUPPLIER, EXPIRY"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 154, 158)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 182, 186)
       },
       {
         status: 422,
@@ -1763,7 +1763,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           error: "INVALID_IDEMPOTENCY_KEY",
           message: "idempotency_key must be at most 255 characters"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 87, 94)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 115, 122)
       },
       {
         status: 422,
@@ -1772,7 +1772,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           error: "INVALID_BIN_CODE",
           message: "bin_code must be at most 64 characters"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 95, 102)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 123, 130)
       },
       {
         status: 422,
@@ -1781,7 +1781,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           error: "INVALID_NOTE",
           message: "note must be at most 1000 characters"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 103, 110)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 131, 138)
       },
       {
         status: 422,
@@ -1789,7 +1789,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "no bin with that code"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 147, 148)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 175, 176)
       },
       {
         status: 422,
@@ -1797,7 +1797,7 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
         json: {
           error: "that sku is not on that shelf — nothing to adjust"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 149, 153)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 177, 181)
       },
       {
         status: 422,
@@ -1806,9 +1806,466 @@ export const warehouseEndpoints: readonly RestEndpoint[] = [
           error: "STOCK_LIMIT_EXCEEDED",
           message: "this adjustment would put more than 2147483647 units of the sku in that bin, more than it can count"
         },
-        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 111, 119)
+        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 139, 147)
       }
     ],
-    source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 15, 57)
+    source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 26, 85)
+  },
+  {
+    id: "warehouse.listBins",
+    service: "warehouse",
+    method: "GET",
+    path: "/api/v1/warehouse/bins",
+    summary: "rest.warehouse.listBins.summary",
+    access: {
+      token: "required",
+      gatewayVerifies: false,
+      who: "rest.warehouse.listBins.who"
+    },
+    request: {
+      fields: [
+        {
+          name: "after",
+          in: "query",
+          type: "string",
+          required: false,
+          rule: "rest.warehouse.listBins.field.after"
+        },
+        {
+          name: "limit",
+          in: "query",
+          type: "integer",
+          required: false,
+          rule: "rest.warehouse.listBins.field.limit"
+        }
+      ]
+    },
+    cases: [
+      {
+        status: 200,
+        when: "rest.warehouse.listBins.case.page",
+        json: {
+          bins: [
+            {
+              id: 57,
+              bin_code: "A-01-3",
+              zone: "A",
+              shelf_level: 3,
+              sku_count: 2,
+              quantity: 36,
+              reserved_quantity: 4,
+              updated_at: "2026-10-22T03:12:40.118Z"
+            },
+            {
+              id: 58,
+              bin_code: "A-01-4",
+              zone: "A",
+              shelf_level: 4,
+              sku_count: 0,
+              quantity: 0,
+              reserved_quantity: 0,
+              updated_at: "2026-10-22T03:13:02.540Z"
+            }
+          ],
+          next_after: "A-01-4"
+        },
+        source: restSource("warehouse", "app/repositories/stock_ledger_repository.rb", 17, 23)
+      },
+      {
+        status: 200,
+        when: "rest.warehouse.listBins.case.lastPage",
+        json: {
+          bins: [
+            {
+              id: 61,
+              bin_code: "B-02-1",
+              zone: "B",
+              shelf_level: 1,
+              sku_count: 1,
+              quantity: 12,
+              reserved_quantity: 0,
+              updated_at: "2026-10-22T03:15:27.902Z"
+            }
+          ],
+          next_after: null
+        },
+        source: restSource("warehouse", "app/services/inventory/page.rb", 16, 25)
+      },
+      {
+        status: 400,
+        when: "rest.warehouse.listBins.case.invalidAfter",
+        json: {
+          error: "INVALID_AFTER",
+          message: "after must be one string of 1 to 64 characters"
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_ledger_query.rb", 60, 67)
+      },
+      {
+        status: 400,
+        when: "rest.warehouse.listBins.case.invalidLimit",
+        json: {
+          error: "INVALID_LIMIT",
+          message: "limit must be a whole number from 1 to 100, written in digits"
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_ledger_query.rb", 49, 58)
+      }
+    ],
+    source: restSource("warehouse", "app/controllers/api/v1/bins_controller.rb", 16, 22)
+  },
+  {
+    id: "warehouse.listStock",
+    service: "warehouse",
+    method: "GET",
+    path: "/api/v1/warehouse/bins/stock",
+    summary: "rest.warehouse.listStock.summary",
+    access: {
+      token: "required",
+      gatewayVerifies: false,
+      who: "rest.warehouse.listStock.who"
+    },
+    request: {
+      fields: [
+        {
+          name: "sku",
+          in: "query",
+          type: "string",
+          required: false,
+          rule: "rest.warehouse.listStock.field.sku"
+        },
+        {
+          name: "bin_code",
+          in: "query",
+          type: "string",
+          required: false,
+          rule: "rest.warehouse.listStock.field.binCode"
+        },
+        {
+          name: "merchant_principal_id",
+          in: "query",
+          type: "string (uuid)",
+          required: false,
+          rule: "rest.warehouse.listStock.field.merchantPrincipalId"
+        },
+        {
+          name: "after",
+          in: "query",
+          type: "integer",
+          required: false,
+          rule: "rest.warehouse.listStock.field.after"
+        },
+        {
+          name: "limit",
+          in: "query",
+          type: "integer",
+          required: false,
+          rule: "rest.warehouse.listStock.field.limit"
+        }
+      ]
+    },
+    cases: [
+      {
+        status: 200,
+        when: "rest.warehouse.listStock.case.page",
+        json: {
+          stock: [
+            {
+              id: 204,
+              bin_code: "A-01-3",
+              zone: "A",
+              shelf_level: 3,
+              sku: "GAMIS-RED-M",
+              merchant_principal_id: merchantPrincipalId,
+              quantity: 24,
+              reserved_quantity: 4,
+              available_quantity: 20,
+              updated_at: "2026-10-22T03:12:40.118Z"
+            },
+            {
+              id: 231,
+              bin_code: "B-02-1",
+              zone: "B",
+              shelf_level: 1,
+              sku: "GAMIS-RED-M",
+              merchant_principal_id: merchantPrincipalId,
+              quantity: 0,
+              reserved_quantity: 0,
+              available_quantity: 0,
+              updated_at: "2026-10-21T09:48:03.661Z"
+            }
+          ],
+          next_after_id: null
+        },
+        source: restSource("warehouse", "app/controllers/api/v1/bin_stock_controller.rb", 22, 38)
+      },
+      {
+        status: 200,
+        when: "rest.warehouse.listStock.case.none",
+        json: {
+          stock: [],
+          next_after_id: null
+        },
+        source: restSource("warehouse", "app/repositories/stock_ledger_repository.rb", 62, 69)
+      },
+      {
+        status: 400,
+        when: "rest.warehouse.listStock.case.invalidText",
+        json: {
+          error: "INVALID_SKU",
+          message: "sku must be one string of 1 to 128 characters"
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_ledger_query.rb", 60, 67)
+      },
+      {
+        status: 400,
+        when: "rest.warehouse.listStock.case.invalidMerchant",
+        json: {
+          error: "INVALID_MERCHANT_PRINCIPAL_ID",
+          message: "merchant_principal_id must be a UUID"
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_ledger_query.rb", 69, 78)
+      },
+      {
+        status: 400,
+        when: "rest.warehouse.listStock.case.invalidCursor",
+        json: {
+          error: "INVALID_AFTER",
+          message: "after must be a record id written in digits"
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_ledger_query.rb", 80, 89)
+      },
+      {
+        status: 400,
+        when: "rest.warehouse.listStock.case.invalidLimit",
+        json: {
+          error: "INVALID_LIMIT",
+          message: "limit must be a whole number from 1 to 100, written in digits"
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_ledger_query.rb", 49, 58)
+      }
+    ],
+    source: restSource("warehouse", "app/controllers/api/v1/bin_stock_controller.rb", 12, 18)
+  },
+  {
+    id: "warehouse.listReceipts",
+    service: "warehouse",
+    method: "GET",
+    path: "/api/v1/warehouse/stock_receipts",
+    summary: "rest.warehouse.listReceipts.summary",
+    access: {
+      token: "required",
+      gatewayVerifies: false,
+      who: "rest.warehouse.listReceipts.who"
+    },
+    request: {
+      fields: [
+        {
+          name: "sku",
+          in: "query",
+          type: "string",
+          required: false,
+          rule: "rest.warehouse.listReceipts.field.sku"
+        },
+        {
+          name: "bin_code",
+          in: "query",
+          type: "string",
+          required: false,
+          rule: "rest.warehouse.listReceipts.field.binCode"
+        },
+        {
+          name: "merchant_principal_id",
+          in: "query",
+          type: "string (uuid)",
+          required: false,
+          rule: "rest.warehouse.listReceipts.field.merchantPrincipalId"
+        },
+        {
+          name: "before",
+          in: "query",
+          type: "integer",
+          required: false,
+          rule: "rest.warehouse.listReceipts.field.before"
+        },
+        {
+          name: "limit",
+          in: "query",
+          type: "integer",
+          required: false,
+          rule: "rest.warehouse.listReceipts.field.limit"
+        }
+      ]
+    },
+    cases: [
+      {
+        status: 200,
+        when: "rest.warehouse.listReceipts.case.page",
+        json: {
+          receipts: [
+            {
+              id: 912,
+              bin_code: "A-01-3",
+              sku: "GAMIS-RED-M",
+              merchant_principal_id: merchantPrincipalId,
+              quantity: 24,
+              note: "Inbound delivery, carton 2 of 3",
+              received_by_principal_id: "9b2e4c71-5a3d-4f86-b0e2-7c1d8a6f3e59",
+              created_at: "2026-10-22T03:12:40.104Z"
+            }
+          ],
+          next_before_id: 912
+        },
+        source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 34, 46)
+      },
+      {
+        status: 400,
+        when: "rest.warehouse.listReceipts.case.invalidText",
+        json: {
+          error: "INVALID_SKU",
+          message: "sku must be one string of 1 to 128 characters"
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_ledger_query.rb", 60, 67)
+      },
+      {
+        status: 400,
+        when: "rest.warehouse.listReceipts.case.invalidMerchant",
+        json: {
+          error: "INVALID_MERCHANT_PRINCIPAL_ID",
+          message: "merchant_principal_id must be a UUID"
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_ledger_query.rb", 69, 78)
+      },
+      {
+        status: 400,
+        when: "rest.warehouse.listReceipts.case.invalidCursor",
+        json: {
+          error: "INVALID_BEFORE",
+          message: "before must be a record id written in digits"
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_ledger_query.rb", 80, 89)
+      },
+      {
+        status: 400,
+        when: "rest.warehouse.listReceipts.case.invalidLimit",
+        json: {
+          error: "INVALID_LIMIT",
+          message: "limit must be a whole number from 1 to 100, written in digits"
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_ledger_query.rb", 49, 58)
+      }
+    ],
+    source: restSource("warehouse", "app/controllers/api/v1/stock_receipts_controller.rb", 16, 22)
+  },
+  {
+    id: "warehouse.listAdjustments",
+    service: "warehouse",
+    method: "GET",
+    path: "/api/v1/warehouse/stock_adjustments",
+    summary: "rest.warehouse.listAdjustments.summary",
+    access: {
+      token: "required",
+      gatewayVerifies: false,
+      who: "rest.warehouse.listAdjustments.who"
+    },
+    request: {
+      fields: [
+        {
+          name: "sku",
+          in: "query",
+          type: "string",
+          required: false,
+          rule: "rest.warehouse.listAdjustments.field.sku"
+        },
+        {
+          name: "bin_code",
+          in: "query",
+          type: "string",
+          required: false,
+          rule: "rest.warehouse.listAdjustments.field.binCode"
+        },
+        {
+          name: "merchant_principal_id",
+          in: "query",
+          type: "string (uuid)",
+          required: false,
+          rule: "rest.warehouse.listAdjustments.field.merchantPrincipalId"
+        },
+        {
+          name: "before",
+          in: "query",
+          type: "integer",
+          required: false,
+          rule: "rest.warehouse.listAdjustments.field.before"
+        },
+        {
+          name: "limit",
+          in: "query",
+          type: "integer",
+          required: false,
+          rule: "rest.warehouse.listAdjustments.field.limit"
+        }
+      ]
+    },
+    cases: [
+      {
+        status: 200,
+        when: "rest.warehouse.listAdjustments.case.page",
+        json: {
+          adjustments: [
+            {
+              id: 77,
+              bin_code: "A-01-3",
+              sku: "GAMIS-RED-M",
+              merchant_principal_id: merchantPrincipalId,
+              quantity_delta: -2,
+              quantity_before: 26,
+              quantity_after: 24,
+              reason: "DAMAGE",
+              note: "Two torn at the seam",
+              adjusted_by_principal_id: "9b2e4c71-5a3d-4f86-b0e2-7c1d8a6f3e59",
+              created_at: "2026-10-22T04:01:18.330Z"
+            }
+          ],
+          next_before_id: null
+        },
+        source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 36, 51)
+      },
+      {
+        status: 400,
+        when: "rest.warehouse.listAdjustments.case.invalidText",
+        json: {
+          error: "INVALID_SKU",
+          message: "sku must be one string of 1 to 128 characters"
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_ledger_query.rb", 60, 67)
+      },
+      {
+        status: 400,
+        when: "rest.warehouse.listAdjustments.case.invalidMerchant",
+        json: {
+          error: "INVALID_MERCHANT_PRINCIPAL_ID",
+          message: "merchant_principal_id must be a UUID"
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_ledger_query.rb", 69, 78)
+      },
+      {
+        status: 400,
+        when: "rest.warehouse.listAdjustments.case.invalidCursor",
+        json: {
+          error: "INVALID_BEFORE",
+          message: "before must be a record id written in digits"
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_ledger_query.rb", 80, 89)
+      },
+      {
+        status: 400,
+        when: "rest.warehouse.listAdjustments.case.invalidLimit",
+        json: {
+          error: "INVALID_LIMIT",
+          message: "limit must be a whole number from 1 to 100, written in digits"
+        },
+        source: restSource("warehouse", "app/controllers/concerns/api_ledger_query.rb", 49, 58)
+      }
+    ],
+    source: restSource("warehouse", "app/controllers/api/v1/stock_adjustments_controller.rb", 16, 24)
   }
 ];
