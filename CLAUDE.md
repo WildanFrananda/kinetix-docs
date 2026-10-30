@@ -230,6 +230,11 @@ each feature as the calls in the order the application makes them, with every re
   route serves, a `{name}` in the path that is not a path field (or the reverse), and cases out of status
   order. Moving a service to a new release means re-reading every case of its endpoints at the new commit, then
   the pin.
+- **Written ahead of its page.** An endpoint that runs in production before the release of the app that calls it
+  may be written as data first, so that app's contract test can read it: `src/site/rest/rest_awaiting_page.ts`
+  lists it, and `tests/rest_pages.test.ts` keeps it off every page and refuses it once a page names it, so the
+  list empties as the pages are written. Since 2026-10-29 it holds identity's six passkey routes and the edge's two
+  (identity v1.7.1, edge v1.3.0); their backoffice pages wait for backoffice v1.4.1 in production.
 - **No open defect.** Writing the inventory for this section in session 32 found about 130 defects; the
   section waited until they were fixed and deployed (2026-10-22). A case that is wrong is never written as
   behaviour: it goes to the internal register, is fixed, and is documented once deployed.

@@ -253,16 +253,16 @@ state also changes with every location update the courier sends, without a datab
 ## The exception: the edge
 
 The edge, Kinetix's browser token handler, is written in Teal and runs on OpenResty, and it keeps no ports.
-[A module requires its adapters directly](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L1-L24):
+[A module requires its adapters directly](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sessions.tl#L1-L24):
 the session code names the Redis store, identity's client and the logger as modules, and nothing outside it
 chooses them. The one dependency handed in is the Redis connection, which the session functions take as an
 argument, so a unit test can give them a fake one.
 
 The edge is tested where it runs instead. Its pure modules have unit tests, and its integration tests
-[start real OpenResty with the generated Lua and the production `nginx.conf`](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/bin/integration#L93-L141)
+[start real OpenResty with the generated Lua and the production `nginx.conf`](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/bin/integration#L93-L141)
 against real Redis, with identity, the API and matching's socket replaced at the network by fakes that answer
 over HTTP and WebSocket. Its security checks are held by mutation tests:
-[each one is broken once](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/tests/mutation/catalogue.tl),
+[each one is broken once](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/tests/mutation/catalogue.tl),
 and
-[a change that no test notices fails the run](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/bin/mutate#L74-L88).
+[a change that no test notices fails the run](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/bin/mutate#L74-L88).
 The [edge's page](/services/edge/#how-the-code-is-laid-out) shows its directories.

@@ -18,7 +18,7 @@ app's own host, and it means nothing anywhere but at the edge.
 
 The tables on this page are generated from the same verified data as the
 [system map](/architecture/system-map/), at the commits linked from each row. The prose is checked
-against edge [v1.2.1](https://github.com/WildanFrananda/kinetix-edge-service/tree/eb13db007a21ca985ca33eca49e44dacf43e6354),
+against edge [v1.3.0](https://github.com/WildanFrananda/kinetix-edge-service/tree/0a52d5805b57a818b16b05848b8333d34115f682),
 the version in production. What a page sends and every answer it can get are in the
 [REST reference](/apis/rest/#the-edge); this page is about why the edge works the way it does.
 
@@ -27,17 +27,17 @@ the version in production. What a page sends and every answer it can get are in 
 <ServiceFacts service="edge" />
 
 The edge is written in Teal, a typed dialect of Lua,
-[compiled to Lua 5.1](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/bin/build#L10-L28)
+[compiled to Lua 5.1](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/bin/build#L10-L28)
 for the LuaJIT inside OpenResty, which is nginx with Lua running in its request phases. The build
-[refuses generated Lua that calls what LuaJIT lacks](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/bin/build#L25-L28),
+[refuses generated Lua that calls what LuaJIT lacks](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/bin/build#L25-L28),
 and the image
-[carries the generated Lua only](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/Dockerfile#L15-L44).
+[carries the generated Lua only](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/Dockerfile#L15-L44).
 
 ## What it calls
 
 Kong sends the edge
 [the calls under `/bff/` at the web apps' addresses](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L221-L249), and
-[the gateway is its only peer](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/CLAUDE.md#L137-L141).
+[the gateway is its only peer](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/CLAUDE.md#L160-L164).
 The edge serves no gRPC and no other service calls it. It calls identity directly for everything that issues,
 renews or ends tokens, sign-up included, and for the rest of identity's account routes. Every other call goes
 back through the gateway, to a listener that exists only inside Kinetix's network, as the
@@ -49,59 +49,59 @@ socket to matching.
 ## A browser holds a cookie, the edge holds the tokens
 
 A web app signs in with `POST /bff/login`. The edge
-[asks identity](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/adapters/identity_client.tl#L36-L40),
+[asks identity](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/adapters/identity_client.tl#L37-L41),
 stores the pair identity returns, and answers the page with
-[a view of the session](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sign_in.tl#L120-L132)
+[a view of the session](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sign_in.tl#L128-L140)
 — whether it is signed in, its role, its principal and when it ends — and a cookie. No answer from the edge
 carries a token, and a page cannot reach identity's token-issuing routes through it: sign-in, registration,
-refresh, sign-out, the two-factor check and courier registration are
-[refused under `/bff/api/`](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/forwarding.tl#L40-L47)
+refresh, sign-out, the two-factor check, with a code or a passkey, and courier registration are
+[refused under `/bff/api/`](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/forwarding.tl#L40-L48)
 with `404`, because each of them answers with tokens. The edge offers its own sign-in, sign-up, two-factor and
 sign-out calls instead, shown in order on the [seller web's](/apis/rest/seller-web/sign-in/) and the
 [backoffice's](/apis/rest/backoffice/sign-in/) sign-in pages, and it renews the tokens itself.
 
 **Sign-up is a sign-in that creates the account first.** On the seller web, and
-[only there](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/apps.tl#L16-L54),
+[only there](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/apps.tl#L16-L56),
 `POST /bff/register` takes an email and a password and
-[asks identity to register them](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/adapters/identity_client.tl#L42-L46).
+[asks identity to register them](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/adapters/identity_client.tl#L43-L47).
 identity
-[creates the account as a `customer`](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L139-L155)
+[creates the account as a `customer`](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/auth_usecase.service.ts#L171-L187)
 and answers with a token pair, so the edge
-[starts the session through the same code as a sign-in](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sign_up.tl#L30-L49):
+[starts the session through the same code as a sign-in](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sign_up.tl#L30-L49):
 the role gate, a new session, the cookie, and `201` with the view of the session. An address already registered
 is `409` `EMAIL_TAKEN`, and a value identity refuses is `400` `INVALID_REQUEST`
-[with identity's own words in the message](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sign_up.tl#L19-L28),
+[with identity's own words in the message](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sign_up.tl#L19-L28),
 so the form can say what to fix. A customer becomes a seller by applying, as
 [Become a seller](/apis/rest/seller-web/become-a-seller/) describes. The backoffice offers no sign-up: there the
 path is `404`.
 
 The cookie is `__Host-kx_session`:
-[32 bytes from a strong random source, base64url, 43 characters](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/adapters/secure_random.tl#L8-L17),
+[32 bytes from a strong random source, base64url, 43 characters](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/adapters/secure_random.tl#L8-L17),
 set with
-[`Path=/; Secure; HttpOnly; SameSite=Strict`](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/cookies.tl#L6-L17).
+[`Path=/; Secure; HttpOnly; SameSite=Strict`](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/cookies.tl#L6-L17).
 The `__Host-` prefix makes the browser keep it for the exact host that set it, so a sibling host cannot set or
 overwrite it; `HttpOnly` hides it from scripts; `SameSite=Strict` keeps it off requests another site starts. A
 sign-in that still waits for a two-factor code, or an admin's enrolment, is held behind a second cookie,
 `__Host-kx_pending`, for as long as identity's challenge lasts and
-[never more than ten minutes](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L290-L327).
+[never more than ten minutes](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sessions.tl#L290-L327).
 
 The edge reads a cookie strictly.
-[A value that is not 43 base64url characters, or a cookie name sent twice, reads as no cookie](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/cookies.tl#L15-L39):
+[A value that is not 43 base64url characters, or a cookie name sent twice, reads as no cookie](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/cookies.tl#L15-L39):
 a second copy, planted by an extension or a bug, must never get to decide which session is used.
 
 ## Sessions
 
 A session is a hash in Redis
-[keyed by the SHA-256 of the cookie](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L75-L81),
+[keyed by the SHA-256 of the cookie](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sessions.tl#L75-L81),
 never by the cookie itself, so reading the store yields no value a browser could present. It holds the token
 pair, when the access token expires, the app, the role, the principal, and three times: when it started, when it
 was last used and when it must end. It is written
-[together with its expiry, in one transaction](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/adapters/redis_store.tl#L96-L131),
+[together with its expiry, in one transaction](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/adapters/redis_store.tl#L96-L131),
 so no key exists without one.
 
 Each app ends its sessions on its own clock
-([lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/lifetimes.tl#L4-L7),
-[apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/apps.tl#L16-L54)):
+([lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/lifetimes.tl#L4-L7),
+[apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/apps.tl#L16-L56)):
 
 | App | Idle limit | Absolute limit | Cookie |
 | --- | --- | --- | --- |
@@ -109,37 +109,37 @@ Each app ends its sessions on its own clock
 | seller web | 7 days | 30 days | `Max-Age` of 30 days |
 
 The backoffice is the strict one. The seller web's cookie
-[lasts as long as the absolute limit](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/lifetimes.tl#L38-L44),
+[lasts as long as the absolute limit](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/lifetimes.tl#L38-L44),
 or a seven-day idle limit would mean nothing once the browser closed. Either way Redis decides whether a session
 is alive, not the cookie.
 
 **Reading a session is not using it.** `GET /bff/session`
-[reports the session and never extends it](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/session_endpoint.tl#L14-L47);
+[reports the session and never extends it](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/session_endpoint.tl#L14-L47);
 an app that polls it would otherwise keep a backoffice session alive for its whole eight hours. Every call under
 `/bff/api/`, and every opening of the merchant socket, is a use, and
-[moves the idle expiry](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L190-L206)
+[moves the idle expiry](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sessions.tl#L190-L206)
 to the idle limit or the absolute end, whichever comes first
-([lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/lifetimes.tl#L11-L19)).
+([lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/lifetimes.tl#L11-L19)).
 The absolute end is also
-[checked on every lookup](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L179-L185),
+[checked on every lookup](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sessions.tl#L179-L185),
 and a session is honoured only on the app that created it. A session can cross its absolute end in the moment
 between the lookup and that use; the use then
-[ends it exactly as the lookup would have](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L190-L195),
+[ends it exactly as the lookup would have](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sessions.tl#L190-L195),
 and the call gets
-[`401` `SESSION_ENDED`](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/session_use.tl#L39-L42)
+[`401` `SESSION_ENDED`](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/session_use.tl#L39-L42)
 with the cookie expired, not a `503` that would send the page into retries.
 
 **A sign-in always starts a new session.** It
-[deletes the session the browser brought and issues a new cookie](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L233-L263),
+[deletes the session the browser brought and issues a new cookie](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sessions.tl#L233-L263),
 so a cookie someone planted before the sign-in never becomes a signed-in session. A sign-up does the same.
 
 **A replaced session is signed out at identity, not only deleted.** Deleting a session from Redis forgets its
 tokens, but identity would still honour them. So the session a new sign-in or sign-up
-[replaces](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L265-L271),
+[replaces](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sessions.tl#L265-L271),
 and one the edge
-[finds past its absolute end](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L144-L155)
+[finds past its absolute end](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sessions.tl#L144-L155)
 when it reads it, is also
-[signed out at identity](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/revocation.tl#L50-L101).
+[signed out at identity](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/revocation.tl#L50-L101).
 That runs after the request, in a timer, so it never delays or refuses the sign-in that caused it. identity's
 sign-out takes a live access token, so a session with less than a minute of it left is renewed first and the
 new pair signed out; a renewal identity refuses means the tokens were already dead. Every outcome is counted, and
@@ -149,7 +149,7 @@ a failure is logged.
 
 identity's access tokens are short-lived, so the edge renews the pair as it goes: when a call under
 `/bff/api/` finds
-[less than 60 seconds left](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/timing.tl#L3-L7),
+[less than 60 seconds left](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/timing.tl#L3-L7),
 the edge exchanges the refresh token at identity before it forwards the call. A page never refreshes, and
 cannot.
 
@@ -157,20 +157,20 @@ Two calls from the same session can arrive together — two tabs, or a page that
 and identity's refresh tokens
 [work once](/learn/tokens-that-can-be-taken-back/): a refresh token presented twice is read as stolen, and the
 whole session is revoked. So the edge refreshes once per session.
-[The first call claims a lock](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L492-L513)
+[The first call claims a lock](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sessions.tl#L492-L513)
 in Redis that expires by itself after 15 seconds, longer than the slowest answer identity is waited for;
-[re-reads the session](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L370-L384)
+[re-reads the session](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sessions.tl#L370-L384)
 and refreshes only if it is still stale, so a call that read the session before another one renewed it never
 presents the spent token. The others
-[wait for the lock to go](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L458-L490),
+[wait for the lock to go](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sessions.tl#L458-L490),
 checking every 25 milliseconds for up to nine seconds, and use the renewed pair. A renewal
-[writes only the fields it changes](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L427-L455),
+[writes only the fields it changes](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sessions.tl#L427-L455),
 never the whole session: rewriting it from an older copy could put back a refresh token that a concurrent
 renewal had just spent.
 
 What identity answers decides what happens to the session
-([sessions.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L386-L425),
-[session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/session_use.tl#L52-L69)):
+([sessions.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sessions.tl#L386-L425),
+[session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/session_use.tl#L52-L69)):
 
 - **A new pair** is stored, and the call goes on with it.
 - **A refusal** ends the session: the call gets `401` `SESSION_ENDED` and the cookie is expired. So does an
@@ -182,12 +182,12 @@ What identity answers decides what happens to the session
 ## The role gate
 
 Each app admits its own roles:
-[the backoffice `admin` only, the seller web `seller` and `customer`](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/apps.tl#L16-L54).
+[the backoffice `admin` only, the seller web `seller` and `customer`](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/apps.tl#L16-L56).
 The edge does not decide roles; it reads the role from identity's answer at sign-in and again
-[at every renewal](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L418-L425).
+[at every renewal](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sessions.tl#L418-L425).
 An account whose role the app does not admit gets no session, or loses the one it had, with `403`
 `ROLE_REFUSED`, and
-[the pair identity has just issued is signed out at identity](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sign_in.tl#L99-L110),
+[the pair identity has just issued is signed out at identity](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sign_in.tl#L107-L118),
 so no token outlives the refusal. Because identity
 [reads the role from the account at every refresh](/services/identity/#signing-in-and-tokens), a role granted
 after sign-in reaches the session at the next renewal: a customer approved as a seller becomes a seller,
@@ -195,60 +195,73 @@ and a customer approved as a courier loses the seller web.
 
 identity [requires every admin to have a second factor](/apis/rest/#tokens), and hands an admin without one an
 enrolment instead of tokens. The backoffice
-[runs that enrolment](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sign_in.tl#L298-L396),
+[runs that enrolment](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sign_in.tl#L394-L492),
 after which the admin signs in again with a code. The seller web, where no admin may sign in,
-[refuses an enrolment](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sign_in.tl#L199-L206)
+[refuses an enrolment](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sign_in.tl#L208-L215)
 with `ROLE_REFUSED`. A pending sign-in
-[is bound to its kind and its app](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L329-L350):
+[is bound to its kind and its app](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sessions.tl#L329-L350):
 an enrolment cannot answer a two-factor challenge, and one app's pending sign-in means nothing on the other.
 
 identity
-[says why it refused a code](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L86-L134),
+[says why it refused a code](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/auth_usecase.service.ts#L98-L162),
 and the edge
-[acts on the reason](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sign_in.tl#L238-L251).
+[acts on the reason](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sign_in.tl#L247-L264).
 A wrong code is `401` `CODE_REFUSED`, and the pending sign-in stays for the next code. A challenge identity
 reports as used up, already spent or unknown
-([`CHALLENGE_EXHAUSTED`, `CHALLENGE_SPENT`, `CHALLENGE_INVALID`](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/identity_answers.tl#L16-L20))
+([`CHALLENGE_EXHAUSTED`, `CHALLENGE_SPENT`, `CHALLENGE_INVALID`](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/identity_answers.tl#L16-L20))
 can never succeed, so the edge deletes the pending sign-in, expires its cookie and answers `401`
 `SIGN_IN_REQUIRED`: the page goes back to the password instead of asking for codes that cannot work.
+
+On the backoffice a passkey can answer the challenge instead of the code. The seller web
+[offers none](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/apps.tl#L48): its sign-in answers exactly `{ mfaRequired: true }`, and both passkey paths
+are `404` there. The backoffice's answer
+[carries identity's `passkeys` as well](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sign_in.tl#L143-L149), and
+`POST /bff/2fa/passkey/options` and `POST /bff/2fa/passkey/verify`
+[take the pending challenge exactly as the code does](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sign_in.tl#L295-L392):
+the same lookup, the same reading of identity's reasons, the same role gate and the same session. A refused
+passkey is `401` `PASSKEY_REFUSED` and keeps the pending sign-in, for another passkey or the code; so does an
+account whose passkeys were removed after its password was checked. identity's options and the browser's answer
+pass through [a JSON codec of their own](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/adapters/json_relay.tl#L1-L43), because the shared one writes an
+empty array as an empty object, which neither a browser nor identity accepts; the answer must be a JSON object of
+at most 16 KiB.
 
 ## Requests another site forges
 
 A cookie the browser sends by itself is what makes cross-site request forgery possible: a page on another site
 makes the browser send a request, and the browser adds the cookie. `SameSite=Strict` already keeps the cookie
 off such requests; the edge does not rely on it alone. Every request it serves
-[passes the same checks, in this order](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/router.tl#L202-L235),
+[passes the same checks, in this order](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/router.tl#L224-L257),
 before the session store is touched: a known path, a method that path takes, an app named by the `Host` header,
 the browser's address, a path that app offers, then two checks against forgery.
 
 - **Where it came from.** A request that changes something must carry
-  [an `Origin` equal to the app's own](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/csrf.tl#L12-L30),
+  [an `Origin` equal to the app's own](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/csrf.tl#L12-L30),
   `https://` and its host, or, with no `Origin`, `Sec-Fetch-Site: same-origin`. Both are headers a page cannot
   set: the browser writes them.
 - **What it carries.** A body
-  [must be `application/json`](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/router.tl#L161-L185),
+  [must be `application/json`](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/router.tl#L183-L207),
   or it is refused with `415` `JSON_REQUIRED`. An HTML form on another site can post only form encodings or
   plain text; a JSON body from another origin needs a CORS preflight, which the edge refuses.
 
 The browser's address is
-[the last entry of `X-Forwarded-For`](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/client_address.tl#L27-L47),
+[the last entry of `X-Forwarded-For`](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/client_address.tl#L27-L47),
 the one Kong appends, and nothing before it is read: an earlier entry is whatever the client chose to send.
 
 ## Forwarding a call
 
 `/bff/api/<path>` on an app's host
-[becomes `/api/<path>`](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/api_path.tl#L9-L30)
+[becomes `/api/<path>`](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/api_path.tl#L9-L30)
 on the API, built from nginx's normalised path with each segment escaped again, so the list of refused paths
 sees exactly what is sent, and a `.` or `..` segment is not found. The refusals are checked
-[before the session is even read](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/forward.tl#L80-L89),
+[before the session is even read](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/forward.tl#L80-L89),
 in any letter case. The [REST reference](/apis/rest/#how-a-call-reaches-the-api) shows a forwarded request.
 
 **Where it goes.** Calls under `/api/v1/auth` and `/api/v1/couriers`
-[go straight to identity](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/forward.tl#L36-L44);
+[go straight to identity](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/forward.tl#L36-L44);
 everything else goes to the gateway's internal listener, where Kong checks the token on the routes it checks
 everywhere. The reason is identity's limits on sign-in attempts and registrations, which count per address, and
 identity
-[trusts exactly one hop in front of it](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/infrastructure/http/gateway_hop.ts#L11-L22)
+[trusts exactly one hop in front of it](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/http/gateway_hop.ts#L11-L22)
 to name that address. Through the gateway, that hop would be the edge, and every web user would share one
 count. Called directly, identity is told the browser's address as the only entry; it verifies every token
 itself, and the backoffice's calls have already passed the staff gate or Tor's client authorization on their way
@@ -256,33 +269,33 @@ in. Sign-in and sign-up
 reach identity the same way.
 
 **What it carries.** From the page, the edge passes on
-[only a short list of headers](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/forwarding.tl#L11-L19);
+[only a short list of headers](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/forwarding.tl#L11-L19);
 the cookie, an `Authorization` the page sets and every `X-Kinetix-*` header stay behind. It
-[adds the session's access token](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/forward_headers.tl#L27-L49),
+[adds the session's access token](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/forward_headers.tl#L27-L49),
 the request id and the browser's address. From the answer it
-[drops](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/forwarding.tl#L21-L38)
+[drops](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/forwarding.tl#L21-L38)
 `Set-Cookie`, the caching headers and those that describe the connection, so no service can set a cookie on the
 app's host, and
-[every answer the edge sends carries `Cache-Control: no-store`](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/response_headers.tl#L4-L6):
+[every answer the edge sends carries `Cache-Control: no-store`](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/response_headers.tl#L4-L6):
 what a signed-in user sees must not be kept by any cache. A call under `/bff/api/` never becomes a WebSocket:
 `Upgrade` is
-[neither passed on nor passed back](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/forwarding.tl#L11-L38).
+[neither passed on nor passed back](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/forwarding.tl#L11-L38).
 The one socket the edge carries has a path and checks of its own, below.
 
 **When the API does not answer.** The API is given
-[two seconds to connect, thirty to send it the request and sixty to read the answer](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/timing.tl#L15-L17).
+[two seconds to connect, thirty to send it the request and sixty to read the answer](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/timing.tl#L15-L17).
 Past that, the page gets `503` `API_UNAVAILABLE`, whose message says
-[it is not known whether the request took effect](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/errors.tl#L77-L81):
+[it is not known whether the request took effect](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/errors.tl#L82-L86):
 the call may have reached the service, and only reading the current state can tell.
 
 ## The seller web's merchant socket
 
 matching tells a seller about their jobs over a WebSocket, the merchant socket, and opening it takes an access
 token. The seller web holds none, so the edge opens the socket for it:
-[`/bff/ws/v1/matching/merchant`](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/router.tl#L105-L122),
+[`/bff/ws/v1/matching/merchant`](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/router.tl#L127-L144),
 and the same path with `/websocket` after it, which Phoenix's JavaScript client dials. Only the seller web
 offers it; on the backoffice it is `404`. Before anything reaches matching, the edge
-[checks, in order](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/merchant_socket.tl#L45-L83):
+[checks, in order](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/merchant_socket.tl#L45-L83):
 
 - **An upgrade.** A request that does not ask for a WebSocket gets `426` `WEBSOCKET_REQUIRED`.
 - **The app's own origin.** `Origin` must equal the seller web's, and a request without one is refused too, with
@@ -291,7 +304,7 @@ offers it; on the backoffice it is `404`. Before anything reaches matching, the 
   page on another site from opening the socket with the seller's cookie.
 - **A usable session**, found, used and renewed exactly as for a call under `/bff/api/`.
 - **A seller.** The seller web admits customers, but
-  [only a `seller` opens the socket](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/apps.tl#L37-L51);
+  [only a `seller` opens the socket](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/apps.tl#L38-L53);
   anyone else gets `403` `SELLER_REQUIRED` and keeps the session, because an applicant may still use the app.
 
 Then nginx proxies the upgrade to the gateway's internal listener, where
@@ -301,21 +314,21 @@ cannot set `Authorization` on a WebSocket, so Phoenix takes a token in the hands
 and matching
 [reads it from there](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/socket_token.ex#L1-L13).
 The edge
-[writes that entry with the session's access token](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/socket_handshake.tl#L67-L69)
+[writes that entry with the session's access token](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/socket_handshake.tl#L67-L69)
 and
-[sends matching nothing else of the browser's](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/nginx/nginx.conf#L84-L113)
+[sends matching nothing else of the browser's](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/nginx/nginx.conf#L84-L113)
 but the handshake's own headers and the user agent: no cookie and no `Origin`, with the browser's address and the
 request id added. matching then checks the token and the role as it does for any client.
 
 The token never comes back. A server answers a WebSocket handshake by naming the subprotocol it chose, and the
 edge
-[drops whatever matching named](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/merchant_socket.tl#L85-L103):
+[drops whatever matching named](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/merchant_socket.tl#L85-L103):
 the browser is answered `phoenix` if it offered `phoenix`, and nothing otherwise, because a browser fails a
 handshake that names a subprotocol it did not offer. `Set-Cookie` is dropped too. An answer other than the
 upgrade, matching's refusal among them, passes through with its status; if the gateway cannot be reached at all,
 the page gets `503` `API_UNAVAILABLE`.
 The edge
-[holds a quiet socket for 90 seconds](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/nginx/nginx.conf#L102-L105),
+[holds a quiet socket for 90 seconds](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/nginx/nginx.conf#L102-L105),
 longer than Phoenix lets a socket stay silent; the
 [gateway](/architecture/gateway/#ninety-seconds-for-a-quiet-socket) waits as long on both of its hops.
 
@@ -323,26 +336,26 @@ longer than Phoenix lets a socket stay silent; the
 
 - **Redis.** Without the session store nothing can be checked, so every call that needs it gets `503`
   `SESSION_STORE_UNAVAILABLE`, never "signed out". A sign-in or a sign-up
-  [opens the store before it asks identity](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sign_in.tl#L211-L226),
+  [opens the store before it asks identity](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sign_in.tl#L220-L235),
   so a sign-in refused for an outage has not spent an attempt on the account's count at identity. An error
   Redis answers, such as a command it refuses, is
-  [a failure like a lost connection](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/adapters/redis_store.tl#L17-L21),
+  [a failure like a lost connection](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/adapters/redis_store.tl#L17-L21),
   never a success, and the connection is closed rather than handed to the next request.
 - **identity.** A sign-in or a sign-up gets `503` `IDENTITY_UNAVAILABLE`; so does a renewal, and the session is
   kept. Signing out
-  [answers `503` and keeps the session too](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/logout.tl#L76-L105):
+  [answers `503` and keeps the session too](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/logout.tl#L76-L105):
   "signed out" would be a definite answer the edge could not give while the tokens might still be live. A
   sign-out
-  [succeeds once identity has ended the tokens](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/logout.tl#L96-L104),
+  [succeeds once identity has ended the tokens](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/logout.tl#L96-L104),
   whether identity answered with success or with `401` or `403`, which mean they were already dead: the page
   gets `204` and both cookies are expired.
 
 ## What it owns, and what it does not
 
 The edge owns sessions: which token pair a cookie stands for, the sign-ins still waiting for a code, and each
-app's policy — its roles, its lifetimes, whether it offers sign-up and the merchant socket, the checks against
+app's policy — its roles, its lifetimes, whether it offers sign-up, passkeys and the merchant socket, the checks against
 forgery. Its policy is
-[code, compiled and type-checked with the rest](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/README.md#L59),
+[code, compiled and type-checked with the rest](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/README.md#L63),
 not configuration.
 
 It owns no account, no password and no role. identity remains the only service that issues a token; the edge
@@ -364,7 +377,7 @@ rules. And it is not the gateway: it sits behind Kong, which decides who may rea
 | `tests/` | unit, integration and mutation tests |
 
 The edge has no ports in the sense of the [other services](/architecture/many-idioms/#the-exception-the-edge):
-[a module requires its adapters directly](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L1-L24),
+[a module requires its adapters directly](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sessions.tl#L1-L24),
 and the tests replace identity, the API and matching's socket at the network instead, with fakes that answer
 over HTTP and WebSocket. The one seam inside is the Redis connection, which the session functions take as an
 argument, so a unit test can hand them a fake one.
@@ -372,46 +385,46 @@ argument, so a unit test can hand them a fake one.
 ## Data
 
 Redis holds
-[three kinds of key](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/README.md#L68-L75),
+[three kinds of key](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/README.md#L72-L79),
 each named after the SHA-256 of a cookie and each with an expiry: a session, which lives until its idle or
 absolute end; a pending sign-in, which lives as long as identity's challenge or enrolment; and the renewal lock,
 which lives 15 seconds. The edge connects as a Redis user of its own,
-[allowed only keys under its prefix and only the commands it uses](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/README.md#L68-L72),
+[allowed only keys under its prefix and only the commands it uses](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/README.md#L72-L76),
 and the integration tests
-[run under that same user](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/tests/integration/main/redis_acl_spec.tl#L12-L30),
+[run under that same user](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/tests/integration/main/redis_acl_spec.tl#L12-L30),
 so a command the edge starts to use without listing it fails a test rather than a sign-in. Nothing in Redis is
 needed for long: losing it signs everyone out of the web apps, and loses nothing else.
 
 ## How it is tested
 
 - **The build** runs
-  [`tl check` on every file](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/bin/check#L17-L44),
+  [`tl check` on every file](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/bin/check#L17-L44),
   and refuses the type `any`, comments and lines longer than 120 columns.
 - **Unit tests** run the pure modules — cookies, the forgery checks, paths, headers, lifetimes, the reading of
   identity's answers, the WebSocket handshake — and the session store against a fake Redis connection, under
-  [busted inside OpenResty](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/bin/unit#L11-L18).
+  [busted inside OpenResty](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/bin/unit#L11-L18).
 - **Integration tests**
-  [start real OpenResty with the generated Lua and the production `nginx.conf`](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/bin/integration#L93-L141)
+  [start real OpenResty with the generated Lua and the production `nginx.conf`](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/bin/integration#L93-L141)
   against real Redis under the edge's own user, with fakes of identity and the API that answer in identity's
   real shapes. The fake of matching's socket
-  [echoes back every subprotocol it is offered](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/CLAUDE.md#L200-L202),
+  [echoes back every subprotocol it is offered](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/CLAUDE.md#L225-L227),
   the hardest upstream there is for keeping the token out of the answer. The tests run three times: as
   configured, with shortened lifetimes so that sessions expire within the test, and with Redis unreachable. Then
   they
-  [check that the edge refuses to start](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/bin/integration#L143-L166)
+  [check that the edge refuses to start](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/bin/integration#L143-L166)
   without each setting, and
-  [search its log](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/bin/integration#L168-L184)
+  [search its log](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/bin/integration#L168-L184)
   for every cookie, token, email, password and code the tests saw.
 - **Mutation tests** break
-  [each security check](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/tests/mutation/catalogue.tl)
-  once — 51 of them, from the `Origin` check to the hashing of keys, the role gate and the socket's token — and run
+  [each security check](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/tests/mutation/catalogue.tl)
+  once — 56 of them, from the `Origin` check to the hashing of keys, the role gate and the socket's token — and run
   the tests that should notice. A change that no test notices
-  [fails the run](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/bin/mutate#L74-L88),
+  [fails the run](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/bin/mutate#L74-L88),
   so a security check cannot quietly lose its test.
 
-[CI runs all three on every change](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/.github/workflows/ci.yml#L27-L35),
+[CI runs all three on every change](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/.github/workflows/ci.yml#L27-L35),
 and
-[checks the image](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/.github/workflows/ci.yml#L60-L74):
+[checks the image](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/.github/workflows/ci.yml#L60-L74):
 it runs as a user rather than root, carries no Teal, and refuses to start without its configuration.
 
 ## Who may do what
@@ -430,20 +443,20 @@ it runs as a user rather than root, carries no Teal, and refuses to start withou
 ## Operating it
 
 - `/health` answers when the process is up; `/health/ready`
-  [needs Redis to answer `PING` as the edge's user](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/health.tl#L9-L27),
+  [needs Redis to answer `PING` as the edge's user](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/health.tl#L9-L27),
   and the container's health check
-  [asks it](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/Dockerfile#L41-L42).
-- [Metrics](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/README.md#L77-L86),
+  [asks it](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/Dockerfile#L41-L42).
+- [Metrics](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/README.md#L81-L90),
   on a port of their own, count requests by route template — never a raw path — sessions started and ended with
   the reason, renewals by outcome, refusals as forged, socket openings by outcome, the sign-outs at identity of
   sessions the edge ended, and failures of Redis, identity and the API.
 - Each request is
-  [one JSON line on standard error](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/access_log.tl#L7-L32):
+  [one JSON line on standard error](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/access_log.tl#L7-L32):
   method, route template, status, duration, request id, app, and
-  [eight hex characters of the cookie's hash](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L83-L89),
+  [eight hex characters of the cookie's hash](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sessions.tl#L83-L89),
   enough to follow one session through the log, and never the cookie itself.
 - The edge
-  [refuses to start](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/adapters/environment.tl#L81-L165)
+  [refuses to start](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/adapters/environment.tl#L81-L165)
   without each of its settings, with a backoffice origin that is not an origin, uses `http://` for anything but a
   `.onion` host, repeats a host or names the seller web's host, with a version that does not name a build, or
   with an address for the API that is not plain `http://`, which is what the gateway's internal listener speaks.

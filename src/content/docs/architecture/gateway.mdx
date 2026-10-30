@@ -148,7 +148,7 @@ Phoenix
 and its JavaScript client
 [sends a heartbeat every 30](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/assets/js/phoenix/socket.js#L174).
 The edge waits
-[90 seconds](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/nginx/nginx.conf#L102-L105)
+[90 seconds](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/nginx/nginx.conf#L102-L105)
 on a quiet merchant socket, so that the proxy is never what ends a socket Phoenix still holds. Kong, by default,
 [gives up after 60 seconds](https://github.com/Kong/kong/blob/ddc85be461165c9eb4506669343aa0d0c627e687/kong/db/schema/entities/services.lua#L40-L42)
 without reading from or writing to a service, and the seller web's socket passes Kong twice: on `/bff/`, between

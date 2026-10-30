@@ -3,7 +3,7 @@ title: Autentikasi dua faktor
 description: Mengaktifkan faktor kedua untuk akun pembeli sendiri dengan aplikasi authenticator, dan mematikannya lagi, di identity, dengan mengonfirmasi setiap perubahan memakai password akun.
 sidebar:
   order: 3
-sourceHash: "ca5a2276c197"
+sourceHash: "3991ff03cf09"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -17,7 +17,7 @@ setiap kali masuk identity menjawab dengan challenge lebih dulu, yang dijawab ap
 
 Setiap panggilan di sini menerima password akun di `password` selain access token, supaya access token yang
 dicuri saja tidak bisa mengubah faktor kedua
-([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L375-L388)).
+([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/auth_usecase.service.ts#L411-L424)).
 Aplikasi menanyakannya kepada pembeli di setiap langkah dan tidak menyimpannya. `401` untuk password yang
 salah menyangkut password-nya, bukan session-nya: aplikasi tetap memegang token-nya dan menanyakan password
 lagi. Setiap panggilan juga dihitung sebagai pemeriksaan akun untuk waktu tunggu masuk, sama seperti masuk;

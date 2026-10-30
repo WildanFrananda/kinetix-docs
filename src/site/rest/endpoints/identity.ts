@@ -1,5 +1,13 @@
 import type { RestCase } from "../../types/rest_case.type";
 import type { RestEndpoint } from "../../types/rest_endpoint.type";
+import {
+  passkeyAssertionCredential,
+  passkeyCreationOptions,
+  passkeyRegistrationCredential,
+  passkeyRequestOptions,
+  passkeyView,
+  passkeyViews
+} from "../passkey_examples";
 import { restSource } from "../rest_source";
 
 export const identityAnswers: readonly RestCase[] = [
@@ -190,7 +198,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
             principalId: "0f8b6c1e-5a2d-4c3b-9e7f-1a2b3c4d5e6f"
           }
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 315, 338)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 351, 374)
       },
       {
         status: 200,
@@ -199,9 +207,10 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         json: {
           mfaRequired: true,
           challengeToken: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.<claims>.<signature>",
-          expiresIn: 300
+          expiresIn: 300,
+          passkeys: false
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 54, 61)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 63, 73)
       },
       {
         status: 200,
@@ -214,7 +223,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           expiresIn: 600,
           userId: 3
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 340, 360)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 376, 396)
       },
       {
         status: 400,
@@ -246,7 +255,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 70, 84)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 82, 96)
       },
       {
         status: 429,
@@ -332,7 +341,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
             principalId: "0f8b6c1e-5a2d-4c3b-9e7f-1a2b3c4d5e6f"
           }
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 139, 155)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 171, 187)
       },
       {
         status: 400,
@@ -364,7 +373,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 143, 146)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 175, 178)
       },
       {
         status: 429,
@@ -429,7 +438,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
             principalId: "0f8b6c1e-5a2d-4c3b-9e7f-1a2b3c4d5e6f"
           }
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 157, 210)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 189, 243)
       },
       {
         status: 400,
@@ -494,7 +503,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 166, 169)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 198, 201)
       },
       {
         status: 401,
@@ -505,7 +514,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
             "An admin account must use two-factor authentication, so this session has ended. Sign in again to set it up.",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 171, 179)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 203, 211)
       },
       {
         status: 401,
@@ -611,7 +620,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
             principalId: "0f8b6c1e-5a2d-4c3b-9e7f-1a2b3c4d5e6f"
           }
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 122, 136)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 112, 127)
       },
       {
         status: 400,
@@ -672,7 +681,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           message: "The account behind this challenge no longer exists",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 90, 96)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 134, 140)
       },
       {
         status: 401,
@@ -682,7 +691,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           message: "This account does not have two-factor authentication enabled",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 98, 103)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 142, 147)
       },
       {
         status: 401,
@@ -692,7 +701,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           message: "This challenge allows no more attempts; sign in again",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 105, 111)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 153, 159)
       },
       {
         status: 401,
@@ -702,7 +711,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           message: "That code is not valid",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 113, 120)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 102, 110)
       },
       {
         status: 401,
@@ -712,7 +721,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           message: "That code has already been used; sign in again with the next one",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 124, 134)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 114, 125)
       },
       {
         status: 429,
@@ -740,6 +749,330 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       }
     ],
     source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 40, 50)
+  },
+  {
+    id: "identity.passkeyOptions",
+    service: "identity",
+    method: "POST",
+    path: "/api/v1/auth/2fa/passkey/options",
+    summary: "rest.identity.passkeyOptions.summary",
+    access: {
+      token: "none",
+      gatewayVerifies: false,
+      who: "rest.identity.passkeyOptions.who"
+    },
+    request: {
+      fields: [
+        {
+          name: "X-Kinetix-Client",
+          in: "header",
+          type: "string",
+          required: false,
+          rule: "rest.identity.passkeyOptions.field.kinetixClient"
+        },
+        {
+          name: "challengeToken",
+          in: "body",
+          type: "string",
+          required: true,
+          rule: "rest.identity.passkeyOptions.field.challengeToken"
+        }
+      ],
+      json: {
+        challengeToken: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.<claims>.<signature>"
+      }
+    },
+    cases: [
+      {
+        status: 200,
+        when: "rest.identity.passkeyOptions.case.options",
+        headers: ["X-RateLimit-Limit: 5", "X-RateLimit-Remaining: 4", "X-RateLimit-Reset: 60"],
+        json: {
+          options: passkeyRequestOptions
+        },
+        source: restSource("identity", "src/application/services/passkey_usecase.service.ts", 153, 168)
+      },
+      {
+        status: 400,
+        when: "rest.identity.passkeyOptions.case.invalid",
+        json: {
+          message: ["challengeToken is required"],
+          error: "Bad Request",
+          statusCode: 400,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/infrastructure/http/http_pipeline.ts", 7, 13)
+      },
+      {
+        status: 400,
+        when: "rest.identity.passkeyOptions.case.unknownClient",
+        json: {
+          error: "UNKNOWN_CLIENT",
+          message: "X-Kinetix-Client names a client identity does not know.",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/client_gate.service.ts", 184, 188)
+      },
+      {
+        status: 401,
+        when: "rest.identity.passkeyOptions.case.invalidChallenge",
+        json: {
+          error: "CHALLENGE_INVALID",
+          message: "Invalid token",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/token.service.ts", 240, 251)
+      },
+      {
+        status: 401,
+        when: "rest.identity.passkeyOptions.case.notChallenge",
+        json: {
+          error: "CHALLENGE_INVALID",
+          message: "This is not a two-factor challenge",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/token.service.ts", 253, 255)
+      },
+      {
+        status: 401,
+        when: "rest.identity.passkeyOptions.case.challengeUsed",
+        json: {
+          error: "CHALLENGE_SPENT",
+          message: "This challenge has already been answered; sign in again",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/token.service.ts", 221, 238)
+      },
+      {
+        status: 401,
+        when: "rest.identity.passkeyOptions.case.accountGone",
+        json: {
+          error: "CHALLENGE_INVALID",
+          message: "The account behind this challenge no longer exists",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 134, 140)
+      },
+      {
+        status: 401,
+        when: "rest.identity.passkeyOptions.case.notEnabled",
+        json: {
+          error: "CHALLENGE_INVALID",
+          message: "This account does not have two-factor authentication enabled",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 142, 147)
+      },
+      {
+        status: 409,
+        when: "rest.identity.passkeyOptions.case.noPasskeys",
+        json: {
+          error: "NO_PASSKEYS",
+          message: "This account has no passkey; answer the challenge with the code.",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/passkey_usecase.service.ts", 156, 162)
+      },
+      {
+        status: 429,
+        when: "rest.identity.passkeyOptions.case.throttled",
+        headers: ["Retry-After: 42"],
+        json: {
+          error: "REQUEST_REFUSED",
+          message: "ThrottlerException: Too Many Requests",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/adapters/controllers/passkey.controller.ts", 39, 46)
+      }
+    ],
+    source: restSource("identity", "src/adapters/controllers/passkey.controller.ts", 39, 46)
+  },
+  {
+    id: "identity.verifyPasskey",
+    service: "identity",
+    method: "POST",
+    path: "/api/v1/auth/2fa/passkey/verify",
+    summary: "rest.identity.verifyPasskey.summary",
+    access: {
+      token: "none",
+      gatewayVerifies: false,
+      who: "rest.identity.verifyPasskey.who"
+    },
+    request: {
+      fields: [
+        {
+          name: "X-Kinetix-Client",
+          in: "header",
+          type: "string",
+          required: false,
+          rule: "rest.identity.verifyPasskey.field.kinetixClient"
+        },
+        {
+          name: "challengeToken",
+          in: "body",
+          type: "string",
+          required: true,
+          rule: "rest.identity.verifyPasskey.field.challengeToken"
+        },
+        {
+          name: "credential",
+          in: "body",
+          type: "object",
+          required: true,
+          rule: "rest.identity.verifyPasskey.field.credential"
+        }
+      ],
+      json: {
+        challengeToken: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.<claims>.<signature>",
+        credential: passkeyAssertionCredential
+      }
+    },
+    cases: [
+      {
+        status: 200,
+        when: "rest.identity.verifyPasskey.case.signedIn",
+        headers: ["X-RateLimit-Limit: 5", "X-RateLimit-Remaining: 4", "X-RateLimit-Reset: 60"],
+        json: {
+          accessToken: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.<claims>.<signature>",
+          refreshToken: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.<claims>.<signature>",
+          expiresIn: 900,
+          tokenType: "Bearer",
+          user: {
+            id: 3,
+            email: "admin@example.com",
+            role: "admin",
+            principalId: "3c9d2e7a-6b1f-4d8e-a5c4-7e2f1b0a9d8c"
+          }
+        },
+        source: restSource("identity", "src/application/services/passkey_usecase.service.ts", 196, 211)
+      },
+      {
+        status: 400,
+        when: "rest.identity.verifyPasskey.case.invalid",
+        json: {
+          message: ["credential must be the object the browser's get() returned, as JSON"],
+          error: "Bad Request",
+          statusCode: 400,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/infrastructure/http/http_pipeline.ts", 7, 13)
+      },
+      {
+        status: 400,
+        when: "rest.identity.verifyPasskey.case.unknownClient",
+        json: {
+          error: "UNKNOWN_CLIENT",
+          message: "X-Kinetix-Client names a client identity does not know.",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/client_gate.service.ts", 184, 188)
+      },
+      {
+        status: 401,
+        when: "rest.identity.verifyPasskey.case.invalidChallenge",
+        json: {
+          error: "CHALLENGE_INVALID",
+          message: "Invalid token",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/token.service.ts", 240, 251)
+      },
+      {
+        status: 401,
+        when: "rest.identity.verifyPasskey.case.notChallenge",
+        json: {
+          error: "CHALLENGE_INVALID",
+          message: "This is not a two-factor challenge",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/token.service.ts", 253, 255)
+      },
+      {
+        status: 401,
+        when: "rest.identity.verifyPasskey.case.challengeUsed",
+        json: {
+          error: "CHALLENGE_SPENT",
+          message: "This challenge has already been answered; sign in again",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/token.service.ts", 221, 238)
+      },
+      {
+        status: 401,
+        when: "rest.identity.verifyPasskey.case.accountGone",
+        json: {
+          error: "CHALLENGE_INVALID",
+          message: "The account behind this challenge no longer exists",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 134, 140)
+      },
+      {
+        status: 401,
+        when: "rest.identity.verifyPasskey.case.notEnabled",
+        json: {
+          error: "CHALLENGE_INVALID",
+          message: "This account does not have two-factor authentication enabled",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 142, 147)
+      },
+      {
+        status: 401,
+        when: "rest.identity.verifyPasskey.case.challengeExhausted",
+        json: {
+          error: "CHALLENGE_EXHAUSTED",
+          message: "This challenge allows no more attempts; sign in again",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 152, 162)
+      },
+      {
+        status: 401,
+        when: "rest.identity.verifyPasskey.case.passkeyRefused",
+        json: {
+          error: "PASSKEY_REFUSED",
+          message: "That passkey was not accepted. Ask for new passkey options and try again, or answer with the code.",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/passkey_usecase.service.ts", 178, 194)
+      },
+      {
+        status: 401,
+        when: "rest.identity.verifyPasskey.case.counterMoved",
+        json: {
+          error: "CHALLENGE_SPENT",
+          message: "That passkey signed another sign-in at the same moment; sign in again",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/passkey_usecase.service.ts", 196, 209)
+      },
+      {
+        status: 429,
+        when: "rest.identity.verifyPasskey.case.throttled",
+        headers: ["Retry-After: 42"],
+        json: {
+          error: "REQUEST_REFUSED",
+          message: "ThrottlerException: Too Many Requests",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/adapters/controllers/passkey.controller.ts", 48, 58)
+      },
+      {
+        status: 429,
+        when: "rest.identity.verifyPasskey.case.delayed",
+        headers: ["Retry-After: 8"],
+        json: {
+          error: "SIGN_IN_DELAYED",
+          message:
+            "Too many unsuccessful sign-in attempts for this account. Nothing was checked; try again after the number of seconds in Retry-After.",
+          retryAfterSeconds: 8,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/infrastructure/observability/unhandled_exception_filter.ts", 54, 75)
+      }
+    ],
+    source: restSource("identity", "src/adapters/controllers/passkey.controller.ts", 48, 58)
   },
   {
     id: "identity.logout",
@@ -815,7 +1148,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 403,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 215, 218)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 249, 252)
       },
       {
         status: 429,
@@ -916,7 +1249,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
             "otpauth://totp/Kinetix%3Abuyer%40example.com?secret=<32 base32 characters>&issuer=Kinetix&algorithm=SHA1&digits=6&period=30",
           enabled: false
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 243, 248)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 278, 283)
       },
       {
         status: 400,
@@ -937,7 +1270,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           message: "Changing the second factor from a signed-in session needs the account's current password.",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 375, 388)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 411, 424)
       },
       {
         status: 401,
@@ -948,7 +1281,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 390, 404)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 426, 441)
       },
       {
         status: 403,
@@ -970,7 +1303,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 404,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 367, 370)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 403, 406)
       },
       {
         status: 409,
@@ -981,7 +1314,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 239, 241)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 274, 276)
       },
       {
         status: 429,
@@ -1058,7 +1391,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         json: {
           enabled: true
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 269, 281)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 305, 317)
       },
       {
         status: 400,
@@ -1079,7 +1412,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           message: "Changing the second factor from a signed-in session needs the account's current password.",
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 375, 388)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 411, 424)
       },
       {
         status: 400,
@@ -1090,7 +1423,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 400,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 265, 267)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 301, 303)
       },
       {
         status: 401,
@@ -1101,7 +1434,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 390, 404)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 426, 441)
       },
       {
         status: 403,
@@ -1123,7 +1456,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 404,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 367, 370)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 403, 406)
       },
       {
         status: 422,
@@ -1134,7 +1467,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 422,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 413, 420)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 450, 458)
       },
       {
         status: 422,
@@ -1145,7 +1478,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 422,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 422, 429)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 460, 468)
       },
       {
         status: 429,
@@ -1222,7 +1555,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
         json: {
           enabled: false
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 299, 312)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 335, 348)
       },
       {
         status: 400,
@@ -1244,7 +1577,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 401,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 390, 404)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 426, 441)
       },
       {
         status: 403,
@@ -1266,7 +1599,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 404,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 367, 370)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 403, 406)
       },
       {
         status: 409,
@@ -1277,7 +1610,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 295, 297)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 331, 333)
       },
       {
         status: 422,
@@ -1288,7 +1621,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 422,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 413, 420)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 450, 458)
       },
       {
         status: 422,
@@ -1299,7 +1632,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 422,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 422, 429)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 460, 468)
       },
       {
         status: 429,
@@ -1327,6 +1660,499 @@ export const identityEndpoints: readonly RestEndpoint[] = [
       }
     ],
     source: restSource("identity", "src/adapters/controllers/auth.controller.ts", 124, 136)
+  },
+  {
+    id: "identity.listPasskeys",
+    service: "identity",
+    method: "GET",
+    path: "/api/v1/auth/passkeys/{id}",
+    summary: "rest.identity.listPasskeys.summary",
+    access: {
+      token: "required",
+      gatewayVerifies: true,
+      who: "rest.identity.listPasskeys.who"
+    },
+    request: {
+      fields: [
+        {
+          name: "id",
+          in: "path",
+          type: "integer",
+          required: true,
+          rule: "rest.identity.listPasskeys.field.id"
+        }
+      ]
+    },
+    cases: [
+      {
+        status: 200,
+        when: "rest.identity.listPasskeys.case.listed",
+        headers: ["X-RateLimit-Limit: 10", "X-RateLimit-Remaining: 9", "X-RateLimit-Reset: 60"],
+        json: {
+          passkeys: passkeyViews
+        },
+        source: restSource("identity", "src/application/services/passkey_usecase.service.ts", 54, 59)
+      },
+      {
+        status: 403,
+        when: "rest.identity.listPasskeys.case.notOwn",
+        json: {
+          message: "This account may only act on its own resources",
+          error: "Forbidden",
+          statusCode: 403,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/adapters/guards/self_or_staff.guard.ts", 41, 49)
+      },
+      {
+        status: 404,
+        when: "rest.identity.listPasskeys.case.accountGone",
+        json: {
+          message: "User with ID 3 not found",
+          error: "Not Found",
+          statusCode: 404,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/passkey_usecase.service.ts", 219, 222)
+      },
+      {
+        status: 429,
+        when: "rest.identity.listPasskeys.case.throttled",
+        headers: ["Retry-After: 42"],
+        json: {
+          error: "REQUEST_REFUSED",
+          message: "ThrottlerException: Too Many Requests",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/infrastructure/http/throttle_policy.ts", 3, 6)
+      }
+    ],
+    source: restSource("identity", "src/adapters/controllers/passkey.controller.ts", 60, 67)
+  },
+  {
+    id: "identity.passkeyRegistrationOptions",
+    service: "identity",
+    method: "POST",
+    path: "/api/v1/auth/passkeys/{id}/options",
+    summary: "rest.identity.passkeyRegistrationOptions.summary",
+    access: {
+      token: "required",
+      gatewayVerifies: true,
+      who: "rest.identity.passkeyRegistrationOptions.who"
+    },
+    request: {
+      fields: [
+        {
+          name: "id",
+          in: "path",
+          type: "integer",
+          required: true,
+          rule: "rest.identity.passkeyRegistrationOptions.field.id"
+        },
+        {
+          name: "password",
+          in: "body",
+          type: "string",
+          required: true,
+          rule: "rest.identity.passkeyRegistrationOptions.field.password"
+        }
+      ],
+      json: {
+        password: "correct horse battery staple"
+      }
+    },
+    cases: [
+      {
+        status: 200,
+        when: "rest.identity.passkeyRegistrationOptions.case.options",
+        headers: ["X-RateLimit-Limit: 5", "X-RateLimit-Remaining: 4", "X-RateLimit-Reset: 60"],
+        json: {
+          challengeId: "7d8e3c1a-5b2f-4a61-9c3e-2f1b0a9d8c7e",
+          options: passkeyCreationOptions
+        },
+        source: restSource("identity", "src/application/services/passkey_usecase.service.ts", 61, 89)
+      },
+      {
+        status: 400,
+        when: "rest.identity.passkeyRegistrationOptions.case.invalid",
+        json: {
+          message: ["password is required"],
+          error: "Bad Request",
+          statusCode: 400,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/infrastructure/http/http_pipeline.ts", 7, 13)
+      },
+      {
+        status: 401,
+        when: "rest.identity.passkeyRegistrationOptions.case.wrongPassword",
+        json: {
+          message: "Invalid email or password credentials",
+          error: "Unauthorized",
+          statusCode: 401,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 426, 441)
+      },
+      {
+        status: 403,
+        when: "rest.identity.passkeyRegistrationOptions.case.notOwn",
+        json: {
+          message: "This account may only act on its own resources",
+          error: "Forbidden",
+          statusCode: 403,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/adapters/guards/self_or_staff.guard.ts", 41, 49)
+      },
+      {
+        status: 404,
+        when: "rest.identity.passkeyRegistrationOptions.case.accountGone",
+        json: {
+          message: "User with ID 3 not found",
+          error: "Not Found",
+          statusCode: 404,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/passkey_usecase.service.ts", 219, 222)
+      },
+      {
+        status: 409,
+        when: "rest.identity.passkeyRegistrationOptions.case.twoFactorRequired",
+        json: {
+          error: "TWO_FACTOR_REQUIRED",
+          message: "A passkey is added only to an account whose authenticator code is on, so the code is always there.",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/passkey_usecase.service.ts", 243, 250)
+      },
+      {
+        status: 409,
+        when: "rest.identity.passkeyRegistrationOptions.case.limit",
+        json: {
+          error: "PASSKEY_LIMIT",
+          message: "An account holds at most 10 passkeys; remove one first.",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/passkey_usecase.service.ts", 71, 74)
+      },
+      {
+        status: 429,
+        when: "rest.identity.passkeyRegistrationOptions.case.throttled",
+        headers: ["Retry-After: 42"],
+        json: {
+          error: "REQUEST_REFUSED",
+          message: "ThrottlerException: Too Many Requests",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/adapters/controllers/passkey.controller.ts", 69, 82)
+      },
+      {
+        status: 429,
+        when: "rest.identity.passkeyRegistrationOptions.case.delayed",
+        headers: ["Retry-After: 8"],
+        json: {
+          error: "SIGN_IN_DELAYED",
+          message:
+            "Too many unsuccessful sign-in attempts for this account. Nothing was checked; try again after the number of seconds in Retry-After.",
+          retryAfterSeconds: 8,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/infrastructure/observability/unhandled_exception_filter.ts", 54, 75)
+      }
+    ],
+    source: restSource("identity", "src/adapters/controllers/passkey.controller.ts", 69, 82)
+  },
+  {
+    id: "identity.registerPasskey",
+    service: "identity",
+    method: "POST",
+    path: "/api/v1/auth/passkeys/{id}",
+    summary: "rest.identity.registerPasskey.summary",
+    access: {
+      token: "required",
+      gatewayVerifies: true,
+      who: "rest.identity.registerPasskey.who"
+    },
+    request: {
+      fields: [
+        {
+          name: "id",
+          in: "path",
+          type: "integer",
+          required: true,
+          rule: "rest.identity.registerPasskey.field.id"
+        },
+        {
+          name: "challengeId",
+          in: "body",
+          type: "string",
+          required: true,
+          rule: "rest.identity.registerPasskey.field.challengeId"
+        },
+        {
+          name: "name",
+          in: "body",
+          type: "string",
+          required: true,
+          rule: "rest.identity.registerPasskey.field.name"
+        },
+        {
+          name: "credential",
+          in: "body",
+          type: "object",
+          required: true,
+          rule: "rest.identity.registerPasskey.field.credential"
+        }
+      ],
+      json: {
+        challengeId: "7d8e3c1a-5b2f-4a61-9c3e-2f1b0a9d8c7e",
+        name: "Work laptop",
+        credential: passkeyRegistrationCredential
+      }
+    },
+    cases: [
+      {
+        status: 201,
+        when: "rest.identity.registerPasskey.case.added",
+        headers: ["X-RateLimit-Limit: 5", "X-RateLimit-Remaining: 4", "X-RateLimit-Reset: 60"],
+        json: passkeyView,
+        source: restSource("identity", "src/application/services/passkey_usecase.service.ts", 122, 134)
+      },
+      {
+        status: 400,
+        when: "rest.identity.registerPasskey.case.invalid",
+        json: {
+          message: ["property password should not exist"],
+          error: "Bad Request",
+          statusCode: 400,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/infrastructure/http/http_pipeline.ts", 7, 13)
+      },
+      {
+        status: 400,
+        when: "rest.identity.registerPasskey.case.challengeInvalid",
+        json: {
+          error: "PASSKEY_CHALLENGE_INVALID",
+          message: "That passkey challenge is unknown, expired or already used; ask for new options.",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/passkey_usecase.service.ts", 100, 106)
+      },
+      {
+        status: 400,
+        when: "rest.identity.registerPasskey.case.passkeyInvalid",
+        json: {
+          error: "PASSKEY_INVALID",
+          message: "The authenticator's answer could not be verified, so no passkey was added.",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/passkey_usecase.service.ts", 108, 120)
+      },
+      {
+        status: 403,
+        when: "rest.identity.registerPasskey.case.notOwn",
+        json: {
+          message: "This account may only act on its own resources",
+          error: "Forbidden",
+          statusCode: 403,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/adapters/guards/self_or_staff.guard.ts", 41, 49)
+      },
+      {
+        status: 404,
+        when: "rest.identity.registerPasskey.case.accountGone",
+        json: {
+          message: "User with ID 3 not found",
+          error: "Not Found",
+          statusCode: 404,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/passkey_usecase.service.ts", 219, 222)
+      },
+      {
+        status: 409,
+        when: "rest.identity.registerPasskey.case.twoFactorRequired",
+        json: {
+          error: "TWO_FACTOR_REQUIRED",
+          message: "A passkey is added only to an account whose authenticator code is on, so the code is always there.",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/passkey_usecase.service.ts", 243, 250)
+      },
+      {
+        status: 409,
+        when: "rest.identity.registerPasskey.case.limit",
+        json: {
+          error: "PASSKEY_LIMIT",
+          message: "An account holds at most 10 passkeys; remove one first.",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/passkey_usecase.service.ts", 122, 128)
+      },
+      {
+        status: 409,
+        when: "rest.identity.registerPasskey.case.exists",
+        json: {
+          error: "PASSKEY_EXISTS",
+          message: "That passkey is already registered.",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/passkey_usecase.service.ts", 130, 132)
+      },
+      {
+        status: 429,
+        when: "rest.identity.registerPasskey.case.throttled",
+        headers: ["Retry-After: 42"],
+        json: {
+          error: "REQUEST_REFUSED",
+          message: "ThrottlerException: Too Many Requests",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/adapters/controllers/passkey.controller.ts", 84, 97)
+      }
+    ],
+    source: restSource("identity", "src/adapters/controllers/passkey.controller.ts", 84, 97)
+  },
+  {
+    id: "identity.removePasskey",
+    service: "identity",
+    method: "DELETE",
+    path: "/api/v1/auth/passkeys/{id}/{passkeyId}",
+    summary: "rest.identity.removePasskey.summary",
+    access: {
+      token: "required",
+      gatewayVerifies: true,
+      who: "rest.identity.removePasskey.who"
+    },
+    request: {
+      fields: [
+        {
+          name: "id",
+          in: "path",
+          type: "integer",
+          required: true,
+          rule: "rest.identity.removePasskey.field.id"
+        },
+        {
+          name: "passkeyId",
+          in: "path",
+          type: "string",
+          required: true,
+          rule: "rest.identity.removePasskey.field.passkeyId"
+        },
+        {
+          name: "password",
+          in: "body",
+          type: "string",
+          required: true,
+          rule: "rest.identity.removePasskey.field.password"
+        }
+      ],
+      json: {
+        password: "correct horse battery staple"
+      }
+    },
+    cases: [
+      {
+        status: 204,
+        when: "rest.identity.removePasskey.case.removed",
+        headers: ["X-RateLimit-Limit: 5", "X-RateLimit-Remaining: 4", "X-RateLimit-Reset: 60"],
+        source: restSource("identity", "src/application/services/passkey_usecase.service.ts", 137, 151)
+      },
+      {
+        status: 400,
+        when: "rest.identity.removePasskey.case.invalid",
+        json: {
+          message: ["password is required"],
+          error: "Bad Request",
+          statusCode: 400,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/infrastructure/http/http_pipeline.ts", 7, 13)
+      },
+      {
+        status: 400,
+        when: "rest.identity.removePasskey.case.notUuid",
+        json: {
+          message: "Validation failed (uuid is expected)",
+          error: "Bad Request",
+          statusCode: 400,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/adapters/controllers/passkey.controller.ts", 105, 112)
+      },
+      {
+        status: 401,
+        when: "rest.identity.removePasskey.case.wrongPassword",
+        json: {
+          message: "Invalid email or password credentials",
+          error: "Unauthorized",
+          statusCode: 401,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 426, 441)
+      },
+      {
+        status: 403,
+        when: "rest.identity.removePasskey.case.notOwn",
+        json: {
+          message: "This account may only act on its own resources",
+          error: "Forbidden",
+          statusCode: 403,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/adapters/guards/self_or_staff.guard.ts", 41, 49)
+      },
+      {
+        status: 404,
+        when: "rest.identity.removePasskey.case.accountGone",
+        json: {
+          message: "User with ID 3 not found",
+          error: "Not Found",
+          statusCode: 404,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/passkey_usecase.service.ts", 219, 222)
+      },
+      {
+        status: 404,
+        when: "rest.identity.removePasskey.case.notFound",
+        json: {
+          error: "PASSKEY_NOT_FOUND",
+          message: "This account has no passkey with that id.",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/application/services/passkey_usecase.service.ts", 147, 150)
+      },
+      {
+        status: 429,
+        when: "rest.identity.removePasskey.case.throttled",
+        headers: ["Retry-After: 42"],
+        json: {
+          error: "REQUEST_REFUSED",
+          message: "ThrottlerException: Too Many Requests",
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/adapters/controllers/passkey.controller.ts", 99, 113)
+      },
+      {
+        status: 429,
+        when: "rest.identity.removePasskey.case.delayed",
+        headers: ["Retry-After: 8"],
+        json: {
+          error: "SIGN_IN_DELAYED",
+          message:
+            "Too many unsuccessful sign-in attempts for this account. Nothing was checked; try again after the number of seconds in Retry-After.",
+          retryAfterSeconds: 8,
+          traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
+        },
+        source: restSource("identity", "src/infrastructure/observability/unhandled_exception_filter.ts", 54, 75)
+      }
+    ],
+    source: restSource("identity", "src/adapters/controllers/passkey.controller.ts", 99, 113)
   },
   {
     id: "identity.getProfile",
@@ -2320,7 +3146,7 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           statusCode: 409,
           traceId: "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b"
         },
-        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 143, 146)
+        source: restSource("identity", "src/application/services/auth_usecase.service.ts", 175, 178)
       },
       {
         status: 409,

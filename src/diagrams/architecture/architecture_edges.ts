@@ -22,15 +22,17 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "identity",
     kind: "http",
     calls: [
-      { operation: "POST /api/v1/auth/login", source: { label: "identity_client.tl:39", href: "https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/adapters/identity_client.tl#L39" } },
-      { operation: "POST /api/v1/auth/register", source: { label: "identity_client.tl:45", href: "https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/adapters/identity_client.tl#L45" }, note: "map.note.signUp" },
-      { operation: "POST /api/v1/auth/2fa/verify", source: { label: "identity_client.tl:51", href: "https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/adapters/identity_client.tl#L51" } },
-      { operation: "POST /api/v1/auth/2fa/setup/{userId}", source: { label: "identity_client.tl:55", href: "https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/adapters/identity_client.tl#L55" } },
-      { operation: "POST /api/v1/auth/2fa/enable/{userId}", source: { label: "identity_client.tl:66", href: "https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/adapters/identity_client.tl#L66" } },
-      { operation: "POST /api/v1/auth/refresh", source: { label: "identity_client.tl:72", href: "https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/adapters/identity_client.tl#L72" } },
-      { operation: "POST /api/v1/auth/logout", source: { label: "identity_client.tl:78", href: "https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/adapters/identity_client.tl#L78" } },
-      { operation: "{method} /api/v1/auth/{path}", source: { label: "forward.tl:41", href: "https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/forward.tl#L41" }, note: "map.note.forwarded" },
-      { operation: "{method} /api/v1/couriers/{path}", source: { label: "forward.tl:41", href: "https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/forward.tl#L41" }, note: "map.note.forwarded" }
+      { operation: "POST /api/v1/auth/login", source: { label: "identity_client.tl:40", href: "https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/adapters/identity_client.tl#L40" } },
+      { operation: "POST /api/v1/auth/register", source: { label: "identity_client.tl:46", href: "https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/adapters/identity_client.tl#L46" }, note: "map.note.signUp" },
+      { operation: "POST /api/v1/auth/2fa/verify", source: { label: "identity_client.tl:52", href: "https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/adapters/identity_client.tl#L52" } },
+      { operation: "POST /api/v1/auth/2fa/passkey/options", source: { label: "identity_client.tl:58", href: "https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/adapters/identity_client.tl#L58" } },
+      { operation: "POST /api/v1/auth/2fa/passkey/verify", source: { label: "identity_client.tl:68", href: "https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/adapters/identity_client.tl#L68" } },
+      { operation: "POST /api/v1/auth/2fa/setup/{userId}", source: { label: "identity_client.tl:72", href: "https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/adapters/identity_client.tl#L72" } },
+      { operation: "POST /api/v1/auth/2fa/enable/{userId}", source: { label: "identity_client.tl:83", href: "https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/adapters/identity_client.tl#L83" } },
+      { operation: "POST /api/v1/auth/refresh", source: { label: "identity_client.tl:89", href: "https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/adapters/identity_client.tl#L89" } },
+      { operation: "POST /api/v1/auth/logout", source: { label: "identity_client.tl:95", href: "https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/adapters/identity_client.tl#L95" } },
+      { operation: "{method} /api/v1/auth/{path}", source: { label: "forward.tl:41", href: "https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/forward.tl#L41" }, note: "map.note.forwarded" },
+      { operation: "{method} /api/v1/couriers/{path}", source: { label: "forward.tl:41", href: "https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/forward.tl#L41" }, note: "map.note.forwarded" }
     ]
   },
   {
@@ -38,8 +40,8 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "gateway",
     kind: "http",
     calls: [
-      { operation: "{method} /api/{path}", source: { label: "forward.tl:37", href: "https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/forward.tl#L37" }, note: "map.note.internalListener" },
-      { operation: "GET /ws/v1/matching/merchant/websocket", source: { label: "merchant_socket.tl:36", href: "https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/merchant_socket.tl#L36" }, note: "map.note.merchantSocket" }
+      { operation: "{method} /api/{path}", source: { label: "forward.tl:37", href: "https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/forward.tl#L37" }, note: "map.note.internalListener" },
+      { operation: "GET /ws/v1/matching/merchant/websocket", source: { label: "merchant_socket.tl:36", href: "https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/merchant_socket.tl#L36" }, note: "map.note.merchantSocket" }
     ]
   },
   {
@@ -73,7 +75,7 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "nominatim",
     kind: "external",
     calls: [
-      { operation: "GET /search", source: { label: "nominatim_geocoding.adapter.ts:33", href: "https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/infrastructure/geocoding/nominatim_geocoding.adapter.ts#L33" } }
+      { operation: "GET /search", source: { label: "nominatim_geocoding.adapter.ts:33", href: "https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/geocoding/nominatim_geocoding.adapter.ts#L33" } }
     ]
   },
   {
@@ -81,8 +83,8 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "matching",
     kind: "grpc",
     calls: [
-      { operation: "fleet.v1.FleetRegistryService/RegisterDriver", source: { label: "fleet_registry_grpc.adapter.ts:45", href: "https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L45" } },
-      { operation: "fleet.v1.FleetRegistryService/ActivateDriver", source: { label: "fleet_registry_grpc.adapter.ts:62", href: "https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L62" } }
+      { operation: "fleet.v1.FleetRegistryService/RegisterDriver", source: { label: "fleet_registry_grpc.adapter.ts:45", href: "https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L45" } },
+      { operation: "fleet.v1.FleetRegistryService/ActivateDriver", source: { label: "fleet_registry_grpc.adapter.ts:62", href: "https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L62" } }
     ]
   },
   {

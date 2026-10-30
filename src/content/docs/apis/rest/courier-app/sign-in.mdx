@@ -24,7 +24,7 @@ On this call, as on the code step, registration and every refresh, it also sends
 [client_proof.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/attestation/client_proof.dart#L14-L49)).
 identity knows the name `courier-app` and binds the session's tokens to it. As production is configured, it
 asks the courier app for no proof, so it does not read `X-Firebase-AppCheck`
-([client_gate.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/client_gate.service.ts#L60-L85)).
+([client_gate.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/client_gate.service.ts#L60-L85)).
 
 A `200` carrying `mfaRequired` goes to step 2 with its `challengeToken`; a `200` carrying the token pair goes
 to step 3. For an approved courier, `user.role` is `courier`. A `200` carrying `mfaEnrolmentRequired` comes only

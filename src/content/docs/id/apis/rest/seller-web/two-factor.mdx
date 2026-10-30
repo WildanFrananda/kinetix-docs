@@ -3,7 +3,7 @@ title: Autentikasi dua faktor
 description: Cara penjual yang sudah masuk menyalakan faktor kedua untuk akunnya sendiri dengan aplikasi authenticator, lalu mematikannya lagi, di identity lewat edge.
 sidebar:
   order: 2
-sourceHash: "5d7d88dc382b"
+sourceHash: "73c5d2e0d66a"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -19,7 +19,7 @@ penjual lebih dulu menjawab `mfaRequired`, yang dijawab aplikasi seperti di
 
 `401` dari identity pada panggilan-panggilan ini menyangkut password, bukan session: edge meneruskan jawaban
 identity apa adanya dan tidak mengusik session-nya
-([forward.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/forward.tl#L70-L77)),
+([forward.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/forward.tl#L70-L77)),
 jadi aplikasi meminta password lagi, bukan meminta masuk ulang. `429` `SIGN_IN_DELAYED` berarti terlalu banyak
 pemeriksaan password atau kode akun itu berturut-turut: aplikasi menunggu sejumlah detik di `Retry-After`.
 
@@ -38,7 +38,7 @@ Penjual mengetik enam digit yang ditampilkan aplikasi authenticator saat ini, ya
 password-nya lagi. Jawaban `200` dengan `enabled: true` memberlakukan faktor kedua untuk setiap proses masuk
 berikutnya. Session ini tetap ada: identity mempertahankan session yang access token-nya dikirim edge, dan
 mengakhiri setiap session lain milik akun itu, di browser dan perangkat lain
-([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L271-L276)).
+([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/auth_usecase.service.ts#L307-L312)).
 
 <RestEndpoint id="identity.enableTwoFactor" via="seller-web" />
 
@@ -47,6 +47,6 @@ mengakhiri setiap session lain milik akun itu, di browser dan perangkat lain
 Dengan password dan kode yang berlaku dari aplikasi authenticator yang sama. Jawaban `200` dengan
 `enabled: false` menghapus secret-nya, dan proses masuk berikutnya langsung menjawab sebuah session. Seperti di
 langkah 2, session ini tetap ada dan setiap session lain milik akun itu berakhir
-([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L301-L306)).
+([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/auth_usecase.service.ts#L337-L342)).
 
 <RestEndpoint id="identity.disableTwoFactor" via="seller-web" />

@@ -17,7 +17,7 @@ as in [step 2 of Sign in](/apis/rest/seller-web/sign-in/#2-answer-the-two-factor
 
 A `401` from identity on these calls is about the password, not about the session: the edge passes identity's
 answer through as it is and leaves the session alone
-([forward.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/forward.tl#L70-L77)),
+([forward.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/forward.tl#L70-L77)),
 so the application asks for the password again rather than for a new sign-in. A `429` `SIGN_IN_DELAYED` means
 too many password or code checks of the account in a row: the application waits the seconds in `Retry-After`.
 
@@ -36,7 +36,7 @@ The seller types the six digits the authenticator app shows now, sent as `code` 
 with `enabled: true` puts the second factor in force for every later sign-in. This session stays: identity keeps
 the session whose access token the edge sent, and ends every other session of the account, on other browsers and
 devices
-([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L271-L276)).
+([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/auth_usecase.service.ts#L307-L312)).
 
 <RestEndpoint id="identity.enableTwoFactor" via="seller-web" />
 
@@ -45,6 +45,6 @@ devices
 With the password and a current code from the same authenticator app. A `200` with `enabled: false` deletes the
 secret, and later sign-ins answer a session at once. As in step 2, this session stays and every other session of
 the account ends
-([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L301-L306)).
+([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/auth_usecase.service.ts#L337-L342)).
 
 <RestEndpoint id="identity.disableTwoFactor" via="seller-web" />

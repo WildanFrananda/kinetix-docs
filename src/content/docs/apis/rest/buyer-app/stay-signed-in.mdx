@@ -22,7 +22,7 @@ with it ([Two-factor authentication](/apis/rest/buyer-app/two-factor/)). Like th
 no `X-Kinetix-Client`: a session started without one is renewed without one. On `200` the app replaces both
 stored tokens at once. Refresh tokens rotate: each exchange spends the token sent, and a spent token sent again
 is taken as stolen, which ends the whole session
-([token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/token.service.ts#L268-L324)).
+([token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/token.service.ts#L268-L324)).
 So the app never sends a refresh token twice, and never in two requests at the same time: requests that
 find the access token expired while a refresh is under way wait for that refresh instead of starting their
 own. A `401` here means the session is over: the buyer signs in again.
@@ -40,8 +40,8 @@ An app that never registered the handset goes straight to step 3.
 The app sends its access token and, in the body, the `refreshToken` of this session. identity then revokes
 that access token and ends this session alone. With the field left out, it ends every session of the
 account, on every device the buyer is signed in on; `null` is refused rather than read that way
-([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L212-L223),
-[token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/token.service.ts#L326-L333)).
+([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/auth_usecase.service.ts#L245-L258),
+[token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/token.service.ts#L326-L333)).
 Kong checks the access token on this route, so an expired one is refused before identity sees it: the app
 refreshes (step 1) and signs out with the new pair. After the `204` it discards both tokens.
 

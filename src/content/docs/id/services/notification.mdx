@@ -1,7 +1,7 @@
 ---
 title: notification
 description: Push dan email untuk orang-orang yang berkepentingan dengan sebuah order. notification memiliki device token milik handset dan catatan setiap pesan yang ia terima; sebuah service hanya boleh memintanya mengirim template yang diberikan kepadanya, dan sebuah handset hanya mendaftarkan dirinya sendiri.
-sourceHash: "8a7d40aadd97"
+sourceHash: "1ed3949f46f9"
 ---
 
 import ServiceCalls from "../../../../components/ServiceCalls.astro";
@@ -220,7 +220,7 @@ tebakan.
   [Handshake-nya mewajibkan sertifikat client](https://github.com/WildanFrananda/kinetix-notification-service/blob/510a1ecf16006e28913c30d9861c95af3af226b9/src/main/scala/com/kinetix/notification/infrastructure/ServiceIdentity.scala#L10-L21).
 - **Untuk membaca alamat email**, notification menunjukkan sertifikat yang menyebut notification.
   identity
-  [mengizinkannya membaca profil dan tidak melakukan panggilan lain](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/infrastructure/mesh/peer_allow_list.ts#L48-L63);
+  [mengizinkannya membaca profil dan tidak melakukan panggilan lain](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/mesh/peer_allow_list.ts#L48-L63);
   lihat [Siapa yang memanggil?](/id/learn/who-is-calling/).
 
 ## Mengoperasikannya

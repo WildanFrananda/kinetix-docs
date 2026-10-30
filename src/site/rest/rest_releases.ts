@@ -9,13 +9,13 @@ export const restReleases: Readonly<Record<RestService, RestRelease>> = {
   },
   edge: {
     repository: "kinetix-edge-service",
-    tag: "v1.2.1",
-    commit: "eb13db007a21ca985ca33eca49e44dacf43e6354"
+    tag: "v1.3.0",
+    commit: "0a52d5805b57a818b16b05848b8333d34115f682"
   },
   identity: {
     repository: "kinetix-identity-service",
-    tag: "v1.6.0",
-    commit: "4193caf69b2ebea67534e619ebf3a2ccc384e857"
+    tag: "v1.7.1",
+    commit: "14a5d4291f2e4987e2ef774f68dc3888c509617c"
   },
   catalog: {
     repository: "kinetix-catalog-service",

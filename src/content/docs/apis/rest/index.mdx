@@ -98,12 +98,12 @@ Each endpoint's **Access** line says which of the two applies to it, and who may
 Three of identity's rules reach every application:
 
 - **`X-Kinetix-Client`.** The calls that issue or renew tokens — sign-in, registration, courier registration,
-  two-factor verification and refresh — take an optional header that names the app. identity knows `courier-app`,
+  two-factor verification, with a code or a passkey, and refresh — take an optional header that names the app. identity knows `courier-app`,
   and `seller-web` and `backoffice`, which the edge sends for the web apps. A request without the header is accepted,
   and production asks no proof that a named app is genuine; a name identity does not know is refused with `400`
   `UNKNOWN_CLIENT`. Tokens issued to a named app are renewed only by a request that names the same app; otherwise
   the refresh answers `401` `CLIENT_MISMATCH`
-  ([client_gate.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/client_gate.service.ts#L60-L105)).
+  ([client_gate.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/client_gate.service.ts#L60-L105)).
   An app without a registered name, such as a buyer app, leaves the header out.
 - **Two-factor authentication for every `admin`.** An admin account without it gets no token pair at sign-in, but an
   `enrolmentToken` that lasts ten minutes and reaches only the endpoints that set up and enable two-factor
@@ -111,18 +111,18 @@ Three of identity's rules reach every application:
   ([identity's answers](#identity)). Once two-factor authentication is on, the admin signs in again, with the
   password and then a code. A refresh for an admin who no longer has it ends the session with `401`
   `TWO_FACTOR_REQUIRED`
-  ([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L63-L65),
-  [L171-L179](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L171-L179)).
+  ([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/auth_usecase.service.ts#L75-L77),
+  [L203-L211](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/auth_usecase.service.ts#L203-L211)).
   On the backoffice, the edge runs the enrolment.
-- **`SIGN_IN_DELAYED`.** identity counts every check of an account's password or two-factor code, right or wrong,
-  from any address. The first five pass at once; after that, each must come 1, 2, 4, 8, 16, 32 and at most 60
+- **`SIGN_IN_DELAYED`.** identity counts every check of an account's password, two-factor code or passkey, right or
+  wrong, from any address. The first five pass at once; after that, each must come 1, 2, 4, 8, 16, 32 and at most 60
   seconds after the one before. A request inside that wait is refused with `429`, the code `SIGN_IN_DELAYED` and
   `Retry-After`, and nothing is checked. Waiting is enough: the account is never locked, a completed sign-in clears
   the count, and the count is forgotten an hour after the last check
-  ([sign_in_attempt_policy.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/domain/sign_in_attempt_policy.ts#L3-L35)).
-  A code sent on a challenge identity has already ended is not counted: it gets that challenge's `401`, inside the
-  wait too
-  ([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L86-L111)).
+  ([sign_in_attempt_policy.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/domain/sign_in_attempt_policy.ts#L3-L35)).
+  An answer sent on a challenge identity has already ended is not counted: it gets that challenge's `401`, inside
+  the wait too
+  ([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/auth_usecase.service.ts#L130-L162)).
   The edge passes the same code to the web apps.
 
 The sign-in pages show these calls in order: [buyer app](/apis/rest/buyer-app/sign-up-and-sign-in/),
@@ -146,15 +146,15 @@ call it sends the API the session's access token. No token reaches the page, so 
 
 The cookie is `__Host-kx_session`, a random value of 43 characters, set with
 `Path=/; Secure; HttpOnly; SameSite=Strict`
-([cookies.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/cookies.tl#L6-L17)).
+([cookies.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/cookies.tl#L6-L17)).
 The `__Host-` prefix makes the browser keep it for the exact host that set it and no other; `HttpOnly` hides it from
 scripts; `SameSite=Strict` keeps the browser from sending it with a request that another site starts. A sign-in that
 still waits for a two-factor code, or an admin's enrolment, is held behind a second cookie, `__Host-kx_pending`, with
 the same attributes, for 300 or 600 seconds.
 
 Each app admits its own roles and ends its sessions on its own clock
-([apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/apps.tl#L16-L54),
-[lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/lifetimes.tl#L4-L7)):
+([apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/apps.tl#L16-L56),
+[lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/lifetimes.tl#L4-L7)):
 
 | App | Roles | Idle limit | Absolute limit | Cookie |
 | --- | --- | --- | --- | --- |
@@ -163,17 +163,17 @@ Each app admits its own roles and ends its sessions on its own clock
 
 Only the seller web offers sign-up, `POST /bff/register`, and the merchant socket, to a `seller`; on the backoffice
 both answer `404`
-([apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/apps.tl#L29-L30),
-[L46-L47](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/apps.tl#L46-L47),
-[router.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/router.tl#L223-L227)).
+([apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/apps.tl#L29-L31),
+[L47-L49](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/apps.tl#L47-L49),
+[router.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/router.tl#L245-L249)).
 
 The idle limit runs from the last call under `/bff/api/` or the last opening of the merchant socket; reading
 `GET /bff/session` does not count
-([session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/session_use.tl#L37-L46)).
+([session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/session_use.tl#L37-L46)).
 The role is checked at sign-in and sign-up, and again whenever the edge renews the tokens: an account whose role the
 app does not admit gets no session, or loses the one it had, with `403` `ROLE_REFUSED`
-([sign_in.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sign_in.tl#L99-L110),
-[sessions.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L418-L425)).
+([sign_in.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sign_in.tl#L107-L118),
+[sessions.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sessions.tl#L418-L425)).
 At the backoffice's staff-network address, every call under `/bff/` from outside that network, sign-in included,
 gets Kong's `403`; the onion service needs no such gate, because Tor connects only a browser holding a client key
 ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L227-L234)).
@@ -181,9 +181,9 @@ gets Kong's `403`; the onion service needs no such gate, because Tor connects on
 The edge renews the token pair by itself. When a call under `/bff/api/`, or the opening of the merchant socket, finds
 the access token less than 60 seconds from expiry, the edge exchanges the refresh token at identity before it goes
 on, once per session even when several calls arrive together
-([timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/timing.tl#L4-L6),
-[session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/session_use.tl#L48-L69),
-[sessions.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L492-L513)).
+([timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/timing.tl#L4-L6),
+[session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/session_use.tl#L48-L69),
+[sessions.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sessions.tl#L492-L513)).
 A page never refreshes, and cannot. If identity refuses the renewal, the session ends with `401` `SESSION_ENDED`; if
 identity cannot renew it now, the session is kept and the call gets `503` `IDENTITY_UNAVAILABLE`. A role granted
 after the session started, such as a customer approved as a seller, reaches the session at the first renewal after
@@ -197,23 +197,23 @@ it.
   without `Origin`, `Sec-Fetch-Site: same-origin` passes as well. A browser sends them by itself on a `fetch` from
   the app's own page. Any other request that changes something is refused with `403` `CSRF_REFUSED` before the
   session is read
-  ([csrf.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/csrf.tl#L12-L30)).
+  ([csrf.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/csrf.tl#L12-L30)).
   The merchant socket's handshake is a `GET` and is checked more strictly: it must carry `Origin`, and exactly the
   seller web's
-  ([merchant_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/merchant_socket.tl#L53-L57)).
+  ([merchant_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/merchant_socket.tl#L53-L57)).
 - **JSON bodies only**, sent with `Content-Type: application/json`; `fetch` sends a string body as `text/plain`
   unless told otherwise. A body of any other type, an HTML form or `multipart/form-data` included, is refused with
   `415` `JSON_REQUIRED`
-  ([router.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/router.tl#L161-L185)),
+  ([router.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/router.tl#L183-L207)),
   and a body over 1 MiB with `413`
-  ([nginx.conf](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/nginx/nginx.conf#L39-L40)).
+  ([nginx.conf](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/nginx/nginx.conf#L39-L40)).
 
 ### How a call reaches the API
 
 `/bff/api/<path>` on an app's host is `/api/<path>` on the API, with the same method and query string
-([api_path.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/api_path.tl#L7-L30)).
+([api_path.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/api_path.tl#L7-L30)).
 The edge takes `GET`, `HEAD`, `POST`, `PUT`, `PATCH` and `DELETE`
-([forwarding.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/forwarding.tl#L9)).
+([forwarding.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/forwarding.tl#L9)).
 This request from the seller web app reaches catalog as `POST /api/v1/products/create`, with
 `Authorization: Bearer <access token>`:
 
@@ -226,8 +226,8 @@ Content-Type: application/json
 ```
 
 On the way, the edge rewrites the headers
-([forwarding.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/forwarding.tl#L11-L38),
-[forward_headers.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/forward_headers.tl#L27-L49)):
+([forwarding.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/forwarding.tl#L11-L38),
+[forward_headers.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/forward_headers.tl#L27-L49)):
 
 - From the page it passes on only `Accept`, `Accept-Language`, `Content-Type`, `Idempotency-Key`, `If-Match`,
   `If-None-Match` and `User-Agent`. Every other header stays at the edge: the cookie, an `Authorization` the page
@@ -235,15 +235,15 @@ On the way, the edge rewrites the headers
 - It adds `Authorization` with the session's access token, `X-Request-Id`, `X-Forwarded-For` with the browser's
   address, and, under `/api/v1/auth` and `/api/v1/couriers`, `X-Kinetix-Client` with the app's name, `seller-web` or
   `backoffice`
-  ([forward.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/forward.tl#L36-L44)).
+  ([forward.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/forward.tl#L36-L44)).
 - The answer keeps the API's status, body and headers, except `Set-Cookie`, `Server`, `X-Powered-By`, the caching
   headers and those that describe the connection. Every answer from the edge carries `Cache-Control: no-store`, so
   no cache keeps it
-  ([response_headers.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/response_headers.tl#L4-L6)).
+  ([response_headers.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/response_headers.tl#L4-L6)).
 - When a service is down behind Kong, the page gets Kong's own `502`, `503` or `504`, passed on like any answer. The
   edge answers `503` `API_UNAVAILABLE` itself only when it cannot reach the API, or identity for `/api/v1/auth` and
   `/api/v1/couriers`, or has no answer within 60 seconds
-  ([forward.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/forward.tl#L61-L77)).
+  ([forward.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/forward.tl#L61-L77)).
 
 ### Realtime
 
@@ -253,18 +253,19 @@ and its messages in the order the seller web uses them. The browser sends the se
 the page sends no token. The edge checks the session as for a call under `/bff/api/`, admits only a `seller`, and
 opens matching's socket with the session's access token; the `101` it passes back to the page carries neither the
 token nor a cookie
-([merchant_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/merchant_socket.tl#L45-L103)).
+([merchant_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/merchant_socket.tl#L45-L103)).
 The page and matching then exchange Phoenix frames through the edge. As for a call, an answer from behind the edge
 comes back with its status, Kong's own included when matching is down; the edge answers `503` `API_UNAVAILABLE`
 itself only when it cannot reach the API or has no handshake answer within 90 seconds
-([nginx.conf](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/nginx/nginx.conf#L102-L108)).
+([nginx.conf](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/nginx/nginx.conf#L102-L108)).
 The backoffice has no socket.
 
 ### Calls the edge refuses
 
-Six of identity's paths are refused with `404`, in any letter case and with everything below them:
-`/bff/api/v1/auth/login`, `/register`, `/refresh`, `/logout`, `/2fa/verify` and `/bff/api/v1/couriers/register`
-([forwarding.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/forwarding.tl#L40-L47)).
+Seven of identity's paths are refused with `404`, in any letter case and with everything below them:
+`/bff/api/v1/auth/login`, `/register`, `/refresh`, `/logout`, `/2fa/verify`, `/2fa/passkey/verify` and
+`/bff/api/v1/couriers/register`
+([forwarding.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/forwarding.tl#L40-L48)).
 Their answers carry tokens, which a page must never hold. On the seller web a new account is created with
 `POST /bff/register`, which starts its session at once; a web app signs in with `POST /bff/login` and, when a code is
 needed, `POST /bff/2fa/verify`; an admin without two-factor authentication enrols with `POST /bff/2fa/setup` and
@@ -300,8 +301,8 @@ The gateway's access log records both, and records the path without its query st
 Through the edge the same id travels on: the edge sends it to the API, the merchant socket's handshake included, and
 repeats it as `requestId` in its own error bodies, provided it is 1 to 128 letters, digits or `.-_:#@`; otherwise the
 edge uses an id of its own
-([context.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/context.tl#L44-L51),
-[request_id.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/request_id.tl#L4-L14)).
+([context.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/context.tl#L44-L51),
+[request_id.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/request_id.tl#L4-L14)).
 
 ## Browsers
 
@@ -339,7 +340,7 @@ are not browsers: they send no `Origin`, and none of this applies to them.
   [L441-L446](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L490-L495)).
   On `/bff/` the edge usually stops waiting first: a call under `/bff/api/` with no answer within 60 seconds, or one
   of the edge's own calls to identity with none within 5, gets the edge's `503`
-  ([timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/timing.tl#L12-L17),
+  ([timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/timing.tl#L12-L17),
   [the edge's answers](#the-edges-answers)).
 - **Body size.** Kong sets no limit of its own on the API host
   ([Kong's defaults](https://github.com/Kong/kong/blob/ddc85be461165c9eb4506669343aa0d0c627e687/kong/templates/kong_defaults.lua#L90));

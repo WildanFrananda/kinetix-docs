@@ -22,7 +22,7 @@ The buyer types an email and a password. The `201` is a session, the same as a s
 `user`. `user.id` is the account id that identity's own paths take, such as the
 [profile](/apis/rest/buyer-app/profile/) and [two-factor](/apis/rest/buyer-app/two-factor/) endpoints.
 `user.principalId` is the `sub` of every token identity issues
-([token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/token.service.ts#L90-L125)),
+([token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/token.service.ts#L90-L125)),
 the id the other services know the buyer by. A `409` means the email already has an account: sign in with
 step 2.
 
@@ -32,7 +32,7 @@ step 2.
 
 The buyer types the email and password of an existing account. A `200` is one of three answers, told apart by
 their fields
-([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L48-L68)).
+([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/auth_usecase.service.ts#L57-L80)).
 Without `mfaRequired`, the answer is a session: keep it as in step 1. With `mfaRequired: true` there is no
 session yet; keep `challengeToken` and its `expiresIn` for step 3. The third, with `mfaEnrolmentRequired`, comes
 only to an `admin` account that has not set up two-factor authentication, and opens no session a buyer app
@@ -42,7 +42,7 @@ Two answers make the buyer wait, both `429` with `Retry-After`: one counts the a
 address, the other, `SIGN_IN_DELAYED`, counts the checks of this account's password and codes from every
 device. After five checks in a row the account's wait grows from 1 second to at most 60, and it never locks
 the account
-([sign_in_attempt_policy.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/domain/sign_in_attempt_policy.ts#L3-L35)).
+([sign_in_attempt_policy.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/domain/sign_in_attempt_policy.ts#L3-L35)).
 The app shows the wait and lets the buyer try again once `Retry-After` seconds have passed.
 
 <RestEndpoint id="identity.login" />
@@ -53,7 +53,7 @@ Only after a sign-in that answered `mfaRequired`. The app sends `challengeToken`
 digits the buyer reads from the authenticator app. A `200` is a session: keep it as in step 1. A challenge
 lasts its `expiresIn` seconds and takes at most five codes. Every refusal of the challenge or the code is a
 `401` whose `error` tells the app what to do next
-([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L86-L137)):
+([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/auth_usecase.service.ts#L98-L162)):
 
 - `WRONG_CODE` leaves the challenge open: the buyer types the code the authenticator shows now, and the app
   sends it with the same `challengeToken`.

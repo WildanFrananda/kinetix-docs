@@ -3,7 +3,7 @@ title: Masuk
 description: Cara backoffice memasukkan seorang admin lewat edge, dengan faktor kedua atau dengan mendaftarkannya lebih dulu, menemukan kembali session saat halaman dimuat, dan keluar.
 sidebar:
   order: 1
-sourceHash: "1e08ede08a68"
+sourceHash: "1ba5bd6ffba8"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -16,7 +16,7 @@ bawah `/bff/`, tempat edge menyimpan session, terpisah untuk masing-masing dari 
 admin lewat identity, menyimpan pasangan token, menambahkan access token ke setiap panggilan `/bff/api/` yang
 diteruskannya ke API, dan memperbarui pasangan itu sendiri ketika sebuah panggilan mendapati access token kurang
 dari satu menit dari kedaluwarsa
-([timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/timing.tl#L4)).
+([timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/timing.tl#L4)).
 Browser hanya memegang cookie `HttpOnly` `__Host-kx_session`, yang tidak bisa dibaca skrip halaman dan dikirim balik
 oleh browser dengan sendirinya, jadi halaman ini tidak punya langkah refresh. Apa yang dikirim dan diterima setiap
 panggilan lewat edge ada di [Edge](/id/apis/rest/#edge).
@@ -60,20 +60,20 @@ Setelah `mfaRequired`, kirim enam digit yang ditampilkan aplikasi authenticator 
 `__Host-kx_session`, mengedaluwarsakan cookie pending, dan menjawab tampilan yang sama seperti langkah 1.
 
 Session berakhir setelah 15 menit tanpa panggilan `/bff/api/`, atau 8 jam setelah langkah ini, mana yang lebih dulu
-([lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/lifetimes.tl#L5)),
+([lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/lifetimes.tl#L5)),
 dan cookie-nya tidak punya `Max-Age`, jadi session itu juga berakhir saat browser ditutup
-([apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/apps.tl#L19-L35),
-[lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/lifetimes.tl#L38-L44)).
+([apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/apps.tl#L19-L36),
+[lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/lifetimes.tl#L38-L44)).
 Sesudah itu, setiap panggilan `/bff/api/` menjawab `401` `SESSION_ENDED`, dan admin masuk lagi dari langkah 2. Bila
 akun itu tidak lagi admin, pembaruan token berikutnya oleh edge mengakhiri session dengan `403` `ROLE_REFUSED`.
 
 Pada `401` `CODE_REFUSED`, kodenya salah dan sign-in itu masih tertunda: minta kode berikutnya. identity mengizinkan
 lima kode per challenge
-([sign_in_attempt_policy.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/domain/sign_in_attempt_policy.ts#L7)),
+([sign_in_attempt_policy.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/domain/sign_in_attempt_policy.ts#L7)),
 jadi setelah penolakan kelima, kode berikutnya menjawab `401` `SIGN_IN_REQUIRED`. Jawaban itu berarti sudah tidak ada
 sign-in yang tertunda: 300 detiknya sudah lewat, challenge itu sudah dijawab dari tab lain, atau identity sudah
 mengakhiri challenge itu, dan edge sudah membuangnya serta mengedaluwarsakan `__Host-kx_pending`
-([sign_in.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sign_in.tl#L243-L250)).
+([sign_in.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sign_in.tl#L254-L264)).
 Kembali ke langkah 2, dan di langkah 3 kirim kode berikutnya yang ditampilkan authenticator.
 
 <RestEndpoint id="edge.verifyTwoFactor" via="backoffice" />

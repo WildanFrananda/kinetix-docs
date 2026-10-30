@@ -16,9 +16,9 @@ reaches the session without a call of its own.
 
 The seller types an email and a password. The edge has identity create the account, which identity makes a
 `customer` like every new account
-([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L139-L154)),
+([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/auth_usecase.service.ts#L171-L186)),
 and starts its session in the same answer, as a sign-in does
-([sign_up.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sign_up.tl#L30-L49)).
+([sign_up.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sign_up.tl#L30-L49)).
 A `201` is that session: the browser holds `__Host-kx_session`, and since a new account has no second factor, no
 sign-in and no code follow. After `409` `EMAIL_TAKEN` the account exists already, and the application signs in
 instead ([Sign in](/apis/rest/seller-web/sign-in/), steps 1 and 2). An account that already buys on Kinetix also
@@ -47,7 +47,7 @@ An admin reviews the pending applications in the backoffice and approves or reje
 ([Seller applications](/apis/rest/backoffice/seller-applications/)). Approval makes the account's merchant
 `verified`, sets the account's role to `seller` and marks the application `verified`; rejection only marks the
 application `rejected`, with the moment in `rejectedAt`
-([seller_onboarding_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/seller_onboarding_usecase.service.ts#L144-L213)).
+([seller_onboarding_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/seller_onboarding_usecase.service.ts#L144-L213)).
 After a rejection, the seller corrects the application and files it again with step 2, which puts it back to
 `pending`, and step 3 follows it again.
 
@@ -55,15 +55,15 @@ After a rejection, the seller corrects the application and files it again with s
 
 After the approval the session still says `customer`: an access token carries the role the account had when
 identity issued it
-([token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/token.service.ts#L90-L104)),
+([token.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/token.service.ts#L90-L104)),
 and the edge keeps the role of the session's latest token. The edge renews the session's tokens on the first
 `/bff/api/` call, or opening of the merchant socket, made once the access token has less than 60 seconds left
-([session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/session_use.tl#L48-L55),
-[timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/timing.tl#L4)).
+([session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/session_use.tl#L48-L55),
+[timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/timing.tl#L4)).
 identity reads the role from the account for the new pair
-([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L157-L210)),
+([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/auth_usecase.service.ts#L189-L243)),
 and the edge stores it as the session's role
-([sessions.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L418-L432)).
+([sessions.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sessions.tl#L418-L432)).
 identity's access tokens last 15 minutes (`expiresIn` 900), so an application that keeps calling `/bff/api/` has
 the `seller` role within about 15 minutes of the approval, in `GET /bff/session`
 ([Sign in](/apis/rest/seller-web/sign-in/), step 3) as in every service. Until then the seller endpoints that read

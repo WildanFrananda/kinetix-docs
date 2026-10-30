@@ -3,7 +3,7 @@ title: Promosi platform
 description: Cara admin membuat diskon, voucher dan flash sale milik platform sendiri di pricing, dan membaca kembali pemakaian sebuah voucher.
 sidebar:
   order: 5
-sourceHash: "83712615a802"
+sourceHash: "07497211d924"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -17,7 +17,7 @@ dibuat, jadi sebuah pembuatan tidak bisa dikoreksi sesudahnya.
 
 Setiap pembuatan menerima header `Idempotency-Key`, yang diteruskan edge ke pricing, dan edge meneruskan
 `Idempotent-Replayed` kembali ke halaman
-([forwarding.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/forwarding.tl#L11-L38)).
+([forwarding.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/forwarding.tl#L11-L38)).
 Buat key baru untuk setiap promosi dan simpan bersama request-nya sampai request itu mendapat jawaban akhir. Setelah
 timeout, `500` atau `503`, termasuk dari edge, kirim body yang sama dengan key yang sama: promosi yang sudah dibuat
 percobaan pertama dikembalikan dengan `Idempotent-Replayed: true`, bukan dibuat dua kali. Pricing mencari key itu

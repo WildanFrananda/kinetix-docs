@@ -25,8 +25,8 @@ Generated from release [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`RegisterDriver`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/registry.proto#L8) | [`RegisterDriverRequest`](#registerdriverrequest) → [`RegisterDriverResponse`](#registerdriverresponse) | [matching](/services/matching/) | [identity](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L45) |
-| [`ActivateDriver`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/registry.proto#L9) | [`ActivateDriverRequest`](#activatedriverrequest) → [`ActivateDriverResponse`](#activatedriverresponse) | [matching](/services/matching/) | [identity](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L62) |
+| [`RegisterDriver`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/registry.proto#L8) | [`RegisterDriverRequest`](#registerdriverrequest) → [`RegisterDriverResponse`](#registerdriverresponse) | [matching](/services/matching/) | [identity](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L45) |
+| [`ActivateDriver`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/registry.proto#L9) | [`ActivateDriverRequest`](#activatedriverrequest) → [`ActivateDriverResponse`](#activatedriverresponse) | [matching](/services/matching/) | [identity](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L62) |
 
 ## Messages
 

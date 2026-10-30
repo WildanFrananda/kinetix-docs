@@ -12,10 +12,10 @@ The seller web application signs in through the edge on its own host, `seller.wi
 the API host. The browser holds no token: the edge keeps identity's token pair and gives the browser an
 `HttpOnly` cookie, `__Host-kx_session`, which no script can read. Every other feature calls `/bff/api/<path>` on
 the same host, and the edge sends the request on with the session's access token in `Authorization`
-([forward_headers.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/forward_headers.tl#L27-L49)).
+([forward_headers.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/forward_headers.tl#L27-L49)).
 The page and the edge share one origin, so no call is a CORS request. The seller web admits accounts whose role is
 `seller` or `customer`; a `customer` signs in here to apply to sell, and a `courier` or an `admin` is refused
-([apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/apps.tl#L37-L51)).
+([apps.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/apps.tl#L38-L53)).
 The calls are a sign-in, the answer to a two-factor challenge when the account has one, a read of the session when
 a page loads, a read of the account, and a sign-out.
 
@@ -25,21 +25,21 @@ What the browser sends with every call to the edge:
   carries the origin's cookies by default.
 - `Origin` on every `POST`, `PUT`, `PATCH` and `DELETE`. The browser adds it, and the edge refuses the request
   unless it is exactly `https://seller.wildanfrananda.my.id`
-  ([csrf.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/csrf.tl#L12-L30)).
+  ([csrf.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/csrf.tl#L12-L30)).
 - A body only as `application/json`, of at most 1 MiB. An HTML form or a `multipart/form-data` body does not pass
   the edge
-  ([router.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/router.tl#L161-L185),
-  [nginx.conf](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/nginx/nginx.conf#L39)).
+  ([router.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/router.tl#L183-L207),
+  [nginx.conf](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/nginx/nginx.conf#L39)).
 
 There is no refresh call. A session ends 7 days after it was last used, and 30 days after sign-in at the latest
-([lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/lifetimes.tl#L6)).
+([lifetimes.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/lifetimes.tl#L6)).
 Each `/bff/api/` call is a use that extends it, and so is opening the merchant socket
 ([Pack orders](/apis/rest/seller-web/packing/), step 2). When the session's access token has less than 60 seconds
 left, the edge first renews the token pair at identity, once for all the requests of the session that arrive
 meanwhile
-([session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/session_use.tl#L22-L70),
-[timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/config/timing.tl#L4),
-[sessions.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L492-L513)).
+([session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/session_use.tl#L22-L70),
+[timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/timing.tl#L4),
+[sessions.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sessions.tl#L492-L513)).
 Once the session has ended, by its limits, a sign-out, a newer sign-in or sign-up in the same browser or a renewal
 identity refused, a `/bff/api/` call answers `401` `SESSION_ENDED` and expires the cookie; a browser without the
 cookie gets `401` `SESSION_REQUIRED`. Either way the application shows the sign-in (step 1). A renewal that finds
@@ -67,7 +67,7 @@ Only after a `200` with `mfaRequired`, from the same browser, which sends `__Hos
 types the code the authenticator shows now. `SIGN_IN_REQUIRED` means there is no challenge left to answer, because
 its time ran out or identity ended it, after five refused codes for instance; the edge has dropped the pending
 sign-in, and the sign-in starts again at step 1
-([sign_in.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sign_in.tl#L228-L251)).
+([sign_in.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sign_in.tl#L237-L264)).
 An account gets a challenge once its seller has turned on
 [two-factor authentication](/apis/rest/seller-web/two-factor/).
 
@@ -97,8 +97,8 @@ access token expires, which the edge renews by itself; when the session ends is 
 
 The application sends the request without a body. The edge ends the session at identity, deletes it and expires
 both cookies; the account's sessions on other browsers and devices stay
-([logout.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/logout.tl#L76-L105),
-[identity_client.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/adapters/identity_client.tl#L75-L79)).
+([logout.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/logout.tl#L76-L105),
+[identity_client.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/adapters/identity_client.tl#L92-L96)).
 For a live session the `204` comes only once identity has ended it, and it also comes when there was nothing to
 end, so a sign-out can be sent again. After a `503` or a `502` the session is kept and the browser is still
 signed in: the application tries again later.

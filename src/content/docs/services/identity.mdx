@@ -15,7 +15,7 @@ when one needs to know who it is talking to, it verifies identity's signature or
 
 The tables on this page are generated from the same verified data as the
 [system map](/architecture/system-map/), at the commits linked from each row. The prose is checked
-against identity [v1.6.0](https://github.com/WildanFrananda/kinetix-identity-service/tree/4193caf69b2ebea67534e619ebf3a2ccc384e857),
+against identity [v1.7.1](https://github.com/WildanFrananda/kinetix-identity-service/tree/14a5d4291f2e4987e2ef774f68dc3888c509617c),
 the version in production.
 
 ## At a glance
@@ -28,7 +28,7 @@ Other services ask identity about people and merchants: whether a merchant may s
 is, where a customer lives, who a principal is, and which merchants have changed since a cursor. That
 cursor is the database transaction that last changed a merchant, recorded by a trigger in a table of its own,
 and the feed
-[serves only merchants written by transactions older than every transaction still running](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/infrastructure/persistence/adapters/typeorm_merchant_repository.adapter.ts#L63-L91),
+[serves only merchants written by transactions older than every transaction still running](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/persistence/adapters/typeorm_merchant_repository.adapter.ts#L63-L91),
 so a merchant whose transaction commits late is served late and never skipped. A cursor without a
 transaction is still read the old way, by the time a merchant last changed.
 
@@ -47,62 +47,74 @@ Every account is given a principal — a UUID that is the same person in every s
 the principal, never identity's own account number, so a service can be rebuilt or a database restored
 without people swapping places. identity keeps the link from each service-local id to its principal as an
 alias:
-[the first time an account is issued a token, at registration, its principal is minted](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/principal_resolver.service.ts#L20-L51),
+[the first time an account is issued a token, at registration, its principal is minted](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/principal_resolver.service.ts#L20-L51),
 and when a seller is approved their merchant row is aliased to the same principal. An alias
-[cannot be re-pointed](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/principal_resolver.service.ts#L71-L90)
+[cannot be re-pointed](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/principal_resolver.service.ts#L71-L90)
 at another principal once it exists. Access tokens carry the principal as their subject.
 
 ## Signing in and tokens
 
 - **Passwords** are bcrypt hashes, and an email address is compared without regard to case. A sign-in for an
   email nobody registered
-  [still runs a comparison](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L70-L84),
+  [still runs a comparison](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/auth_usecase.service.ts#L82-L96),
   so the answer takes as long as for a wrong password and does not reveal which accounts exist.
 - **Two limits on guessing.** Sign-in, registration and the second-factor check take five requests a minute
   from one client address, which identity reads from the gateway's forwarding header and
-  [trusts only from the hop next to it](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/infrastructure/http/gateway_hop.ts#L11-L22).
-  Each account also counts every check of its password or code, from any address: the first five pass at once,
-  and after that
-  [each must wait 1, 2, 4 and at most 60 seconds after the one before](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/domain/sign_in_attempt_policy.ts#L3-L35),
+  [trusts only from the hop next to it](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/http/gateway_hop.ts#L11-L22).
+  Each account also counts every check of its password, code or passkey, from any address: the first five pass
+  at once, and after that
+  [each must wait 1, 2, 4 and at most 60 seconds after the one before](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/domain/sign_in_attempt_policy.ts#L3-L35),
   or is refused `429` `SIGN_IN_DELAYED` without being checked. The account is never locked; a completed
   sign-in clears the count, and an hour without a check forgets it. The answers are in the
   [REST reference](/apis/rest/#tokens).
 - **A second factor**, once enabled, turns the password into half a sign-in: the password earns a
   five-minute challenge, and only
-  [the challenge with a valid code](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L86-L137)
+  [the challenge with a valid code](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/auth_usecase.service.ts#L98-L162)
   earns tokens. A challenge takes five attempts and signs in once, and
-  [a code is good once](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/infrastructure/persistence/adapters/typeorm_user_repository.adapter.ts#L54-L64):
+  [a code is good once](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/persistence/adapters/typeorm_user_repository.adapter.ts#L54-L64):
   after it, no code from the same or an earlier thirty-second step is accepted. A refusal says which case it
   is — `WRONG_CODE` keeps the challenge open; `CHALLENGE_EXHAUSTED`, `CHALLENGE_SPENT` and `CHALLENGE_INVALID`
   send the person back to their password — and a request on a spent, exhausted or invalid challenge does not
   count on the account.
+- **A passkey can answer the challenge instead of the code.** An account
+  [adds one only while its code is on](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/passkey_usecase.service.ts#L61-L89),
+  so the code is always there to fall back on, holds
+  [at most ten](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/domain/passkey_policy.ts#L1), and gives its password before the authenticator is asked to
+  make one; removing one takes the password too, and neither ends another session. The authenticator is given the
+  principal id as its user handle, never the email. A passkey's answer
+  [follows the challenge's rules](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/passkey_usecase.service.ts#L170-L212):
+  it counts on the challenge and on the account, it spends the challenge once, and a refused one leaves the
+  challenge open for another passkey or the code. identity accepts an answer only when it was
+  [made on the one origin it is configured for, with the user verified](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/webauthn/simple_webauthn_ceremony.adapter.ts#L101-L143),
+  and refuses one whose signature counter went back, the mark of a cloned authenticator. Only the backoffice offers
+  passkeys.
 - **An admin must have a second factor.** An admin who signs in without one gets no token pair but
-  [a ten-minute enrolment token](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L340-L360)
+  [a ten-minute enrolment token](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/auth_usecase.service.ts#L376-L396)
   that
-  [reaches only the setup of a second factor](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/adapters/guards/jwt_auth.guard.ts#L37-L45),
+  [reaches only the setup of a second factor](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/adapters/guards/jwt_auth.guard.ts#L37-L45),
   and a refresh for an admin who has none
-  [ends the session](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L171-L179).
+  [ends the session](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/auth_usecase.service.ts#L203-L211).
 - **Changing the second factor** from a signed-in session
-  [takes the account's password](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L375-L388)
+  [takes the account's password](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/auth_usecase.service.ts#L411-L424)
   as well as the token, so a stolen access token cannot enrol the thief's authenticator, and enabling or
   disabling it
-  [ends every other session](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L271-L276).
+  [ends every other session](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/auth_usecase.service.ts#L307-L312).
 - **Tokens** are RS256 JWTs, and the public keys are published at `/.well-known/jwks.json` for every
   other service to verify against: the signing key and, while a rotation is under way,
-  [the keys that signed before it](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/infrastructure/crypto/jwt_key_provider.ts#L114-L137), which verify
+  [the keys that signed before it](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/crypto/jwt_key_provider.ts#L114-L137), which verify
   but never sign. Identity checks a token with
-  [the key its `kid` names](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/token.service.ts#L395-L418) and refuses one that names
+  [the key its `kid` names](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/token.service.ts#L395-L418) and refuses one that names
   no key it holds, so a new signing key does not sign everyone out. An access token lives fifteen minutes; a refresh token lives thirty
   days, is stored, and
-  [works once](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/token.service.ts#L268-L324)
+  [works once](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/token.service.ts#L268-L324)
   — using it again revokes every token in its session. Signing out
-  [revokes the access token and the session](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/token.service.ts#L326-L333)
+  [revokes the access token and the session](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/token.service.ts#L326-L333)
   of the refresh token sent with it, or every session of the account when none is sent.
   The whole design, and the two flaws found while documenting it, is in
   [Tokens that can be taken back](/learn/tokens-that-can-be-taken-back/).
 - **A session belongs to the app that started it.** An app may name itself in `X-Kinetix-Client`; the name is
   written into the tokens and the stored refresh token, and
-  [a refresh from another app is refused](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/domain/session_client.ts#L3-L13)
+  [a refresh from another app is refused](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/domain/session_client.ts#L3-L13)
   with `CLIENT_MISMATCH`. A session that named no app is bound to the first named app that renews it. A
   client can be required to prove it is genuine; production asks no such proof.
 - **The role in a token** is read from the account each time a token is issued or refreshed, so a role an
@@ -111,27 +123,27 @@ at another principal once it exists. Access tokens carry the principal as their 
 ## Roles, and how an account gets one
 
 Registration always creates a customer —
-[the role is not part of the request](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/auth_usecase.service.ts#L139-L155).
+[the role is not part of the request](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/auth_usecase.service.ts#L171-L187).
 The other roles are granted:
 
 - **A seller** files an application with a store name, business registration, tax id and store address;
   it stays `pending` until an admin rejects it or
-  [approves it](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/seller_onboarding_usecase.service.ts#L153-L213),
+  [approves it](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/seller_onboarding_usecase.service.ts#L153-L213),
   which creates the merchant, places the store address on the map, and makes the account a seller. Only a
   pending application is decided, and an approval never changes a merchant that is already `active` or
   `suspended`. A merchant
-  [may sell only while it is `verified` or `active`](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/domain/merchant_standing.ts#L1-L5),
+  [may sell only while it is `verified` or `active`](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/domain/merchant_standing.ts#L1-L5),
   and every service that lets a merchant sell — checkout, promotions, products, fulfilment — asks.
 - **A courier** registers with a vehicle, which identity files in matching's fleet; the account stays a
   customer until
-  [an admin approves it](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/courier_onboarding_usecase.service.ts#L52-L90),
+  [an admin approves it](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/courier_onboarding_usecase.service.ts#L52-L90),
   which makes it a courier and activates the driver. If the fleet refuses the activation, the account is a
   customer again, and an approval that could not reach the fleet can be repeated without duplicating anything.
   An admin may instead
-  [refuse a pending application](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/courier_onboarding_usecase.service.ts#L92-L123),
+  [refuse a pending application](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/courier_onboarding_usecase.service.ts#L92-L123),
   which leaves the account a customer; registering the vehicle again puts the application back to pending.
 - **One account holds one role.** Approval never overwrites a role: a courier or an admin
-  [is refused a seller application](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/seller_onboarding_usecase.service.ts#L226-L234),
+  [is refused a seller application](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/seller_onboarding_usecase.service.ts#L226-L234),
   and only a customer can be approved as a courier. A person who is both uses two accounts.
 - **Admins** are not created through the API. The first one is made by a one-off script that refuses to
   run once any admin exists.
@@ -140,7 +152,7 @@ The other roles are granted:
 
 `GetMerchantInfo`, `GetUserProfile` and `ValidateToken` answer "no such merchant", "no such person" or
 "invalid token" only when that is true. When identity cannot read its own database the call fails with
-[`UNAVAILABLE`](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/adapters/controllers/identity_grpc.controller.ts#L390-L400),
+[`UNAVAILABLE`](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/adapters/controllers/identity_grpc.controller.ts#L390-L400),
 and every caller treats that as "identity could not say": order refuses a checkout with `503` rather than
 telling the buyer the merchant may not sell, and notification answers that it could not reach its directory,
 so the message's sender tries again rather than dropping it.
@@ -148,7 +160,7 @@ The lookups used to answer "not found" for any failure, which turned a slow data
 business answer — see [Unknown is not no](/learn/unknown-is-not-no/). A person who has an account and
 never filled in a profile is found, with empty fields; that is an answer, not a failure. Over HTTP the
 same outage is
-[`503` `DATABASE_UNAVAILABLE`](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/infrastructure/observability/unhandled_exception_filter.ts#L32-L52),
+[`503` `DATABASE_UNAVAILABLE`](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/observability/unhandled_exception_filter.ts#L32-L52),
 never a `401` that would send a signed-in user to sign in again.
 
 ## How the code is laid out
@@ -158,7 +170,7 @@ never a `401` that would send a signed-in user to sign in again.
 | `src/adapters/` | the HTTP and gRPC controllers, the guards that decide who may call a route, the admin audit, and the mappers onto the contract |
 | `src/application/` | the use cases — sign-in and tokens, the sign-in counters, the client check, seller and courier onboarding, profiles, geocoding, principals |
 | `src/domain/` | entities, the ports the use cases need, and the rules for which merchant may sell, who must have a second factor and how long a sign-in waits — no NestJS, no TypeORM |
-| `src/infrastructure/` | what implements the ports: TypeORM persistence, the signing key, TOTP, the client registry and the App Check verifier, the Nominatim geocoder, the fleet client, the mesh identity, observability |
+| `src/infrastructure/` | what implements the ports: TypeORM persistence, the signing key, TOTP, WebAuthn, the client registry and the App Check verifier, the Nominatim geocoder, the fleet client, the mesh identity, observability |
 | `src/migrations/` | TypeORM migrations, run by `migrate.ts` |
 
 Most use cases work through ports and are tested with fakes; the token service and the principal
@@ -171,51 +183,54 @@ PostgreSQL, through TypeORM, holds accounts and profiles, principals and their a
 seller applications, courier applications, the transaction that last changed each merchant, the refresh
 tokens of every session with the app that started it, the access tokens revoked before they expire, the
 sign-in counts of each account and each second-factor challenge — keyed by a hash of the email address,
-not the address — and every address already placed on the map, so a second lookup of the same address
-does not ask the geocoder again. Expired revocations and counts are swept every ten minutes. The schema is
+not the address — each account's passkeys with their public keys, the passkey challenges still open, and every
+address already placed on the map, so a second lookup of the same address does not ask the geocoder again.
+Expired revocations, counts and passkey challenges are swept every ten minutes. The schema is
 changed only by migrations, which
-[the same image runs as `migrate.js`](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/migrate.ts#L3-L23)
+[the same image runs as `migrate.js`](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/migrate.ts#L3-L23)
 in a one-shot container that must finish before the service starts.
 
 ## Who may do what
 
 - **Without a token**: signing in, registering as a customer or a courier, refreshing, completing a
   second factor, the key set, health and metrics. Everything else
-  [needs an access token](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/app.module.ts#L126-L129)
+  [needs an access token](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/app.module.ts#L139-L142)
   — a guard on every route, which a route has to opt out of rather than in.
 - **An account's own resources** — its profile, its seller application — are
-  [reachable by that account or an admin](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/adapters/guards/self_or_staff.guard.ts#L41-L49),
+  [reachable by that account or an admin](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/adapters/guards/self_or_staff.guard.ts#L41-L49),
   and nobody else.
 - **A second factor is the owner's alone.**
-  [Setting one up, enabling and disabling it](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/adapters/controllers/auth.controller.ts#L94-L136)
+  [Setting one up, enabling and disabling it](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/adapters/controllers/auth.controller.ts#L94-L136)
+  and
+  [listing, adding and removing passkeys](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/adapters/controllers/passkey.controller.ts#L60-L113)
   are refused even to an admin: setting one up hands back its secret, and a second factor someone else
   holds is not a second factor.
 - **Approving or rejecting a seller, approving a courier and listing applications** take the `admin` role, and
   the gateway serves those routes only to the staff network ([The staff gate](/architecture/gateway/#the-staff-gate)).
-  Every call an admin makes to these routes, and to the profile and seller-application routes, is
-  [logged and counted](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/adapters/interceptors/admin_audit.interceptor.ts#L20-L53)
+  Every call an admin makes to these routes, and to the profile, seller-application and passkey routes, is
+  [logged and counted](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/adapters/interceptors/admin_audit.interceptor.ts#L20-L53)
   with the admin's principal, the action, the account it names and how it ended.
 - **Other services** reach the gRPC port only with a certificate from Kinetix's CA —
-  [the handshake requires one](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/infrastructure/mesh/service_identity.ts#L25-L31)
+  [the handshake requires one](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/mesh/service_identity.ts#L25-L31)
   — naming a service on identity's allow list, and
-  [each is allowed only the calls it makes](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/infrastructure/mesh/peer_allow_list.ts#L48-L63):
+  [each is allowed only the calls it makes](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/mesh/peer_allow_list.ts#L48-L63):
   order resolves principals, reads merchants and profiles, and places the address a buyer typed at
   checkout; warehouse, catalog and pricing read a merchant; notification reads a profile; search follows the
   merchant change feed. A service that may ask whether a merchant may sell cannot read a customer's address,
   no running service may validate a token or read a principal over gRPC, and nobody may geocode addresses in
   bulk — communication, in the table above, is not deployed, and is granted nothing until it is. Any other call
-  [is refused with `PERMISSION_DENIED` and logged](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/infrastructure/mesh/peer_authorization_interceptor.ts#L27-L35);
+  [is refused with `PERMISSION_DENIED` and logged](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/mesh/peer_authorization_interceptor.ts#L27-L35);
   see [Who is calling?](/learn/who-is-calling/).
 
 ## Operating it
 
 - `/health` answers when the process is up; `/health/ready`
-  [runs a real query](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/adapters/controllers/health.controller.ts#L27-L40),
+  [runs a real query](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/adapters/controllers/health.controller.ts#L27-L40),
   so the container is healthy only when the service can serve.
 - `/metrics` serves Prometheus text with the names the platform contract gives identity, and counts failed
   sign-ins by stage and whether the account is an admin's.
 - The database reads behind the gRPC lookups
-  [have a five-second deadline](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/infrastructure/persistence/with_timeout.ts#L1-L10),
+  [have a five-second deadline](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/persistence/with_timeout.ts#L1-L10),
   so a slow database becomes `UNAVAILABLE` instead of a call that never returns.
 - On `SIGTERM` both servers stop taking work and finish what they hold, within
-  [a 25-second budget](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/infrastructure/observability/shutdown_drain.ts#L5).
+  [a 25-second budget](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/observability/shutdown_drain.ts#L5).

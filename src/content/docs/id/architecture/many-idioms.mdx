@@ -1,7 +1,7 @@
 ---
 title: Satu aturan, sebelas idiom
 description: Bagaimana sebelas dari dua belas service Kinetix di production menaruh logika bisnisnya di balik port, masing-masing dalam bahasanya sendiri, di mana build yang menjaga aturan itu dan di mana hanya code review yang menjaganya, di mana sebuah bahasa mengubah desainnya sendiri, dan bagaimana edge bekerja tanpa port.
-sourceHash: "3daada6f318a"
+sourceHash: "d76f19bf0378"
 sidebar:
   order: 5
 ---
@@ -262,16 +262,16 @@ database.
 ## Pengecualiannya: edge
 
 Edge, browser token handler milik Kinetix, ditulis dalam Teal dan berjalan di OpenResty, dan ia tidak memakai port.
-[Sebuah modul langsung me-require adapter-nya](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/src/http/sessions.tl#L1-L24):
+[Sebuah modul langsung me-require adapter-nya](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/sessions.tl#L1-L24):
 kode sesi menyebut store Redis, client identity, dan logger sebagai modul, dan tidak ada yang di luarnya yang
 memilihnya. Satu-satunya dependency yang diserahkan dari luar adalah koneksi Redis, yang diterima fungsi-fungsi
 sesi sebagai argumen, sehingga sebuah unit test bisa memberinya koneksi palsu.
 
 Edge diuji di tempat ia berjalan. Modul-modul murninya punya unit test, dan integration test-nya
-[menjalankan OpenResty sungguhan dengan Lua hasil generate dan `nginx.conf` production](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/bin/integration#L93-L141)
+[menjalankan OpenResty sungguhan dengan Lua hasil generate dan `nginx.conf` production](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/bin/integration#L93-L141)
 terhadap Redis sungguhan, dengan identity, API, dan socket matching digantikan di level jaringan oleh fake yang
 menjawab lewat HTTP dan WebSocket. Pemeriksaan keamanannya dijaga oleh mutation test:
-[masing-masing dirusak sekali](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/tests/mutation/catalogue.tl),
+[masing-masing dirusak sekali](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/tests/mutation/catalogue.tl),
 dan
-[perubahan yang tidak disadari test mana pun menggagalkan run-nya](https://github.com/WildanFrananda/kinetix-edge-service/blob/eb13db007a21ca985ca33eca49e44dacf43e6354/bin/mutate#L74-L88).
+[perubahan yang tidak disadari test mana pun menggagalkan run-nya](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/bin/mutate#L74-L88).
 [Halaman edge](/id/services/edge/#bagaimana-kodenya-disusun) menunjukkan direktorinya.

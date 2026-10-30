@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { bff } from "../src/site/rest/bff";
 import { restAnswers } from "../src/site/rest/rest_answers";
+import { restAwaitingPage } from "../src/site/rest/rest_awaiting_page";
 import { restEndpoint, restEndpoints } from "../src/site/rest/rest_endpoints";
 import { restSocketMessages, restSockets } from "../src/site/rest/rest_sockets";
 import type { RestWebApp } from "../src/site/types/rest_web_app.type";
@@ -53,10 +54,19 @@ describe("REST pages", () => {
     expect(unknown).toEqual([]);
   });
 
-  test("every endpoint is on at least one page", () => {
+  test("every endpoint is on at least one page, except those awaiting the release of the app that calls them", () => {
+    const named = new Set(englishPages.flatMap((page) => mentions(page, "RestEndpoint", "id")));
+    const unplaced = restEndpoints
+      .map((endpoint) => endpoint.id)
+      .filter((id) => !named.has(id) && !restAwaitingPage.includes(id));
+
+    expect(unplaced).toEqual([]);
+  });
+
+  test("an endpoint awaiting its page is documented and is on no page yet", () => {
     const named = new Set(englishPages.flatMap((page) => mentions(page, "RestEndpoint", "id")));
 
-    expect(restEndpoints.map((endpoint) => endpoint.id).filter((id) => !named.has(id))).toEqual([]);
+    expect(restAwaitingPage.filter((id) => !known.has(id) || named.has(id))).toEqual([]);
   });
 
   test("every socket and socket message is on at least one page", () => {

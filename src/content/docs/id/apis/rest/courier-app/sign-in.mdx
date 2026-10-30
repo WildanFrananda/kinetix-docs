@@ -3,7 +3,7 @@ title: Masuk
 description: Kurir masuk di identity, menyelesaikan autentikasi dua faktor bila akunnya mengaktifkannya, dan membaca dari matching driver id yang dibutuhkan driver socket.
 sidebar:
   order: 2
-sourceHash: "93adb999c5d2"
+sourceHash: "8aef17ff970b"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -25,7 +25,7 @@ Pada panggilan ini, seperti pada langkah kode, registrasi, dan setiap refresh, a
 [client_proof.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/attestation/client_proof.dart#L14-L49)).
 identity mengenal nama `courier-app` dan mengikat token session itu ke nama tersebut. Sesuai konfigurasi
 production, identity tidak meminta bukti apa pun dari aplikasi kurir, jadi `X-Firebase-AppCheck` tidak dibacanya
-([client_gate.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/4193caf69b2ebea67534e619ebf3a2ccc384e857/src/application/services/client_gate.service.ts#L60-L85)).
+([client_gate.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/client_gate.service.ts#L60-L85)).
 
 Jawaban `200` yang membawa `mfaRequired` lanjut ke langkah 2 dengan `challengeToken`-nya; jawaban `200` yang
 membawa pasangan token lanjut ke langkah 3. Untuk kurir yang sudah disetujui, `user.role` bernilai `courier`.
