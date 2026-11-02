@@ -16,15 +16,13 @@ export async function loadVerifier(sources: VerifierSources, dependencies: Loade
     return globals.kinetixNotaryVerify;
   }
 
-  const runtime = await readAsset(sources.runtime, { fetch: dependencies.fetch, progress: () => {} });
-  const module = await readAsset(sources.module, dependencies);
-
-  new Function(new TextDecoder().decode(runtime))();
+  await dependencies.runScript(sources.runtime);
 
   if (globals.Go === undefined) {
     throw new Error("wasm_exec.js did not define the Go runtime");
   }
 
+  const module = await readAsset(sources.module, dependencies);
   const go = new globals.Go();
   const { instance } = await WebAssembly.instantiate(module, go.importObject);
 

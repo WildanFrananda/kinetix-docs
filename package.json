@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "bun scripts/fetch_verifier.ts && astro dev",
-    "build": "bun scripts/fetch_verifier.ts && astro build",
+    "build": "bun scripts/fetch_verifier.ts && astro build && bun scripts/write_csp.ts",
     "preview": "astro preview",
     "check": "astro check && svelte-check --tsconfig ./tsconfig.svelte.json --fail-on-warnings",
     "check:translations": "bun scripts/check_translations.ts",

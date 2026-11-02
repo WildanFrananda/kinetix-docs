@@ -253,6 +253,43 @@ published), a good-faith safe harbor, acknowledgement within three business days
 and the site's URL, so no hostname is written in the source. `tests/security_txt.test.ts` turns red 30 days before
 `Expires`: move it forward (at most a year) and nothing else. A change to the commitments is the user's to make.
 
+## Hardening the site
+
+Added on 2026-10-30 at the user's request ("mengamankan dari bot atau hal lainnya, soalnya public"). The site is static:
+no sign-in, no API, nothing a form sends anywhere. What a bot can do is read it, copy it and spend the host's quota.
+
+- **Content Security Policy.** `bun run build` ends with `scripts/write_csp.ts`. It writes a
+  `<meta http-equiv="content-security-policy">` into every page, right after the charset. The policy is the fixed
+  directives of `scripts/lib/content_security_policy.ts` plus the SHA-256 of each inline `<script>` and `<style>` the
+  page carries. Astro's own `security.csp` was tried first and blocked every page, because it does not hash
+  Starlight's inline scripts (theme, search, island loaders).
+  - `script-src` is `'self'`, `'wasm-unsafe-eval'` (Pagefind and the verifier are WebAssembly) and the hashes. It has
+    no `'unsafe-inline'` and no `'unsafe-eval'`, so no code under `src/` may run a string as code;
+    `tests/content_security_policy.test.ts` refuses `eval` and `new Function`.
+  - `connect-src` allows any `https:` origin and a node on the reader's own machine, because the verifier reads the
+    chain through an RPC endpoint the reader chooses.
+  - Style attributes are allowed (`style-src-attr 'unsafe-inline'`): Expressive Code and Svelte write them, and they
+    run no code.
+  - A policy in a `<meta>` cannot carry `frame-ancestors`, so `vercel.json` sends it as a header.
+  - The build hashes every inline block it writes. What it cannot see is code a library adds at run time: an
+    injected `<style>`, or a string evaluated. After an upgrade of Astro, Starlight, Svelte or Pagefind, open the
+    pages in headless Chrome and listen for `securitypolicyviolation`. A blocked script leaves the page rendered, so
+    nothing else shows it. Checked on 2026-10-30: all pages, search, and the verifier on a malformed document and on
+    a chain read against Base Sepolia. No violation was reported, and an injected inline script was refused.
+- **Headers.** `vercel.json` sets:
+  - `frame-ancestors 'none'` with `X-Frame-Options: DENY`;
+  - `nosniff`;
+  - `Referrer-Policy`, `Permissions-Policy` and `Cross-Origin-Opener-Policy`.
+
+  `/_astro/` (fingerprinted) and `/notary/<release>/` (pinned by hash) are cached as immutable; the verifier's
+  WebAssembly is about 50 MB. HSTS is the host's default.
+- **Crawlers.** `/robots.txt` is built by `src/pages/robots.txt.ts` from `src/site/robots_txt.ts`. It refuses the
+  crawlers that collect for model training and leaves every other crawler open, search engines included (ruled on
+  2026-10-30). robots.txt is a request, not a lock: refusing a crawler that ignores it is the host's firewall,
+  configured outside this repository.
+- **CI.** Every action is pinned to a commit, with its release in a comment that Dependabot moves, and the
+  workflow's token is read-only.
+
 ## Interactive diagrams
 
 Interactive, animated diagrams are the reason this site is built on Starlight. They are Svelte 5
@@ -293,7 +330,10 @@ disagree; this repository writes no verification logic of its own.
 - The island is `src/verifier/NotaryVerifier.svelte`, mounted by `components/NotaryVerifier.astro`. Its
   logic lives in plain modules beside it (`load_verifier`, `read_asset`, `parse_answer`), which the browser
   and `bun test` both run: `tests/notary_verifier_module.test.ts` loads the pinned WebAssembly under Bun and
-  checks its answers. The browser checks the hash again before it instantiates anything.
+  checks its answers. The browser checks both hashes again before it instantiates anything:
+  - `read_asset` checks the module's hash.
+  - `run_script` loads `wasm_exec.js` as a `<script>` with subresource integrity, because the site's CSP lets no
+    string run as code. Under Bun the test evaluates it instead.
 - The page's text lives in the catalogue under `verifier.*`, and the verdict list in `src/verifier/verdict_names.ts`
   mirrors the CLI's exit codes.
 - **One island for both kinds of document.** Since v1.5.0 the WebAssembly verifies evidence documents too, telling
@@ -375,4 +415,5 @@ DOCS_DENYLIST="" bun run check:leaks
 bun run build
 ```
 
-`DOCS_SITE_URL` must be set for `check` and `build`; any URL works locally.
+`DOCS_SITE_URL` must be set for `check` and `build`; any URL works locally. `build` also writes each page's CSP
+(see "Hardening the site"), so `astro build` alone gives pages without one.

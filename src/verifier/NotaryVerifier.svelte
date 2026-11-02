@@ -6,6 +6,7 @@
   import { loadVerifier } from "./load_verifier";
   import { parseAnswer } from "./parse_answer";
   import { reportFields } from "./report_fields";
+  import { runScript } from "./run_script";
   import type { DocumentKind } from "./types/document_kind.type";
   import type { VerifierAnswer } from "./types/verifier_answer.type";
   import type { VerifierConfig } from "./types/verifier_config.type";
@@ -106,7 +107,8 @@
           fetch: globalThis.fetch.bind(globalThis),
           progress: (bytes) => {
             received = bytes;
-          }
+          },
+          runScript
         });
       } catch (error) {
         phase = "failed";

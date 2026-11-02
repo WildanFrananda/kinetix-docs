@@ -4,7 +4,7 @@ import type { VerifierAssetSource } from "./types/verifier_asset_source.type";
 
 export async function readAsset(
   source: VerifierAssetSource,
-  dependencies: LoaderDependencies
+  dependencies: Pick<LoaderDependencies, "fetch" | "progress">
 ): Promise<Uint8Array<ArrayBuffer>> {
   const response = await dependencies.fetch(source.url);
 

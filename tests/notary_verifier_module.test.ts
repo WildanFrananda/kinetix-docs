@@ -4,6 +4,8 @@ import { join } from "node:path";
 import { notaryVerifier, verifierPath } from "../src/site/notary_verifier";
 import { loadVerifier } from "../src/verifier/load_verifier";
 import { parseAnswer } from "../src/verifier/parse_answer";
+import { readAsset } from "../src/verifier/read_asset";
+import type { VerifierAssetSource } from "../src/verifier/types/verifier_asset_source.type";
 import { verifierEnvironment } from "../src/verifier/verifier_environment";
 
 const sources = {
@@ -28,6 +30,14 @@ const fromPublic = (async (url: string | URL | Request) => {
 
   return new Response(readFileSync(path));
 }) as unknown as typeof fetch;
+
+const runFromPublic = async (source: VerifierAssetSource) => {
+  const script = await readAsset(source, { fetch: fromPublic, progress: () => {} });
+
+  new Function(new TextDecoder().decode(script))();
+};
+
+const fromRelease = { fetch: fromPublic, progress: () => {}, runScript: runFromPublic };
 
 const settings = verifierEnvironment({
   rpcUrl: notaryVerifier.network.rpcUrl,
@@ -73,7 +83,7 @@ const evidenceProof = {
 
 describe("the pinned WebAssembly verifier", () => {
   test("loads from the release's path and answers as notary-verify does, without a chain", async () => {
-    const verify = await loadVerifier(sources, { fetch: fromPublic, progress: () => {} });
+    const verify = await loadVerifier(sources, fromRelease);
 
     const malformed = parseAnswer(await verify('{"format":', settings));
     expect(malformed.exit).toBe(65);
@@ -86,7 +96,7 @@ describe("the pinned WebAssembly verifier", () => {
   });
 
   test("an endpoint that does not answer is unknown, never a verdict about the proof", async () => {
-    const verify = await loadVerifier(sources, { fetch: fromPublic, progress: () => {} });
+    const verify = await loadVerifier(sources, fromRelease);
     const proof = JSON.stringify({
       format: "kinetix.notary.inclusion.v1",
       scheme: 1,
@@ -106,7 +116,7 @@ describe("the pinned WebAssembly verifier", () => {
   });
 
   test("routes an evidence document to the evidence verifier, which needs the registry", async () => {
-    const verify = await loadVerifier(sources, { fetch: fromPublic, progress: () => {} });
+    const verify = await loadVerifier(sources, fromRelease);
     const answer = JSON.stringify({ proofs: [evidenceProof], pending: 0 });
 
     const unconfigured = parseAnswer(
@@ -121,7 +131,7 @@ describe("the pinned WebAssembly verifier", () => {
   });
 
   test("an evidence proof whose endpoint does not answer is unknown, never a verdict about the record", async () => {
-    const verify = await loadVerifier(sources, { fetch: fromPublic, progress: () => {} });
+    const verify = await loadVerifier(sources, fromRelease);
     const answer = parseAnswer(
       await verify(JSON.stringify(evidenceProof), { ...settings, KINETIX_NOTARY_RPC_URL: "http://127.0.0.1:1" })
     );
