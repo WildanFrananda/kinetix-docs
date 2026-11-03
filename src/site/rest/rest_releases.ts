@@ -66,5 +66,10 @@ export const restReleases: Readonly<Record<RestService, RestRelease>> = {
     repository: "kinetix-notification-service",
     tag: "v1.3.3",
     commit: "510a1ecf16006e28913c30d9861c95af3af226b9"
+  },
+  seal: {
+    repository: "kinetix-seal-service",
+    tag: "v1.7.0",
+    commit: "e0dcc6be63591d63c440b282cf8fc38ecef3f9d5"
   }
 };

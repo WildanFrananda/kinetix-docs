@@ -1,0 +1,49 @@
+---
+title: Predicate kredensial
+description: Cara admin mendaftar, membaca, menyetujui dan menarik predicate yang menjadi ukuran pemeriksaan kredensial kurir.
+sidebar:
+  order: 9
+sourceHash: "b5ad7f5939a5"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Seal menerbitkan kredensial untuk tiap kurir berisi jumlah pengiriman, rating dan hari aktifnya sendiri, dan siapa pun
+bisa memeriksanya: pemberi pinjaman atau pemberi kerja hanya tahu apakah kurir memenuhi sebuah predicate, tidak pernah
+angkanya. Hanya admin yang menentukan predicate apa saja yang ada, jadi verifier tidak bisa mempersempit angka kurir
+dengan ambang buatannya sendiri. Admin, yang masuk dari jaringan staf Kinetix seperti di
+[Masuk](/id/apis/rest/backoffice/sign-in/), mendaftar predicate, membaca satu, menyetujui yang baru dan menarik yang
+lama. Seal melayani kedua pembacaan untuk siapa pun dan memeriksa token sendiri pada kedua penulisan, yang harus milik
+admin.
+
+## 1. Daftar predicate
+
+Setiap predicate yang berlaku dikembalikan beserta row-nya. Satu predicate menjadi satu row di registry kredensial per
+minggu: minimum keempat row itu adalah hari terbit paling awal yang diizinkan jendela kebaruan predicate pada hari
+pertama minggu itu, dan seal menyimpan row minggu ini dan minggu lalu. `placed` menjadi true begitu registry memegang
+row itu.
+
+<RestEndpoint id="seal.listPredicates" via="backoffice" />
+
+## 2. Baca satu predicate
+
+Baca predicate dengan `id` dari langkah 1 atau langkah 3, misalnya untuk melihat apakah row-nya sudah ditempatkan, atau
+apa yang diminta predicate yang sudah ditarik.
+
+<RestEndpoint id="seal.getPredicate" via="backoffice" />
+
+## 3. Setujui predicate
+
+Kirim kelasnya, label yang akan dilihat verifier, tiga minimum dan jendela kebaruannya. Jawabannya adalah predicate baru
+beserta row-nya, yang belum ditempatkan: seal menuliskannya ke registry pada putaran berikutnya, dalam sekitar sepuluh
+menit, dibayar dari dompet sponsor seal sendiri.
+
+<RestEndpoint id="seal.approvePredicate" via="backoffice" />
+
+## 4. Tarik predicate
+
+Penarikan menghentikan presentasi baru di bawah row predicate itu begitu seal mengeluarkannya dari registry, juga dalam
+sekitar sepuluh menit. Yang sudah dibuktikan di bawahnya tetap bisa dibaca, dan menyetujui minimum yang sama nanti akan
+menghasilkan row yang sama lagi.
+
+<RestEndpoint id="seal.withdrawPredicate" via="backoffice" />

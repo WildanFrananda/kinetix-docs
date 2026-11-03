@@ -11,6 +11,7 @@ import { matchingEndpoints } from "./endpoints/matching";
 import { paymentEndpoints } from "./endpoints/payment";
 import { notaryEndpoints } from "./endpoints/notary";
 import { notificationEndpoints } from "./endpoints/notification";
+import { sealEndpoints } from "./endpoints/seal";
 import type { RestEndpoint } from "../types/rest_endpoint.type";
 
 export const restEndpoints: readonly RestEndpoint[] = [
@@ -26,7 +27,8 @@ export const restEndpoints: readonly RestEndpoint[] = [
   ...matchingEndpoints,
   ...paymentEndpoints,
   ...notaryEndpoints,
-  ...notificationEndpoints
+  ...notificationEndpoints,
+  ...sealEndpoints
 ];
 
 export function restEndpoint(id: string): RestEndpoint {

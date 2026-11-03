@@ -11,6 +11,7 @@ import { matchingAnswers } from "./endpoints/matching";
 import { paymentAnswers } from "./endpoints/payment";
 import { notaryAnswers } from "./endpoints/notary";
 import { notificationAnswers } from "./endpoints/notification";
+import { sealAnswers } from "./endpoints/seal";
 import type { RestCase } from "../types/rest_case.type";
 import type { RestService } from "../types/rest_service.type";
 
@@ -27,5 +28,6 @@ export const restAnswers: Readonly<Record<RestService, readonly RestCase[]>> = {
   matching: matchingAnswers,
   payment: paymentAnswers,
   notary: notaryAnswers,
-  notification: notificationAnswers
+  notification: notificationAnswers,
+  seal: sealAnswers
 };

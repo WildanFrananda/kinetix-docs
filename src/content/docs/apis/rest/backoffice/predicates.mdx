@@ -1,0 +1,46 @@
+---
+title: Credential predicates
+description: How an admin lists, reads, approves and withdraws the predicates that courier credentials are checked against.
+sidebar:
+  order: 9
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+Seal issues each courier a credential of their own deliveries, rating and days active, and anyone can check one: a
+lender or an employer learns only whether the courier meets a predicate, never the numbers. Only an admin decides which
+predicates exist, so a verifier cannot narrow a courier's numbers down with thresholds of its own. The admin, signed in
+from Kinetix's staff network as on [Sign in](/apis/rest/backoffice/sign-in/), lists the predicates, reads one, approves
+new ones and withdraws old ones. Seal serves the two reads to anyone and checks the token itself on the two writes,
+where it must be an admin's.
+
+## 1. List the predicates
+
+Every live predicate comes back with its rows. A predicate becomes one row in the credential registry per week: the
+row's fourth minimum is the week's first issue day the predicate's freshness window allows, and seal keeps this week's
+row and last week's. `placed` turns true once the registry holds the row.
+
+<RestEndpoint id="seal.listPredicates" via="backoffice" />
+
+## 2. Read one predicate
+
+Read a predicate by the `id` from step 1 or step 3, for example to see whether its rows are placed yet, or what a
+withdrawn one asked for.
+
+<RestEndpoint id="seal.getPredicate" via="backoffice" />
+
+## 3. Approve a predicate
+
+Send the class, the label verifiers will see, the three minimums and the freshness window. The answer is the new
+predicate with its rows, not yet placed: seal writes them to the registry on its next pass, within about ten minutes,
+paying from its own sponsor wallet.
+
+<RestEndpoint id="seal.approvePredicate" via="backoffice" />
+
+## 4. Withdraw a predicate
+
+Withdrawing stops new presentations under the predicate's rows once seal has taken them out of the registry, again
+within about ten minutes. What was proven under them before stays readable, and approving the same minimums later makes
+the same rows again.
+
+<RestEndpoint id="seal.withdrawPredicate" via="backoffice" />

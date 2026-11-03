@@ -11,4 +11,5 @@ export type RestService =
   | "matching"
   | "payment"
   | "notary"
-  | "notification";
+  | "notification"
+  | "seal";

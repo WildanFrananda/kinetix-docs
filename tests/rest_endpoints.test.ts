@@ -28,7 +28,8 @@ const gatewayPrefixes: Readonly<Record<RestService, readonly string[]>> = {
   matching: ["/api/v1/matching"],
   payment: ["/api/v1/payment"],
   notary: ["/api/v1/proofs"],
-  notification: ["/api/v1/notifications/devices"]
+  notification: ["/api/v1/notifications/devices"],
+  seal: ["/api/v1/seal/predicates"]
 };
 
 function releasePrefix(service: RestService): string {

@@ -12,6 +12,7 @@ import matchingEnglish from "../../catalogue/rest/en/matching.json";
 import paymentEnglish from "../../catalogue/rest/en/payment.json";
 import notaryEnglish from "../../catalogue/rest/en/notary.json";
 import notificationEnglish from "../../catalogue/rest/en/notification.json";
+import sealEnglish from "../../catalogue/rest/en/seal.json";
 import commonIndonesian from "../../catalogue/rest/id/common.json";
 import gatewayIndonesian from "../../catalogue/rest/id/gateway.json";
 import edgeIndonesian from "../../catalogue/rest/id/edge.json";
@@ -26,6 +27,7 @@ import matchingIndonesian from "../../catalogue/rest/id/matching.json";
 import paymentIndonesian from "../../catalogue/rest/id/payment.json";
 import notaryIndonesian from "../../catalogue/rest/id/notary.json";
 import notificationIndonesian from "../../catalogue/rest/id/notification.json";
+import sealIndonesian from "../../catalogue/rest/id/seal.json";
 import type { Locale } from "../../diagrams/types/locale.type";
 import type { RestCatalogue } from "../types/rest_catalogue.type";
 
@@ -43,7 +45,8 @@ export const restEnglish = {
   ...matchingEnglish,
   ...paymentEnglish,
   ...notaryEnglish,
-  ...notificationEnglish
+  ...notificationEnglish,
+  ...sealEnglish
 };
 
 const restIndonesian = {
@@ -60,7 +63,8 @@ const restIndonesian = {
   ...matchingIndonesian,
   ...paymentIndonesian,
   ...notaryIndonesian,
-  ...notificationIndonesian
+  ...notificationIndonesian,
+  ...sealIndonesian
 };
 
 const catalogues = {
