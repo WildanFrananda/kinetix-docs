@@ -5,7 +5,27 @@ import { restSource } from "../rest_source";
 const routes = "src/infrastructure/http/predicate_routes.ts";
 const caller = "src/infrastructure/http/caller_of.ts";
 const server = "src/infrastructure/http/http_server.ts";
+const credentials = "src/infrastructure/http/credential_routes.ts";
+const holder = "src/infrastructure/http/holder_routes.ts";
+const snapshot = "src/infrastructure/http/registry_snapshot_routes.ts";
+const presentations = "src/infrastructure/http/presentation_routes.ts";
 const templateId = "4b5c6d7e-8f90-4a1b-9c2d-3e4f5a6b7c8d";
+const credentialId = "7d8e9fa0-b1c2-4d3e-8f4a-5b6c7d8e9f0a";
+const contractAddress = "5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e";
+const classId = "6b696e657469783a7365616c3a636f75726965723a7631000000000000000000";
+const holderPublicKey = "4242424242424242424242424242424242424242424242424242424242424242424242424242";
+const holderDigest = "1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d";
+const rowId = "a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3";
+const txId = "007c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c";
+const traceId = "6f1c2b9e-3d4a-4f5e-8a7b-9c0d1e2f3a4b";
+const holderPolicy = [
+  "default-src 'none'",
+  "script-src 'self' 'wasm-unsafe-eval'",
+  "connect-src 'self'",
+  "base-uri 'none'",
+  "form-action 'none'",
+  "frame-ancestors 'none'"
+].join("; ");
 
 export const sealAnswers: readonly RestCase[] = [
   {
@@ -402,5 +422,495 @@ export const sealEndpoints: readonly RestEndpoint[] = [
       }
     ],
     source: restSource("seal", routes, 192, 213)
+  },
+  {
+    id: "seal.requestCourierCredential",
+    service: "seal",
+    method: "POST",
+    path: "/api/v1/seal/courier-credentials",
+    summary: "rest.seal.requestCourierCredential.summary",
+    access: {
+      token: "required",
+      gatewayVerifies: true,
+      who: "rest.seal.requestCourierCredential.who"
+    },
+    request: {
+      fields: [
+        {
+          name: "holderPublicKey",
+          in: "body",
+          type: "string",
+          required: true,
+          rule: "rest.seal.requestCourierCredential.field.holderPublicKey"
+        }
+      ],
+      json: {
+        holderPublicKey
+      }
+    },
+    cases: [
+      {
+        status: 200,
+        when: "rest.seal.requestCourierCredential.case.existing",
+        headers: [`Location: /api/v1/seal/courier-credentials/${credentialId}`, "Cache-Control: no-store"],
+        json: {
+          id: credentialId,
+          status: "issued",
+          issueDay: 20760,
+          credential: {
+            classId,
+            attributes: [
+              "128",
+              "472",
+              "95",
+              "20760"
+            ],
+            salt: "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a"
+          },
+          holderPublicKey,
+          registry: {
+            generation: 1,
+            contractAddress,
+            leafIndex: "17",
+            txId
+          }
+        },
+        source: restSource("seal", credentials, 88, 96)
+      },
+      {
+        status: 202,
+        when: "rest.seal.requestCourierCredential.case.accepted",
+        headers: [`Location: /api/v1/seal/courier-credentials/${credentialId}`, "Cache-Control: no-store"],
+        json: {
+          id: credentialId,
+          status: "pending",
+          issueDay: 20760,
+          credential: {
+            classId,
+            attributes: [
+              "128",
+              "472",
+              "95",
+              "20760"
+            ],
+            salt: "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a"
+          },
+          holderPublicKey,
+          registry: null
+        },
+        source: restSource("seal", credentials, 83, 87)
+      },
+      {
+        status: 400,
+        when: "rest.seal.requestCourierCredential.case.invalid",
+        headers: ["Cache-Control: no-store"],
+        json: {
+          error: "INVALID_REQUEST",
+          message: "the body must be { holderPublicKey }, a field element in decimal",
+          traceId
+        },
+        source: restSource("seal", credentials, 70, 78)
+      },
+      {
+        status: 403,
+        when: "rest.seal.requestCourierCredential.case.notCourier",
+        headers: ["Cache-Control: no-store"],
+        json: {
+          error: "COURIER_REQUIRED",
+          message: "only a courier holds a courier credential",
+          traceId
+        },
+        source: restSource("seal", credentials, 97, 100)
+      },
+      {
+        status: 409,
+        when: "rest.seal.requestCourierCredential.case.noDeliveries",
+        headers: ["Cache-Control: no-store"],
+        json: {
+          error: "NO_DELIVERIES",
+          message: "a credential needs at least one delivered order",
+          traceId
+        },
+        source: restSource("seal", credentials, 108, 111)
+      },
+      {
+        status: 409,
+        when: "rest.seal.requestCourierCredential.case.issuedToday",
+        headers: ["Cache-Control: no-store"],
+        json: {
+          error: "ISSUED_TODAY",
+          message: "a credential was already issued today to another holder key",
+          traceId
+        },
+        source: restSource("seal", credentials, 112, 115)
+      },
+      {
+        status: 503,
+        when: "rest.seal.requestCourierCredential.case.factsStale",
+        headers: ["Retry-After: 60", "Cache-Control: no-store"],
+        json: {
+          error: "FACTS_UNAVAILABLE",
+          message: "the delivery and review facts are not current; try again later",
+          traceId
+        },
+        source: restSource("seal", credentials, 101, 107)
+      }
+    ],
+    source: restSource("seal", credentials, 61, 117)
+  },
+  {
+    id: "seal.getCourierCredential",
+    service: "seal",
+    method: "GET",
+    path: "/api/v1/seal/courier-credentials/{id}",
+    summary: "rest.seal.getCourierCredential.summary",
+    access: {
+      token: "required",
+      gatewayVerifies: true,
+      who: "rest.seal.getCourierCredential.who"
+    },
+    request: {
+      fields: [
+        {
+          name: "id",
+          in: "path",
+          type: "string",
+          required: true,
+          rule: "rest.seal.getCourierCredential.field.id"
+        }
+      ]
+    },
+    cases: [
+      {
+        status: 200,
+        when: "rest.seal.getCourierCredential.case.found",
+        headers: ["Cache-Control: no-store"],
+        json: {
+          id: credentialId,
+          status: "issued",
+          issueDay: 20760,
+          credential: {
+            classId,
+            attributes: [
+              "128",
+              "472",
+              "95",
+              "20760"
+            ],
+            salt: "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a"
+          },
+          holderPublicKey,
+          registry: {
+            generation: 1,
+            contractAddress,
+            leafIndex: "17",
+            txId
+          }
+        },
+        source: restSource("seal", credentials, 136, 136)
+      },
+      {
+        status: 404,
+        when: "rest.seal.getCourierCredential.case.notFound",
+        headers: ["Cache-Control: no-store"],
+        json: {
+          error: "NOT_FOUND",
+          message: "no such credential",
+          traceId
+        },
+        source: restSource("seal", credentials, 128, 134)
+      }
+    ],
+    source: restSource("seal", credentials, 119, 137)
+  },
+  {
+    id: "seal.holder",
+    service: "seal",
+    method: "GET",
+    path: "/api/v1/seal/holder",
+    summary: "rest.seal.holder.summary",
+    access: {
+      token: "none",
+      gatewayVerifies: false,
+      who: "rest.seal.holder.who"
+    },
+    request: {
+      fields: []
+    },
+    cases: [
+      {
+        status: 200,
+        when: "rest.seal.holder.case.found",
+        headers: ["Cache-Control: no-cache"],
+        json: {
+          digest: holderDigest,
+          entry: `/api/v1/seal/holder/${holderDigest}/index.html`,
+          notices: `/api/v1/seal/holder/${holderDigest}/THIRD_PARTY_NOTICES.txt`
+        },
+        source: restSource("seal", holder, 24, 33)
+      }
+    ],
+    source: restSource("seal", holder, 24, 33)
+  },
+  {
+    id: "seal.holderFile",
+    service: "seal",
+    method: "GET",
+    path: "/api/v1/seal/holder/{digest}/{file}",
+    summary: "rest.seal.holderFile.summary",
+    access: {
+      token: "none",
+      gatewayVerifies: false,
+      who: "rest.seal.holderFile.who"
+    },
+    request: {
+      fields: [
+        {
+          name: "digest",
+          in: "path",
+          type: "string",
+          required: true,
+          rule: "rest.seal.holderFile.field.digest"
+        },
+        {
+          name: "file",
+          in: "path",
+          type: "string",
+          required: true,
+          rule: "rest.seal.holderFile.field.file"
+        }
+      ]
+    },
+    cases: [
+      {
+        status: 200,
+        when: "rest.seal.holderFile.case.page",
+        headers: [
+          "Content-Type: text/html; charset=utf-8",
+          `Content-Security-Policy: ${holderPolicy}`,
+          "Cache-Control: public, max-age=31536000, immutable",
+          "X-Content-Type-Options: nosniff"
+        ],
+        source: restSource("seal", holder, 45, 54)
+      },
+      {
+        status: 200,
+        when: "rest.seal.holderFile.case.file",
+        headers: [
+          "Content-Type: application/wasm",
+          "Cache-Control: public, max-age=31536000, immutable",
+          "X-Content-Type-Options: nosniff"
+        ],
+        source: restSource("seal", holder, 49, 54)
+      },
+      {
+        status: 404,
+        when: "rest.seal.holderFile.case.notFound",
+        headers: ["Cache-Control: no-store"],
+        json: {
+          error: "NOT_FOUND",
+          message: "no such holder file",
+          traceId
+        },
+        source: restSource("seal", holder, 38, 43)
+      }
+    ],
+    source: restSource("seal", holder, 35, 55)
+  },
+  {
+    id: "seal.registrySnapshot",
+    service: "seal",
+    method: "GET",
+    path: "/api/v1/seal/registry/snapshot",
+    summary: "rest.seal.registrySnapshot.summary",
+    access: {
+      token: "none",
+      gatewayVerifies: false,
+      who: "rest.seal.registrySnapshot.who"
+    },
+    request: {
+      fields: []
+    },
+    cases: [
+      {
+        status: 200,
+        when: "rest.seal.registrySnapshot.case.read",
+        headers: ["Cache-Control: public, max-age=60"],
+        json: {
+          generation: 1,
+          networkId: "preprod",
+          contractAddress,
+          contractState: "0c0c0c0c0c0c0c0c",
+          zswapChainState: "0d0d0d0d0d0d0d0d",
+          ledgerParameters: "0e0e0e0e0e0e0e0e",
+          readAt: "2026-11-03T03:00:00.000Z"
+        },
+        source: restSource("seal", snapshot, 54, 57)
+      },
+      {
+        status: 503,
+        when: "rest.seal.registrySnapshot.case.unavailable",
+        headers: ["Cache-Control: no-store", "Retry-After: 60"],
+        json: {
+          error: "REGISTRY_UNAVAILABLE",
+          message: "the registry cannot be read now; try again later",
+          traceId
+        },
+        source: restSource("seal", snapshot, 46, 52)
+      }
+    ],
+    source: restSource("seal", snapshot, 33, 58)
+  },
+  {
+    id: "seal.relayPresentation",
+    service: "seal",
+    method: "POST",
+    path: "/api/v1/seal/presentations",
+    summary: "rest.seal.relayPresentation.summary",
+    access: {
+      token: "none",
+      gatewayVerifies: false,
+      who: "rest.seal.relayPresentation.who"
+    },
+    request: {
+      fields: [
+        {
+          name: "transaction",
+          in: "body",
+          type: "string",
+          required: true,
+          rule: "rest.seal.relayPresentation.field.transaction"
+        }
+      ],
+      json: {
+        transaction: "0f0f0f0f0f0f0f0f"
+      }
+    },
+    cases: [
+      {
+        status: 202,
+        when: "rest.seal.relayPresentation.case.relayed",
+        headers: ["Cache-Control: no-store"],
+        json: {
+          txId
+        },
+        source: restSource("seal", presentations, 85, 86)
+      },
+      {
+        status: 400,
+        when: "rest.seal.relayPresentation.case.invalid",
+        headers: ["Cache-Control: no-store"],
+        json: {
+          error: "INVALID_REQUEST",
+          message: "the body must be { transaction }, the bound transaction in hex",
+          traceId
+        },
+        source: restSource("seal", presentations, 76, 80)
+      },
+      {
+        status: 422,
+        when: "rest.seal.relayPresentation.case.notPresentation",
+        headers: ["Cache-Control: no-store"],
+        json: {
+          error: "NOT_A_PRESENTATION",
+          message: "the call is not to the active registry",
+          traceId
+        },
+        source: restSource("seal", presentations, 87, 88)
+      },
+      {
+        status: 503,
+        when: "rest.seal.relayPresentation.case.noRegistry",
+        headers: ["Cache-Control: no-store", "Retry-After: 30"],
+        json: {
+          error: "REGISTRY_UNAVAILABLE",
+          message: "no registry is active now; try again later",
+          traceId
+        },
+        source: restSource("seal", presentations, 89, 93)
+      },
+      {
+        status: 503,
+        when: "rest.seal.relayPresentation.case.sponsorUnavailable",
+        headers: ["Cache-Control: no-store", "Retry-After: 30"],
+        json: {
+          error: "SPONSOR_UNAVAILABLE",
+          message: "the presentation cannot be sent now; try again later",
+          traceId
+        },
+        source: restSource("seal", presentations, 94, 104)
+      }
+    ],
+    source: restSource("seal", presentations, 71, 106)
+  },
+  {
+    id: "seal.presentationStatus",
+    service: "seal",
+    method: "GET",
+    path: "/api/v1/seal/presentations/{challenge}",
+    summary: "rest.seal.presentationStatus.summary",
+    access: {
+      token: "none",
+      gatewayVerifies: false,
+      who: "rest.seal.presentationStatus.who"
+    },
+    request: {
+      fields: [
+        {
+          name: "challenge",
+          in: "path",
+          type: "string",
+          required: true,
+          rule: "rest.seal.presentationStatus.field.challenge"
+        }
+      ]
+    },
+    cases: [
+      {
+        status: 200,
+        when: "rest.seal.presentationStatus.case.answered",
+        headers: ["Cache-Control: no-store"],
+        json: {
+          status: "answered",
+          predicateId: rowId,
+          generation: 1
+        },
+        source: restSource("seal", presentations, 64, 68)
+      },
+      {
+        status: 200,
+        when: "rest.seal.presentationStatus.case.unanswered",
+        headers: ["Cache-Control: no-store"],
+        json: {
+          status: "unanswered",
+          predicateId: null,
+          generation: 1
+        },
+        source: restSource("seal", presentations, 64, 68)
+      },
+      {
+        status: 400,
+        when: "rest.seal.presentationStatus.case.invalid",
+        headers: ["Cache-Control: no-store"],
+        json: {
+          error: "INVALID_REQUEST",
+          message: "a challenge is 32 bytes in lowercase hex",
+          traceId
+        },
+        source: restSource("seal", presentations, 41, 43)
+      },
+      {
+        status: 503,
+        when: "rest.seal.presentationStatus.case.unavailable",
+        headers: ["Cache-Control: no-store", "Retry-After: 30"],
+        json: {
+          error: "REGISTRY_UNAVAILABLE",
+          message: "the registry cannot be read now; try again later",
+          traceId
+        },
+        source: restSource("seal", presentations, 57, 62)
+      }
+    ],
+    source: restSource("seal", presentations, 36, 69)
   }
 ];
