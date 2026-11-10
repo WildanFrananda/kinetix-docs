@@ -2,7 +2,7 @@
 title: "fulfillment.v1"
 description: "Paket gRPC fulfillment.v1 di kinetix-contracts 1.7.0: service, message, dan enum-nya."
 editUrl: false
-sourceHash: "691b2a18d291"
+sourceHash: "90e66e81b182"
 ---
 
 <div class="grpc-reference">
@@ -27,8 +27,8 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 | --- | --- | --- | --- |
 | [`CheckBinStock`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fulfillment/v1/fulfillment.proto#L9) | [`CheckBinStockRequest`](#checkbinstockrequest) → [`CheckBinStockResponse`](#checkbinstockresponse) | [warehouse](/id/services/warehouse/) | [catalog](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/infrastructure/grpc/bin_stock_client.py#L44) |
 | [`CheckBinStockBatch`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fulfillment/v1/fulfillment.proto#L10) | [`CheckBinStockBatchRequest`](#checkbinstockbatchrequest) → [`CheckBinStockBatchResponse`](#checkbinstockbatchresponse) | [warehouse](/id/services/warehouse/) | [catalog](https://github.com/WildanFrananda/kinetix-catalog-service/blob/ab557c90cb3230221c5a504def11fa7df26a6f7a/core/infrastructure/grpc/bin_stock_client.py#L83) |
-| [`ReserveStock`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fulfillment/v1/fulfillment.proto#L11) | [`ReserveStockRequest`](#reservestockrequest) → [`ReserveStockResponse`](#reservestockresponse) | [warehouse](/id/services/warehouse/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Grpc/StockGrpcClient.cs#L22) |
-| [`ReleaseStock`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fulfillment/v1/fulfillment.proto#L12) | [`ReleaseStockRequest`](#releasestockrequest) → [`ReleaseStockResponse`](#releasestockresponse) | [warehouse](/id/services/warehouse/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Grpc/StockGrpcClient.cs#L44) |
+| [`ReserveStock`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fulfillment/v1/fulfillment.proto#L11) | [`ReserveStockRequest`](#reservestockrequest) → [`ReserveStockResponse`](#reservestockresponse) | [warehouse](/id/services/warehouse/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/a0167a3ec43e857e85401924b4bee486e596d4fd/Infrastructure/Grpc/StockGrpcClient.cs#L22) |
+| [`ReleaseStock`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fulfillment/v1/fulfillment.proto#L12) | [`ReleaseStockRequest`](#releasestockrequest) → [`ReleaseStockResponse`](#releasestockresponse) | [warehouse](/id/services/warehouse/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/a0167a3ec43e857e85401924b4bee486e596d4fd/Infrastructure/Grpc/StockGrpcClient.cs#L44) |
 
 ### FulfillmentService
 
@@ -46,9 +46,9 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`CreateFulfillmentTask`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fulfillment/v1/task.proto#L8) | [`CreateFulfillmentTaskRequest`](#createfulfillmenttaskrequest) → [`CreateFulfillmentTaskResponse`](#createfulfillmenttaskresponse) | [warehouse](/id/services/warehouse/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Grpc/FulfillmentGrpcClient.cs#L34) |
-| [`CancelFulfillmentTask`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fulfillment/v1/task.proto#L9) | [`CancelFulfillmentTaskRequest`](#cancelfulfillmenttaskrequest) → [`CancelFulfillmentTaskResponse`](#cancelfulfillmenttaskresponse) | [warehouse](/id/services/warehouse/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Grpc/FulfillmentGrpcClient.cs#L62) |
-| [`RecordCourierAwb`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fulfillment/v1/task.proto#L10) | [`RecordCourierAwbRequest`](#recordcourierawbrequest) → [`RecordCourierAwbResponse`](#recordcourierawbresponse) | [warehouse](/id/services/warehouse/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Grpc/FulfillmentGrpcClient.cs#L90) |
+| [`CreateFulfillmentTask`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fulfillment/v1/task.proto#L8) | [`CreateFulfillmentTaskRequest`](#createfulfillmenttaskrequest) → [`CreateFulfillmentTaskResponse`](#createfulfillmenttaskresponse) | [warehouse](/id/services/warehouse/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/a0167a3ec43e857e85401924b4bee486e596d4fd/Infrastructure/Grpc/FulfillmentGrpcClient.cs#L34) |
+| [`CancelFulfillmentTask`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fulfillment/v1/task.proto#L9) | [`CancelFulfillmentTaskRequest`](#cancelfulfillmenttaskrequest) → [`CancelFulfillmentTaskResponse`](#cancelfulfillmenttaskresponse) | [warehouse](/id/services/warehouse/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/a0167a3ec43e857e85401924b4bee486e596d4fd/Infrastructure/Grpc/FulfillmentGrpcClient.cs#L62) |
+| [`RecordCourierAwb`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fulfillment/v1/task.proto#L10) | [`RecordCourierAwbRequest`](#recordcourierawbrequest) → [`RecordCourierAwbResponse`](#recordcourierawbresponse) | [warehouse](/id/services/warehouse/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/a0167a3ec43e857e85401924b4bee486e596d4fd/Infrastructure/Grpc/FulfillmentGrpcClient.cs#L90) |
 
 ## Message
 

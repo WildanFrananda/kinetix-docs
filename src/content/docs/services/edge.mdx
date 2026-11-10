@@ -36,12 +36,12 @@ and the image
 ## What it calls
 
 Kong sends the edge
-[the calls under `/bff/` at the web apps' addresses](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L221-L249), and
+[the calls under `/bff/` at the web apps' addresses](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L262-L290), and
 [the gateway is its only peer](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/CLAUDE.md#L160-L164).
 The edge serves no gRPC and no other service calls it. It calls identity directly for everything that issues,
 renews or ends tokens, sign-up included, and for the rest of identity's account routes. Every other call goes
 back through the gateway, to a listener that exists only inside Kinetix's network, as the
-[gateway page](/architecture/gateway/#tls-outside-and-two-listeners-inside) explains; so does the seller web's
+[gateway page](/architecture/gateway/#tls-outside-and-listeners-inside) explains; so does the seller web's
 socket to matching.
 
 <ServiceCalls service="edge" />

@@ -10,8 +10,8 @@ import RestEndpoint from "../../../../../components/RestEndpoint.astro";
 Matching tracks the couriers whose apps connect to it and gives each job, on its own, to an available courier near the
 pickup. The backoffice watches the fleet and the dispatch board, and an admin steps in by hand: gives a waiting job to a
 chosen courier, takes a job off its courier, or cancels a job no order is waiting for. Couriers join the fleet through
-[Courier applications](/apis/rest/backoffice/courier-applications/); signed in from Kinetix's staff network as on
-[Sign in](/apis/rest/backoffice/sign-in/), the admin reads the fleet, the board's counts, the jobs and one job, finds
+[Courier applications](/apis/rest/backoffice/courier-applications/); signed in at one of the backoffice's two
+addresses as on [Sign in](/apis/rest/backoffice/sign-in/), the admin reads the fleet, the board's counts, the jobs and one job, finds
 couriers near a pickup, assigns, unassigns or cancels, and lists one courier's jobs. Kong checks the token on every
 endpoint here, matching checks the role, and matching records every request on these routes with the admin's account and
 its outcome

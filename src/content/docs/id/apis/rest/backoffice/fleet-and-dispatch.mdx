@@ -3,7 +3,7 @@ title: Armada dan dispatch
 description: Cara admin memantau kurir dan papan dispatch milik matching, lalu turun tangan untuk meng-assign, melepas atau membatalkan sebuah pekerjaan armada.
 sidebar:
   order: 7
-sourceHash: "3dcecabdc6ca"
+sourceHash: "facfcb25874f"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -12,8 +12,8 @@ Matching melacak kurir yang aplikasinya terhubung ke matching dan memberikan set
 kepada kurir yang tersedia di dekat titik jemput. Backoffice memantau armada dan papan dispatch, dan admin turun tangan:
 memberikan pekerjaan yang menunggu kepada kurir pilihan, melepas pekerjaan dari kurirnya, atau membatalkan pekerjaan
 yang tidak ditunggu pesanan mana pun. Kurir masuk ke armada lewat
-[Pengajuan kurir](/id/apis/rest/backoffice/courier-applications/); setelah masuk dari jaringan staf Kinetix seperti di
-[Masuk](/id/apis/rest/backoffice/sign-in/), admin membaca armada, angka-angka papan, daftar pekerjaan dan satu
+[Pengajuan kurir](/id/apis/rest/backoffice/courier-applications/); setelah masuk di salah satu dari dua alamat
+backoffice seperti di [Masuk](/id/apis/rest/backoffice/sign-in/), admin membaca armada, angka-angka papan, daftar pekerjaan dan satu
 pekerjaan, mencari kurir di dekat titik jemput, meng-assign, melepas atau membatalkan, dan mendaftar pekerjaan satu
 kurir. Kong memeriksa token di setiap endpoint di sini, matching memeriksa role-nya, dan matching mencatat setiap
 request di route ini bersama akun admin dan hasilnya

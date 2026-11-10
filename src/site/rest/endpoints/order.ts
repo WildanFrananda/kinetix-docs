@@ -73,7 +73,7 @@ export const orderAnswers: readonly RestCase[] = [
       },
       traceId: traceContext
     },
-    source: restSource("order", "Program.cs", 283, 287)
+    source: restSource("order", "Program.cs", 286, 290)
   },
   {
     status: 401,
@@ -102,13 +102,13 @@ export const orderAnswers: readonly RestCase[] = [
   {
     status: 404,
     when: "rest.order.answers.unknownPath",
-    source: restSource("order", "Program.cs", 368, 370)
+    source: restSource("order", "Program.cs", 371, 373)
   },
   {
     status: 405,
     when: "rest.order.answers.methodNotAllowed",
     headers: ["Allow: POST"],
-    source: restSource("order", "Program.cs", 368, 370)
+    source: restSource("order", "Program.cs", 371, 373)
   },
   {
     status: 413,
@@ -130,7 +130,7 @@ export const orderAnswers: readonly RestCase[] = [
       status: 415,
       traceId: traceContext
     },
-    source: restSource("order", "Program.cs", 283, 287)
+    source: restSource("order", "Program.cs", 286, 290)
   },
   {
     status: 500,
@@ -246,6 +246,57 @@ function queryInvalid(name: string, value: string): RestCase["json"] {
       [name]: [`The value '${value}' is not valid.`]
     },
     traceId: traceContext
+  };
+}
+
+const searchParameters = [
+  "status",
+  "createdFrom",
+  "createdTo",
+  "merchant",
+  "customer",
+  "orderNumber",
+  "before",
+  "limit"
+];
+
+const secondBuyer = "8e4b2d6f-1a3c-4b5e-9d7f-0c2e4a6b8d93";
+
+const deliveredSummary = {
+  id: "7d2e9f41-3b6a-4c8d-9e15-2a4f6b8c0d13",
+  orderNumber: "ORD-20261109-5C2E8A17",
+  status: "DELIVERED",
+  customerPrincipalId: buyer,
+  merchantPrincipalId: merchant,
+  finalTotal: 193800,
+  finalShippingFee: 12000,
+  itemCount: 2,
+  createdAt: "2026-11-09T07:42:18.305127Z",
+  updatedAt: "2026-11-09T10:15:02.118406Z",
+  deliveredAt: "2026-11-09T10:15:02.118406Z",
+  completedAt: null
+};
+
+const completedSummary = {
+  id: "3f8a1c5e-6d2b-4e9f-8a07-5b3c9d1e2f64",
+  orderNumber: "ORD-20261102-9B4D1F06",
+  status: "COMPLETED",
+  customerPrincipalId: secondBuyer,
+  merchantPrincipalId: merchant,
+  finalTotal: 85000,
+  finalShippingFee: 9000,
+  itemCount: 1,
+  createdAt: "2026-11-02T03:08:51.77429Z",
+  updatedAt: "2026-11-09T06:56:12.640881Z",
+  deliveredAt: "2026-11-02T06:55:40.209815Z",
+  completedAt: "2026-11-09T06:56:12.640881Z"
+};
+
+function searchRefused(error: string, parameter: string, message: string): RestCase["json"] {
+  return {
+    error,
+    parameter,
+    message
   };
 }
 
@@ -1257,6 +1308,213 @@ export const orderEndpoints: readonly RestEndpoint[] = [
       }
     ],
     source: restSource("order", "Controllers/OrderController.cs", 293, 342)
+  },
+  {
+    id: "order.searchOrders",
+    service: "order",
+    method: "GET",
+    path: "/api/v1/orders/search",
+    summary: "rest.order.searchOrders.summary",
+    access: {
+      token: "required",
+      gatewayVerifies: false,
+      who: "rest.order.searchOrders.who"
+    },
+    request: {
+      fields: [
+        {
+          name: "status",
+          in: "query",
+          type: "string",
+          required: false,
+          rule: "rest.order.searchOrders.field.status"
+        },
+        {
+          name: "createdFrom",
+          in: "query",
+          type: "string (date-time)",
+          required: false,
+          rule: "rest.order.searchOrders.field.createdFrom"
+        },
+        {
+          name: "createdTo",
+          in: "query",
+          type: "string (date-time)",
+          required: false,
+          rule: "rest.order.searchOrders.field.createdTo"
+        },
+        {
+          name: "merchant",
+          in: "query",
+          type: "string (uuid)",
+          required: false,
+          rule: "rest.order.searchOrders.field.merchant"
+        },
+        {
+          name: "customer",
+          in: "query",
+          type: "string (uuid)",
+          required: false,
+          rule: "rest.order.searchOrders.field.customer"
+        },
+        {
+          name: "orderNumber",
+          in: "query",
+          type: "string",
+          required: false,
+          rule: "rest.order.searchOrders.field.orderNumber"
+        },
+        {
+          name: "before",
+          in: "query",
+          type: "string",
+          required: false,
+          rule: "rest.order.searchOrders.field.before"
+        },
+        {
+          name: "limit",
+          in: "query",
+          type: "integer",
+          required: false,
+          rule: "rest.order.searchOrders.field.limit"
+        }
+      ]
+    },
+    cases: [
+      {
+        status: 200,
+        when: "rest.order.searchOrders.case.page",
+        json: {
+          orders: [deliveredSummary, completedSummary],
+          nextCursor: "AQjfOI6fOUk0P4ocXm0rTp-KB1s8nR4vZNu9wRs"
+        },
+        source: restSource("order", "Application/Search/OrderSearch.cs", 8, 19)
+      },
+      {
+        status: 200,
+        when: "rest.order.searchOrders.case.lastPage",
+        json: {
+          orders: [],
+          nextCursor: null
+        },
+        source: restSource("order", "Application/Search/OrderSearch.cs", 11, 13)
+      },
+      {
+        status: 400,
+        when: "rest.order.searchOrders.case.statusInvalid",
+        json: {
+          error: "INVALID_STATUS",
+          parameter: "status",
+          allowed: allStatuses,
+          message: "'paid' is not an order status"
+        },
+        source: restSource("order", "Application/Search/OrderSearchParameters.cs", 160, 170)
+      },
+      {
+        status: 400,
+        when: "rest.order.searchOrders.case.instantInvalid",
+        json: searchRefused(
+          "INVALID_CREATED_RANGE",
+          "createdFrom",
+          "createdFrom is an instant with an offset, to the microsecond at most, such as 2026-11-10T00:00:00+07:00 or 2026-11-09T17:00:00Z; in a query string + is sent as %2B"
+        ),
+        source: restSource("order", "Application/Search/OrderSearchParameters.cs", 190, 203)
+      },
+      {
+        status: 400,
+        when: "rest.order.searchOrders.case.rangeEmpty",
+        json: searchRefused(
+          "INVALID_CREATED_RANGE",
+          "createdTo",
+          "createdTo must be after createdFrom: the range is [createdFrom, createdTo), so a range that ends where it starts or before holds no order"
+        ),
+        source: restSource("order", "Application/Search/OrderSearchParameters.cs", 209, 215)
+      },
+      {
+        status: 400,
+        when: "rest.order.searchOrders.case.merchantInvalid",
+        json: searchRefused(
+          "INVALID_MERCHANT",
+          "merchant",
+          "merchant is a merchant principal id: a UUID in its 36-character form"
+        ),
+        source: restSource("order", "Application/Search/OrderSearchParameters.cs", 230, 236)
+      },
+      {
+        status: 400,
+        when: "rest.order.searchOrders.case.customerInvalid",
+        json: searchRefused(
+          "INVALID_CUSTOMER",
+          "customer",
+          "customer is a customer principal id: a UUID in its 36-character form"
+        ),
+        source: restSource("order", "Application/Search/OrderSearchParameters.cs", 230, 236)
+      },
+      {
+        status: 400,
+        when: "rest.order.searchOrders.case.orderNumberInvalid",
+        json: searchRefused(
+          "INVALID_ORDER_NUMBER",
+          "orderNumber",
+          "orderNumber is one order number, exactly as issued, of 1 to 50 characters"
+        ),
+        source: restSource("order", "Application/Search/OrderSearchParameters.cs", 248, 258)
+      },
+      {
+        status: 400,
+        when: "rest.order.searchOrders.case.cursorInvalid",
+        json: searchRefused(
+          "INVALID_CURSOR",
+          "before",
+          "before is not a cursor this search gave out; send the previous page's nextCursor unchanged, or leave before out for the first page"
+        ),
+        source: restSource("order", "Application/Search/OrderSearchParameters.cs", 272, 279)
+      },
+      {
+        status: 400,
+        when: "rest.order.searchOrders.case.limitInvalid",
+        json: searchRefused("INVALID_LIMIT", "limit", "limit is a whole number from 1 to 100"),
+        source: restSource("order", "Application/Search/OrderSearchParameters.cs", 293, 303)
+      },
+      {
+        status: 400,
+        when: "rest.order.searchOrders.case.unknownParameter",
+        json: {
+          error: "UNKNOWN_PARAMETER",
+          parameter: "page",
+          allowed: searchParameters,
+          message: "the search takes only status, createdFrom, createdTo, merchant, customer, orderNumber, before, limit"
+        },
+        source: restSource("order", "Application/Search/OrderSearchParameters.cs", 121, 132)
+      },
+      {
+        status: 400,
+        when: "rest.order.searchOrders.case.repeated",
+        json: searchRefused(
+          "INVALID_STATUS",
+          "status",
+          "status is given more than once; several statuses are one value, comma-separated"
+        ),
+        source: restSource("order", "Application/Search/OrderSearchParameters.cs", 134, 146)
+      },
+      {
+        status: 400,
+        when: "rest.order.searchOrders.case.empty",
+        json: {
+          error: "INVALID_STATUS",
+          parameter: "status",
+          allowed: allStatuses,
+          message: "status holds an empty name; give one or more order statuses, comma-separated"
+        },
+        source: restSource("order", "Application/Search/OrderSearchParameters.cs", 160, 170)
+      },
+      {
+        status: 403,
+        when: "rest.order.searchOrders.case.notAdmin",
+        source: restSource("order", "Security/OrderPolicies.cs", 11, 13)
+      }
+    ],
+    source: restSource("order", "Controllers/OrderSearchController.cs", 10, 56)
   },
   {
     id: "order.getOrder",

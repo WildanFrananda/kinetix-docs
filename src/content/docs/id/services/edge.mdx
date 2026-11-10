@@ -1,7 +1,7 @@
 ---
 title: edge
 description: Sesi milik web app — service yang login dan mendaftar ke identity atas nama browser, menyimpan token di Redis di balik cookie HttpOnly yang opak, dan menambahkan token itu ke setiap panggilan dan ke socket web penjual, sehingga tidak ada token yang pernah sampai ke JavaScript.
-sourceHash: "e185980a5bfd"
+sourceHash: "33b1bab2710d"
 ---
 
 import ServiceCalls from "../../../../components/ServiceCalls.astro";
@@ -38,13 +38,13 @@ dan image-nya
 ## Yang dipanggil
 
 Kong mengirim ke edge
-[panggilan di bawah `/bff/` di alamat web app](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L221-L249),
+[panggilan di bawah `/bff/` di alamat web app](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L262-L290),
 dan
 [gateway adalah satu-satunya lawan bicaranya](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/CLAUDE.md#L160-L164).
 Edge tidak melayani gRPC dan tidak dipanggil service lain. Ia memanggil identity langsung untuk semua yang
 menerbitkan, memperbarui, atau mengakhiri token, termasuk pendaftaran, dan untuk route akun identity lainnya.
 Setiap panggilan lain kembali lewat gateway, ke listener yang hanya ada di dalam jaringan Kinetix, seperti
-dijelaskan [halaman gateway](/id/architecture/gateway/#tls-di-luar-dan-dua-listener-di-dalam); begitu pula
+dijelaskan [halaman gateway](/id/architecture/gateway/#tls-di-luar-dan-listener-di-dalam); begitu pula
 socket web penjual ke matching.
 
 <ServiceCalls service="edge" />

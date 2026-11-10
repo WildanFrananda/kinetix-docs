@@ -23,7 +23,7 @@ parcels is booked or changes, so the page knows when a parcel has a courier and 
 
 Tasks are not created over REST. Order's checkout saga creates one over gRPC once the buyer's payment is held in
 escrow, with the order's number and its lines, each a SKU and a quantity
-([CheckoutSagaRunner.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Checkout/CheckoutSagaRunner.cs#L237-L277)).
+([CheckoutSagaRunner.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a0167a3ec43e857e85401924b4bee486e596d4fd/Application/Checkout/CheckoutSagaRunner.cs#L237-L277)).
 Its due time, `same_day_cutoff_at`, follows the merchant's cutoff hour
 ([Store set-up](/apis/rest/seller-web/store-setup/)).
 
@@ -119,7 +119,7 @@ is what it is for: when the scan that packed the parcel answered `order_notified
 no courier has been booked yet
 ([advance_task_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/services/fulfillment/advance_task_service.rb#L95-L118)).
 Order keeps one courier booking per order, so a report sent again books no second courier
-([FulfillmentPackedHandler.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Fulfillment/FulfillmentPackedHandler.cs#L62-L81)).
+([FulfillmentPackedHandler.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a0167a3ec43e857e85401924b4bee486e596d4fd/Application/Fulfillment/FulfillmentPackedHandler.cs#L62-L81)).
 
 ## 8. Wait for the tracking number
 
@@ -127,9 +127,9 @@ Order asks matching for a courier for the parcel. matching books the job at once
 `pending`, but answers order with the parcel's tracking number (AWB) only once a courier is assigned to it
 ([courier_telemetry_server.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/servers/courier_telemetry_server.ex#L24-L61));
 until then order asks again later
-([CourierDispatcher.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Fulfillment/CourierDispatcher.cs#L73-L109)).
+([CourierDispatcher.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a0167a3ec43e857e85401924b4bee486e596d4fd/Application/Fulfillment/CourierDispatcher.cs#L73-L109)).
 With the answer, order records the tracking number in the warehouse over gRPC
-([CourierDispatcher.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Fulfillment/CourierDispatcher.cs#L121-L146),
+([CourierDispatcher.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a0167a3ec43e857e85401924b4bee486e596d4fd/Application/Fulfillment/CourierDispatcher.cs#L121-L146),
 [fulfillment_task_service_handler.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/rpc/fulfillment_task_service_handler.rb#L80-L111)),
 and from then on the task's card in the queue carries it as `tracking_number`
 ([task_queue_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/services/fulfillment/task_queue_service.rb#L54)).

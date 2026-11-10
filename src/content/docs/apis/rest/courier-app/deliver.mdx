@@ -24,7 +24,7 @@ A WebSocket connection to a fixed address. The client sets one header itself, `S
 access token in place of the placeholder; the WebSocket library adds the upgrade headers. Kong passes this path,
 and the same path ending in `/websocket`, which Phoenix's JavaScript client dials, to matching without checking
 the token, and counts each connection against the route's [limit per address](/apis/rest/#limits)
-([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L475-L488)).
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L534-L547)).
 
 <RestSocket id="matching.driverSocket" />
 

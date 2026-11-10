@@ -1,9 +1,9 @@
 ---
 title: Pesanan dan retur
-description: Cara admin mengikuti saga checkout dan retur yang menunggu tindakan orang di order, menolak retur, menyelesaikan pesanan lebih awal, dan membaca sebuah pesanan.
+description: Cara admin mengikuti saga checkout dan retur yang menunggu tindakan orang di order, menolak retur, menyelesaikan pesanan lebih awal, mencari pesanan, dan membaca salah satunya.
 sidebar:
   order: 8
-sourceHash: "4720251f2837"
+sourceHash: "c0cffa3576b6"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -11,12 +11,12 @@ import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
 Order menjalankan setiap checkout sebagai saga yang melibatkan pricing, warehouse dan payment, dan membiarkan pesanan
 yang sudah terkirim tetap terbuka sampai jendela returnya tertutup, saat pesanan itu selesai dan merchant dibayar.
 Beberapa kasus menunggu tindakan orang: saga yang tidak bisa mundur sendiri, retur yang dibuka merchant, pesanan yang
-diputuskan staf untuk diselesaikan lebih awal. Setelah masuk dari jaringan staf Kinetix seperti di
+diputuskan staf untuk diselesaikan lebih awal. Setelah masuk di salah satu dari dua alamat backoffice seperti di
 [Masuk](/id/apis/rest/backoffice/sign-in/), admin menghitung dan mendaftar saga, mendaftar retur, menolak retur atau
-menyelesaikan pesanan, dan membaca sebuah pesanan. Order memeriksa token sendiri di setiap endpoint di sini. Order
-menulis setiap panggilan di langkah 1 sampai 5, dan pembacaan admin atas pesanan yang bukan miliknya, ke log audit
-tindakan admin-nya
-([AdminAudit.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Infrastructure/Observability/AdminAudit.cs#L30-L42)).
+menyelesaikan pesanan, mencari pesanan, dan membaca salah satunya. Order memeriksa token sendiri di setiap endpoint di
+sini. Order menulis setiap panggilan di langkah 1 sampai 6, dan pembacaan admin atas pesanan yang bukan miliknya, ke
+log audit tindakan admin-nya
+([AdminAudit.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a0167a3ec43e857e85401924b4bee486e596d4fd/Infrastructure/Observability/AdminAudit.cs#L30-L42)).
 
 ## 1. Hitung saga yang butuh perhatian
 
@@ -28,17 +28,17 @@ Sebuah angka saja, untuk lencana di backoffice; langkah 2 mendaftar saga di bali
 
 Setiap saga menyebut pesanannya dengan `orderNumber`, dan setiap entri di `unreleasedSteps`-nya membawa `remedy` yang
 menyebut operasi gRPC untuk mengembalikan langkah itu
-([SagaAdminController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Controllers/SagaAdminController.cs#L121-L137);
+([SagaAdminController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a0167a3ec43e857e85401924b4bee486e596d4fd/Controllers/SagaAdminController.cs#L121-L137);
 operasinya ada di [referensi gRPC](/id/apis/grpc/)). REST API milik order hanya membaca saga: controller ini hanya
 melayani dua `GET` ini
-([SagaAdminController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Controllers/SagaAdminController.cs#L12-L53)).
+([SagaAdminController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a0167a3ec43e857e85401924b4bee486e596d4fd/Controllers/SagaAdminController.cs#L12-L53)).
 
 <RestEndpoint id="order.listSagasNeedingAttention" via="backoffice" />
 
 ## 3. Daftar retur yang butuh perhatian
 
 Retur yang masih `OPEN`, dan retur yang barangnya sudah kembali tetapi refund-nya berhenti. Simpan `returnNumber`
-masing-masing untuk langkah 4 dan `orderNumber`-nya untuk langkah 5.
+masing-masing untuk langkah 4 dan `orderNumber`-nya untuk langkah 5, atau untuk langkah 6 guna menemukan pesanannya.
 
 <RestEndpoint id="order.listReturnsNeedingAttention" via="backoffice" />
 
@@ -60,20 +60,38 @@ berarti pesanan sudah `COMPLETED`, jadi panggilan ini tidak diulang untuknya. `e
 payment langsung melepas escrow ke merchant; bila tidak, `detail` berisi salah satu dari dua kalimat tetap, yang bisa
 dipetakan backoffice ke kata-katanya sendiri: payment tidak bisa dihubungi dan order mencoba lagi pelepasannya sendiri,
 atau payment menolak dan pelepasannya menunggu staf
-([OrderCompletion.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Completion/OrderCompletion.cs#L21-L25),
-[OrderCompletion.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Application/Completion/OrderCompletion.cs#L175-L178)).
+([OrderCompletion.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a0167a3ec43e857e85401924b4bee486e596d4fd/Application/Completion/OrderCompletion.cs#L21-L25),
+[OrderCompletion.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a0167a3ec43e857e85401924b4bee486e596d4fd/Application/Completion/OrderCompletion.cs#L175-L178)).
 Setelah `500` atau `503`, yang hasilnya tidak diketahui, panggilan ini boleh dikirim lagi: pesanan yang sudah
 diselesaikan percobaan pertama menjawab `409` `ORDER_ALREADY_COMPLETED` dan tidak ada yang berubah.
 
 <RestEndpoint id="order.completeOrder" via="backoffice" />
 
-## 6. Baca sebuah pesanan
+## 6. Cari pesanan
+
+Semua pesanan, yang terbaru lebih dulu, satu halaman setiap kali: menurut status, menurut kapan dibuat, menurut merchant
+atau pembelinya, atau menurut `orderNumber`-nya, misalnya dari langkah 3 atau yang disebut seorang pembeli. Semua
+filter yang dikirim berlaku bersama. Setiap pesanan di sebuah halaman berupa ringkasan dengan `id`-nya dan tanpa
+alamat, penerima atau nomor telepon; langkah 7 membaca semua itu, satu pesanan setiap kali. Filter yang tidak bisa
+dibaca order dengan persis ditolak dengan `400` yang menyebut `parameter`-nya, tidak pernah dijawab dengan sebuah
+halaman, karena filter yang dihilangkan diam-diam akan menjawab daftar yang lebih luas yang tampak seperti daftar yang
+benar
+([OrderSearchParameters.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a0167a3ec43e857e85401924b4bee486e596d4fd/Application/Search/OrderSearchParameters.cs#L53-L106)).
+Untuk halaman berikutnya, kirim `nextCursor` dari jawaban sebagai `before` dengan filter yang sama; halaman terakhir
+menjawab `nextCursor: null`. Setiap pencarian ditulis ke log audit dengan nama filternya dan tidak pernah nilainya,
+agar log itu tidak menjadi catatan kedua tentang siapa membeli dari siapa
+([OrderSearchController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a0167a3ec43e857e85401924b4bee486e596d4fd/Controllers/OrderSearchController.cs#L19-L41)).
+
+<RestEndpoint id="order.searchOrders" via="backoffice" />
+
+## 7. Baca sebuah pesanan
 
 Admin bisa membaca pesanan mana pun, tetapi hanya dengan `id`-nya, yaitu UUID yang dibawa jawaban checkout dan daftar
-pesanan milik pembeli. Daftar-daftar di atas hanya menyebut pesanan dengan `orderNumber`, dan tidak ada endpoint yang
-mencari pesanan dengan nomornya: path-nya hanya menerima UUID
-([OrderController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Controllers/OrderController.cs#L344-L374)),
-dan `GET /api/v1/orders/my-orders` hanya mendaftar pembelian milik pemanggil sendiri
-([OrderController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/1395062e2b803ead17d09bc8f50622367c7fd2ab/Controllers/OrderController.cs#L293-L342)).
+pesanan milik pembeli, serta setiap pesanan dari pencarian di langkah 6. Saga dan retur di atas hanya menyebut pesanan
+dengan `orderNumber`, dan path-nya hanya menerima UUID
+([OrderController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a0167a3ec43e857e85401924b4bee486e596d4fd/Controllers/OrderController.cs#L344-L374)):
+untuk membaca pesanan yang diketahui nomornya, temukan `id`-nya dengan `orderNumber` di langkah 6.
+`GET /api/v1/orders/my-orders` hanya mendaftar pembelian milik pemanggil sendiri
+([OrderController.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a0167a3ec43e857e85401924b4bee486e596d4fd/Controllers/OrderController.cs#L293-L342)).
 
 <RestEndpoint id="order.getOrder" via="backoffice" />

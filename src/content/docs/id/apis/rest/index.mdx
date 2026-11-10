@@ -4,7 +4,7 @@ description: Setiap endpoint HTTP yang dipanggil aplikasi Kinetix, dikelompokkan
 sidebar:
   label: Ikhtisar
   order: 0
-sourceHash: "67cb1cbf6b79"
+sourceHash: "9047e075105b"
 ---
 
 import RestEndpoint from "../../../../../components/RestEndpoint.astro";
@@ -39,24 +39,24 @@ Kinetix menjawab di empat host publik:
   WebSocket milik matching, `wss://api.wildanfrananda.my.id/ws/v1/matching/driver?vsn=2.0.0` dan
   `wss://api.wildanfrananda.my.id/ws/v1/matching/merchant?vsn=2.0.0`. Setiap socket juga menjawab bila path-nya
   diberi akhiran `/websocket`, bentuk yang dipanggil client JavaScript milik Phoenix
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L475-L505)).
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L534-L564)).
 - `storage.wildanfrananda.my.id` menyimpan file yang di-upload. Client mengirim file ke sana di URL yang sudah
   ditandatangani service untuknya; bucket di URL itu ditulis `example-bucket` dalam contoh-contohnya
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L507-L529)).
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L566-L588)).
 - `seller.wildanfrananda.my.id` melayani panggilan aplikasi web penjual di bawah `/bff/`, yang diteruskan Kong ke
   edge, dan di bawah `/bff/` juga socket merchant milik matching untuk halamannya ([Realtime](#realtime)). Path lain
   di host ini, termasuk path `/api/v1/`, mendapat `404 Not found` dari Kong
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L243-L257)).
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L284-L298)).
 - Backoffice tidak punya host publik. Staf membukanya di alamat yang tidak dipublikasikan, ditulis
   `<backoffice origin>` di referensi ini: onion service Tor yang hanya menyambungkan browser yang memegang kunci
   klien, atau, ketika Tor tidak tersedia, alamat di jaringan staf Kinetix. Di keduanya, Kong meneruskan `/bff/` ke
   edge dan setiap path lain ke aplikasi statis backoffice sendiri
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L221-L279)).
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L262-L338)).
 
 Setiap host publik hanya menjawab lewat HTTPS, dan socket lewat `wss://`. Tidak ada yang menjawab HTTP biasa: port 80
 tertutup, jadi client yang keliru memanggil alamat `http://` tidak tersambung dan tidak mengirim apa pun, termasuk
 token
-([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L133-L139)).
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L173-L179)).
 Request ke host API:
 
 ```http
@@ -83,17 +83,17 @@ Authorization: Bearer <access token>
 
 Kong membaca token hanya dari header ini. Token di parameter query `jwt` atau di cookie bukan token bagi Kong: di
 route yang token-nya diperiksa Kong, request seperti itu mendapat `401` dari Kong dan tidak pernah sampai ke service
-([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L61-L70)).
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L95-L104)).
 
 Token diperiksa di salah satu dari dua tempat:
 
 - **Oleh Kong, lalu oleh service.** Pada route akun milik identity (`/api/v1/auth`, `/api/v1/users`,
-  `/api/v1/sellers`, `/api/v1/couriers`), matching, payment, proof milik notary dan device milik notification,
-  Kong memeriksa tanda tangan dan masa berlakunya sebelum request sampai ke service. Token yang ditolaknya
+  `/api/v1/sellers`, `/api/v1/couriers`), matching, payment, proof milik notary, device milik notification, serta
+  credential kurir dan penulisan predicate milik seal, Kong memeriksa tanda tangan dan masa berlakunya sebelum request sampai ke service. Token yang ditolaknya
   mendapat salah satu [jawaban Kong](#jawaban-kong). Service lalu memeriksa sisanya: audience, jenis token,
   role dan pemiliknya.
-- **Oleh service saja.** Kong meneruskan request ke catalog, search, pricing, order, review dan warehouse tanpa
-  melihat token. Masing-masing memverifikasi token sendiri di mana pun token diperlukan, dan melayani endpoint
+- **Oleh service saja.** Kong meneruskan request ke catalog, search, pricing, order, review dan warehouse, serta
+  ke route seal lainnya, tanpa melihat token. Masing-masing memverifikasi token sendiri di mana pun token diperlukan, dan melayani endpoint
   publiknya tanpa token.
 
 Baris **Akses** di setiap endpoint menyebutkan mana yang berlaku, dan siapa yang boleh memanggilnya.
@@ -181,7 +181,7 @@ diterima aplikasi itu tidak mendapat session, atau kehilangan session yang dimil
 Di alamat backoffice pada jaringan staf, setiap panggilan di bawah `/bff/` dari luar jaringan itu, termasuk masuk,
 mendapat `403` dari Kong; onion service-nya tidak butuh gerbang seperti itu, karena Tor hanya menyambungkan browser
 yang memegang kunci klien
-([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L227-L234)).
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L268-L275)).
 
 Edge memperbarui pasangan token sendiri. Ketika sebuah panggilan di bawah `/bff/api/`, atau pembukaan socket merchant,
 mendapati access token kurang dari 60 detik lagi kedaluwarsa, edge menukar refresh token di identity sebelum
@@ -290,7 +290,7 @@ jawaban lainnya di halaman masuk; jawaban dari API diteruskan dengan status dan 
 
 Kong memberi setiap request header `X-Request-Id`: milik client sendiri bila client mengirimnya, atau UUID
 baru. Service menerimanya, dan Kong mengembalikannya di response
-([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L665-L672)).
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L823-L830)).
 Kirim id sendiri bila nanti ingin mencari request itu di log. Beberapa service mengulangnya di body error,
 misalnya `traceId` milik identity. matching juga mengulangnya sebagai `traceId`, termasuk di jawaban handshake kedua
 socket-nya, bila id itu 20 sampai 200 karakter; id yang lebih pendek atau lebih panjang, yang hanya bisa dikirim
@@ -301,7 +301,7 @@ Body error milik Kong sendiri membawa nilai lain, `request_id`, yaitu id
 internal Kong untuk request itu; Kong juga mengembalikannya di header `X-Kong-Request-Id`
 ([nilai bawaan Kong](https://github.com/Kong/kong/blob/ddc85be461165c9eb4506669343aa0d0c627e687/kong/templates/kong_defaults.lua#L71)).
 Access log gateway mencatat keduanya, dan mencatat path tanpa query string-nya
-([access_log.conf](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/access_log.conf#L1-L8)).
+([access_log.conf](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/access_log.conf#L1-L8)).
 
 Lewat edge, id yang sama ikut berjalan: edge mengirimnya ke API, termasuk di handshake socket merchant, dan
 mengulangnya sebagai `requestId` di body error miliknya, asalkan berupa 1 sampai 128 huruf, angka atau `.-_:#@`; bila
@@ -313,12 +313,12 @@ tidak, edge memakai id miliknya sendiri
 
 Kong tidak memercayai origin browser mana pun. Produksi tidak mengonfigurasi satu pun, jadi Kong tidak memasang
 plugin `cors`-nya di route mana pun dan tidak menaruh header `Access-Control-*` di jawabannya
-([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L133-L139)).
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L173-L179)).
 Tidak ada service di belakang Kong yang menambahkan header `Access-Control-*` sendiri; review, yang framework-nya akan
 melakukannya, mematikannya
 ([bootstrap/app.php](https://github.com/WildanFrananda/kinetix-review-service/blob/e3ca897c68947dd7ba4a47f04355e5e91da9afa8/bootstrap/app.php#L34)).
 Kong tidak memeriksa token pada request `OPTIONS`
-([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L61-L70),
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L95-L104),
 [plugin jwt Kong](https://github.com/Kong/kong/blob/ddc85be461165c9eb4506669343aa0d0c627e687/kong/plugins/jwt/handler.lua#L306-L310))
 dan selebihnya memperlakukannya seperti request lain.
 
@@ -330,20 +330,21 @@ mereka.
 ## Batas
 
 - **100 request per menit** dari satu alamat client ke setiap route Kong
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L81-L89),
-  [L112-L118](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L133-L139)).
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L115-L123),
+  [L173-L179](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L173-L179)).
   Satu route memuat path milik satu service, kadang beberapa prefiks darinya: `/api/v1/cart` dan `/api/v1/orders`
   berbagi satu hitungan, misalnya. Setiap route khusus admin, `/health`, `/.well-known/security.txt`, setiap socket,
   host storage, dan `/bff/` di host setiap aplikasi web dihitung sendiri-sendiri; di aplikasi web, setiap panggilan
   browser di bawah `/bff/`, termasuk masuk dan handshake socket merchant, berbagi satu hitungan itu. Route notifikasi
   Midtrans mengizinkan 600 per menit
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L586-L602)).
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L646-L662)), dan route seal yang meneruskan sebuah presentation 20
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L714-L730)).
   Lewat dari batas itu, Kong menjawab `429` dengan `Retry-After`.
 - **Waktu tunggu.** Kong menunggu sebuah service 60 detik, dan 90 detik di `/bff/` pada host kedua aplikasi web serta
   di socket merchant milik matching; service yang lebih lama dari itu membuat client mendapat `504` dari Kong
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L29),
-  [L191-L196](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L221-L226),
-  [L441-L446](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L490-L495)).
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L63),
+  [L262-L267](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L262-L267),
+  [L549-L554](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L549-L554)).
   Di `/bff/`, edge biasanya berhenti menunggu lebih dulu: panggilan di bawah `/bff/api/` yang tidak dijawab dalam 60
   detik, atau panggilan edge sendiri ke identity yang tidak dijawab dalam 5 detik, mendapat `503` dari edge
   ([timing.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/timing.tl#L12-L17),
@@ -352,7 +353,7 @@ mereka.
   ([nilai bawaan Kong](https://github.com/Kong/kong/blob/ddc85be461165c9eb4506669343aa0d0c627e687/kong/templates/kong_defaults.lua#L90));
   service yang membatasi body mencantumkan `413` miliknya di antara jawabannya. Host storage menerima **16 MB** per
   upload
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L517-L524)),
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L576-L583)),
   dan edge **1 MiB** per request.
 - Beberapa endpoint punya batas sendiri yang lebih ketat, ditetapkan oleh service-nya, misalnya lima percobaan
   masuk per menit dari satu alamat. Batas itu tertulis di endpoint-nya. Penundaan per akun dari identity dijelaskan

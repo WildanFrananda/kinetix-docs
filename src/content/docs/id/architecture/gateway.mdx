@@ -1,7 +1,7 @@
 ---
 title: Gateway
 description: Satu-satunya pintu masuk ke Kinetix dari luar. Kong, dikonfigurasi secara deklaratif dari Pkl, menjawab tiga host publik hanya lewat TLS dan backoffice di dua alamat yang tidak dipublikasikan, mengirim setiap path ke service pemiliknya, memeriksa token di sebagian route sebagai kunci pertama, membatasi route khusus admin ke jaringan staf, serta membatasi, menandai, dan menghitung setiap request.
-sourceHash: "65a6532ba08b"
+sourceHash: "f99bd74199e2"
 sidebar:
   order: 4
 ---
@@ -10,12 +10,12 @@ import GatewayRoutes from "../../../../components/GatewayRoutes.astro";
 
 Semua yang diminta browser, integrasi, atau aplikasi kurir dari Kinetix tiba di satu tempat: Kong, yang
 berjalan tanpa database, dengan seluruh konfigurasinya ditulis dalam
-[Pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl)
+[Pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl)
 lalu dirender ke format deklaratif Kong. Halaman ini diperiksa terhadap gateway
-[v1.8.0](https://github.com/WildanFrananda/kinetix-api-gateway/tree/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349),
+[v1.14.0](https://github.com/WildanFrananda/kinetix-api-gateway/tree/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7),
 versi yang berjalan di production, di atas
 [Kong 3.9.4](https://github.com/Kong/kong/tree/ddc85be461165c9eb4506669343aa0d0c627e687), versi yang dibawa
-[digest yang dipin](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/Dockerfile#L61-L64)
+[digest yang dipin](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/Dockerfile#L92-L95)
 oleh image-nya. Apa yang dikirim client dan apa yang ia terima ada di [referensi REST](/id/apis/rest/); halaman
 ini membahas mengapa gateway dibangun seperti ini.
 
@@ -27,21 +27,23 @@ hal yang berbeda:
 - **`api.wildanfrananda.my.id`** melayani API: setiap route di bawah `/api/v1/`, signing key identity, dua
   WebSocket milik matching, dan dua jawaban yang diberikan Kong sendiri.
 - **`storage.wildanfrananda.my.id`** menyimpan file yang diunggah. Setiap path di sana diteruskan ke object store,
-  [dengan header `Host` dipertahankan dan 16 MB per request](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L507-L529):
+  [dengan header `Host` dipertahankan dan 16 MB per request](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L566-L588):
   URL unggahan ditandatangani atas host yang dikirim ponsel, sehingga host yang ditulis ulang akan menggagalkan
   setiap tanda tangan.
 - **`seller.wildanfrananda.my.id`** adalah host aplikasi web penjual. Di sana Kong mengirim
-  [`/bff/` beserta semua yang ada di bawahnya ke edge](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L243-L249),
+  [`/bff/` beserta semua yang ada di bawahnya ke edge](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L284-L290),
   dengan path dan `Host` tidak diubah, agar [edge](/id/services/edge/) bisa membedakan app dari host-nya.
-  [Setiap path lain di host itu](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L251-L257)
+  [Setiap path lain di host itu](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L292-L298)
   dijawab Kong dengan
-  [`404 Not found`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L171-L177),
+  [`404 Not found`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L212-L218),
   termasuk `/api/v1/`.
 - **Backoffice** tidak punya host publik. Staf menjangkaunya di dua alamat yang tidak dipublikasikan: onion service
-  Tor, yang masuk ke Kong lewat [listener-nya sendiri](#tls-di-luar-dan-dua-listener-di-dalam), dan alamat di
-  jaringan staf Kinetix di balik [gerbang staf](#gerbang-staf). Di keduanya, Kong mengirim
-  [`/bff/` ke edge](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L227-L241) dengan `Host` tidak diubah, dan
-  [setiap path lain ke aplikasi statis backoffice](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L261-L279).
+  Tor, yang masuk ke Kong lewat [listener-listener-nya sendiri](#tls-di-luar-dan-listener-di-dalam), dan alamat di
+  jaringan staf Kinetix di balik [gerbang staf](#gerbang-staf). Kong menyajikan kepada masing-masing
+  [sertifikatnya sendiri](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L802-L820), dipilih menurut nama yang diminta browser. Di
+  keduanya, Kong mengirim [`/bff/` ke edge](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L268-L282) dengan `Host` tidak diubah, dan
+  [setiap path lain ke aplikasi statis backoffice](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L302-L338), dengan tile peta di bawah
+  `/tiles/` di route tersendiri yang batasnya lebih besar ([Batas, label, dan hitungan](#batas-label-dan-hitungan)).
 
 Aturan terakhir untuk web penjual itu lebih penting daripada kelihatannya. Route API tidak menyebut host, jadi
 tanpa aturan itu route tersebut akan menjawab juga di host web penjual, dan jawaban API yang disajikan di bawah
@@ -50,23 +52,23 @@ aplikasinya sendiri mengambil setiap path di luar `/bff/` dengan alasan yang sam
 lewat `/bff/`, tempat edge memutuskan apa yang diteruskan. [Referensi REST](/id/apis/rest/#alamat-dan-transport) memberikan setiap host
 beserta contoh request.
 
-## TLS di luar, dan dua listener di dalam
+## TLS di luar, dan listener di dalam
 
 Gateway punya
-[tiga listener](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/Dockerfile#L87-L91),
-dan hanya yang berbicara TLS yang menghadap internet. Tidak ada yang menjawab HTTP biasa dari luar: port yang
+[empat listener](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/Dockerfile#L118-L123),
+dan hanya satu yang menghadap internet: listener yang melayani host-host publik, lewat TLS. Tidak ada yang menjawab HTTP biasa dari luar: port yang
 masih menjawab plaintext adalah port yang terus dipakai client, dan setiap token yang diperiksa gateway akan
 melintasi jaringan tanpa enkripsi dalam perjalanan untuk diperiksa. Container-nya
-[menolak start tanpa sertifikat](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/bin/entrypoint.sh#L150-L154).
+[menolak start tanpa sertifikat](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/bin/entrypoint.sh#L214-L218).
 Jadi client selalu memakai `https://`, dan WebSocket dari client selalu `wss://`.
 
 Listener kedua hanya ada di dalam jaringan Kinetix, dan hanya edge yang memakainya: ketika panggilan web app di
 bawah `/bff/api/` harus sampai ke sebuah service, atau web penjual membuka socket-nya, edge mengirimnya ke sana.
 Setiap route API ditulis sekali dan
-[dirender dua kali](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L130-L160):
+[dirender dua kali](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L170-L200):
 route yang dilayani listener TLS, dan kembarannya dengan path, method, service, penulisan ulang path, dan
 pemeriksaan token yang sama, yang dilayani listener internal.
-[Penjaga di setiap kembaran](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L112-L119)
+[Penjaga di setiap kembaran](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L152-L159)
 menolak request yang tidak tiba sebagai HTTP biasa di listener itu, dengan membaca koneksinya, bukan header,
 sehingga request dari luar yang menyebut host sebuah kembaran ditolak sebelum hal lain dijalankan.
 
@@ -74,16 +76,25 @@ Kembaran tidak membawa gerbang staf maupun rate limit. Lawan bicaranya selalu ed
 alamat edge sebagai ganti alamat browser: gerbang akan menolak setiap admin, dan semua pengguna web akan berbagi
 satu jatah. Alamat browser sendiri diperiksa di tempat browser masuk, di `/bff/`. `/health`, `security.txt`,
 socket kurir, host storage, dan `/bff/` sendiri tidak punya kembaran; socket merchant milik matching punya satu,
-untuk edge, seperti dijelaskan [WebSocket](#websocket). Di belakang kedua listener, di dalam jaringan
+untuk edge, seperti dijelaskan [WebSocket](#websocket). Di belakang setiap listener, di dalam jaringan
 privat, Kong menjangkau setiap service lewat HTTP biasa. Panggilan antar-service menempuh jalan yang sama sekali
 lain: gRPC di atas mutual TLS, yang dijelaskan di [Siapa yang memanggil?](/id/learn/who-is-calling/).
 
-Listener ketiga hanya ada untuk onion service backoffice. Tor membawa koneksi browser, terenkripsi dan
-terautentikasi dari ujung ke ujung, ke sebuah proses Tor di dalam jaringan Kinetix, yang menyerahkannya ke
-listener ini dalam HTTP biasa; tidak ada apa pun dari luar jaringan itu yang menjangkau port-nya. Hanya dua route
-onion milik backoffice yang menjawab di sana, masing-masing di balik [penjaga sejenis](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L121-L128),
-dan alamat onion yang disebut di listener TLS mendapat `421`. Route itu membawa rate limit tetapi tidak membawa
-gerbang staf: peer-nya selalu proses Tor, dan otorisasi klien Tor sudah memutuskan siapa yang boleh tersambung.
+Dua listener lainnya hanya ada untuk onion service backoffice. Tor membawa koneksi browser, terenkripsi dan
+terautentikasi dari ujung ke ujung, ke sebuah proses Tor di dalam jaringan Kinetix, yang menyerahkannya ke salah
+satunya; tidak ada apa pun dari luar jaringan itu yang menjangkau port keduanya. HTTPS tiba di listener yang
+berbicara TLS, tempat Kong menyajikan sertifikat alamat onion. HTTP biasa tiba di listener satunya dan hanya
+dialihkan, `308` ke path dan query yang sama lewat `https://`, tanpa ada yang diteruskan. Tor sudah mengenkripsi
+koneksinya, jadi TLS tidak menambah kerahasiaan di sini;
+[TLS ada untuk perangkat lunak yang hanya memercayai origin `https://`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/CLAUDE.md#L297-L300): lewat HTTP
+biasa, browser di alamat onion bisa menolak passkey dan cookie `Secure` milik session. Tiga route onion milik
+backoffice menjawab alamat onion, masing-masing di balik [penjaga sejenis](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L161-L168),
+yang melayani HTTPS di listener TLS milik onion, mengalihkan HTTP biasa di listener satunya, dan menolak selain itu
+dengan `421`, termasuk alamat onion yang disebut di listener TLS publik. Di listener HTTP biasa tidak ada yang lain
+yang menjawab. Kong tidak bisa membedakan kedua listener TLS-nya, jadi request di listener milik onion yang menyebut
+host lain [dijawab seperti di listener publik](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/CLAUDE.md#L342-L348), tanpa apa pun yang belum publik di sana.
+Route onion membawa rate limit tetapi tidak membawa gerbang staf: peer-nya selalu proses Tor, dan otorisasi klien
+Tor sudah memutuskan siapa yang boleh tersambung.
 
 ## Ke mana setiap path pergi
 
@@ -93,29 +104,31 @@ Dihasilkan dari data terverifikasi yang sama dengan [peta sistem](/id/architectu
 
 Sebuah route adalah prefix path. Kebanyakan service menerima path persis seperti yang dikirim client;
 sebagian kecil prefix-nya diubah ke milik service itu — `/api/v1/products` milik catalog tiba sebagai
-[`/api/products`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L332-L342),
+[`/api/products`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L391-L401),
 `/api/v1/warehouse` milik warehouse sebagai
-[`/api/v1`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L379-L389).
+[`/api/v1`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L438-L448).
 `/bff/` hanya dirutekan di host dua web app.
 
-Tiga hal lagi yang dilayani Kong tidak ada di peta:
+Empat hal lagi yang dilayani Kong tidak ada di peta:
 
 - `/health` dan `/.well-known/security.txt`, yang
-  [dijawab Kong sendiri](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L182-L219)
+  [dijawab Kong sendiri](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L223-L260)
   tanpa menyentuh service mana pun. `/health` hanya berkata `{"status":"ok"}`; `security.txt` adalah
-  [kontak RFC 9116](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L52-L59)
+  [kontak RFC 9116](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L86-L93)
   yang menunjuk ke [cara melaporkan kerentanan](/id/reference/report-a-vulnerability/).
 - Notifikasi dari penyedia pembayaran,
-  [hanya `POST`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L586-L602).
+  [hanya `POST`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L646-L662).
   Notifikasi itu tidak membawa token, karena penyedianya memang tidak punya token untuk dikirim; payment
   memverifikasi tanda tangan setiap notifikasi sebagai gantinya, seperti dijelaskan di
   [halaman payment](/id/services/payment/).
+- [Route milik seal di bawah `/api/v1/seal/`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L695-L771). Seal belum punya tempat di
+  peta; [referensi REST](/id/apis/rest/) mencantumkan endpoint yang dipanggil client-nya.
 - Host storage, yang setiap path-nya diteruskan ke object store.
 
 ## WebSocket
 
 Dua socket, keduanya dilayani matching:
-[`/ws/v1/matching/driver` dan `/ws/v1/matching/merchant`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L475-L505),
+[`/ws/v1/matching/driver` dan `/ws/v1/matching/merchant`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L534-L564),
 masing-masing juga dengan `/websocket` di belakangnya, bentuk yang dipanggil client JavaScript Phoenix. WebSocket
 dimulai sebagai request HTTP biasa yang meminta upgrade, jadi Kong merutekannya seperti request lain lalu
 meneruskan koneksi yang sudah di-upgrade. Access token ikut bersama request koneksi, dan matching memeriksanya
@@ -132,14 +145,14 @@ Web penjual tidak memegang token, jadi ia tidak bisa membuka socket merchant di 
 membuka socket-nya sendiri. Ia meminta edge, di host-nya sendiri, dan edge membukakan socket ke matching untuknya
 dengan access token milik sesi, seperti dijelaskan [edge](/id/services/edge/#socket-merchant-milik-web-penjual).
 Koneksi itu lewat listener internal, jadi route socket merchant
-[ditulis seperti route API](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L490-L505)
+[ditulis seperti route API](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L549-L564)
 dan dirender dengan kembaran: dua path yang sama dan service yang sama, penjaga di urutan pertama, dan tanpa
 gerbang staf, rate limit, maupun pemeriksaan token di Kong, karena matching memeriksa token dan role-nya sendiri.
 Kong meneruskan upgrade lewat route HTTP biasa sama seperti lewat route TLS, jadi
-[kembaran itu tidak memerlukan apa pun yang tidak dimiliki kembaran API](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/CLAUDE.md#L249-L256).
+[kembaran itu tidak memerlukan apa pun yang tidak dimiliki kembaran API](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/CLAUDE.md#L271-L278).
 
 Kembaran itu tetap di dalam dengan cara yang sama seperti setiap kembaran.
-[Ia hanya menyebut host internal gateway, lewat HTTP biasa](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L141-L156),
+[Ia hanya menyebut host internal gateway, lewat HTTP biasa](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L181-L196),
 dan penjaganya menolak dengan `421` apa pun yang tidak tiba sebagai HTTP biasa di listener internal, yang tidak
 bisa dijangkau dari luar jaringan Kinetix. Request HTTP biasa ke path yang sama yang menyebut host lain tidak
 cocok dengan kembaran mana pun dan mendapat `426` dari Kong. Socket kurir sama sekali tidak punya kembaran:
@@ -161,19 +174,19 @@ antara browser dan edge, dan di kembaran, antara edge dan matching. Dengan defau
 yang diam sebelum salah satu ujungnya bermaksud begitu. Karena itu dua service Kong di jalur itu, milik edge, yang
 menerima `/bff/` di host kedua web app, dan milik socket merchant, yang menerima route publiknya dan kembarannya,
 membaca dan menulis selama 90 detik
-([milik edge](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L221-L225),
-[milik socket](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L490-L494)).
+([milik edge](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L262-L266),
+[milik socket](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L549-L553)).
 Koneksi awal tetap timeout pada default Kong, dan setiap service lain tetap memakai default Kong. Harganya
 dibayar ketika sesuatu macet: panggilan `/bff/` atau socket merchant, termasuk route publiknya, yang tidak
 mendengar apa pun kini menunggu 90 detik untuk `504` atau penutupan dari Kong, bukan 60.
 
 ## Kunci pertama untuk token
 
-Di lima kelompok route — route identity yang memerlukan login, REST API matching, payment, notary, dan
-pendaftaran handset di notification — Kong
-[memeriksa access token sebelum request diteruskan](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L61-L70).
+Di enam kelompok route — route identity yang memerlukan login, REST API matching, payment, notary,
+pendaftaran handset di notification, serta credential kurir dan penulisan predicate milik seal — Kong
+[memeriksa access token sebelum request diteruskan](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L95-L104).
 Ia mengenal
-[satu penanda tangan: identity, lewat issuer-nya, dengan public key identity dan RS256](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L650-L662),
+[satu penanda tangan: identity, lewat issuer-nya, dengan public key identity dan RS256](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L788-L800),
 dan memeriksa tanda tangan serta bahwa token belum kedaluwarsa. Token dari pihak lain, tanpa tanda
 tangan, atau ditandatangani dengan algoritma lain ditolak di pintu dengan `401`.
 
@@ -182,7 +195,7 @@ Kong membaca token dari `Authorization` dan tidak dari tempat lain. Plugin `jwt`
 dan
 [default-nya membaca parameter query bernama `jwt`](https://github.com/Kong/kong/blob/ddc85be461165c9eb4506669343aa0d0c627e687/kong/plugins/jwt/schema.lua#L12-L23).
 Token di dalam URL berakhir di access log, di riwayat browser, dan di `Referer` halaman berikutnya, jadi
-[Kinetix tidak menyebut parameter query maupun cookie apa pun](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L66-L67).
+[Kinetix tidak menyebut parameter query maupun cookie apa pun](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L100-L101).
 Token yang dikirim di mana pun selain `Authorization: Bearer …` dianggap tidak ada, dan request-nya
 mendapat
 [`401` dengan `{"message":"Unauthorized"}`](https://github.com/Kong/kong/blob/ddc85be461165c9eb4506669343aa0d0c627e687/kong/plugins/jwt/handler.lua#L160-L166)
@@ -192,7 +205,7 @@ Itu kunci pertama, bukan satu-satunya. Kong tidak menanyakan apakah token itu ac
 token, atau untuk audience mana token itu diterbitkan; service di belakangnya yang menanyakan, terhadap
 key yang dipublikasikan identity, lalu memutuskan apa yang boleh dilakukan pemanggil. Route tanpa
 pemeriksaan Kong — login dan registrasi, signing key identity, pencarian produk, katalog, keranjang dan
-order, ulasan, warehouse, dan pricing — entah memang publik secara rancangan atau diperiksa oleh service
+order, ulasan, warehouse, pricing, dan route seal lainnya — entah memang publik secara rancangan atau diperiksa oleh service
 itu sendiri; setiap [halaman service](/id/services/order/) menyebutkan yang mana. `/bff/` sama sekali tidak
 membawa token: browser mengirim cookie, dan edge yang memegang token.
 
@@ -200,103 +213,114 @@ membawa token: browser mengirim cookie, dan edge yang memegang token.
 
 Route yang hanya boleh dipanggil admin hanya menjawab jaringan staf Kinetix. Masing-masing punya route sendiri
 yang membawa
-[`ip-restriction`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L72-L79)
+[`ip-restriction`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L106-L113)
 milik Kong, yang hanya menerima rentang alamat yang disebut environment saat container start:
 
 - daftar pengajuan seller dan kurir di identity beserta hitungannya, serta menyetujui atau menolak sebuah pengajuan
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L315-L328));
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L374-L387));
 - penulisan kategori di catalog; membaca kategori tetap publik
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L369-L375));
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L428-L434));
 - bin, penerimaan stok, dan penyesuaian stok di warehouse
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L391-L428));
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L450-L487));
 - driver dan API backoffice milik matching
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L443-L473));
-- saga order, retur yang perlu perhatian, menolak retur, dan menyelesaikan order
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L556-L567));
-- dan seluruh backoffice di alamat jaringan stafnya: aplikasinya dan setiap panggilan di bawah `/bff/`, termasuk
-  login ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L227-L234), [L265-L271](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L265-L271)).
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L502-L532));
+- pencarian order, saga-nya, retur yang perlu perhatian, menolak retur, dan menyelesaikan order
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L615-L626));
+- penulisan predicate milik seal, yaitu menyetujui dan menarik sebuah predicate; membaca predicate tetap publik
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L760-L769));
+- dan seluruh backoffice di alamat jaringan stafnya: aplikasinya, tile petanya, dan setiap panggilan di bawah
+  `/bff/`, termasuk login
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L268-L275), [L306-L323](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L306-L323)).
   Onion service-nya tidak punya gerbang staf: di sana, otorisasi klien Tor yang memutuskan siapa yang tersambung.
 
 Gerbang itu membaca
 [alamat koneksi](https://github.com/Kong/kong/blob/ddc85be461165c9eb4506669343aa0d0c627e687/kong/plugins/ip-restriction/handler.lua#L67-L92),
 bukan header yang bisa ditulis client, dan pihak lain mendapat `403` dengan pesan tetap yang tidak mengulang
-alamat pemanggil. Di route admin milik identity dan matching,
-[pemeriksaan token Kong berjalan lebih dulu](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/CLAUDE.md#L79-L84),
+alamat pemanggil. Di route admin milik identity, matching, dan seal,
+[pemeriksaan token Kong berjalan lebih dulu](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/CLAUDE.md#L99-L104),
 jadi request tanpa token yang sah mendapat `401` sebelum gerbang ditanya.
 
 Gerbang itu adalah kunci kedua di belakang pemeriksaan role milik service sendiri, bukan penggantinya.
-[Endpoint yang boleh dipanggil pengguna maupun admin](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/CLAUDE.md#L53-L56),
+[Endpoint yang boleh dipanggil pengguna maupun admin](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/CLAUDE.md#L71-L74),
 seperti membaca pengajuan seorang seller, tidak dipagari: jaringan tidak bisa membedakan kedua pemanggil itu,
 jadi service yang memutuskan. Rentangnya sendiri adalah konfigurasi, bukan kode;
-[container menolak start tanpa rentang itu](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/bin/entrypoint.sh#L31-L34),
+[container menolak start tanpa rentang itu](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/bin/entrypoint.sh#L31-L34),
 dan Pkl-nya
-[menolak daftar kosong serta rentang yang menerima semua alamat](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L16-L18).
+[menolak daftar kosong serta rentang yang menerima semua alamat](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L16-L18).
 
 ## Batas, label, dan hitungan
 
 Setiap request:
 
 - dibatasi, di route yang dilayani listener TLS, sampai
-  [100 request per menit dari satu alamat client](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L81-L89)
+  [100 request per menit dari satu alamat client](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L115-L123)
   di setiap route, dihitung di gateway itu sendiri. Batas itu
-  [ditambahkan ke setiap route di listener TLS](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L133-L139)
+  [ditambahkan ke setiap route di listener TLS](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L173-L179)
   alih-alih sekali untuk seluruh gateway,
-  [karena Kong tidak bisa mengecualikan sebuah route dari plugin global](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/CLAUDE.md#L187-L193)
+  [karena Kong tidak bisa mengecualikan sebuah route dari plugin global](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/CLAUDE.md#L208-L215)
   dan kembaran tidak boleh membawanya; Kong
   [menyimpan hitungan sebuah route di bawah route itu](https://github.com/Kong/kong/blob/ddc85be461165c9eb4506669343aa0d0c627e687/kong/plugins/rate-limiting/policies/init.lua#L68-L73),
   jadi satu alamat punya jatah di setiap route. Satu route adalah sekelompok path milik satu service, dan `/bff/`
   di host sebuah web app adalah satu route: login dari sebuah browser dan semua panggilannya lewat edge berbagi
   jatah itu. Notifikasi penyedia pembayaran punya
-  [batasnya sendiri, 600 per menit](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L586-L602),
-  agar lonjakan pembayaran tidak tercekik oleh batas yang dibuat untuk manusia. [Referensi REST](/id/apis/rest/#batas)
+  [batasnya sendiri, 600 per menit](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L646-L662),
+  agar lonjakan pembayaran tidak tercekik oleh batas yang dibuat untuk manusia. Dua route lagi punya batasnya
+  sendiri: [route seal yang meneruskan sebuah presentation, 20 per menit](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L714-L730), dan
+  [tile peta backoffice, 1200 per menit](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L125-L129), karena peta mengambil satu tile untuk
+  setiap bagian tampilan yang digambarnya, dan
+  [route tersendiri menjaga agar peta dan halaman aplikasi tidak saling menghabiskan jatah](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/CLAUDE.md#L419-L422).
+  [Referensi REST](/id/apis/rest/#batas)
   mencantumkan path mana yang dihitung bersama;
-- membawa [`X-Request-Id`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L665-L672):
+- membawa [`X-Request-Id`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L823-L830):
   milik client bila ia mengirimnya, UUID baru bila tidak, dan dikembalikan di response agar permintaan
   dukungan bisa menyebut panggilan yang persis;
-- [dihitung untuk Prometheus](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L673-L682)
+- [dihitung untuk Prometheus](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L831-L840)
   berdasarkan status, latensi, dan kesehatan upstream.
 
 ## Browser
 
 Kong menambahkan plugin `cors`-nya ke sebuah route
-[hanya bila environment menyebut origin browser](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L133-L139),
+[hanya bila environment menyebut origin browser](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L173-L179),
 dan tidak pernah ke `/bff/`
-([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L158-L160)).
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L198-L200)).
 Production tidak menyebut satu pun, jadi di production Kong tidak menjawab preflight CORS apa pun dan tidak
 menambahkan header `Access-Control-*`. Preflight ke host API diteruskan ke service seperti request lain:
-[pemeriksaan token Kong melewati `OPTIONS`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L61-L70).
+[pemeriksaan token Kong melewati `OPTIONS`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L95-L104).
 
 Web app tidak memerlukan CORS. Sebuah halaman memanggil `/bff/` di host-nya sendiri, origin yang sama dengan
 halaman itu, dan edge memanggil API untuknya dengan token yang tidak pernah dilihat halaman; [edge](/id/services/edge/)
 menjelaskan alasannya. Aplikasi kurir bukan browser dan tidak mengirim `Origin`.
 [Referensi REST](/id/apis/rest/#browser) menjelaskan apa artinya bagi client. Di environment yang memang menyebut
 origin, seperti yang bisa dilakukan lab, plugin itu
-[tidak pernah mengizinkan credentials](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L91-L110),
+[tidak pernah mengizinkan credentials](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L131-L150),
 dan `*` di samping origin bernama
-[bahkan tidak bisa dievaluasi](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/config/gateway.pkl#L13-L14).
+[bahkan tidak bisa dievaluasi](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L13-L14).
 
 ## Satu image untuk setiap environment
 
 Image-nya membawa Pkl, bukan konfigurasi yang sudah dirender. Saat container start, ia
-[merender konfigurasinya](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/bin/entrypoint.sh#L17-L91)
+[merender konfigurasinya](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/bin/entrypoint.sh#L17-L156)
 dari nilai milik environment itu sendiri — public key identity, issuer yang dipercaya, origin browser (yang
-boleh kosong, tetapi harus dinyatakan), rentang staf, dan host-host-nya, termasuk alamat onion — menolak start bila
-salah satunya tidak ada, lalu memeriksa bahwa hasilnya memuat key untuk memverifikasi token, gerbang staf, dan
-penjaga di setiap kembaran serta di kedua route onion: gateway tanpa verification key akan merutekan semuanya tanpa mengautentikasi apa pun. Karena itu
+boleh kosong, tetapi harus dinyatakan), rentang staf, host-host-nya, termasuk alamat onion, dan sertifikat kedua
+alamat backoffice, yang masing-masing harus menyebut host-nya — menolak start bila salah satunya tidak ada, lalu
+memeriksa bahwa hasilnya memuat key untuk memverifikasi token, gerbang staf, penjaga di setiap kembaran serta di
+ketiga route onion, dan dua route tile peta beserta batasnya: gateway tanpa verification key akan merutekan semuanya tanpa mengautentikasi apa pun. Karena itu
 digest yang dipindai CI adalah digest yang berjalan di mana-mana.
 
 Setiap perubahan dievaluasi sebelum di-merge.
-[CI merender Pkl-nya](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/.github/workflows/ci.yml#L46-L182)
+[CI merender Pkl-nya](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/.github/workflows/ci.yml#L46-L277)
 dengan key sekali pakai dan membuktikan bahwa daftar origin kosong tidak menyertakan CORS dan bahwa `*` di
 samping origin bernama ditolak; bahwa render tanpa rentang staf, atau dengan rentang yang menerima semua orang,
-ditolak, dan bahwa gerbangnya terpasang di sepuluh route; bahwa `/bff/` di host dua web app diteruskan ke edge,
-sisa host backoffice ke aplikasinya, dan tidak ada yang lain yang menjawab di sana; bahwa alamat onion punya tepat
-dua route plaintext berpenjaga; bahwa setiap route API serta socket merchant punya kembarannya; dan bahwa
-[tidak ada plugin `jwt` yang membaca query atau cookie, dan hanya service milik edge dan socket merchant yang menunggu 90 detik](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/test/config_invariants.jq#L40-L50).
+ditolak, dan bahwa gerbangnya terpasang di dua belas route; bahwa `/bff/` di host dua web app diteruskan ke edge,
+`/tiles/` di kedua alamat backoffice ke aplikasinya dengan batas milik peta, sisa host backoffice ke aplikasinya, dan
+tidak ada yang lain yang menjawab di sana; bahwa alamat onion punya tepat tiga route berpenjaga, dilayani lewat TLS
+dengan sertifikatnya sendiri dan dialihkan dari HTTP biasa; bahwa alamat jaringan staf backoffice adalah sebuah nama,
+tidak pernah alamat IP, dengan sertifikatnya sendiri; bahwa setiap route API serta socket merchant punya kembarannya; dan bahwa
+[tidak ada plugin `jwt` yang membaca query atau cookie, dan hanya service milik edge dan socket merchant yang menunggu 90 detik](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/test/config_invariants.jq#L56-L66).
 Build image
-[merendernya sekali lagi](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/Dockerfile#L16-L59),
+[merendernya sekali lagi](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/Dockerfile#L16-L90),
 lalu
-[sebuah probe menjalankan image itu sendiri](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/.github/workflows/ci.yml#L218-L222)
-dari alamat di dalam dan di luar rentang staf, lewat kedua listener, dan
-[mengirim token yang sah di query dan di cookie](https://github.com/WildanFrananda/kinetix-api-gateway/blob/ddea9d964f47bf42cd2bbbc5bf05ba47f0dc0349/test/edge_probe/checks.sh#L81-L98)
+[sebuah probe menjalankan image itu sendiri](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/.github/workflows/ci.yml#L313-L317)
+dari alamat di dalam dan di luar rentang staf, lewat listener-listener-nya, dan
+[mengirim token yang sah di query dan di cookie](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/test/edge_probe/checks.sh#L89-L106)
 ke setiap route yang diperiksa Kong, yang harus menjawab seolah request itu tidak membawa token.
