@@ -109,6 +109,9 @@ would read as "nothing calls it". Adding notary (session 26) moved order to (335
 found by searching positions with the test's own geometry, not by eye. Adding the edge (2026-10-27: its HTTP calls
 to identity and back to the gateway) put it at (720, 140) and moved matching to (790, 225) and Firebase to
 (855, 305): no free position fitted both lines without moving a box, and this one clears every line at padding 6.
+Adding seal (2026-11-12, at v1.9.1: its feeds from matching and review, and Midnight Preprod as an external) found no
+free position either; seal at (95, 160) and Midnight at (95, 55) fit once pricing moved to (185, 340), and the
+smallest line-to-box clearance stayed 6.98, the map's own minimum before seal.
 
 ## Decision records
 
@@ -387,10 +390,19 @@ Do not bring any of it back.
   because the backoffice copies it byte for byte with a lock (infra `docs/BACKOFFICE.md` §5); a change here is a
   change to the backoffice's look. `src/styles/theme.css` maps Starlight's variables onto it and loads after it
   (`customCss` order). Components use the `--kx-*` and Starlight's variables, never literal colours.
-- Type: Source Serif 4 for headings, IBM Plex Sans for text, IBM Plex Mono for code and for small
-  uppercase labels. All self-hosted from Fontsource.
-- Structure is drawn with rules: a 2px ink rule over a list or table, 1px rules between rows, a rule
-  above every `h2` (on `.sl-heading-wrapper.level-h2` — Starlight renders the `h2` inline).
+- Type (the user's choice on 2026-11-12, after Terragrunt's docs: "font sama persis"): Inter, with its optical-size
+  axis (`@fontsource-variable/inter/opsz.css`), for text and headings, and Geist Mono for code and for small uppercase
+  labels. Both self-hosted from Fontsource, both OFL. Headings h1–h3 are weight 400; h4–h6, the site title, sidebar
+  group labels and card titles 600. Source Serif 4 and IBM Plex are gone, and so is `--kx-font-serif`.
+- Structure is drawn with rules. Hairlines are **dashed** (same day, same request: "garis putus putus"):
+  `1px dashed var(--kx-rule-strong)` on the header, both sidebars, between the title panel and the content, above
+  every `h2` (on `.sl-heading-wrapper.level-h2` — Starlight renders the `h2` inline), between table and list rows,
+  around cards and diagram frames. Solid stays where a line means something: the 2px ink rule over a list or table,
+  the spec sheet, technology tiles, code borders, and every box, lane or coloured border inside a diagram scene.
+- A band of dots (`src/assets/dot-band.svg`, drawn for this site by a deterministic script, not copied from anyone)
+  sits between dashed rules under the table of contents (the `PageSidebar` override, wide screens only) and under
+  the hero. It is a CSS `mask-image` over `--kx-gray-4`, so it follows the theme. The table of contents' heading is a
+  Geist Mono label on `--sl-color-accent-low`.
 - The hero is a Starlight component override (`components/overrides/Hero.astro`) that keeps
   Starlight's contract (`h1#_top` with `data-page-title`, tagline, `LinkButton` actions) beside a
   spec sheet whose service and language counts are computed from `src/site/services.ts`.

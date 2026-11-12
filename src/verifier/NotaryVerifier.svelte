@@ -231,7 +231,7 @@
     gap: 1rem;
     margin-block: 1.5rem;
     padding: 1rem;
-    border: 1px solid var(--kx-rule);
+    border: 1px dashed var(--kx-rule-strong);
     border-top: 2px solid var(--sl-color-white);
     background: var(--kx-surface);
     font-size: var(--sl-text-sm);
@@ -338,7 +338,7 @@
   pre {
     margin: 0;
     padding: 0.6rem;
-    border: 1px solid var(--kx-rule);
+    border: 1px dashed var(--kx-rule-strong);
     background: var(--sl-color-black);
     font-size: var(--sl-text-xs);
     white-space: pre-wrap;
@@ -356,7 +356,7 @@
     flex-direction: column;
     gap: 0.5rem;
     padding: 0.75rem;
-    border: 1px solid var(--kx-rule);
+    border: 1px dashed var(--kx-rule-strong);
     border-left: 3px solid var(--kx-rule-strong);
     background: var(--sl-color-black);
   }

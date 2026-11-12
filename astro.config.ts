@@ -25,16 +25,14 @@ export default defineConfig({
       },
       favicon: "/favicon.svg",
       customCss: [
-        "@fontsource-variable/ibm-plex-sans",
-        "@fontsource-variable/source-serif-4/opsz.css",
-        "@fontsource/ibm-plex-mono/400.css",
-        "@fontsource/ibm-plex-mono/500.css",
-        "@fontsource/ibm-plex-mono/600.css",
+        "@fontsource-variable/inter/opsz.css",
+        "@fontsource-variable/geist-mono",
         "./src/styles/kx-tokens.css",
         "./src/styles/theme.css"
       ],
       components: {
-        Hero: "./src/components/overrides/Hero.astro"
+        Hero: "./src/components/overrides/Hero.astro",
+        PageSidebar: "./src/components/overrides/PageSidebar.astro"
       },
       expressiveCode: {
         themes: ["github-dark-default", "github-light-default"],

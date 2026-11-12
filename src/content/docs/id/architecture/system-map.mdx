@@ -1,7 +1,7 @@
 ---
 title: Peta sistem
 description: Setiap service, panggilan di antara mereka, dan apa yang masuk dari luar — digambar dari kodenya, dengan setiap panah menautkan baris yang melakukan panggilan itu.
-sourceHash: "3aacda0f1c47"
+sourceHash: "a180a7accf6f"
 sidebar:
   order: 1
 ---
@@ -48,10 +48,15 @@ Semua yang ia tulis masuk ke Base Sepolia, chain publik yang bisa dibaca siapa p
 yang lain meminta notification memberi tahu seorang pemegang bahwa statement baru atas saldonya sudah siap;
 lihat [notary](/id/services/notary/).
 
+**seal membaca dua log yang sama dan membuktikan di chain lain.** Ia menyimpan salinannya sendiri atas
+pengiriman matching dan ulasan driver di review, mengubahnya menjadi kredensial seorang kurir, dan mencatatnya
+di sebuah kontrak di Midnight. Ponsel kurir membuktikan sebuah klaim tentang kredensial itu, dan sponsor milik
+seal membayar fee untuk mencatat bukti tersebut; lihat [seal](/id/services/seal/).
+
 ## Yang tidak digambar
 
 - Panggilan yang hanya dilakukan oleh migrasi data sekali jalan.
-- Lalu lintas di dalam satu service, seperti event in-process milik matching, atau dua proses notary yang
-  saling menyetujui sebuah epoch.
+- Lalu lintas di dalam satu service, seperti event in-process milik matching, dua proses notary yang
+  saling menyetujui sebuah epoch, atau seal yang meminta sponsornya membayar.
 - communication di production. Ia sudah dibangun tapi belum di-deploy; panahnya ke identity adalah
   panggilan yang ia lakukan begitu di-deploy.

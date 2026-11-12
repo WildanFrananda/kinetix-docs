@@ -8,8 +8,9 @@ sidebar:
 import TechStack from "../../../components/TechStack.astro";
 
 Kinetix gives every service its own language on purpose: one domain, twelve idioms, and contracts
-that have to hold between all of them. The one exception is notary, which shares Go with search because
-its domain needs go-ethereum, and whose contracts on chain are Solidity. The versions below are the ones pinned in each repository's
+that have to hold between all of them. There are two exceptions, each for its domain. notary shares Go with
+search because its domain needs go-ethereum, and its contracts on chain are Solidity. seal shares TypeScript
+with identity because Midnight's only application SDK is TypeScript, and its contracts are Compact. The versions below are the ones pinned in each repository's
 manifest or lockfile, not the ones its README mentions; a version with no evidence in the repository
 is left out rather than guessed.
 
@@ -23,7 +24,8 @@ gateway from outside.
 ## Edge, contracts and clients
 
 The gateway is the only door from the internet. The contracts are the only definition of a message
-on the wire. The courier app is the first client.
+on the wire. The courier app and the backoffice are the clients Kinetix builds itself: one for couriers on
+their phones, one for staff in a browser.
 
 <TechStack group="edge" />
 
@@ -42,7 +44,8 @@ How code becomes a running system.
 ## Planned
 
 Not built yet. Recorded here so the direction is visible: native customer apps on both mobile
-platforms, one backoffice for every service, and a recommendation service.
+platforms, and insight, a service of learned models that forecast and score while the services that own
+the data keep every decision.
 
 <TechStack group="planned" />
 

@@ -200,7 +200,7 @@
 <style>
   .player {
     margin: 1.5rem 0;
-    border: 1px solid var(--kx-rule);
+    border: 1px dashed var(--kx-rule-strong);
     border-top: 2px solid var(--sl-color-white);
     border-radius: 0;
     background: var(--sl-color-gray-7);
@@ -212,7 +212,7 @@
     flex-wrap: wrap;
     gap: 0 1.25rem;
     padding: 0 1rem;
-    border-bottom: 1px solid var(--kx-rule);
+    border-bottom: 1px dashed var(--kx-rule-strong);
   }
 
   .variant {
@@ -242,7 +242,7 @@
   .narration {
     min-height: 7.5rem;
     padding: 0.75rem 1rem;
-    border-top: 1px solid var(--kx-rule);
+    border-top: 1px dashed var(--kx-rule-strong);
     font-size: var(--sl-text-sm);
     line-height: 1.6;
   }
@@ -276,7 +276,7 @@
     align-items: center;
     gap: 0.35rem;
     padding: 0.5rem 0.75rem;
-    border-top: 1px solid var(--kx-rule);
+    border-top: 1px dashed var(--kx-rule-strong);
   }
 
   .icon {

@@ -289,7 +289,7 @@
 <style>
   .map {
     margin: 1.5rem 0;
-    border: 1px solid var(--kx-rule);
+    border: 1px dashed var(--kx-rule-strong);
     border-top: 2px solid var(--sl-color-white);
     background: var(--sl-color-gray-7);
   }
@@ -297,7 +297,7 @@
   .hint {
     margin: 0;
     padding: 0.6rem 1rem;
-    border-bottom: 1px solid var(--kx-rule);
+    border-bottom: 1px dashed var(--kx-rule-strong);
     color: var(--sl-color-gray-3);
     font-size: var(--sl-text-xs);
   }
@@ -449,7 +449,7 @@
     gap: 0.4rem 1.25rem;
     margin: 0;
     padding: 0.6rem 1rem;
-    border-top: 1px solid var(--kx-rule);
+    border-top: 1px dashed var(--kx-rule-strong);
     list-style: none;
     color: var(--sl-color-gray-3);
     font-size: var(--sl-text-xs);
@@ -476,7 +476,7 @@
   }
 
   .panel {
-    border-top: 1px solid var(--kx-rule);
+    border-top: 1px dashed var(--kx-rule-strong);
   }
 
   .panel header {
@@ -512,7 +512,7 @@
     width: 1.4rem;
     height: 1.4rem;
     padding: 0.15rem;
-    border: 1px solid var(--kx-rule);
+    border: 1px dashed var(--kx-rule-strong);
     background: var(--kx-tile);
   }
 
@@ -554,7 +554,7 @@
   section h4 {
     margin: 0.75rem 0 0.35rem;
     padding-bottom: 0.25rem;
-    border-bottom: 1px solid var(--kx-rule);
+    border-bottom: 1px dashed var(--kx-rule-strong);
     color: var(--sl-color-gray-3);
     font-family: var(--sl-font-mono);
     font-size: var(--sl-text-2xs);

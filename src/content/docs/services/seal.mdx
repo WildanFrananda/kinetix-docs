@@ -1,0 +1,97 @@
+---
+title: seal
+description: Facts a courier proves without revealing them — the service that turns a courier's deliveries and ratings into a credential, records it in a Compact contract on Midnight, and lets anyone check a claim about it while the numbers stay on the courier's phone.
+---
+
+import ServiceCalls from "../../../components/ServiceCalls.astro";
+import ServiceFacts from "../../../components/ServiceFacts.astro";
+
+A courier who wants to show a new customer, a lender or another platform that they are reliable today has two
+choices: hand over their whole record, or ask to be trusted. seal gives them a third. It issues the courier a
+credential that states their deliveries, their average rating and how long they have been delivering, records it
+in a contract on Midnight, and the courier's own phone proves a claim about it — "at least 500 deliveries, rated
+4.5 or better" — without sending the numbers anywhere.
+
+The tables on this page are generated from the same verified data as the
+[system map](/architecture/system-map/), at the commits linked from each row. The prose is checked
+against seal [v1.9.1](https://github.com/WildanFrananda/kinetix-seal-service/tree/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf),
+the version in production. Every request and answer is in the REST reference: the courier's side in
+[Credentials](/apis/rest/courier-app/credentials/), the staff's in [Predicates](/apis/rest/backoffice/predicates/).
+
+## At a glance
+
+<ServiceFacts service="seal" />
+
+seal is written in TypeScript and runs on Node. Its contracts are written in Compact, Midnight's language for
+contracts whose inputs stay private: the
+[credential registry](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/contracts/src/credential_registry/CredentialRegistry.compact)
+is the one that runs. It serves nothing over gRPC; couriers, verifiers and staff reach it through the gateway.
+
+## What it calls
+
+<ServiceCalls service="seal" />
+
+seal reads the same two logs as the [notary](/services/notary/): matching's deliveries and review's reviews.
+It
+[keeps only the reviews of drivers](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/application/courier_facts.service.ts#L83-L92),
+and it checks every page before recording it. A feed that does not answer
+[is read again on the next tick](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/application/courier_facts.service.ts#L103-L118);
+a malformed page stops that stream and is logged as an error. Access tokens are checked against identity's
+published keys, so that fetch is not an arrow on the map.
+
+## A credential is a snapshot
+
+When a courier asks for a credential, seal does not call matching or review. It reads its own copy of their
+facts, and refuses unless
+[the caller is a courier and both feeds caught up recently](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/application/courier_credentials.service.ts#L87-L94):
+a feed that is down or behind would otherwise state an old count as today's. The credential holds
+[four numbers](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/domain/courier_credential_attributes.ts#L4-L13):
+the deliveries, the average rating in hundredths, the days since the first delivery, and the day it was
+issued. A courier with no delivery gets none.
+
+A courier gets
+[one credential a day](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/application/courier_credentials.service.ts#L96-L101).
+Asking again with the same key returns that day's credential, and asking with another key is refused. The key is
+a public key the phone derives from a secret that never leaves it.
+
+## The phone proves, the contract checks
+
+A verifier does not choose what to ask. It picks a predicate that staff approved — minimums for the first three
+numbers and how recent the credential must be — and the contract's
+[`present` circuit](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/contracts/src/credential_registry/CredentialRegistry.compact#L50-L68)
+looks the minimums up by the predicate's id. A verifier free to choose its own thresholds could narrow down a
+courier's exact numbers by asking many times; one that can only pick an approved predicate cannot. The circuit
+proves that the credential was issued to the holder of the secret, that it is of the predicate's class, and that
+each number meets its minimum, then records the verifier's challenge as answered.
+
+The proof is made on the courier's phone. seal serves the page the phone proves with and a snapshot of the
+registry to prove against, and never sees the secret or the proof's inputs.
+
+## Who pays, and who relays
+
+Every transaction on Midnight pays a fee in DUST. The courier pays nothing: the verifier hands the proven
+transaction to seal's relay, which
+[accepts only a presentation](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/domain/presentation_shape.ts#L3-L23)
+— exactly one call, to `present`, on the active registry, moving no coins — and
+[asks the sponsor to pay for it](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/application/presentation_relay.service.ts#L20-L45).
+Because the verifier relays, seal sees the verifier's address at presentation time and never the courier's.
+
+The sponsor is seal's second process, started from the same image by
+[its own entry point](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/sponsor_main.ts).
+It is the only process that holds the wallet's seed, and the service is the only one that holds the issuer's
+secret. They talk over mutual TLS, and the service
+[accepts only a server whose mesh identity is seal's](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/infrastructure/sponsor/https_sponsor_client.ts#L25-L36).
+The sponsor also pays for what seal writes itself: deploying the registry, issuing credentials and placing the
+approved predicates.
+
+## Who may do what
+
+- **A courier** — with identity's access token,
+  [and only an access token](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/infrastructure/identity/jose_token_verifier.adapter.ts#L50-L58)
+  — asks for a credential and reads only its own.
+- **Anyone**, with no account, reads the approved predicates, the registry snapshot and the phone's page, relays a
+  presentation, and checks whether a challenge was answered. The gateway limits the relay to
+  [20 requests a minute per address](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L714-L730).
+- **An admin** approves and withdraws predicates; anyone else is
+  [refused](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/infrastructure/http/predicate_routes.ts#L173-L174).
+  The gateway serves those two routes only to the staff network; see [the gateway](/architecture/gateway/).

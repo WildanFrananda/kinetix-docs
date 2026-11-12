@@ -1,7 +1,7 @@
 ---
 title: Tech stack
 description: Setiap bahasa, framework, library, dan komponen platform yang dipakai Kinetix, dengan versi yang dipin di tiap repositori.
-sourceHash: "ca6556a131d5"
+sourceHash: "9b7d283e6020"
 sidebar:
   order: 3
 ---
@@ -9,8 +9,10 @@ sidebar:
 import TechStack from "../../../../components/TechStack.astro";
 
 Kinetix sengaja memberi setiap service bahasanya sendiri: satu domain, dua belas idiom, dan kontrak yang
-harus tetap berlaku di antara semuanya. Satu-satunya pengecualian adalah notary, yang berbagi Go dengan
-search karena domainnya membutuhkan go-ethereum, dan yang kontraknya di chain ditulis dalam Solidity. Versi di bawah adalah yang dipin di manifest atau lockfile tiap
+harus tetap berlaku di antara semuanya. Ada dua pengecualian, masing-masing karena domainnya. notary berbagi
+Go dengan search karena domainnya membutuhkan go-ethereum, dan kontraknya di chain ditulis dalam Solidity.
+seal berbagi TypeScript dengan identity karena satu-satunya SDK aplikasi Midnight adalah TypeScript, dan
+kontraknya ditulis dalam Compact. Versi di bawah adalah yang dipin di manifest atau lockfile tiap
 repositori, bukan yang disebut README-nya; versi yang tidak punya bukti di repositori dibiarkan kosong,
 bukan ditebak.
 
@@ -24,7 +26,8 @@ atau lewat gateway dari luar.
 ## Edge, kontrak, dan client
 
 Gateway adalah satu-satunya pintu dari internet. Kontrak adalah satu-satunya definisi sebuah pesan di
-jaringan. Aplikasi kurir adalah client pertama.
+jaringan. Aplikasi kurir dan backoffice adalah client yang dibangun Kinetix sendiri: satu untuk kurir di
+ponselnya, satu untuk staf di browser.
 
 <TechStack group="edge" />
 
@@ -44,7 +47,8 @@ Bagaimana kode menjadi sistem yang berjalan.
 ## Rencana
 
 Belum dibangun. Dicatat di sini supaya arahnya terlihat: aplikasi customer native di kedua platform
-mobile, satu backoffice untuk semua service, dan sebuah recommendation service.
+mobile, dan insight, service berisi model yang dipelajari untuk memprediksi dan memberi skor, sementara
+service pemilik datanya tetap memegang setiap keputusan.
 
 <TechStack group="planned" />
 

@@ -1,0 +1,38 @@
+---
+import Default from "@astrojs/starlight/components/PageSidebar.astro";
+
+const hasToc = Astro.locals.starlightRoute.toc !== undefined;
+---
+
+<Default />
+
+{
+  hasToc && (
+    <div class="band-frame" aria-hidden="true">
+      <div class="band" />
+    </div>
+  )
+}
+
+<style>
+  .band-frame {
+    display: none;
+  }
+
+  @media (min-width: 72rem) {
+    .band-frame {
+      display: block;
+      margin-top: 1.5rem;
+      padding-block: 0.375rem;
+      border-block: 1px dashed var(--kx-rule-strong);
+    }
+  }
+
+  .band {
+    height: 32px;
+    background-color: var(--kx-gray-4);
+    mask-image: url("../../assets/dot-band.svg");
+    mask-repeat: repeat-x;
+    mask-position: 0 0;
+  }
+</style>

@@ -311,5 +311,31 @@ export const architectureEdges: readonly MapEdge[] = [
       { operation: "eth_getLogs", source: { label: "withholding_court.go:184", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/8446176813c354716d77ca6591038633871bcda5/internal/ethereum/withholding_court.go#L184" } },
       { operation: "eth_call", source: { label: "ledger.go:281", href: "https://github.com/WildanFrananda/kinetix-notary-service/blob/8446176813c354716d77ca6591038633871bcda5/internal/ethereum/ledger.go#L281" } }
     ]
+  },
+  {
+    from: "seal",
+    to: "matching",
+    kind: "grpc",
+    calls: [
+      { operation: "fulfillment.v1.DeliveryEvidenceService/DeliveriesSince", source: { label: "grpc_delivery_feed.adapter.ts:33", href: "https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/infrastructure/grpc/grpc_delivery_feed.adapter.ts#L33-L38" } }
+    ]
+  },
+  {
+    from: "seal",
+    to: "review",
+    kind: "grpc",
+    calls: [
+      { operation: "review.v1.ReviewEvidenceService/ReviewsSince", source: { label: "grpc_review_feed.adapter.ts:43", href: "https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/infrastructure/grpc/grpc_review_feed.adapter.ts#L43-L48" } }
+    ]
+  },
+  {
+    from: "seal",
+    to: "midnight",
+    kind: "external",
+    calls: [
+      { operation: "submitTransaction", source: { label: "wallet_transactions.ts:26", href: "https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/infrastructure/midnight/wallet_transactions.ts#L26" }, note: "map.note.sponsorPays" },
+      { operation: "queryContractState", source: { label: "midnight_registry_chain.adapter.ts:67", href: "https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/infrastructure/midnight/midnight_registry_chain.adapter.ts#L67" } },
+      { operation: "query { block }", source: { label: "indexer_blocks.ts:34", href: "https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/infrastructure/midnight/indexer_blocks.ts#L34-L39" } }
+    ]
   }
 ];

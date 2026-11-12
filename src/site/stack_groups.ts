@@ -35,7 +35,7 @@ const serviceEntries: readonly StackEntry[] = [
   service("identity", [
     { role: "stack.role.language", techs: [tech("TypeScript", "5.9.3", "typescript")] },
     { role: "stack.role.runtime", techs: [tech("Bun", "1", "bun")] },
-    { role: "stack.role.framework", techs: [tech("NestJS", "11.2.1", "nestjs"), tech("Fastify", "5.12.7")] },
+    { role: "stack.role.framework", techs: [tech("NestJS", "11.2.1", "nestjs"), tech("Fastify", "5.11.3")] },
     { role: "stack.role.grpc", techs: [tech("@grpc/grpc-js", "1.14.6")] },
     { role: "stack.role.data", techs: [postgres, tech("TypeORM", "1.1.2")] },
     { role: "stack.role.tests", techs: [tech("Jest", "30.5.2")] }
@@ -62,7 +62,7 @@ const serviceEntries: readonly StackEntry[] = [
   ]),
   service("order", [
     { role: "stack.role.language", techs: [tech("C#", undefined, "csharp")] },
-    { role: "stack.role.runtime", techs: [tech(".NET", "10", "dotnetcore")] },
+    { role: "stack.role.runtime", techs: [tech(".NET", "10.0.0-preview.7", "dotnetcore")] },
     { role: "stack.role.framework", techs: [tech("ASP.NET Core"), tech("Kestrel")] },
     { role: "stack.role.grpc", techs: [tech("Grpc.AspNetCore", "2.84.0")] },
     {
@@ -102,12 +102,17 @@ const serviceEntries: readonly StackEntry[] = [
     { role: "stack.role.tests", techs: [tech("ExUnit")] }
   ]),
   service("review", [
-    { role: "stack.role.language", techs: [tech("PHP", "8.5", "php")] },
+    { role: "stack.role.language", techs: [tech("PHP", "8.5.12", "php")] },
     { role: "stack.role.framework", techs: [tech("Laravel", "13.34.0", "laravel"), tech("Octane", "2.19.1")] },
-    { role: "stack.role.runtime", techs: [tech("FrankenPHP"), tech("RoadRunner", "2025.1.15")] },
+    { role: "stack.role.runtime", techs: [tech("FrankenPHP", "1.13.3"), tech("RoadRunner")] },
     {
       role: "stack.role.grpc",
-      techs: [tech("grpc/grpc", "1.82.0"), tech("spiral/roadrunner-grpc", "3.6.0"), tech("Go", "1.27", "go")]
+      techs: [
+        tech("grpc/grpc", "1.82.0"),
+        tech("spiral/roadrunner-grpc", "3.6.0"),
+        tech("roadrunner-server/grpc", "5.3.0"),
+        tech("Go", "1.27", "go")
+      ]
     },
     { role: "stack.role.data", techs: [postgres, tech("Eloquent")] },
     { role: "stack.role.tests", techs: [tech("Pest", "4.7.8")] }
@@ -134,7 +139,7 @@ const serviceEntries: readonly StackEntry[] = [
     { role: "stack.role.tooling", techs: [tech("CMake", "3.25+"), tech("vcpkg")] }
   ]),
   service("search", [
-    { role: "stack.role.language", techs: [tech("Go", "1.26.4", "go")] },
+    { role: "stack.role.language", techs: [tech("Go", "1.27", "go")] },
     { role: "stack.role.framework", techs: [tech("chi", "5.5.0")] },
     { role: "stack.role.grpc", techs: [tech("grpc-go", "1.84.0")] },
     {
@@ -146,7 +151,7 @@ const serviceEntries: readonly StackEntry[] = [
   service("notary", [
     {
       role: "stack.role.language",
-      techs: [tech("Go", "1.26.8", "go"), tech("Solidity", "0.8.37", "solidity")]
+      techs: [tech("Go", "1.27", "go"), tech("Solidity", "0.8.37", "solidity")]
     },
     { role: "stack.role.framework", techs: [tech("go-ethereum", "1.17.9"), tech("dig", "1.19.0")] },
     { role: "stack.role.grpc", techs: [tech("grpc-go", "1.84.0")] },
@@ -165,6 +170,21 @@ const serviceEntries: readonly StackEntry[] = [
     { role: "stack.role.runtime", techs: [tech("LuaJIT")] },
     { role: "stack.role.data", techs: [tech("Redis", "7.2", "redis")] },
     { role: "stack.role.tests", techs: [tech("busted", "2.3.0")] }
+  ]),
+  service("seal", [
+    {
+      role: "stack.role.language",
+      techs: [tech("TypeScript", "7.0.2", "typescript"), tech("Compact", "compactc 0.36.0")]
+    },
+    { role: "stack.role.runtime", techs: [tech("Node.js", "26.12.1")] },
+    {
+      role: "stack.role.framework",
+      techs: [tech("Fastify", "5.12.7"), tech("midnight-js", "5.0.0"), tech("Midnight wallet SDK", "2.0.0")]
+    },
+    { role: "stack.role.grpc", techs: [tech("@grpc/grpc-js", "1.14.6")] },
+    { role: "stack.role.data", techs: [postgres, tech("Prisma ORM", "7.10.1")] },
+    { role: "stack.role.tests", techs: [tech("node:test")] },
+    { role: "stack.role.quality", techs: [tech("Biome", "2.5.15")] }
   ])
 ];
 
@@ -174,7 +194,7 @@ const edgeEntries: readonly StackEntry[] = [
     summary: "stack.edge.gateway.summary",
     repository: `${github}/kinetix-api-gateway`,
     layers: [
-      { role: "stack.role.engine", techs: [tech("Kong Gateway", "3.9")] },
+      { role: "stack.role.engine", techs: [tech("Kong Gateway", "3.9.4")] },
       { role: "stack.role.tooling", techs: [tech("Apple Pkl", "0.32.1")] }
     ]
   },
@@ -204,13 +224,39 @@ const edgeEntries: readonly StackEntry[] = [
     summary: "stack.edge.courier.summary",
     repository: `${github}/kinetix-courier-mobile`,
     layers: [
-      { role: "stack.role.language", techs: [tech("Dart", "3.10+", "dart")] },
-      { role: "stack.role.ui", techs: [tech("Flutter", "stable", "flutter")] },
+      { role: "stack.role.language", techs: [tech("Dart", "3.12+", "dart")] },
+      { role: "stack.role.ui", techs: [tech("Flutter", "3.44", "flutter")] },
       {
         role: "stack.role.framework",
-        techs: [tech("provider", "6.1.5"), tech("get_it", "9.2.1"), tech("dio", "5.11.0"), tech("Hive", "2.2.3")]
+        techs: [tech("provider", "6.1.5+1"), tech("get_it", "9.2.1"), tech("dio", "5.11.0"), tech("Hive", "2.2.3")]
       },
       { role: "stack.role.tests", techs: [tech("flutter_test"), tech("mocktail", "1.0.5")] }
+    ]
+  },
+  {
+    name: "backoffice",
+    summary: "stack.edge.backoffice.summary",
+    repository: `${github}/kinetix-backoffice`,
+    layers: [
+      { role: "stack.role.language", techs: [tech("TypeScript", "7.0.2", "typescript")] },
+      {
+        role: "stack.role.framework",
+        techs: [
+          tech("TanStack Start", "1.169.4"),
+          tech("TanStack Router", "1.170.46"),
+          tech("TanStack Query", "5.105.0"),
+          tech("TanStack Form", "1.33.5"),
+          tech("Valibot", "1.5.0")
+        ]
+      },
+      {
+        role: "stack.role.ui",
+        techs: [tech("React", "19.3.1", "react"), tech("React Aria Components", "1.22.1"), tech("MapLibre GL", "6.16.0")]
+      },
+      { role: "stack.role.tooling", techs: [tech("Bun", "1.4.4", "bun"), tech("Vite", "8.3.5")] },
+      { role: "stack.role.tests", techs: [tech("Vitest", "5.0.5"), tech("Playwright", "1.64.1")] },
+      { role: "stack.role.quality", techs: [tech("Biome", "2.6.3")] },
+      { role: "stack.role.hosting", techs: [tech("nginx-unprivileged", "1.31.7")] }
     ]
   }
 ];
@@ -298,16 +344,8 @@ const plannedEntries: readonly StackEntry[] = [
     ]
   },
   {
-    name: "backoffice",
-    summary: "stack.planned.backoffice.summary",
-    layers: [
-      { role: "stack.role.language", techs: [tech("TypeScript", undefined, "typescript")] },
-      { role: "stack.role.framework", techs: [tech("TanStack Start"), tech("React", undefined, "react")] }
-    ]
-  },
-  {
-    name: "recommendation",
-    summary: "stack.planned.recommendation.summary",
+    name: "insight",
+    summary: "stack.planned.insight.summary",
     layers: [{ role: "stack.role.language", techs: [tech("R", undefined, "r")] }]
   }
 ];

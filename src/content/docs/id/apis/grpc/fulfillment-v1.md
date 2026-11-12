@@ -2,7 +2,7 @@
 title: "fulfillment.v1"
 description: "Paket gRPC fulfillment.v1 di kinetix-contracts 1.7.0: service, message, dan enum-nya."
 editUrl: false
-sourceHash: "90e66e81b182"
+sourceHash: "671ee8eb0a48"
 ---
 
 <div class="grpc-reference">
@@ -17,7 +17,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`DeliveriesSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fulfillment/v1/delivery_evidence.proto#L9) | [`DeliveriesSinceRequest`](#deliveriessincerequest) → [`DeliveriesSinceResponse`](#deliveriessinceresponse) | [matching](/id/services/matching/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/8446176813c354716d77ca6591038633871bcda5/internal/feeds/delivery_feed.go#L50) |
+| [`DeliveriesSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fulfillment/v1/delivery_evidence.proto#L9) | [`DeliveriesSinceRequest`](#deliveriessincerequest) → [`DeliveriesSinceResponse`](#deliveriessinceresponse) | [matching](/id/services/matching/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/8446176813c354716d77ca6591038633871bcda5/internal/feeds/delivery_feed.go#L50), [seal](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/infrastructure/grpc/grpc_delivery_feed.adapter.ts#L33-L38) |
 
 ### BinStockService
 

@@ -44,10 +44,15 @@ order's lifecycle, matching's deliveries and review's reviews. It changes nothin
 it writes goes to Base Sepolia, a public chain anyone can read. Its one other call asks notification to tell a
 holder that a new statement of their balance is ready; see [notary](/services/notary/).
 
+**seal reads the same two logs and proves on another chain.** It keeps its own copy of matching's deliveries
+and review's driver reviews, turns them into a courier's credential, and records it in a contract on Midnight.
+A courier's phone proves a claim about that credential, and seal's sponsor pays the fee to record the proof;
+see [seal](/services/seal/).
+
 ## What is not on it
 
 - Calls made only by one-off data migrations.
-- Traffic inside a single service, such as matching's in-process events, or notary's two processes
-  approving an epoch between them.
+- Traffic inside a single service, such as matching's in-process events, notary's two processes
+  approving an epoch between them, or seal asking its sponsor to pay.
 - communication in production. It is built but not deployed; its arrow to identity is the call it makes
   once it is.

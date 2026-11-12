@@ -2,7 +2,7 @@
 title: "review.v1"
 description: "Paket gRPC review.v1 di kinetix-contracts 1.7.0: service, message, dan enum-nya."
 editUrl: false
-sourceHash: "8de3282ab5ea"
+sourceHash: "a7a70b0d0ebe"
 ---
 
 <div class="grpc-reference">
@@ -17,7 +17,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`ReviewsSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/review/v1/review.proto#L9) | [`ReviewsSinceRequest`](#reviewssincerequest) → [`ReviewsSinceResponse`](#reviewssinceresponse) | [review](/id/services/review/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/8446176813c354716d77ca6591038633871bcda5/internal/feeds/review_feed.go#L50) |
+| [`ReviewsSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/review/v1/review.proto#L9) | [`ReviewsSinceRequest`](#reviewssincerequest) → [`ReviewsSinceResponse`](#reviewssinceresponse) | [review](/id/services/review/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/8446176813c354716d77ca6591038633871bcda5/internal/feeds/review_feed.go#L50), [seal](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/infrastructure/grpc/grpc_review_feed.adapter.ts#L43-L48) |
 
 ## Message
 

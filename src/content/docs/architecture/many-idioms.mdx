@@ -1,18 +1,18 @@
 ---
-title: One rule, eleven idioms
-description: How eleven of Kinetix's twelve production services keep their business logic behind ports, each in its own language, where the build holds that rule and where only code review does, where a language changes the design itself, and how the edge does without ports.
+title: One rule, twelve idioms
+description: How twelve of Kinetix's thirteen production services keep their business logic behind ports, each in its own language, where the build holds that rule and where only code review does, where a language changes the design itself, and how the edge does without ports.
 sidebar:
   order: 5
 ---
 
-Kinetix runs twelve services in production, and eleven of them keep the same rule: the business logic
+Kinetix runs thirteen services in production, and twelve of them keep the same rule: the business logic
 depends on ports, adapters implement them, and one place outside the logic chooses the adapters. The
-twelfth, the edge, has no ports, and [the last section](#the-exception-the-edge) says what it does
+thirteenth, the edge, has no ports, and [the last section](#the-exception-the-edge) says what it does
 instead. What changes from service to service is how the language says it. A port is an interface in
 C#, a trait in Rust, a behaviour in Elixir and an abstract class in Python; the wiring is a dependency
 injection container in one service, a function in another and a configuration lookup in a third.
 
-This page sets the eleven side by side. Each service page has a section, "How the code is laid out",
+This page sets the twelve side by side. Each service page has a section, "How the code is laid out",
 for its own directories; this one is about what they have in common and why they differ.
 
 ## The rule
@@ -30,8 +30,8 @@ database.
 
 ## Interfaces named at the call site: C#, Java, PHP and TypeScript
 
-In these four languages a class declares the interfaces it implements, and the container resolves a
-dependency by the interface's name.
+In these four languages a class declares the interfaces it implements, and in all but one service a container
+resolves a dependency by the interface's name.
 
 - **order**, C#.
   [`IPricingClient`](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Ports/IPricingClient.cs#L6-L17)
@@ -77,6 +77,16 @@ dependency by the interface's name.
   with `@Inject("FleetRegistryPort")`. The compiler checks that the adapter fits the interface; a
   misspelt token is found when the application starts, because NestJS refuses to start with a
   dependency it cannot resolve.
+- **seal**, TypeScript, with no container at all.
+  [`DeliveryFeedPort`](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/application/ports/delivery_feed.port.ts#L5-L7)
+  is in `application/ports` and
+  [`GrpcDeliveryFeed`](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/infrastructure/grpc/grpc_delivery_feed.adapter.ts#L22-L29)
+  implements it. `CourierFacts`
+  [names its ports in its constructor](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/application/courier_facts.service.ts#L24-L38),
+  and `main.ts`, the only place that wires anything,
+  [builds the adapter and passes it in](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/main.ts#L79-L89)
+  by hand. With nothing to resolve at run time, the erased interface costs nothing: the compiler checks
+  every argument, and there is no string to misspell.
 
 ## Structural interfaces: Go
 
@@ -208,7 +218,7 @@ instead of reaching past it.
 
 ## Fakes, and what they prove
 
-Each of the eleven tests its logic against fakes of its ports. Most are written by hand and implement the
+Each of the twelve tests its logic against fakes of its ports. Most are written by hand and implement the
 port like any adapter:
 [catalog's stock](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/tests/unit/fake_bin_stock_service_port.py#L6-L35),
 [warehouse's identity](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/spec/support/fake_identity_client.rb#L4-L31),
@@ -216,7 +226,8 @@ port like any adapter:
 [pricing's catalog](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0b990129286ce38750cf418d54c3bd52edf31d9e/tests/promotion_ownership_test.rs#L34-L39),
 [review's order](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/tests/FakeOrderClient.php#L11-L35),
 [search's sources](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/tests/searchtest/source.go#L9-L19),
-[notary's payment](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/tests/notarytest/source.go#L9-L19)
+[notary's payment](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/tests/notarytest/source.go#L9-L19),
+[seal's deliveries](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/tests/fakes/fake_delivery_feed.ts#L6-L21)
 and
 [notification's identity](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/test/scala/com/kinetix/notification/fakes/FakeDirectory.scala#L9-L14).
 order and payment build theirs from the interface with a mocking library,

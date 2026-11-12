@@ -1,0 +1,101 @@
+---
+title: seal
+description: Fakta yang dibuktikan kurir tanpa membukanya — service yang mengubah pengiriman dan rating seorang kurir menjadi kredensial, mencatatnya di kontrak Compact di Midnight, dan membiarkan siapa pun memeriksa klaim tentangnya sementara angkanya tetap di ponsel kurir.
+sourceHash: "ac1df2b04df5"
+---
+
+import ServiceCalls from "../../../../components/ServiceCalls.astro";
+import ServiceFacts from "../../../../components/ServiceFacts.astro";
+
+Seorang kurir yang ingin menunjukkan kepada pelanggan baru, pemberi pinjaman, atau platform lain bahwa ia bisa
+diandalkan hari ini punya dua pilihan: menyerahkan seluruh catatannya, atau meminta untuk dipercaya. seal
+memberinya pilihan ketiga. seal menerbitkan kredensial yang menyatakan jumlah pengiriman kurir, rata-rata
+rating-nya, dan sudah berapa lama ia mengantar, mencatatnya di sebuah kontrak di Midnight, lalu ponsel kurir
+sendiri membuktikan sebuah klaim tentangnya — "setidaknya 500 pengiriman, rating 4,5 atau lebih" — tanpa
+mengirim angka-angka itu ke mana pun.
+
+Tabel di halaman ini dihasilkan dari data terverifikasi yang sama dengan
+[peta sistem](/id/architecture/system-map/), pada commit yang ditautkan dari tiap baris. Prosanya diperiksa
+terhadap seal [v1.9.1](https://github.com/WildanFrananda/kinetix-seal-service/tree/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf),
+versi yang berjalan di production. Setiap request dan jawabannya ada di referensi REST: sisi kurir di
+[Kredensial](/id/apis/rest/courier-app/credentials/), sisi staf di [Predicate](/id/apis/rest/backoffice/predicates/).
+
+## Sekilas
+
+<ServiceFacts service="seal" />
+
+seal ditulis dalam TypeScript dan berjalan di Node. Kontraknya ditulis dalam Compact, bahasa Midnight untuk
+kontrak yang input-nya tetap privat:
+[registry kredensial](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/contracts/src/credential_registry/CredentialRegistry.compact)
+adalah kontrak yang berjalan. seal tidak melayani apa pun lewat gRPC; kurir, verifier, dan staf menjangkaunya
+lewat gateway.
+
+## Apa yang dipanggilnya
+
+<ServiceCalls service="seal" />
+
+seal membaca dua log yang sama dengan [notary](/id/services/notary/): pengiriman milik matching dan ulasan milik
+review. Ia
+[hanya menyimpan ulasan untuk driver](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/application/courier_facts.service.ts#L83-L92),
+dan memeriksa setiap halaman sebelum mencatatnya. Feed yang tidak menjawab
+[dibaca lagi di tick berikutnya](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/application/courier_facts.service.ts#L103-L118);
+halaman yang cacat menghentikan stream itu dan dicatat sebagai error. Access token diperiksa terhadap key yang
+dipublikasikan identity, sehingga pengambilan key itu bukan panah di peta.
+
+## Kredensial adalah snapshot
+
+Saat kurir meminta kredensial, seal tidak memanggil matching atau review. Ia membaca salinan faktanya sendiri,
+dan menolak kecuali
+[pemanggilnya kurir dan kedua feed baru saja mengejar ketertinggalannya](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/application/courier_credentials.service.ts#L87-L94):
+feed yang mati atau tertinggal akan menyatakan jumlah lama sebagai jumlah hari ini. Kredensial memuat
+[empat angka](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/domain/courier_credential_attributes.ts#L4-L13):
+jumlah pengiriman, rata-rata rating dalam perseratus, jumlah hari sejak pengiriman pertama, dan hari
+penerbitannya. Kurir yang belum pernah mengantar tidak mendapat kredensial.
+
+Seorang kurir mendapat
+[satu kredensial per hari](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/application/courier_credentials.service.ts#L96-L101).
+Meminta lagi dengan key yang sama mengembalikan kredensial hari itu, dan meminta dengan key lain ditolak. Key itu
+adalah public key yang diturunkan ponsel dari sebuah secret yang tidak pernah meninggalkannya.
+
+## Ponsel membuktikan, kontrak memeriksa
+
+Verifier tidak memilih apa yang ditanyakan. Ia memilih predicate yang sudah disetujui staf — nilai minimum untuk
+tiga angka pertama dan seberapa baru kredensialnya harus — dan
+[sirkuit `present`](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/contracts/src/credential_registry/CredentialRegistry.compact#L50-L68)
+milik kontrak mencari nilai minimum itu berdasarkan id predicate. Verifier yang bebas memilih ambangnya sendiri
+bisa mempersempit angka persis seorang kurir dengan bertanya berkali-kali; verifier yang hanya bisa memilih
+predicate yang disetujui tidak bisa. Sirkuit itu membuktikan bahwa kredensial diterbitkan untuk pemegang secret,
+bahwa kelasnya sama dengan kelas predicate, dan bahwa setiap angka memenuhi nilai minimumnya, lalu mencatat
+challenge dari verifier sebagai sudah dijawab.
+
+Bukti itu dibuat di ponsel kurir. seal menyajikan halaman yang dipakai ponsel untuk membuktikan dan snapshot
+registry yang menjadi acuannya, dan tidak pernah melihat secret atau input bukti tersebut.
+
+## Siapa yang membayar, dan siapa yang meneruskan
+
+Setiap transaksi di Midnight membayar fee dalam DUST. Kurir tidak membayar apa pun: verifier menyerahkan transaksi
+yang sudah dibuktikan ke relay milik seal, yang
+[hanya menerima presentation](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/domain/presentation_shape.ts#L3-L23)
+— tepat satu panggilan, ke `present`, pada registry yang aktif, tanpa memindahkan koin — lalu
+[meminta sponsor membayarnya](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/application/presentation_relay.service.ts#L20-L45).
+Karena verifier yang meneruskan, seal melihat alamat verifier saat presentation, dan tidak pernah alamat kurir.
+
+Sponsor adalah proses kedua seal, dijalankan dari image yang sama lewat
+[entry point-nya sendiri](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/sponsor_main.ts).
+Hanya proses itu yang memegang seed wallet, dan hanya service yang memegang secret penerbit. Keduanya berbicara
+lewat mutual TLS, dan service
+[hanya menerima server yang identitas mesh-nya adalah seal](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/infrastructure/sponsor/https_sponsor_client.ts#L25-L36).
+Sponsor juga membayar apa yang ditulis seal sendiri: men-deploy registry, menerbitkan kredensial, dan menempatkan
+predicate yang disetujui.
+
+## Siapa boleh melakukan apa
+
+- **Kurir** — dengan access token dari identity,
+  [dan hanya access token](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/infrastructure/identity/jose_token_verifier.adapter.ts#L50-L58)
+  — meminta kredensial dan hanya bisa membaca miliknya sendiri.
+- **Siapa pun**, tanpa akun, membaca predicate yang disetujui, snapshot registry, dan halaman milik ponsel,
+  meneruskan presentation, dan memeriksa apakah sebuah challenge sudah dijawab. Gateway membatasi relay ke
+  [20 request per menit per alamat](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L714-L730).
+- **Admin** menyetujui dan menarik predicate; selain admin
+  [ditolak](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/infrastructure/http/predicate_routes.ts#L173-L174).
+  Gateway hanya menyajikan dua route itu ke jaringan staf; lihat [gateway](/id/architecture/gateway/).

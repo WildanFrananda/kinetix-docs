@@ -1,8 +1,8 @@
 ---
 title: Kinetix
-description: Arsitektur, kontrak, dan keputusan engineering Kinetix, platform e-commerce dan fulfilment real-time yang dibangun dari tiga belas service dalam dua belas bahasa.
+description: Arsitektur, kontrak, dan keputusan engineering Kinetix, platform e-commerce dan fulfilment real-time yang dibangun dari empat belas service dalam dua belas bahasa.
 template: splash
-sourceHash: "fe918c9b3e05"
+sourceHash: "22b47a395270"
 eyebrow: Dokumentasi engineering
 hero:
   tagline: Platform e-commerce dan fulfilment real-time, didokumentasikan dari kodenya — untuk engineer yang membangun di atasnya, dan untuk engineer yang ingin belajar desain backend terdistribusi dari sistem yang benar-benar berjalan.
@@ -47,14 +47,16 @@ menautkan kode itu pada commit tertentu, jadi yang kamu baca adalah yang berjala
 
 ## Service
 
-Tiga belas service, masing-masing satu-satunya pemilik datanya, dan masing-masing dalam bahasanya sendiri
-kecuali satu: notary berbagi Go dengan search, karena domainnya membutuhkan go-ethereum. Pilih salah satu
+Empat belas service, masing-masing satu-satunya pemilik datanya, dan masing-masing dalam bahasanya sendiri
+kecuali dua: notary berbagi Go dengan search, karena domainnya membutuhkan go-ethereum, dan seal berbagi
+TypeScript dengan identity, karena satu-satunya SDK aplikasi Midnight adalah TypeScript. Pilih salah satu
 untuk membuka source-nya.
 
 <ServiceList />
 
 Di sekelilingnya ada [API gateway](https://github.com/WildanFrananda/kinetix-api-gateway) (Kong),
-[aplikasi kurir](https://github.com/WildanFrananda/kinetix-courier-mobile) (Flutter), dan
+[aplikasi kurir](https://github.com/WildanFrananda/kinetix-courier-mobile) (Flutter),
+[backoffice](https://github.com/WildanFrananda/kinetix-backoffice) (React), dan
 [kontrak](https://github.com/WildanFrananda/kinetix-contracts) (Protocol Buffers) yang diikuti semua
 service. Stack lengkap beserta versinya ada di halaman [tech stack](/id/architecture/tech-stack/).
 

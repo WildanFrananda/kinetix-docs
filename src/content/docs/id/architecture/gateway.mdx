@@ -1,7 +1,7 @@
 ---
 title: Gateway
 description: Satu-satunya pintu masuk ke Kinetix dari luar. Kong, dikonfigurasi secara deklaratif dari Pkl, menjawab tiga host publik hanya lewat TLS dan backoffice di dua alamat yang tidak dipublikasikan, mengirim setiap path ke service pemiliknya, memeriksa token di sebagian route sebagai kunci pertama, membatasi route khusus admin ke jaringan staf, serta membatasi, menandai, dan menghitung setiap request.
-sourceHash: "f99bd74199e2"
+sourceHash: "808a753b22c4"
 sidebar:
   order: 4
 ---
@@ -109,7 +109,7 @@ sebagian kecil prefix-nya diubah ke milik service itu — `/api/v1/products` mil
 [`/api/v1`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L438-L448).
 `/bff/` hanya dirutekan di host dua web app.
 
-Empat hal lagi yang dilayani Kong tidak ada di peta:
+Tiga hal lagi yang dilayani Kong tidak ada di peta:
 
 - `/health` dan `/.well-known/security.txt`, yang
   [dijawab Kong sendiri](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L223-L260)
@@ -121,8 +121,6 @@ Empat hal lagi yang dilayani Kong tidak ada di peta:
   Notifikasi itu tidak membawa token, karena penyedianya memang tidak punya token untuk dikirim; payment
   memverifikasi tanda tangan setiap notifikasi sebagai gantinya, seperti dijelaskan di
   [halaman payment](/id/services/payment/).
-- [Route milik seal di bawah `/api/v1/seal/`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L695-L771). Seal belum punya tempat di
-  peta; [referensi REST](/id/apis/rest/) mencantumkan endpoint yang dipanggil client-nya.
 - Host storage, yang setiap path-nya diteruskan ke object store.
 
 ## WebSocket

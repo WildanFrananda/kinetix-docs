@@ -93,5 +93,12 @@ export const services: readonly Service[] = [
     owns: "service.edge.owns",
     language: { name: "Teal" },
     framework: { name: "OpenResty", version: "1.31.1.1" }
+  },
+  {
+    name: "seal",
+    repository: `${github}/kinetix-seal-service`,
+    owns: "service.seal.owns",
+    language: { name: "TypeScript", logo: "typescript" },
+    framework: { name: "Fastify", version: "5.12.7" }
   }
 ];

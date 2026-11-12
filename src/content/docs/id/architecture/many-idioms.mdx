@@ -1,20 +1,20 @@
 ---
-title: Satu aturan, sebelas idiom
-description: Bagaimana sebelas dari dua belas service Kinetix di production menaruh logika bisnisnya di balik port, masing-masing dalam bahasanya sendiri, di mana build yang menjaga aturan itu dan di mana hanya code review yang menjaganya, di mana sebuah bahasa mengubah desainnya sendiri, dan bagaimana edge bekerja tanpa port.
-sourceHash: "d76f19bf0378"
+title: Satu aturan, dua belas idiom
+description: Bagaimana dua belas dari tiga belas service Kinetix di production menaruh logika bisnisnya di balik port, masing-masing dalam bahasanya sendiri, di mana build yang menjaga aturan itu dan di mana hanya code review yang menjaganya, di mana sebuah bahasa mengubah desainnya sendiri, dan bagaimana edge bekerja tanpa port.
+sourceHash: "6ffafee73547"
 sidebar:
   order: 5
 ---
 
-Kinetix menjalankan dua belas service di production, dan sebelas di antaranya memegang aturan yang sama:
+Kinetix menjalankan tiga belas service di production, dan dua belas di antaranya memegang aturan yang sama:
 logika bisnis bergantung pada port, adapter mengimplementasikannya, dan satu tempat di luar logika memilih
-adapter-nya. Yang kedua belas, edge, tidak punya port, dan [bagian terakhir](#pengecualiannya-edge) menjelaskan
+adapter-nya. Yang ketiga belas, edge, tidak punya port, dan [bagian terakhir](#pengecualiannya-edge) menjelaskan
 apa yang dilakukannya sebagai gantinya. Yang berubah dari service ke service adalah cara bahasanya mengatakan
 hal itu. Port adalah interface di C#, trait di Rust, behaviour di Elixir, dan abstract class di Python;
 wiring-nya berupa container dependency injection di satu service, sebuah fungsi di service lain, dan lookup
 konfigurasi di service ketiga.
 
-Halaman ini menjajarkan kesebelasnya. Setiap halaman service punya bagian "Bagaimana kodenya disusun"
+Halaman ini menjajarkan kedua belasnya. Setiap halaman service punya bagian "Bagaimana kodenya disusun"
 untuk direktorinya sendiri; halaman ini membahas apa yang sama di antara mereka dan kenapa mereka
 berbeda.
 
@@ -34,8 +34,8 @@ database.
 
 ## Interface yang disebut di titik pemakaian: C#, Java, PHP, dan TypeScript
 
-Di keempat bahasa ini sebuah class menyatakan interface yang ia implementasikan, dan container
-me-resolve dependency berdasarkan nama interface-nya.
+Di keempat bahasa ini sebuah class menyatakan interface yang ia implementasikan, dan di semua service kecuali
+satu, sebuah container me-resolve dependency berdasarkan nama interface-nya.
 
 - **order**, C#.
   [`IPricingClient`](https://github.com/WildanFrananda/kinetix-order-service/blob/0c3698ed729ac161bef54c469f46cebf89acb6c6/Application/Ports/IPricingClient.cs#L6-L17)
@@ -83,6 +83,16 @@ me-resolve dependency berdasarkan nama interface-nya.
   dengan `@Inject("FleetRegistryPort")`. Compiler memeriksa bahwa adapter cocok dengan interface-nya;
   token yang salah eja ketahuan saat aplikasi start, karena NestJS menolak start dengan dependency yang
   tidak bisa ia resolve.
+- **seal**, TypeScript, tanpa container sama sekali.
+  [`DeliveryFeedPort`](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/application/ports/delivery_feed.port.ts#L5-L7)
+  ada di `application/ports` dan
+  [`GrpcDeliveryFeed`](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/infrastructure/grpc/grpc_delivery_feed.adapter.ts#L22-L29)
+  mengimplementasikannya. `CourierFacts`
+  [menyebut port-port-nya di constructor](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/application/courier_facts.service.ts#L24-L38),
+  dan `main.ts`, satu-satunya tempat yang melakukan wiring,
+  [membangun adapter itu dan meneruskannya](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/main.ts#L79-L89)
+  dengan tangan. Karena tidak ada yang perlu di-resolve saat runtime, interface yang terhapus tidak
+  merugikan apa pun: compiler memeriksa setiap argumen, dan tidak ada string yang bisa salah eja.
 
 ## Interface struktural: Go
 
@@ -216,7 +226,7 @@ membuktikan bahwa logika memakai port alih-alih melewatinya.
 
 ## Fake, dan apa yang dibuktikannya
 
-Masing-masing dari kesebelasnya menguji logikanya terhadap fake dari port-port-nya. Sebagian besar ditulis dengan tangan
+Masing-masing dari kedua belasnya menguji logikanya terhadap fake dari port-port-nya. Sebagian besar ditulis dengan tangan
 dan mengimplementasikan port seperti adapter lainnya:
 [stok milik catalog](https://github.com/WildanFrananda/kinetix-catalog-service/blob/2a395740eb832a69bfd72c82be54779d421ddef3/core/tests/unit/fake_bin_stock_service_port.py#L6-L35),
 [identity milik warehouse](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/633964cb65b5d74cc9cb525414d182d459acb687/spec/support/fake_identity_client.rb#L4-L31),
@@ -225,6 +235,7 @@ dan mengimplementasikan port seperti adapter lainnya:
 [order milik review](https://github.com/WildanFrananda/kinetix-review-service/blob/d259ba53f8ce03651eec94f8fe4e1faf1544c6b2/tests/FakeOrderClient.php#L11-L35),
 [sumber milik search](https://github.com/WildanFrananda/kinetix-search-service/blob/9d0994b7a46011b4889bba4a7dc3b3e7a56028e2/tests/searchtest/source.go#L9-L19),
 [payment milik notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/0a5e21f2f06e9aa404692c437dc417bdded90215/tests/notarytest/source.go#L9-L19),
+[pengiriman milik seal](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/tests/fakes/fake_delivery_feed.ts#L6-L21)
 dan
 [identity milik notification](https://github.com/WildanFrananda/kinetix-notification-service/blob/8e4a1c51f9758b7acffa1bb27a97a35c48feaf23/src/test/scala/com/kinetix/notification/fakes/FakeDirectory.scala#L9-L14).
 order dan payment membangun fake-nya dari interface dengan library mocking,
