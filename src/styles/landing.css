@@ -1,0 +1,183 @@
+html[data-has-hero] {
+  --sl-content-width: 76rem;
+  --sl-content-pad-x: clamp(1rem, 3vw, 2rem);
+
+  --kx-land-radius: 8px;
+  --kx-land-radius-lg: 12px;
+  --kx-land-accent-warm: #ffb377;
+  --kx-land-glow-soft: rgba(240, 116, 47, 0.16);
+  --kx-land-glow-cool: rgba(116, 169, 214, 0.1);
+  --kx-land-border: rgba(246, 242, 234, 0.1);
+  --kx-land-border-strong: rgba(246, 242, 234, 0.18);
+  --kx-land-card-bg: rgba(25, 24, 21, 0.78);
+  --kx-land-card-solid: #171614;
+  --kx-land-surface-elevated: #1f1d1a;
+  --kx-land-node-active: rgba(240, 116, 47, 0.12);
+  --kx-land-card-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+}
+
+html[data-has-hero][data-theme="light"] {
+  --kx-land-accent-warm: #ea580c;
+  --kx-land-glow-soft: rgba(194, 65, 12, 0.1);
+  --kx-land-glow-cool: rgba(43, 95, 143, 0.08);
+  --kx-land-border: rgba(23, 22, 20, 0.11);
+  --kx-land-border-strong: rgba(23, 22, 20, 0.2);
+  --kx-land-card-bg: rgba(255, 255, 255, 0.86);
+  --kx-land-card-solid: #ffffff;
+  --kx-land-surface-elevated: #f1eee8;
+  --kx-land-node-active: rgba(194, 65, 12, 0.08);
+  --kx-land-card-shadow: 0 10px 28px rgba(23, 22, 20, 0.06);
+}
+
+html[data-has-hero] body {
+  background-image:
+    radial-gradient(ellipse 68% 36% at 68% 0%, var(--kx-land-glow-soft), transparent 70%),
+    radial-gradient(ellipse 46% 30% at 16% 6%, var(--kx-land-glow-cool), transparent 72%);
+  background-repeat: no-repeat;
+}
+
+html[data-has-hero] header.header {
+  border-bottom: 1px solid var(--kx-land-border);
+  background: color-mix(in oklab, var(--sl-color-bg-nav) 84%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+html[data-has-hero] .content-panel {
+  padding-block: 0;
+}
+
+html[data-has-hero] .content-panel + .content-panel {
+  border-top: 0;
+}
+
+html[data-has-hero] .sl-markdown-content {
+  margin-top: 0;
+}
+
+html[data-has-hero] .sl-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-block-size: 2.75rem;
+  block-size: 2.75rem;
+  margin: 0;
+  padding: 0 1.2rem;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--kx-land-radius);
+  font-size: var(--sl-text-sm);
+  font-weight: 500;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+html[data-has-hero] .sl-link-button svg {
+  inline-size: 1rem;
+  block-size: 1rem;
+  flex: none;
+}
+
+html[data-has-hero] .sl-link-button.primary {
+  position: relative;
+  border-color: transparent;
+  background-color: var(--sl-color-accent);
+  background-image: linear-gradient(
+    115deg,
+    var(--sl-color-accent) 0%,
+    var(--kx-land-accent-warm) 50%,
+    var(--sl-color-accent) 100%
+  );
+  background-size: 220% 220%;
+  background-position: 0% 50%;
+  color: #131210;
+  box-shadow: 0 0 24px var(--kx-land-glow-soft);
+}
+
+html[data-has-hero] .sl-link-button.primary:hover {
+  box-shadow: 0 0 32px rgba(240, 116, 47, 0.34);
+  color: #131210;
+}
+
+html[data-has-hero][data-theme="light"] .sl-link-button.primary,
+html[data-has-hero][data-theme="light"] .sl-link-button.primary:hover {
+  color: #ffffff;
+}
+
+html[data-has-hero] .sl-link-button.secondary {
+  border-color: var(--kx-land-border-strong);
+  background: var(--kx-land-card-bg);
+  color: var(--sl-color-white);
+}
+
+html[data-has-hero] .sl-link-button.secondary:hover,
+html[data-has-hero] .sl-link-button.minimal:hover {
+  border-color: var(--sl-color-accent);
+  color: var(--sl-color-white);
+}
+
+html[data-has-hero] .sl-link-button.minimal {
+  border-color: var(--kx-land-border);
+  background: transparent;
+  color: var(--sl-color-gray-1);
+}
+
+@keyframes kx-cta-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-has-hero] .sl-link-button.primary {
+    animation: kx-cta-flow 6s ease infinite;
+  }
+
+  html[data-has-hero] .sl-link-button:hover {
+    transform: translateY(-1px);
+  }
+}
+
+html[data-has-hero] .kx-section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  max-inline-size: 42rem;
+  margin-block-end: 1.75rem;
+}
+
+html[data-has-hero] .kx-section-kicker {
+  margin: 0;
+  color: var(--sl-color-accent);
+  font-family: var(--sl-font-mono);
+  font-size: var(--sl-text-2xs);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+html[data-has-hero] .kx-section-head h2 {
+  margin: 0;
+  color: var(--sl-color-white);
+  font-size: clamp(1.65rem, 3vw, 2.35rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+
+html[data-has-hero] .kx-section-sub {
+  margin: 0;
+  color: var(--sl-color-gray-2);
+  font-size: var(--sl-text-base);
+  line-height: 1.6;
+}

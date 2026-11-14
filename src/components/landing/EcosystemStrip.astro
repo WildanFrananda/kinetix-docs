@@ -1,0 +1,280 @@
+---
+import { catalogueFor } from "../../diagrams/engine/catalogue_for";
+import { localeOf } from "../../diagrams/engine/locale_of";
+import { localePath } from "../../site/landing_data";
+import type { Tech } from "../../site/types/tech.type";
+import TechLogo from "../TechLogo.astro";
+
+const locale = localeOf(Astro.locals.starlightRoute.entryMeta.lang);
+const catalogue = catalogueFor(locale);
+
+const stripItems: readonly Tech[] = [
+  { name: "TypeScript", logo: "typescript" },
+  { name: "Python", logo: "python" },
+  { name: "Rust", logo: "rust" },
+  { name: "C#", logo: "csharp" },
+  { name: "Java", logo: "java" },
+  { name: "Ruby", logo: "ruby" },
+  { name: "Elixir", logo: "elixir" },
+  { name: "PHP", logo: "php" },
+  { name: "Scala", logo: "scala" },
+  { name: "C++", logo: "cplusplus" },
+  { name: "Go", logo: "go" },
+  { name: "Flutter", logo: "flutter" },
+  { name: "PostgreSQL", logo: "postgresql" },
+  { name: "Redis", logo: "redis" },
+  { name: "RabbitMQ", logo: "rabbitmq" },
+  { name: "OpenTelemetry", logo: "opentelemetry" }
+];
+---
+
+<section class="kx-eco not-content" aria-labelledby="kx-eco-title">
+  <div class="kx-eco-head">
+    <p id="kx-eco-title" class="kx-eco-label">{catalogue["landing.ecosystem.label"]}</p>
+    <div class="kx-eco-actions">
+      <button
+        type="button"
+        class="kx-eco-toggle"
+        data-eco-toggle
+        data-pause-label={catalogue["landing.ecosystem.pause"]}
+        data-play-label={catalogue["landing.ecosystem.play"]}
+        aria-label={catalogue["landing.ecosystem.pause"]}
+      >
+        <svg class="kx-eco-icon kx-eco-icon-pause" viewBox="0 0 12 12" aria-hidden="true">
+          <rect x="2" y="2" width="3" height="8" rx="0.8" />
+          <rect x="7" y="2" width="3" height="8" rx="0.8" />
+        </svg>
+        <svg class="kx-eco-icon kx-eco-icon-play" viewBox="0 0 12 12" aria-hidden="true">
+          <path d="M3 2.2 10 6 3 9.8Z" />
+        </svg>
+        <span data-eco-toggle-text>{catalogue["landing.ecosystem.pause"]}</span>
+      </button>
+      <a class="kx-eco-link" href={localePath(locale, "/architecture/tech-stack/")}>
+        {catalogue["landing.ecosystem.cta"]} <span aria-hidden="true">→</span>
+      </a>
+    </div>
+  </div>
+  <div class="kx-eco-viewport">
+    <div class="kx-eco-track" data-eco-track data-paused="false">
+      <ul class="kx-eco-strip">
+        {
+          stripItems.map((tech) => (
+            <li class="kx-eco-item">
+              <TechLogo tech={tech} size="sm" showName={true} />
+            </li>
+          ))
+        }
+      </ul>
+      <ul class="kx-eco-strip kx-eco-clone" aria-hidden="true">
+        {
+          stripItems.map((tech) => (
+            <li class="kx-eco-item">
+              <TechLogo tech={tech} size="sm" showName={true} />
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+</section>
+
+<script>
+  const toggleBtn = document.querySelector<HTMLButtonElement>("[data-eco-toggle]");
+  const track = document.querySelector<HTMLElement>("[data-eco-track]");
+  const toggleText = document.querySelector<HTMLElement>("[data-eco-toggle-text]");
+
+  if (toggleBtn && track && toggleText) {
+    toggleBtn.addEventListener("click", () => {
+      const paused = track.dataset.paused === "true";
+      const nextPaused = !paused;
+      track.dataset.paused = String(nextPaused);
+      toggleBtn.dataset.state = nextPaused ? "paused" : "playing";
+      const nextLabel = nextPaused ? toggleBtn.dataset.playLabel ?? "" : toggleBtn.dataset.pauseLabel ?? "";
+      toggleBtn.setAttribute("aria-label", nextLabel);
+      toggleText.textContent = nextLabel;
+    });
+  }
+</script>
+
+<style>
+  .kx-eco {
+    padding-block: 1.5rem;
+    border-block: 1px solid var(--kx-land-border);
+  }
+
+  .kx-eco-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    margin-block-end: 1.1rem;
+  }
+
+  .kx-eco-label {
+    margin: 0;
+    color: var(--sl-color-gray-3);
+    font-family: var(--sl-font-mono);
+    font-size: var(--sl-text-xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .kx-eco-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+
+  .kx-eco-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-block-size: 44px;
+    padding: 0 0.7rem;
+    border: 1px solid var(--kx-land-border);
+    border-radius: 6px;
+    background: var(--kx-land-card-bg);
+    color: var(--sl-color-gray-2);
+    font-family: var(--sl-font-mono);
+    font-size: var(--sl-text-2xs);
+    cursor: pointer;
+    transition: border-color 0.16s ease, color 0.16s ease, scale 0.16s ease;
+  }
+
+  .kx-eco-toggle:hover {
+    border-color: var(--sl-color-accent);
+    color: var(--sl-color-white);
+  }
+
+  .kx-eco-toggle:active {
+    scale: 0.97;
+  }
+
+  .kx-eco-toggle:focus-visible,
+  .kx-eco-link:focus-visible {
+    outline: 2px solid var(--sl-color-accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  .kx-eco-icon {
+    inline-size: 0.7rem;
+    block-size: 0.7rem;
+    fill: currentColor;
+  }
+
+  .kx-eco-icon-play {
+    display: none;
+  }
+
+  .kx-eco-toggle[data-state="paused"] .kx-eco-icon-pause {
+    display: none;
+  }
+
+  .kx-eco-toggle[data-state="paused"] .kx-eco-icon-play {
+    display: block;
+  }
+
+  .kx-eco-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-block-size: 44px;
+    color: var(--sl-color-accent);
+    font-family: var(--sl-font-mono);
+    font-size: var(--sl-text-xs);
+    text-decoration: none;
+  }
+
+  .kx-eco-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+
+  .kx-eco-viewport {
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent);
+    mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent);
+  }
+
+  .kx-eco-track {
+    display: flex;
+    inline-size: max-content;
+    gap: 0.75rem;
+  }
+
+  .kx-eco-strip {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .kx-eco-item {
+    flex: none;
+    margin: 0;
+    padding: 0.42rem 0.72rem;
+    border: 1px solid var(--kx-land-border);
+    border-radius: var(--kx-land-radius);
+    background: var(--kx-land-card-bg);
+    transition: border-color 0.2s ease, background-color 0.2s ease, translate 0.28s ease-out;
+    transition-timing-function: ease, ease, linear(0, 0.48 22%, 1.07 58%, 0.99 84%, 1);
+  }
+
+  .kx-eco-item:hover {
+    border-color: var(--sl-color-accent);
+  }
+
+  @keyframes kx-eco-scroll {
+    from {
+      transform: translateX(0);
+    }
+
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .kx-eco-track {
+      animation: kx-eco-scroll 34s linear infinite;
+    }
+
+    .kx-eco-track[data-paused="true"],
+    .kx-eco-viewport:hover .kx-eco-track,
+    .kx-eco-viewport:focus-within .kx-eco-track {
+      animation-play-state: paused;
+    }
+
+    .kx-eco-item:hover {
+      translate: 0 -2px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .kx-eco-toggle {
+      display: none;
+    }
+
+    .kx-eco-viewport {
+      overflow: visible;
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
+
+    .kx-eco-track {
+      inline-size: auto;
+    }
+
+    .kx-eco-strip {
+      flex-wrap: wrap;
+    }
+
+    .kx-eco-clone {
+      display: none;
+    }
+  }
+</style>

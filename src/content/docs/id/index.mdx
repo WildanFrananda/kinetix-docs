@@ -2,7 +2,7 @@
 title: Kinetix
 description: Arsitektur, kontrak, dan keputusan engineering Kinetix, platform e-commerce dan fulfilment real-time yang dibangun dari empat belas service dalam dua belas bahasa.
 template: splash
-sourceHash: "22b47a395270"
+sourceHash: "e1660f07c23f"
 eyebrow: Dokumentasi engineering
 hero:
   tagline: Platform e-commerce dan fulfilment real-time, didokumentasikan dari kodenya — untuk engineer yang membangun di atasnya, dan untuk engineer yang ingin belajar desain backend terdistribusi dari sistem yang benar-benar berjalan.
@@ -11,8 +11,8 @@ hero:
       link: /id/learn/two-buyers-one-item/
       variant: primary
       icon: right-arrow
-    - text: Tech stack
-      link: /id/architecture/tech-stack/
+    - text: API REST & gRPC
+      link: /id/apis/rest/
       variant: secondary
     - text: GitHub
       link: https://github.com/WildanFrananda
@@ -20,48 +20,18 @@ hero:
       icon: external
 ---
 
-import { Aside, Card, CardGrid } from "@astrojs/starlight/components";
-import ServiceList from "../../../components/ServiceList.astro";
+import BentoShowcase from "../../../components/landing/BentoShowcase.astro";
+import EcosystemStrip from "../../../components/landing/EcosystemStrip.astro";
+import GuidedPaths from "../../../components/landing/GuidedPaths.astro";
+import ServiceSection from "../../../components/landing/ServiceSection.astro";
+import StatsBand from "../../../components/landing/StatsBand.astro";
 
-## Tentang situs ini
+<EcosystemStrip />
 
-Kinetix menjalankan katalog, checkout, pembayaran, fulfilment gudang, dan dispatch kurir sebagai
-service yang berdiri sendiri. Setiap service memiliki datanya dan database-nya sendiri. Antar-service
-berkomunikasi lewat gRPC, mengikuti kontrak yang didefinisikan sekali di `kinetix-contracts`. Trafik
-dari luar masuk lewat satu Kong gateway, dan hanya identity yang berhak menentukan siapa pemanggilnya.
+<BentoShowcase />
 
-Halaman-halaman di sini menjelaskan kenapa sistemnya dibangun seperti itu, apa tanggung jawab tiap
-service, dan kontrak di antara mereka. Setiap halaman ditulis berdasarkan kode yang dijelaskannya dan
-menautkan kode itu pada commit tertentu, jadi yang kamu baca adalah yang berjalan.
+<ServiceSection />
 
-<CardGrid>
-  <Card title="Membangun di atas Kinetix" icon="puzzle">
-    Kontrak, endpoint, autentikasi, dan semantik error untuk client dan integrasi.
-  </Card>
-  <Card title="Belajar backend dari Kinetix" icon="open-book">
-    Masalah nyata — overselling, double charge, partial failure antar-service — dan kode yang
-    menyelesaikannya, langkah demi langkah. Mengasumsikan kamu sudah paham HTTP, SQL, dan satu bahasa
-    backend.
-  </Card>
-</CardGrid>
+<StatsBand />
 
-## Service
-
-Empat belas service, masing-masing satu-satunya pemilik datanya, dan masing-masing dalam bahasanya sendiri
-kecuali dua: notary berbagi Go dengan search, karena domainnya membutuhkan go-ethereum, dan seal berbagi
-TypeScript dengan identity, karena satu-satunya SDK aplikasi Midnight adalah TypeScript. Pilih salah satu
-untuk membuka source-nya.
-
-<ServiceList />
-
-Di sekelilingnya ada [API gateway](https://github.com/WildanFrananda/kinetix-api-gateway) (Kong),
-[aplikasi kurir](https://github.com/WildanFrananda/kinetix-courier-mobile) (Flutter),
-[backoffice](https://github.com/WildanFrananda/kinetix-backoffice) (React), dan
-[kontrak](https://github.com/WildanFrananda/kinetix-contracts) (Protocol Buffers) yang diikuti semua
-service. Stack lengkap beserta versinya ada di halaman [tech stack](/id/architecture/tech-stack/).
-
-<Aside title="Situs ini sedang ditulis">
-  Sebuah bagian baru muncul setelah isinya diverifikasi terhadap kode, tidak sebelumnya. Halaman
-  tersedia dalam bahasa Inggris dan Bahasa Indonesia; halaman yang belum diterjemahkan ditampilkan
-  dalam bahasa Inggris.
-</Aside>
+<GuidedPaths />

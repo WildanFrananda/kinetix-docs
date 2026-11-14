@@ -1,0 +1,713 @@
+---
+import { catalogueFor } from "../../diagrams/engine/catalogue_for";
+import { localeOf } from "../../diagrams/engine/locale_of";
+import { contractsRelease } from "../../site/contracts_release";
+import { localePath } from "../../site/landing_data";
+import { notaryVerifier } from "../../site/notary_verifier";
+import { BENTO_FIGURES_BUNDLE } from "./anatomy/bento_figures_bundle";
+import "./anatomy/switchboard_rig.css";
+
+const locale = localeOf(Astro.locals.starlightRoute.entryMeta.lang);
+const catalogue = catalogueFor(locale);
+const verifierSizeMb = (notaryVerifier.module.bytes / (1024 * 1024)).toFixed(1);
+---
+
+<section class="kx-bento-section not-content" aria-labelledby="kx-bento-heading">
+  <header class="kx-section-head">
+    <p class="kx-section-kicker">{catalogue["landing.bento.kicker"]}</p>
+    <h2 id="kx-bento-heading">{catalogue["landing.bento.title"]}</h2>
+    <p class="kx-section-sub">{catalogue["landing.bento.subtitle"]}</p>
+  </header>
+
+  <div class="kx-bento-grid">
+    <article class="kx-bento-card kx-span-7">
+      <div class="kx-bento-media" aria-hidden="true">
+        <div class="kx-bento-stage">
+          <div class="iso kx-bento-iso" set:html={BENTO_FIGURES_BUNDLE.contracts.svg}></div>
+        </div>
+        <div class="kx-bento-telemetry kx-preview-code">
+          <div class="kx-preview-top">
+            <span>fulfillment/v1/bin_stock.proto</span>
+            <span class="kx-preview-ver">v{contractsRelease.version}</span>
+          </div>
+          <div class="kx-telemetry-pills">
+            <span class="kx-tele-pill kx-code-line kx-code-line-a">rpc ReserveStock</span>
+            <span class="kx-tele-pill kx-code-line kx-code-line-b">rpc ReleaseStock</span>
+          </div>
+        </div>
+      </div>
+      <div class="kx-bento-body">
+        <p class="kx-bento-eyebrow">{catalogue["landing.bento.contracts.eyebrow"]}</p>
+        <h3>{catalogue["landing.bento.contracts.title"]}</h3>
+        <p>{catalogue["landing.bento.contracts.body"]}</p>
+      </div>
+      <footer class="kx-bento-foot">
+        <a href={localePath(locale, "/apis/grpc/")} class="kx-bento-link">
+          {catalogue["landing.bento.contracts.cta"]} <span aria-hidden="true">→</span>
+        </a>
+      </footer>
+    </article>
+
+    <article class="kx-bento-card kx-span-5">
+      <div class="kx-bento-media" aria-hidden="true">
+        <div class="kx-bento-stage">
+          <div class="iso kx-bento-iso" set:html={BENTO_FIGURES_BUNDLE.concurrency.svg}></div>
+        </div>
+        <div class="kx-bento-telemetry kx-preview-compare">
+          <div class="kx-compare-row kx-compare-bad">
+            <span class="kx-compare-tag">01</span>
+            <span>{catalogue["landing.bento.concurrency.before"]}</span>
+          </div>
+          <div class="kx-compare-row kx-compare-good">
+            <span class="kx-compare-tag">02</span>
+            <span>{catalogue["landing.bento.concurrency.after"]}</span>
+          </div>
+        </div>
+      </div>
+      <div class="kx-bento-body">
+        <p class="kx-bento-eyebrow">{catalogue["landing.bento.concurrency.eyebrow"]}</p>
+        <h3>{catalogue["landing.bento.concurrency.title"]}</h3>
+        <p>{catalogue["landing.bento.concurrency.body"]}</p>
+      </div>
+      <footer class="kx-bento-foot">
+        <a href={localePath(locale, "/learn/two-buyers-one-item/")} class="kx-bento-link">
+          {catalogue["landing.bento.concurrency.cta"]} <span aria-hidden="true">→</span>
+        </a>
+      </footer>
+    </article>
+
+    <article class="kx-bento-card kx-span-5">
+      <div class="kx-bento-media" aria-hidden="true">
+        <div class="kx-bento-stage">
+          <div class="iso kx-bento-iso" set:html={BENTO_FIGURES_BUNDLE.boundary.svg}></div>
+        </div>
+        <div class="kx-bento-telemetry kx-preview-flow">
+          <span class="kx-flow-pill">__Host-kx_session</span>
+          <span class="kx-flow-track"><span class="kx-flow-spark"></span></span>
+          <span class="kx-flow-pill kx-flow-accent">Edge BFF</span>
+          <span class="kx-flow-track"><span class="kx-flow-spark kx-flow-spark-delayed"></span></span>
+          <span class="kx-flow-pill">JWT</span>
+        </div>
+      </div>
+      <div class="kx-bento-body">
+        <p class="kx-bento-eyebrow">{catalogue["landing.bento.boundary.eyebrow"]}</p>
+        <h3>{catalogue["landing.bento.boundary.title"]}</h3>
+        <p>{catalogue["landing.bento.boundary.body"]}</p>
+      </div>
+      <footer class="kx-bento-foot">
+        <a href={localePath(locale, "/architecture/gateway/")} class="kx-bento-link">
+          {catalogue["landing.bento.boundary.cta"]} <span aria-hidden="true">→</span>
+        </a>
+      </footer>
+    </article>
+
+    <article class="kx-bento-card kx-span-7">
+      <div class="kx-bento-media" aria-hidden="true">
+        <div class="kx-bento-stage">
+          <div class="iso kx-bento-iso" set:html={BENTO_FIGURES_BUNDLE.identity.svg}></div>
+        </div>
+        <div class="kx-bento-telemetry kx-preview-jwks">
+          <span class="kx-jwks-key">
+            <span>kid: K1 (verify)</span>
+            <span class="kx-jwks-state">standby</span>
+          </span>
+          <span class="kx-jwks-key kx-jwks-active">
+            <span>kid: K2 (sign + verify)</span>
+            <span class="kx-jwks-state kx-jwks-state-on">active</span>
+          </span>
+        </div>
+      </div>
+      <div class="kx-bento-body">
+        <p class="kx-bento-eyebrow">{catalogue["landing.bento.identity.eyebrow"]}</p>
+        <h3>{catalogue["landing.bento.identity.title"]}</h3>
+        <p>{catalogue["landing.bento.identity.body"]}</p>
+      </div>
+      <footer class="kx-bento-foot">
+        <a href={localePath(locale, "/decisions/0006-identity-is-the-only-issuer/")} class="kx-bento-link">
+          {catalogue["landing.bento.identity.cta"]} <span aria-hidden="true">→</span>
+        </a>
+      </footer>
+    </article>
+
+    <article class="kx-bento-card kx-span-7">
+      <div class="kx-bento-media" aria-hidden="true">
+        <div class="kx-bento-stage">
+          <div class="iso kx-bento-iso" set:html={BENTO_FIGURES_BUNDLE.verifier.svg}></div>
+        </div>
+        <div class="kx-bento-telemetry kx-preview-wasm">
+          <div class="kx-wasm-row">
+            <span class="kx-wasm-file">{notaryVerifier.module.file}</span>
+            <span class="kx-wasm-meta">{verifierSizeMb} MB · {notaryVerifier.release} · {notaryVerifier.network.name}</span>
+          </div>
+          <div class="kx-wasm-track">
+            <span class="kx-wasm-scan"></span>
+          </div>
+        </div>
+      </div>
+      <div class="kx-bento-body">
+        <p class="kx-bento-eyebrow">{catalogue["landing.bento.verifier.eyebrow"]}</p>
+        <h3>{catalogue["landing.bento.verifier.title"]}</h3>
+        <p>{catalogue["landing.bento.verifier.body"]}</p>
+      </div>
+      <footer class="kx-bento-foot">
+        <a href={localePath(locale, "/verify/proof-of-liabilities/")} class="kx-bento-link">
+          {catalogue["landing.bento.verifier.cta"]} <span aria-hidden="true">→</span>
+        </a>
+      </footer>
+    </article>
+
+    <article class="kx-bento-card kx-span-5 kx-bento-spotlight">
+      <div class="kx-bento-media" aria-hidden="true">
+        <div class="kx-bento-stage">
+          <div class="iso kx-bento-iso" set:html={BENTO_FIGURES_BUNDLE.learn.svg}></div>
+        </div>
+        <div class="kx-bento-telemetry kx-preview-steps">
+          <span class="kx-trace-step kx-trace-1">01</span>
+          <span class="kx-trace-sep"></span>
+          <span class="kx-trace-step kx-trace-2">02</span>
+          <span class="kx-trace-sep"></span>
+          <span class="kx-trace-step kx-trace-3">03</span>
+          <span class="kx-trace-sep"></span>
+          <span class="kx-trace-step kx-trace-4">04</span>
+        </div>
+      </div>
+      <div class="kx-bento-body">
+        <p class="kx-bento-eyebrow">{catalogue["landing.bento.learn.eyebrow"]}</p>
+        <h3>{catalogue["landing.bento.learn.title"]}</h3>
+        <p>{catalogue["landing.bento.learn.body"]}</p>
+      </div>
+      <footer class="kx-bento-foot">
+        <a href={localePath(locale, "/learn/two-buyers-one-item/")} class="kx-bento-link">
+          {catalogue["landing.bento.learn.cta"]} <span aria-hidden="true">→</span>
+        </a>
+      </footer>
+    </article>
+  </div>
+</section>
+
+<style>
+  .kx-bento-section {
+    padding-block: clamp(2.5rem, 5vw, 4rem);
+  }
+
+  .kx-bento-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .kx-span-7 {
+    grid-column: span 7;
+  }
+
+  .kx-span-5 {
+    grid-column: span 5;
+  }
+
+  .kx-bento-card {
+    position: relative;
+    container: bento-card / inline-size;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.35rem;
+    border: 1px solid var(--kx-land-border);
+    border-radius: var(--kx-land-radius-lg);
+    background: var(--kx-land-card-bg);
+    box-shadow: var(--kx-land-card-shadow);
+    min-inline-size: 0;
+    overflow: clip;
+    transition: border-color 0.25s ease, background-color 0.25s ease, transform 0.25s ease;
+  }
+
+  .kx-bento-card::before {
+    content: "";
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    block-size: 2px;
+    background: linear-gradient(90deg, transparent, var(--sl-color-accent), var(--kx-land-accent-warm), transparent);
+    background-size: 200% 100%;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+  }
+
+  .kx-bento-card:hover {
+    border-color: var(--sl-color-accent);
+  }
+
+  .kx-bento-card:hover::before {
+    opacity: 1;
+  }
+
+  .kx-bento-spotlight {
+    background-image: radial-gradient(circle at 88% 12%, var(--kx-land-glow-soft), transparent 58%);
+  }
+
+  .kx-bento-media {
+    display: grid;
+    grid-template-rows: 1fr auto;
+    gap: 0.7rem;
+    padding: 0.85rem;
+    border: 1px solid var(--kx-land-border);
+    border-radius: var(--kx-land-radius);
+    background: var(--kx-land-surface-elevated);
+    font-family: var(--sl-font-mono);
+    font-size: var(--sl-text-xs);
+    min-inline-size: 0;
+  }
+
+  .kx-bento-stage {
+    display: grid;
+    place-items: center;
+    block-size: 164px;
+    inline-size: 100%;
+    overflow: hidden;
+  }
+
+  .kx-bento-iso {
+    display: grid;
+    place-items: center;
+    inline-size: 100%;
+    block-size: 100%;
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .kx-bento-iso :global(.iso-svg) {
+    max-inline-size: 100%;
+    max-block-size: 164px;
+    inline-size: auto;
+    block-size: auto;
+  }
+
+  .kx-bento-telemetry {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding-block-start: 0.55rem;
+    border-block-start: 1px solid var(--kx-land-border);
+    min-block-size: 3.35rem;
+    justify-content: center;
+  }
+
+  .kx-preview-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    color: var(--sl-color-gray-3);
+    font-size: var(--sl-text-2xs);
+  }
+
+  .kx-preview-ver {
+    color: var(--sl-color-accent);
+    flex-shrink: 0;
+  }
+
+  .kx-telemetry-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .kx-tele-pill {
+    padding: 0.22rem 0.5rem;
+    border: 1px solid var(--kx-land-border);
+    border-radius: 4px;
+    border-inline-start: 2px solid transparent;
+    color: var(--sl-color-gray-2);
+    font-size: var(--sl-text-2xs);
+    white-space: nowrap;
+  }
+
+  .kx-preview-compare {
+    gap: 0.32rem;
+  }
+
+  .kx-compare-row {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.26rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid var(--kx-land-border);
+    font-size: var(--sl-text-2xs);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .kx-compare-bad {
+    color: var(--sl-color-gray-3);
+  }
+
+  .kx-compare-good {
+    border-color: var(--sl-color-accent);
+    color: var(--sl-color-white);
+    background: var(--kx-land-node-active);
+  }
+
+  .kx-compare-tag {
+    color: var(--sl-color-accent);
+    font-weight: 600;
+  }
+
+  .kx-preview-flow {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: nowrap;
+  }
+
+  .kx-flow-pill {
+    padding: 0.28rem 0.5rem;
+    border: 1px solid var(--kx-land-border-strong);
+    border-radius: 5px;
+    background: var(--kx-land-card-solid);
+    color: var(--sl-color-gray-2);
+    font-size: 0.68rem;
+    white-space: nowrap;
+  }
+
+  .kx-flow-accent {
+    border-color: var(--sl-color-accent);
+    color: var(--sl-color-accent);
+  }
+
+  .kx-flow-track {
+    position: relative;
+    flex: 1;
+    min-inline-size: 0.75rem;
+    block-size: 2px;
+    background: var(--kx-land-border-strong);
+    overflow: hidden;
+  }
+
+  .kx-flow-spark {
+    position: absolute;
+    inset-block: -1px;
+    inset-inline-start: -45%;
+    inline-size: 45%;
+    background: linear-gradient(90deg, transparent, var(--sl-color-accent), transparent);
+  }
+
+  .kx-preview-jwks {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .kx-jwks-key {
+    flex: 1 1 9rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.34rem 0.55rem;
+    border: 1px solid var(--kx-land-border);
+    border-radius: 5px;
+    font-size: 0.72rem;
+    color: var(--sl-color-gray-2);
+  }
+
+  .kx-jwks-active {
+    border-color: var(--sl-color-accent);
+    background: var(--kx-land-node-active);
+    color: var(--sl-color-white);
+  }
+
+  .kx-jwks-state {
+    font-size: 0.65rem;
+    color: var(--sl-color-gray-3);
+    text-transform: uppercase;
+  }
+
+  .kx-jwks-state-on {
+    color: var(--sl-color-accent);
+  }
+
+  .kx-preview-wasm {
+    gap: 0.45rem;
+  }
+
+  .kx-wasm-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .kx-wasm-file {
+    color: var(--sl-color-accent);
+    font-weight: 600;
+  }
+
+  .kx-wasm-meta {
+    color: var(--sl-color-gray-3);
+    font-size: 0.72rem;
+  }
+
+  .kx-wasm-track {
+    position: relative;
+    block-size: 3px;
+    border-radius: 999px;
+    background: var(--kx-land-border);
+    overflow: hidden;
+  }
+
+  .kx-wasm-scan {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: -35%;
+    inline-size: 35%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, transparent, var(--sl-color-accent), var(--kx-land-accent-warm));
+  }
+
+  .kx-preview-steps {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .kx-trace-step {
+    display: grid;
+    place-items: center;
+    min-inline-size: 2rem;
+    block-size: 1.75rem;
+    border: 1px solid var(--kx-land-border-strong);
+    border-radius: 5px;
+    background: var(--kx-land-card-solid);
+    color: var(--sl-color-gray-2);
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+
+  .kx-trace-sep {
+    flex: 1;
+    block-size: 1px;
+    background: var(--kx-land-border-strong);
+  }
+
+  .kx-bento-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .kx-bento-eyebrow {
+    margin: 0;
+    color: var(--sl-color-accent);
+    font-family: var(--sl-font-mono);
+    font-size: var(--sl-text-2xs);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .kx-bento-body h3 {
+    margin: 0;
+    color: var(--sl-color-white);
+    font-size: var(--sl-text-lg);
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .kx-bento-body p:last-child {
+    margin: 0;
+    color: var(--sl-color-gray-2);
+    font-size: var(--sl-text-sm);
+    line-height: 1.55;
+  }
+
+  .kx-bento-foot {
+    margin-block-start: auto;
+  }
+
+  .kx-bento-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-block-size: 44px;
+    padding-inline: 0.15rem;
+    color: var(--sl-color-white);
+    font-family: var(--sl-font-mono);
+    font-size: var(--sl-text-xs);
+    text-decoration: none;
+    border-radius: 6px;
+  }
+
+  .kx-bento-link:hover {
+    color: var(--sl-color-accent);
+  }
+
+  .kx-bento-link:focus-visible {
+    outline: 2px solid var(--sl-color-accent);
+    outline-offset: 2px;
+  }
+
+  @keyframes kx-sheen-shift {
+    0% {
+      background-position: 200% 0%;
+    }
+
+    100% {
+      background-position: -200% 0%;
+    }
+  }
+
+  @keyframes kx-rpc-ping {
+    0%,
+    100% {
+      background: transparent;
+      border-inline-start-color: transparent;
+    }
+
+    25%,
+    45% {
+      background: var(--kx-land-node-active);
+      border-inline-start-color: var(--sl-color-accent);
+    }
+  }
+
+  @keyframes kx-compare-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 transparent;
+    }
+
+    50% {
+      box-shadow: 0 0 18px var(--kx-land-glow-soft);
+    }
+  }
+
+  @keyframes kx-flow-dash {
+    0% {
+      inset-inline-start: -45%;
+    }
+
+    100% {
+      inset-inline-start: 110%;
+    }
+  }
+
+  @keyframes kx-key-glow {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 transparent;
+    }
+
+    50% {
+      box-shadow: 0 0 16px var(--kx-land-glow-soft);
+    }
+  }
+
+  @keyframes kx-wasm-sweep {
+    0% {
+      inset-inline-start: -35%;
+    }
+
+    100% {
+      inset-inline-start: 105%;
+    }
+  }
+
+  @keyframes kx-step-active {
+    0%,
+    35%,
+    100% {
+      border-color: var(--kx-land-border-strong);
+      color: var(--sl-color-gray-2);
+      background: var(--kx-land-card-solid);
+    }
+
+    12%,
+    25% {
+      border-color: var(--sl-color-accent);
+      color: var(--sl-color-accent);
+      background: var(--kx-land-node-active);
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .kx-bento-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .kx-bento-card:hover .kx-bento-iso {
+      transform: translateY(-3px) scale(1.015);
+    }
+
+    .kx-bento-card:hover::before {
+      animation: kx-sheen-shift 2.8s linear infinite;
+    }
+
+    .kx-code-line-a {
+      animation: kx-rpc-ping 4.8s ease-in-out infinite;
+    }
+
+    .kx-code-line-b {
+      animation: kx-rpc-ping 4.8s ease-in-out 2.4s infinite;
+    }
+
+    .kx-compare-good {
+      animation: kx-compare-pulse 3.2s ease-in-out infinite;
+    }
+
+    .kx-flow-spark {
+      animation: kx-flow-dash 2.2s linear infinite;
+    }
+
+    .kx-flow-spark-delayed {
+      animation: kx-flow-dash 2.2s linear 1.1s infinite;
+    }
+
+    .kx-jwks-active {
+      animation: kx-key-glow 3.4s ease-in-out infinite;
+    }
+
+    .kx-wasm-scan {
+      animation: kx-wasm-sweep 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    .kx-trace-1 {
+      animation: kx-step-active 4s ease-in-out 0s infinite;
+    }
+
+    .kx-trace-2 {
+      animation: kx-step-active 4s ease-in-out 1s infinite;
+    }
+
+    .kx-trace-3 {
+      animation: kx-step-active 4s ease-in-out 2s infinite;
+    }
+
+    .kx-trace-4 {
+      animation: kx-step-active 4s ease-in-out 3s infinite;
+    }
+  }
+
+  @media (max-width: 60rem) {
+    .kx-bento-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .kx-span-7,
+    .kx-span-5 {
+      grid-column: span 1;
+    }
+  }
+
+  @media (max-width: 42rem) {
+    .kx-bento-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .kx-bento-stage {
+      block-size: 148px;
+    }
+
+    .kx-bento-iso :global(.iso-svg) {
+      max-block-size: 148px;
+    }
+  }
+</style>

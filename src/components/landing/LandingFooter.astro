@@ -1,0 +1,202 @@
+---
+import Default from "@astrojs/starlight/components/Footer.astro";
+import { catalogueFor } from "../../diagrams/engine/catalogue_for";
+import { localeOf } from "../../diagrams/engine/locale_of";
+import { contractsRelease } from "../../site/contracts_release";
+import { localePath } from "../../site/landing_data";
+
+const isLanding = Boolean(Astro.locals.starlightRoute.entry.data.hero);
+const locale = localeOf(Astro.locals.starlightRoute.entryMeta.lang);
+const catalogue = catalogueFor(locale);
+---
+
+{
+  isLanding ? (
+    <footer class="kx-land-footer not-content">
+      <div class="kx-footer-grid">
+        <div class="kx-footer-brand">
+          <p class="kx-footer-title">Kinetix</p>
+          <p class="kx-footer-tagline">{catalogue["landing.footer.tagline"]}</p>
+        </div>
+
+        <nav class="kx-footer-col" aria-label={catalogue["landing.footer.colDocs"]}>
+          <h2>{catalogue["landing.footer.colDocs"]}</h2>
+          <ul>
+            <li>
+              <a href={localePath(locale, "/architecture/system-map/")}>
+                {catalogue["landing.footer.systemMap"]}
+              </a>
+            </li>
+            <li>
+              <a href={localePath(locale, "/architecture/tech-stack/")}>
+                {catalogue["landing.footer.techStack"]}
+              </a>
+            </li>
+            <li>
+              <a href={localePath(locale, "/decisions/")}>{catalogue["landing.footer.decisions"]}</a>
+            </li>
+            <li>
+              <a href={localePath(locale, "/reference/glossary/")}>
+                {catalogue["landing.footer.glossary"]}
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        <nav class="kx-footer-col" aria-label={catalogue["landing.footer.colApis"]}>
+          <h2>{catalogue["landing.footer.colApis"]}</h2>
+          <ul>
+            <li>
+              <a href={localePath(locale, "/apis/rest/")}>{catalogue["landing.footer.restOverview"]}</a>
+            </li>
+            <li>
+              <a href={localePath(locale, "/apis/grpc/")}>{catalogue["landing.footer.grpcOverview"]}</a>
+            </li>
+            <li>
+              <a href={localePath(locale, "/learn/two-buyers-one-item/")}>
+                {catalogue["landing.footer.learningTrack"]}
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        <nav class="kx-footer-col" aria-label={catalogue["landing.footer.colTrust"]}>
+          <h2>{catalogue["landing.footer.colTrust"]}</h2>
+          <ul>
+            <li>
+              <a href={localePath(locale, "/verify/proof-of-liabilities/")}>
+                {catalogue["landing.footer.verifyProof"]}
+              </a>
+            </li>
+            <li>
+              <a href={localePath(locale, "/verify/evidence/")}>
+                {catalogue["landing.footer.verifyEvidence"]}
+              </a>
+            </li>
+            <li>
+              <a href={localePath(locale, "/reference/report-a-vulnerability/")}>
+                {catalogue["landing.footer.securityPolicy"]}
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        <nav class="kx-footer-col" aria-label={catalogue["landing.footer.colRepo"]}>
+          <h2>{catalogue["landing.footer.colRepo"]}</h2>
+          <ul>
+            <li>
+              <a href="https://github.com/WildanFrananda" target="_blank" rel="noopener noreferrer">
+                {catalogue["landing.footer.github"]}
+              </a>
+            </li>
+            <li>
+              <a href={contractsRelease.repository} target="_blank" rel="noopener noreferrer">
+                {catalogue["landing.footer.contractsRepo"]} v{contractsRelease.version}
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </footer>
+  ) : (
+    <Default />
+  )
+}
+
+<style>
+  .kx-land-footer {
+    margin-block-start: 2rem;
+    padding-block: 2.5rem 1rem;
+    border-block-start: 1px solid var(--kx-land-border);
+  }
+
+  .kx-footer-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) repeat(4, minmax(0, 1fr));
+    gap: 2rem 1.5rem;
+  }
+
+  .kx-footer-brand {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-inline-size: 0;
+  }
+
+  .kx-footer-title {
+    margin: 0;
+    color: var(--sl-color-white);
+    font-size: var(--sl-text-lg);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  .kx-footer-tagline {
+    max-inline-size: 18rem;
+    margin: 0;
+    color: var(--sl-color-gray-3);
+    font-size: var(--sl-text-xs);
+    line-height: 1.55;
+  }
+
+  .kx-footer-col h2 {
+    margin: 0 0 0.75rem;
+    color: var(--sl-color-white);
+    font-family: var(--sl-font-mono);
+    font-size: var(--sl-text-2xs);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .kx-footer-col ul {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .kx-footer-col a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 36px;
+    color: var(--sl-color-gray-3);
+    font-size: var(--sl-text-sm);
+    text-decoration: none;
+    border-radius: 4px;
+    transition: color 0.18s ease, translate 0.2s ease-out;
+  }
+
+  .kx-footer-col a:hover {
+    color: var(--sl-color-accent);
+  }
+
+  .kx-footer-col a:focus-visible {
+    outline: 2px solid var(--sl-color-accent);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .kx-footer-col a:hover {
+      translate: 2px 0;
+    }
+  }
+
+  @media (max-width: 60rem) {
+    .kx-footer-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .kx-footer-brand {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 34rem) {
+    .kx-footer-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

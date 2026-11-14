@@ -10,8 +10,8 @@ hero:
       link: /learn/two-buyers-one-item/
       variant: primary
       icon: right-arrow
-    - text: Tech stack
-      link: /architecture/tech-stack/
+    - text: REST & gRPC APIs
+      link: /apis/rest/
       variant: secondary
     - text: GitHub
       link: https://github.com/WildanFrananda
@@ -19,45 +19,18 @@ hero:
       icon: external
 ---
 
-import { Aside, Card, CardGrid } from "@astrojs/starlight/components";
-import ServiceList from "../../components/ServiceList.astro";
+import BentoShowcase from "../../components/landing/BentoShowcase.astro";
+import EcosystemStrip from "../../components/landing/EcosystemStrip.astro";
+import GuidedPaths from "../../components/landing/GuidedPaths.astro";
+import ServiceSection from "../../components/landing/ServiceSection.astro";
+import StatsBand from "../../components/landing/StatsBand.astro";
 
-## What this site is
+<EcosystemStrip />
 
-Kinetix runs catalogue, checkout, payment, warehouse fulfilment and courier dispatch as independent
-services. Each service owns its data and its database. Services talk to each other over gRPC, against
-contracts defined once in `kinetix-contracts`. Outside traffic enters through a single Kong gateway,
-and identity is the only service that decides who a caller is.
+<BentoShowcase />
 
-These pages explain why it is built that way, what each service is responsible for, and the
-contracts between them. Every page is written against the code it describes and links to that code
-at a fixed commit, so what you read is what runs.
+<ServiceSection />
 
-<CardGrid>
-  <Card title="Building against Kinetix" icon="puzzle">
-    Contracts, endpoints, authentication and error semantics for clients and integrations.
-  </Card>
-  <Card title="Learning backend from Kinetix" icon="open-book">
-    Real problems — overselling, double charges, partial failure across services — and the code
-    that solves them, step by step. Assumes you know HTTP, SQL and one backend language.
-  </Card>
-</CardGrid>
+<StatsBand />
 
-## Services
-
-Fourteen services, each the only owner of its data, and each in a language of its own but two: notary shares
-Go with search, because its domain needs go-ethereum, and seal shares TypeScript with identity, because
-Midnight's only application SDK is TypeScript. Select one to open its source.
-
-<ServiceList />
-
-Around them sit the [API gateway](https://github.com/WildanFrananda/kinetix-api-gateway) (Kong),
-the [courier app](https://github.com/WildanFrananda/kinetix-courier-mobile) (Flutter), the
-[backoffice](https://github.com/WildanFrananda/kinetix-backoffice) (React) and the
-[contracts](https://github.com/WildanFrananda/kinetix-contracts) (Protocol Buffers) every service
-conforms to. The full stack, with versions, is on the [tech stack](/architecture/tech-stack/) page.
-
-<Aside title="This site is being written">
-  A section appears when its content has been verified against the code, not before. Pages are
-  available in English and Bahasa Indonesia; a page not yet translated is shown in English.
-</Aside>
+<GuidedPaths />

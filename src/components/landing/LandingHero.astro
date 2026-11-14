@@ -1,0 +1,189 @@
+---
+import { LinkButton } from "@astrojs/starlight/components";
+import { getCollection } from "astro:content";
+import { catalogueFor } from "../../diagrams/engine/catalogue_for";
+import { localeOf } from "../../diagrams/engine/locale_of";
+import { contractsRelease } from "../../site/contracts_release";
+import {
+  computeLandingStats,
+  heroCommandLabels,
+  heroCommands,
+  localePath
+} from "../../site/landing_data";
+import { heroSwitchboardLabels } from "../../site/switchboard_labels";
+import HeroAnatomyRig from "./HeroAnatomyRig.svelte";
+import HeroCommandBar from "./HeroCommandBar.svelte";
+
+const locale = localeOf(Astro.locals.starlightRoute.entryMeta.lang);
+const catalogue = catalogueFor(locale);
+const { data } = Astro.locals.starlightRoute.entry;
+const { tagline, actions = [] } = data.hero ?? {};
+const commands = heroCommands(locale);
+const commandLabels = heroCommandLabels(locale);
+const entries = await getCollection("docs");
+const lessons = entries.filter((entry) => /^learn\/.+/.test(entry.id)).length;
+const adrs = entries.filter((entry) => entry.data.adr !== undefined && !entry.id.startsWith("id/")).length;
+const stats = computeLandingStats(lessons, adrs);
+const switchboardLabels = heroSwitchboardLabels(locale);
+---
+
+<section class="kx-land-hero not-content">
+  <div class="kx-land-hero-grid">
+    <div class="kx-land-hero-copy">
+      <div class="kx-land-eyebrow-row">
+        <a class="kx-land-badge" href={localePath(locale, "/apis/grpc/")}>
+          <span class="kx-land-badge-dot" aria-hidden="true"></span>
+          <span>kinetix-contracts v{contractsRelease.version}</span>
+          <span aria-hidden="true">→</span>
+        </a>
+        {data.eyebrow && <span class="kx-land-eyebrow">{data.eyebrow}</span>}
+      </div>
+
+      <h1 id="_top" data-page-title>
+        <span>{catalogue["landing.hero.headlineStart"]}</span>
+        <span class="kx-land-headline-accent">{catalogue["landing.hero.headlineAccent"]}</span>
+      </h1>
+
+      {tagline && <p class="kx-land-tagline" set:html={tagline} />}
+
+      {
+        actions.length > 0 && (
+          <div class="kx-land-actions">
+            {actions.map(({ attrs: { class: className, ...attrs } = {}, icon, link: href, text, variant }) => (
+              <LinkButton {href} {variant} icon={icon?.name} class:list={[className]} {...attrs}>
+                {text}
+              </LinkButton>
+            ))}
+          </div>
+        )
+      }
+
+      <HeroCommandBar client:load items={commands} labels={commandLabels} />
+    </div>
+
+    <div class="kx-land-hero-visual">
+      <HeroAnatomyRig
+        client:load
+        {locale}
+        labels={switchboardLabels}
+        {stats}
+        contractsVersion={contractsRelease.version}
+      />
+    </div>
+  </div>
+</section>
+
+<style>
+  .kx-land-hero {
+    position: relative;
+    padding-block: clamp(1.5rem, 4vw, 3.25rem) clamp(1.5rem, 3vw, 2.5rem);
+  }
+
+  .kx-land-hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.02fr) minmax(0, 1.08fr);
+    align-items: center;
+    gap: clamp(2rem, 4vw, 3.5rem);
+  }
+
+  .kx-land-hero-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    min-inline-size: 0;
+  }
+
+  .kx-land-eyebrow-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem 1rem;
+  }
+
+  .kx-land-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.3rem 0.7rem;
+    border: 1px solid var(--kx-land-border-strong);
+    border-radius: 999px;
+    background: var(--kx-land-surface-elevated);
+    color: var(--sl-color-white);
+    font-family: var(--sl-font-mono);
+    font-size: var(--sl-text-2xs);
+    text-decoration: none;
+    transition: border-color 0.18s ease;
+  }
+
+  .kx-land-badge:hover {
+    border-color: var(--sl-color-accent);
+    color: var(--sl-color-accent);
+  }
+
+  .kx-land-badge-dot {
+    inline-size: 0.42rem;
+    block-size: 0.42rem;
+    border-radius: 999px;
+    background: var(--sl-color-accent);
+  }
+
+  .kx-land-eyebrow {
+    color: var(--sl-color-gray-3);
+    font-family: var(--sl-font-mono);
+    font-size: var(--sl-text-2xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.08em;
+    color: var(--sl-color-white);
+    font-family: var(--kx-font-sans);
+    font-size: clamp(2.35rem, 4.6vw, 3.85rem);
+    font-weight: 600;
+    line-height: 1.04;
+    letter-spacing: -0.035em;
+  }
+
+  .kx-land-headline-accent {
+    background: linear-gradient(120deg, var(--sl-color-accent) 0%, var(--kx-land-accent-warm) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .kx-land-tagline {
+    max-inline-size: 36rem;
+    margin: 0;
+    color: var(--sl-color-gray-2);
+    font-size: clamp(var(--sl-text-base), 1.35vw, var(--sl-text-lg));
+    line-height: 1.6;
+  }
+
+  .kx-land-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 0.9rem;
+  }
+
+  .kx-land-hero-visual {
+    min-inline-size: 0;
+  }
+
+  @media (max-width: 64rem) {
+    .kx-land-hero-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (forced-colors: active) {
+    .kx-land-headline-accent {
+      background: none;
+      color: CanvasText;
+    }
+  }
+</style>

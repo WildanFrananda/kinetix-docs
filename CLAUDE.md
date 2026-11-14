@@ -381,9 +381,18 @@ The look is an engineering manual, not a product landing page. The user rejected
 violet-to-cyan gradients, gradient text, glow, an orbit of logos, pill buttons — as "vibe coding".
 Do not bring any of it back.
 
+- **Landing page exception (2026-11-14, approved by user):** Only the hero landing pages (`/` and
+  `/id/`, matched via `html[data-has-hero]`) follow a Vite-style showcase layout (`src/styles/landing.css`,
+  `src/components/landing/*`, overridden `Hero` and `Footer` in `astro.config.ts`) with an animated
+  signal-pulse diagram, subtle radial ambient glows, hairline gradient card borders, bento showcase,
+  and a filterable service explorer. It keeps the estate's warm charcoal/paper + signal orange
+  palette (`#131210` / `#f7f5f0` + `#f0742f` / `#c2410c`) and supports both light and dark themes
+  (`data-theme="light"` / `data-theme="dark"`). All documentation pages keep the strict manual style,
+  and `src/styles/kx-tokens.css`, `src/styles/theme.css`, and `src/components/overrides/Hero.astro`
+  remain untouched for `kinetix-backoffice` and `kinetix-docs-internal`.
 - Paper and ink with one accent: off-white `#f7f5f0` and near-black `#171614` in light mode, warm
   charcoal in dark, and signal orange (`--sl-color-accent`) for links, the current page and the
-  hero kicker. No gradients, no shadows, no glow, no hover lift.
+  hero kicker. Outside `html[data-has-hero]`, no gradients, no shadows, no glow, no hover lift.
 - Tokens are in `src/styles/kx-tokens.css`, for both themes: the three font stacks, the contrast scale
   `--kx-fg`, `--kx-gray-1`…`--kx-gray-7`, `--kx-bg`, the accent trio, `--kx-rule`, `--kx-rule-strong`,
   `--kx-surface`, `--kx-tile`, `--kx-lane-a`, `--kx-lane-b` and `--kx-radius` (3px). It names no framework,

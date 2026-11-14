@@ -28,10 +28,12 @@ export default defineConfig({
         "@fontsource-variable/inter/opsz.css",
         "@fontsource-variable/geist-mono",
         "./src/styles/kx-tokens.css",
-        "./src/styles/theme.css"
+        "./src/styles/theme.css",
+        "./src/styles/landing.css"
       ],
       components: {
-        Hero: "./src/components/overrides/Hero.astro",
+        Hero: "./src/components/landing/LandingHero.astro",
+        Footer: "./src/components/landing/LandingFooter.astro",
         PageSidebar: "./src/components/overrides/PageSidebar.astro"
       },
       expressiveCode: {

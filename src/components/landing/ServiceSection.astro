@@ -1,0 +1,32 @@
+---
+import { catalogueFor } from "../../diagrams/engine/catalogue_for";
+import { localeOf } from "../../diagrams/engine/locale_of";
+import {
+  landingServices,
+  serviceCategoryTabs,
+  serviceExplorerLabels
+} from "../../site/landing_data";
+import ServiceExplorer from "./ServiceExplorer.svelte";
+
+const locale = localeOf(Astro.locals.starlightRoute.entryMeta.lang);
+const catalogue = catalogueFor(locale);
+const items = landingServices(locale);
+const tabs = serviceCategoryTabs(locale, items);
+const labels = serviceExplorerLabels(locale);
+---
+
+<section class="kx-svc-section not-content" aria-labelledby="kx-services-heading">
+  <header class="kx-section-head">
+    <p class="kx-section-kicker">{catalogue["landing.services.kicker"]}</p>
+    <h2 id="kx-services-heading">{catalogue["landing.services.title"]}</h2>
+    <p class="kx-section-sub">{catalogue["landing.services.subtitle"]}</p>
+  </header>
+
+  <ServiceExplorer client:load items={items} tabs={tabs} labels={labels} />
+</section>
+
+<style>
+  .kx-svc-section {
+    padding-block: clamp(2rem, 4.5vw, 3.5rem);
+  }
+</style>

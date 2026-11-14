@@ -1,0 +1,290 @@
+---
+import { catalogueFor } from "../../diagrams/engine/catalogue_for";
+import { localeOf } from "../../diagrams/engine/locale_of";
+import { localePath } from "../../site/landing_data";
+
+const locale = localeOf(Astro.locals.starlightRoute.entryMeta.lang);
+const catalogue = catalogueFor(locale);
+
+const paths = [
+  {
+    code: "01",
+    motif: "map",
+    title: catalogue["landing.paths.arch.title"],
+    body: catalogue["landing.paths.arch.body"],
+    href: localePath(locale, "/architecture/system-map/")
+  },
+  {
+    code: "02",
+    motif: "apis",
+    title: catalogue["landing.paths.apis.title"],
+    body: catalogue["landing.paths.apis.body"],
+    href: localePath(locale, "/apis/rest/")
+  },
+  {
+    code: "03",
+    motif: "learn",
+    title: catalogue["landing.paths.learn.title"],
+    body: catalogue["landing.paths.learn.body"],
+    href: localePath(locale, "/learn/two-buyers-one-item/")
+  },
+  {
+    code: "04",
+    motif: "verify",
+    title: catalogue["landing.paths.verify.title"],
+    body: catalogue["landing.paths.verify.body"],
+    href: localePath(locale, "/verify/proof-of-liabilities/")
+  }
+];
+---
+
+<section class="kx-paths not-content" aria-labelledby="kx-paths-heading">
+  <header class="kx-section-head">
+    <p class="kx-section-kicker">{catalogue["landing.paths.kicker"]}</p>
+    <h2 id="kx-paths-heading">{catalogue["landing.paths.title"]}</h2>
+  </header>
+
+  <div class="kx-paths-grid">
+    {
+      paths.map((item) => (
+        <a class="kx-path-card" href={item.href}>
+          <div class="kx-path-head">
+            <span class="kx-path-code">{item.code}</span>
+            <svg class="kx-path-svg" viewBox="0 0 64 26" aria-hidden="true">
+              {item.motif === "map" && (
+                <>
+                  <path class="kx-motif-wire" d="M10 13h22l12-7M32 13l12 7" />
+                  <path class="kx-motif-trace" d="M10 13h22l12-7" />
+                  <circle class="kx-motif-node" cx="10" cy="13" r="3" />
+                  <circle class="kx-motif-node kx-motif-core" cx="32" cy="13" r="3.5" />
+                  <circle class="kx-motif-node" cx="44" cy="6" r="2.5" />
+                  <circle class="kx-motif-node" cx="44" cy="20" r="2.5" />
+                </>
+              )}
+              {item.motif === "apis" && (
+                <>
+                  <path class="kx-motif-wire" d="M10 9h38l-5-4M54 17H16l5 4" />
+                  <path class="kx-motif-trace" d="M10 9h38l-5-4" />
+                  <rect class="kx-motif-node" x="4" y="6" width="6" height="6" rx="1.2" />
+                  <rect class="kx-motif-node kx-motif-core" x="54" y="14" width="6" height="6" rx="1.2" />
+                </>
+              )}
+              {item.motif === "learn" && (
+                <>
+                  <path class="kx-motif-wire" d="M8 20h14v-6h14v-6h18" />
+                  <path class="kx-motif-trace" d="M8 20h14v-6h14v-6h18" />
+                  <circle class="kx-motif-node" cx="8" cy="20" r="2.5" />
+                  <circle class="kx-motif-node" cx="22" cy="14" r="2.5" />
+                  <circle class="kx-motif-node" cx="36" cy="8" r="2.5" />
+                  <circle class="kx-motif-node kx-motif-core" cx="54" cy="8" r="3" />
+                </>
+              )}
+              {item.motif === "verify" && (
+                <>
+                  <path class="kx-motif-wire" d="M12 18 22 7 32 18 42 7 52 18M22 7h20" />
+                  <path class="kx-motif-trace" d="M22 7h20l10 11" />
+                  <circle class="kx-motif-node" cx="12" cy="18" r="2.5" />
+                  <circle class="kx-motif-node kx-motif-core" cx="32" cy="18" r="3" />
+                  <circle class="kx-motif-node" cx="52" cy="18" r="2.5" />
+                </>
+              )}
+            </svg>
+          </div>
+          <h3>{item.title}</h3>
+          <p>{item.body}</p>
+          <span class="kx-path-arrow" aria-hidden="true">
+            →
+          </span>
+        </a>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .kx-paths {
+    padding-block: clamp(2rem, 4.5vw, 3.5rem) clamp(1rem, 3vw, 2rem);
+  }
+
+  .kx-paths-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .kx-path-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    padding: 1.25rem;
+    border: 1px solid var(--kx-land-border);
+    border-radius: var(--kx-land-radius-lg);
+    background: var(--kx-land-card-bg);
+    text-decoration: none;
+    min-inline-size: 0;
+    overflow: clip;
+    transition: border-color 0.2s ease, background-color 0.2s ease, translate 0.34s ease-out, scale 0.14s ease-out;
+    transition-timing-function: ease, ease, linear(0, 0.45 20%, 1.06 55%, 0.99 80%, 1), ease-out;
+  }
+
+  .kx-path-card::before {
+    content: "";
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    block-size: 2px;
+    background: linear-gradient(90deg, transparent, var(--sl-color-accent), var(--kx-land-accent-warm), transparent);
+    background-size: 200% 100%;
+    opacity: 0;
+    transition: opacity 0.24s ease;
+    pointer-events: none;
+  }
+
+  .kx-path-card:hover {
+    border-color: var(--sl-color-accent);
+  }
+
+  .kx-path-card:hover::before {
+    opacity: 1;
+  }
+
+  .kx-path-card:active {
+    scale: 0.985;
+  }
+
+  .kx-path-card:focus-visible {
+    outline: 2px solid var(--sl-color-accent);
+    outline-offset: 3px;
+  }
+
+  .kx-path-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-block-end: 0.25rem;
+  }
+
+  .kx-path-code {
+    color: var(--sl-color-accent);
+    font-family: var(--sl-font-mono);
+    font-size: var(--sl-text-xs);
+    font-weight: 600;
+  }
+
+  .kx-path-svg {
+    inline-size: 64px;
+    block-size: 26px;
+    flex-shrink: 0;
+  }
+
+  .kx-motif-wire,
+  .kx-motif-trace {
+    fill: none;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .kx-motif-wire {
+    stroke: var(--kx-land-border-strong);
+  }
+
+  .kx-motif-trace {
+    stroke: var(--sl-color-accent);
+    stroke-dasharray: 56;
+    stroke-dashoffset: 56;
+    transition: stroke-dashoffset 0.52s ease-out;
+  }
+
+  .kx-motif-node {
+    fill: var(--kx-land-card-solid);
+    stroke: var(--kx-land-border-strong);
+    stroke-width: 1.4;
+    transition: stroke 0.25s ease, fill 0.25s ease;
+  }
+
+  .kx-motif-core {
+    stroke: var(--sl-color-accent);
+  }
+
+  .kx-path-card:hover .kx-motif-trace {
+    stroke-dashoffset: 0;
+  }
+
+  .kx-path-card:hover .kx-motif-core {
+    fill: var(--sl-color-accent);
+  }
+
+  .kx-path-card h3 {
+    margin: 0;
+    color: var(--sl-color-white);
+    font-size: var(--sl-text-base);
+    font-weight: 600;
+  }
+
+  .kx-path-card p {
+    margin: 0;
+    color: var(--sl-color-gray-2);
+    font-size: var(--sl-text-sm);
+    line-height: 1.5;
+  }
+
+  .kx-path-arrow {
+    display: inline-block;
+    inline-size: fit-content;
+    margin-block-start: auto;
+    padding-block-start: 0.5rem;
+    color: var(--sl-color-gray-3);
+    font-family: var(--sl-font-mono);
+    transition: color 0.2s ease, translate 0.28s ease-out;
+    transition-timing-function: ease, linear(0, 0.45 20%, 1.08 55%, 0.99 80%, 1);
+  }
+
+  .kx-path-card:hover .kx-path-arrow {
+    color: var(--sl-color-accent);
+  }
+
+  @keyframes kx-path-entry {
+    from {
+      opacity: 0.4;
+      translate: 0 12px;
+    }
+
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .kx-path-card:hover {
+      translate: 0 -2px;
+    }
+
+    .kx-path-card:hover .kx-path-arrow {
+      translate: 4px 0;
+    }
+
+    @supports ((animation-timeline: view()) and (animation-range: entry)) {
+      .kx-path-card {
+        animation: kx-path-entry auto linear backwards;
+        animation-timeline: view();
+        animation-range: entry 0% entry 24%;
+      }
+    }
+  }
+
+  @media (max-width: 64rem) {
+    .kx-paths-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 36rem) {
+    .kx-paths-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>
