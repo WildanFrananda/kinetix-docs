@@ -1,7 +1,7 @@
 ---
 title: Gateway
 description: Satu-satunya pintu masuk ke Kinetix dari luar. Kong, dikonfigurasi secara deklaratif dari Pkl, menjawab tiga host publik hanya lewat TLS dan backoffice di dua alamat yang tidak dipublikasikan, mengirim setiap path ke service pemiliknya, memeriksa token di sebagian route sebagai kunci pertama, membatasi route khusus admin ke jaringan staf, serta membatasi, menandai, dan menghitung setiap request.
-sourceHash: "808a753b22c4"
+sourceHash: "2a7f599cb90e"
 sidebar:
   order: 4
 ---
@@ -125,58 +125,26 @@ Tiga hal lagi yang dilayani Kong tidak ada di peta:
 
 ## WebSocket
 
-Dua socket, keduanya dilayani matching:
-[`/ws/v1/matching/driver` dan `/ws/v1/matching/merchant`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L534-L564),
-masing-masing juga dengan `/websocket` di belakangnya, bentuk yang dipanggil client JavaScript Phoenix. WebSocket
-dimulai sebagai request HTTP biasa yang meminta upgrade, jadi Kong merutekannya seperti request lain lalu
-meneruskan koneksi yang sudah di-upgrade. Access token ikut bersama request koneksi, dan matching memeriksanya
-sebelum socket terbuka —
-[token kurir atau admin untuk socket driver](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/driver_socket.ex#L27-L49),
-[token seller atau admin untuk socket merchant](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/merchant_socket.ex#L24-L45).
-Request tanpa token, atau dengan token yang buruk, ditolak dengan `403`, request yang tidak bisa diperiksa
-matching karena identity tidak terjangkau ditolak dengan `503`, dan socket tidak dibuka. Socket aplikasi kurir
-dijelaskan langkah demi langkah di [Mulai bertugas dan mengantar](/id/apis/rest/courier-app/deliver/).
+Edge mengakhiri WebSocket event terpadu publik,
+[`/ws/v1/events`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/4badbc5eb549e398a9bc99ea538e0e838dbabc1e/config/gateway.pkl#L300-L304),
+dan Kong meneruskan lalu lintas `/bff/` di host web app (termasuk `/bff/ws/v1/events`) langsung ke edge. Untuk kurir
+dan seller, edge memanggil route internal Kong menuju endpoint WebSocket terpadu milik matching,
+[`/ws/v1/matching/events`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/4badbc5eb549e398a9bc99ea538e0e838dbabc1e/config/gateway.pkl#L572-L584),
+yang memangkas prefix-nya dan meneruskan `/ws/v1/events` ke upstream matching (`EventSocketPlug`). Edge memverifikasi
+sesi dan token Bearer sebelum membuka socket upstream apa pun
+([event_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L564-L630),
+[event_socket_plug.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/event_socket_plug.ex#L24-L48));
+pembeli hanya tersambung ke edge dan men-subscribe posisi kurir live lewat Redis Pub/Sub, sedangkan alur kurir
+dan seller dijelaskan di [Mulai bertugas dan mengantar](/id/apis/rest/courier-app/deliver/) serta
+[Mengemas pesanan](/id/apis/rest/seller-web/packing/).
 
-### Kembaran socket merchant
+### Kembaran WebSocket internal matching
 
-Web penjual tidak memegang token, jadi ia tidak bisa membuka socket merchant di host API seperti aplikasi kurir
-membuka socket-nya sendiri. Ia meminta edge, di host-nya sendiri, dan edge membukakan socket ke matching untuknya
-dengan access token milik sesi, seperti dijelaskan [edge](/id/services/edge/#socket-merchant-milik-web-penjual).
-Koneksi itu lewat listener internal, jadi route socket merchant
-[ditulis seperti route API](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L549-L564)
-dan dirender dengan kembaran: dua path yang sama dan service yang sama, penjaga di urutan pertama, dan tanpa
-gerbang staf, rate limit, maupun pemeriksaan token di Kong, karena matching memeriksa token dan role-nya sendiri.
-Kong meneruskan upgrade lewat route HTTP biasa sama seperti lewat route TLS, jadi
-[kembaran itu tidak memerlukan apa pun yang tidak dimiliki kembaran API](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/CLAUDE.md#L271-L278).
-
-Kembaran itu tetap di dalam dengan cara yang sama seperti setiap kembaran.
-[Ia hanya menyebut host internal gateway, lewat HTTP biasa](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L181-L196),
-dan penjaganya menolak dengan `421` apa pun yang tidak tiba sebagai HTTP biasa di listener internal, yang tidak
-bisa dijangkau dari luar jaringan Kinetix. Request HTTP biasa ke path yang sama yang menyebut host lain tidak
-cocok dengan kembaran mana pun dan mendapat `426` dari Kong. Socket kurir sama sekali tidak punya kembaran:
-aplikasi kurir memanggil listener TLS.
-
-### Sembilan puluh detik untuk socket yang diam
-
-Phoenix
-[menutup socket yang tidak menerima apa pun selama 60 detik](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/endpoint.ex#L1044-L1045),
-dan client JavaScript-nya
-[mengirim heartbeat setiap 30 detik](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/assets/js/phoenix/socket.js#L174).
-Edge menunggu
-[90 detik](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/nginx/nginx.conf#L102-L105)
-pada socket merchant yang diam, agar proxy tidak pernah menjadi pihak yang mengakhiri socket yang masih dipegang
-Phoenix. Secara default, Kong
-[menyerah setelah 60 detik](https://github.com/Kong/kong/blob/ddc85be461165c9eb4506669343aa0d0c627e687/kong/db/schema/entities/services.lua#L40-L42)
-tanpa membaca dari atau menulis ke sebuah service, dan socket web penjual melewati Kong dua kali: di `/bff/`,
-antara browser dan edge, dan di kembaran, antara edge dan matching. Dengan default itu, Kong akan menutup socket
-yang diam sebelum salah satu ujungnya bermaksud begitu. Karena itu dua service Kong di jalur itu, milik edge, yang
-menerima `/bff/` di host kedua web app, dan milik socket merchant, yang menerima route publiknya dan kembarannya,
-membaca dan menulis selama 90 detik
-([milik edge](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L262-L266),
-[milik socket](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L549-L553)).
-Koneksi awal tetap timeout pada default Kong, dan setiap service lain tetap memakai default Kong. Harganya
-dibayar ketika sesuatu macet: panggilan `/bff/` atau socket merchant, termasuk route publiknya, yang tidak
-mendengar apa pun kini menunggu 90 detik untuk `504` atau penutupan dari Kong, bukan 60.
+Edge berada di belakang jaringan internal Kong, jadi ketika edge membuka `/ws/v1/matching/events` untuk kurir atau
+seller, edge memanggil listener internal Kong lewat HTTP biasa membawa bearer token dan `X-Edge-Role`. Penjaga Kong
+membatasi kembaran tersebut pada host internal sekaligus menjaga `read_timeout` dan `write_timeout` pada `90` detik
+agar lebih panjang dari batas idle 60 detik milik aplikasi
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/4badbc5eb549e398a9bc99ea538e0e838dbabc1e/config/gateway.pkl#L572-L584)).
 
 ## Kunci pertama untuk token
 

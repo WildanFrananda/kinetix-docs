@@ -34,16 +34,16 @@ not belong to any single endpoint.
 Kinetix answers on four public hosts:
 
 - `api.wildanfrananda.my.id` serves every API endpoint, under `/api/v1/`; identity's public keys, at
-  `/.well-known/jwks.json`; Kong's own two endpoints, `/health` and `/.well-known/security.txt`; and matching's two
-  WebSockets, `wss://api.wildanfrananda.my.id/ws/v1/matching/driver?vsn=2.0.0` and
-  `wss://api.wildanfrananda.my.id/ws/v1/matching/merchant?vsn=2.0.0`. Each socket also answers with `/websocket`
-  after its path, the form Phoenix's JavaScript client dials
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L534-L564)).
+  `/.well-known/jwks.json`; Kong's own two endpoints, `/health` and `/.well-known/security.txt`; and the unified
+  event WebSocket handled by edge, `wss://api.wildanfrananda.my.id/ws/v1/events`, which serves live buyer order
+  tracking directly and relays couriers and sellers to matching's internal socket
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/4badbc5eb549e398a9bc99ea538e0e838dbabc1e/config/gateway.pkl#L300-L304),
+  [#L572-L584](https://github.com/WildanFrananda/kinetix-api-gateway/blob/4badbc5eb549e398a9bc99ea538e0e838dbabc1e/config/gateway.pkl#L572-L584)).
 - `storage.wildanfrananda.my.id` holds uploaded files. A client sends a file there at a URL a service signed for it;
   the bucket in those URLs is written `example-bucket` in the examples
   ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L566-L588)).
 - `seller.wildanfrananda.my.id` serves the seller web app's calls under `/bff/`, which Kong passes to the edge,
-  and under `/bff/` also matching's merchant socket for its page ([Realtime](#realtime)). Any other path on this
+  and under `/bff/` also the unified event WebSocket for sellers ([Realtime](#realtime)). Any other path on this
   host, `/api/v1/` paths included, gets Kong's `404 Not found`
   ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L284-L298)).
 - The backoffice has no public host. Staff open it at an address that is not published, written
@@ -247,18 +247,15 @@ On the way, the edge rewrites the headers
 
 ### Realtime
 
-The seller web's page gets its realtime from matching's merchant socket, which the edge carries: the page opens it on
-its own host, under `/bff/`, and [Pack orders](/apis/rest/seller-web/packing/) gives its address, its handshake answers
-and its messages in the order the seller web uses them. The browser sends the session cookie with the handshake, and
-the page sends no token. The edge checks the session as for a call under `/bff/api/`, admits only a `seller`, and
-opens matching's socket with the session's access token; the `101` it passes back to the page carries neither the
-token nor a cookie
-([merchant_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/merchant_socket.tl#L45-L103)).
-The page and matching then exchange Phoenix frames through the edge. As for a call, an answer from behind the edge
-comes back with its status, Kong's own included when matching is down; the edge answers `503` `API_UNAVAILABLE`
-itself only when it cannot reach the API or has no handshake answer within 90 seconds
-([nginx.conf](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/nginx/nginx.conf#L102-L108)).
-The backoffice has no socket.
+All WebSocket clients now use a single `camelCase` JSON event envelope handled at the edge
+([event_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L564-L630)).
+Seller Web opens it on its own host under `/bff/` with its session cookie, and [Pack orders](/apis/rest/seller-web/packing/)
+gives its address, handshake answers, and messages. The edge checks the session as for a call under `/bff/api/`
+and opens matching's upstream WebSocket with the session's access token and `X-Edge-Role: seller`; mobile clients
+(buyers and couriers) connect directly to `wss://api.wildanfrananda.my.id/ws/v1/events` with `Authorization: Bearer`.
+Buyers subscribe to live courier positions relayed from matching over Redis Pub/Sub
+([My orders](/apis/rest/buyer-app/orders/)); couriers and sellers relay upstream to matching (`WebSock`, no Phoenix
+channel framing). The backoffice does not connect to matching's stream.
 
 ### Calls the edge refuses
 
@@ -290,8 +287,8 @@ Send your own id when you want to find a request in the logs later. Several serv
 bodies, for example identity's `traceId`. matching repeats it as `traceId` too, the answers to its two sockets'
 handshakes included, when the id has 20 to 200 characters; a shorter or longer one, which only a client can send, it
 replaces with an id of its own
-([request_trace.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/request_trace.ex#L1-L26),
-[error_json.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/controllers/error_json.ex#L22-L29)).
+([request_trace.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/request_trace.ex#L1-L26),
+[error_json.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/controllers/error_json.ex#L22-L29)).
 Kong's own error bodies carry a different value, `request_id`, which
 is Kong's internal id for the request; Kong also returns it in the `X-Kong-Request-Id` header
 ([Kong's defaults](https://github.com/Kong/kong/blob/ddc85be461165c9eb4506669343aa0d0c627e687/kong/templates/kong_defaults.lua#L71)).

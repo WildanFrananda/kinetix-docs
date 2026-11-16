@@ -1,7 +1,5 @@
 import type { JsonValue } from "../types/json_value.type";
 import type { RestSocketFrame } from "../types/rest_socket_frame.type";
-import type { RestSocketMessage } from "../types/rest_socket_message.type";
-import type { RestSocketReply } from "../types/rest_socket_reply.type";
 
 const frameWidest = 56;
 const lineWidest = 64;
@@ -52,10 +50,4 @@ export function frameCode(frame: RestSocketFrame): string {
   }
 
   return layout(frame, "", lineWidest);
-}
-
-export function replyFrame(message: RestSocketMessage, reply: RestSocketReply): RestSocketFrame {
-  const [joinRef, ref, topic] = message.frame;
-
-  return [joinRef, ref, topic, "phx_reply", { status: reply.status, response: reply.response }];
 }

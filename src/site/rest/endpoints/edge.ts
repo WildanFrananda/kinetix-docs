@@ -50,7 +50,7 @@ export const edgeAnswers: readonly RestCase[] = [
       message: "This request did not come from the application's own page, so nothing was done.",
       requestId
     },
-    source: restSource("edge", "src/http/router.tl", 183, 207)
+    source: restSource("edge", "src/http/router.tl", 200, 224)
   },
   {
     status: 403,
@@ -72,7 +72,7 @@ export const edgeAnswers: readonly RestCase[] = [
       message: "Nothing is served at this path.",
       requestId
     },
-    source: restSource("edge", "src/http/router.tl", 229, 232)
+    source: restSource("edge", "src/http/router.tl", 246, 249)
   },
   {
     status: 404,
@@ -83,7 +83,7 @@ export const edgeAnswers: readonly RestCase[] = [
       message: "Nothing is served at this path.",
       requestId
     },
-    source: restSource("edge", "src/http/forward.tl", 81, 84)
+    source: restSource("edge", "src/http/forward.tl", 87, 90)
   },
   {
     status: 405,
@@ -94,7 +94,7 @@ export const edgeAnswers: readonly RestCase[] = [
       message: "This path does not take that method.",
       requestId
     },
-    source: restSource("edge", "src/http/router.tl", 236, 238)
+    source: restSource("edge", "src/http/router.tl", 253, 255)
   },
   {
     status: 413,
@@ -127,7 +127,7 @@ export const edgeAnswers: readonly RestCase[] = [
       message: "Request bodies must be application/json.",
       requestId
     },
-    source: restSource("edge", "src/http/router.tl", 190, 196)
+    source: restSource("edge", "src/http/router.tl", 207, 213)
   },
   {
     status: 431,
@@ -149,7 +149,7 @@ export const edgeAnswers: readonly RestCase[] = [
       message: "Something went wrong in the edge, and it is not known how much of this request took effect.",
       requestId
     },
-    source: restSource("edge", "src/http/router.tl", 209, 222)
+    source: restSource("edge", "src/http/router.tl", 226, 239)
   },
   {
     status: 502,
@@ -194,7 +194,7 @@ export const edgeAnswers: readonly RestCase[] = [
         "The API could not be reached, and it is not known whether the request took effect. Read the current state first.",
       requestId
     },
-    source: restSource("edge", "src/http/forward.tl", 61, 68)
+    source: restSource("edge", "src/http/forward.tl", 67, 74)
   }
 ];
 
@@ -673,7 +673,7 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
           message: "Nothing is served at this path.",
           requestId
         },
-        source: restSource("edge", "src/http/router.tl", 245, 249)
+        source: restSource("edge", "src/http/router.tl", 262, 266)
       },
       {
         status: 429,
@@ -792,7 +792,7 @@ export const edgeEndpoints: readonly RestEndpoint[] = [
           message: "Nothing is served at this path.",
           requestId
         },
-        source: restSource("edge", "src/http/router.tl", 245, 249)
+        source: restSource("edge", "src/http/router.tl", 262, 266)
       },
       {
         status: 429,

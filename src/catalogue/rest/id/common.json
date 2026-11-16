@@ -31,6 +31,5 @@
   "rest.common.socket.handshake": "Jawaban handshake",
   "rest.common.socket.send": "Dikirim client",
   "rest.common.socket.receive": "Di-push server",
-  "rest.common.socket.topic": "Topic",
   "rest.common.socket.replies": "Balasan"
 }

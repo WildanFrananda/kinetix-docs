@@ -54,7 +54,7 @@ export const architectureNodes: readonly MapNode[] = [
     y: 140,
     repository: `${github}/kinetix-edge-service`,
     serves: [],
-    routes: ["/bff/"],
+    routes: ["/bff/", "/ws/v1/events"],
     stores: ["Redis"],
     deployed: true
   },
@@ -114,7 +114,7 @@ export const architectureNodes: readonly MapNode[] = [
       "shipping.v1.ShippingService/EstimateShippingOptions",
       "fulfillment.v1.DeliveryEvidenceService/DeliveriesSince"
     ],
-    routes: ["/api/v1/matching", "/ws/v1/matching/driver", "/ws/v1/matching/merchant"],
+    routes: ["/api/v1/matching", "/ws/v1/matching/events"],
     stores: [postgres, "VersityGW"],
     deployed: true
   },

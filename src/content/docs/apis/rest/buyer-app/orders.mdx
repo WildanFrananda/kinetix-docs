@@ -6,9 +6,12 @@ sidebar:
 ---
 
 import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+import RestSocket from "../../../../../components/RestSocket.astro";
+import RestSocketMessage from "../../../../../components/RestSocketMessage.astro";
 
-order answers the orders whose buyer is the access token's `sub`. A buyer app lists them (step 1) and opens
-one (step 2). The order that [checkout](/apis/rest/buyer-app/checkout/) placed is read the same way.
+order answers the orders whose buyer is the access token's `sub`. A buyer app lists them (step 1), opens
+one (step 2), and tracks an active delivery live over WebSocket (step 3). The order that
+[checkout](/apis/rest/buyer-app/checkout/) placed is read the same way.
 
 ## 1. List the orders
 
@@ -29,3 +32,37 @@ courier has delivered it. A delivered order can be [reviewed](/apis/rest/buyer-a
 history [proven](/apis/rest/buyer-app/proofs/#5-fetch-an-orders-evidence).
 
 <RestEndpoint id="order.getOrder" />
+
+## 3. Track courier location live
+
+While an order is assigned or picked up, the buyer app opens the unified event socket at
+`wss://api.wildanfrananda.my.id/ws/v1/events` with its Bearer access token
+([event_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L601-L630)).
+Unlike couriers and sellers, a buyer connects only to edge — no upstream socket is opened to matching
+([#L331-L334](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L331-L334)).
+
+<RestSocket id="edge.buyerSocket" />
+
+Send `subscription.subscribe` with the order's `id` from step 1 or 2 (`orderId` UUID). Edge asks order
+`GET /api/v1/orders/{orderId}` using the buyer's token to confirm ownership and resolve `orderNumber`, then
+subscribes to matching's Redis Pub/Sub channel for that order number
+([#L222-L305](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L222-L305)).
+
+<RestSocketMessage id="edge.buyerSocket.subscribe" />
+
+On each accepted `courier.location.ping` for that job, matching publishes `courier.location.updated` onto Redis
+Pub/Sub
+([event_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/event_socket.ex#L385-L401)),
+and edge coalesces readings per channel so at most one frame reaches the client every 250 ms
+([event_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L117-L151)):
+
+<RestSocketMessage id="edge.buyerSocket.locationUpdated" />
+
+Keep the connection inside edge's 60-second idle timeout with `system.ping`
+([#L419-L422](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L419-L422)),
+and send `subscription.unsubscribe` when leaving the tracking screen
+([#L307-L329](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L307-L329)):
+
+<RestSocketMessage id="edge.buyerSocket.heartbeat" />
+
+<RestSocketMessage id="edge.buyerSocket.unsubscribe" />

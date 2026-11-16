@@ -133,7 +133,7 @@
   "map.note.forwarded": "a web app's call under /bff/api/, sent with the session's token",
   "map.note.internalListener": "a web app's call under /bff/api/, through the gateway's listener inside Kinetix's network",
   "map.note.signUp": "the seller web's sign-up, which then starts a session as a sign-in does",
-  "map.note.merchantSocket": "the seller web's merchant socket, through the gateway's listener inside Kinetix's network to matching",
+  "map.note.merchantSocket": "unified courier and seller event relay from the edge, through the gateway's listener inside Kinetix's network to matching",
   "map.note.sponsorPays": "sent by the sponsor, seal's second process and the only one that holds the wallet's seed; it pays the fee in DUST",
   "map.node.clients.title": "Clients",
   "map.node.clients.summary": "Browsers, apps and integrations. Everything they send enters through the gateway.",

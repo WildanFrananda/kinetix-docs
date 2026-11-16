@@ -31,52 +31,38 @@ Its due time, `same_day_cutoff_at`, follows the merchant's cutoff hour
 
 The page opens the socket when it loads, before it reads the queue, so that no push about a parcel packed from
 then on is missed. It takes the same `seller` session as the warehouse calls: the browser sends the session cookie
-and `Origin` with the upgrade by itself, and the page offers the subprotocol `phoenix` or none, never a token. The
-edge checks the session as it does for a `/bff/api/` call, so opening the socket counts as a use of the session and
-may renew its tokens first; it admits only a `seller`, then opens matching's socket with the session's access token
-([merchant_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/merchant_socket.tl#L45-L83),
-[session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/session_use.tl#L22-L70)).
-matching verifies the token again and lets the socket join only the channel named after the token's
-`principalId`
-([merchant_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/merchant_socket.ex#L24-L45),
-[merchant_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/merchant_channel.ex#L32-L41)).
+and `Origin` with the upgrade by itself, and the page sends no token. The edge checks the session and exact origin,
+then opens matching's unified event socket upstream with the session's access token and `X-Edge-Role: seller`
+([event_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L564-L599),
+[event_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L331-L360),
+[session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/session_use.tl#L22-L70)).
+matching verifies the token again and scopes the stream to the token's `principalId` automatically — there is no
+Phoenix topic join
+([event_socket_plug.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/event_socket_plug.ex#L94-L100),
+[event_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/event_socket.ex#L77-L98)).
 
 <RestSocket id="matching.merchantSocket" />
 
 A browser's `WebSocket` does not show the page the status of a refused handshake, only that the connection failed
 and closed. The page then reads the session ([Sign in](/apis/rest/seller-web/sign-in/), step 3):
-`authenticated: false` shows the sign-in, a `customer` role is an account not approved yet or whose approval has not
-reached the session (Become a seller, step 5), and a `seller` session opens the socket again after a pause.
-matching closes its sockets in batches when it restarts
-([endpoint.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/endpoint.ex#L19-L26)),
-which the page takes as a lost connection: it connects again and joins again (step 3). The Phoenix JavaScript
-client does both by itself, connecting again after a short wait that grows to 5 seconds
-([socket.js](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/assets/js/phoenix/socket.js#L182-L188)).
+`authenticated: false` shows the sign-in, and an account approved since sign-in gains `seller` once edge refreshes
+the session tokens or after re-login. matching's upstream WebSocket closes after 60 seconds without traffic
+([event_socket_plug.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/event_socket_plug.ex#L45-L48)).
 
-## 3. Join the seller's channel
+## 3. Receive the initial snapshot
 
-Every frame is a JSON array `[join_ref, ref, topic, event, payload]`; a reply repeats the `ref` of the frame it
-answers, and a push from matching has `null` for `ref`
-([v2_json_serializer.ex](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/socket/serializers/v2_json_serializer.ex#L63-L98)).
-Join the topic `merchant:` followed by the session's `principalId`, from the sign-in's answer or from
-`GET /bff/session` (Sign in, step 3):
+Every frame is a `camelCase` JSON object (`event`, `schemaVersion`, optional `eventId`, `requestId`, `orderId`,
+`sequence`, `occurredAt`, and `data`)
+([envelope.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/events/envelope.ex#L24-L70)).
+Immediately on upgrade, matching pushes `matching.job.snapshot` with all unfinished jobs for this seller. The page
+takes `data.orders` as the current state, on initial connect and after every reconnect alike, because changes made
+while the socket was down are not sent again:
 
-<RestSocketMessage id="matching.merchantSocket.join" />
+<RestSocketMessage id="matching.merchantSocket.snapshot" />
 
-Right after the join, matching pushes the seller's unfinished courier jobs. The page takes the list as the current
-state, after the first join and after every reconnect alike, because changes made while the socket was down are
-not sent again:
-
-<RestSocketMessage id="matching.merchantSocket.activeOrders" />
-
-The channel only pushes. When it fails, for example because matching's database did not answer while it listed the
-jobs, Phoenix pushes `phx_error` and the channel is gone until it is joined again
-([socket.ex](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/socket.ex#L560-L569));
-the Phoenix JavaScript client joins again by itself, and the new `active_orders` replaces the list. matching closes a
-socket that has sent nothing for 60 seconds
-([websocket.ex](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/transports/websocket.ex#L26-L35)),
-so the page sends a heartbeat every 30 seconds, as the Phoenix JavaScript client does by itself
-([socket.js](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/assets/js/phoenix/socket.js#L174)):
+Both edge and matching close a socket that has sent or received nothing for 60 seconds
+([event_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L28)),
+so the page sends `system.ping` every 30 seconds or so:
 
 <RestSocketMessage id="matching.merchantSocket.heartbeat" />
 
@@ -125,7 +111,7 @@ Order keeps one courier booking per order, so a report sent again books no secon
 
 Order asks matching for a courier for the parcel. matching books the job at once, which the socket pushes as
 `pending`, but answers order with the parcel's tracking number (AWB) only once a courier is assigned to it
-([courier_telemetry_server.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/servers/courier_telemetry_server.ex#L24-L61));
+([courier_telemetry_server.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching/servers/courier_telemetry_server.ex#L24-L45));
 until then order asks again later
 ([CourierDispatcher.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a0167a3ec43e857e85401924b4bee486e596d4fd/Application/Fulfillment/CourierDispatcher.cs#L73-L109)).
 With the answer, order records the tracking number in the warehouse over gRPC
@@ -134,11 +120,11 @@ With the answer, order records the tracking number in the warehouse over gRPC
 and from then on the task's card in the queue carries it as `tracking_number`
 ([task_queue_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/services/fulfillment/task_queue_service.rb#L54)).
 
-The page matches each push to a task by `order_number`. A `pending` job has no courier yet: the page keeps waiting.
+The page matches each push to a task by `data.order.orderNumber`. A `pending` job has no courier yet: the page keeps waiting.
 An `assigned` job has one, and the page reads the queue again (step 4). Order learns the tracking number only from
 matching's answer to one of its requests, which can come a while after the push, so while that task's
 `tracking_number` is still `null`, the page reads the queue again later. Once set, `tracking_number` equals the
-job's `awb_number`; no label can be printed before. Later pushes, `picked_up` and `delivered`, follow the parcel
+job's `awbNumber`; no label can be printed before. Later pushes, `picked_up` and `delivered`, follow the parcel
 on its way to the buyer.
 
 <RestSocketMessage id="matching.merchantSocket.orderUpdated" />

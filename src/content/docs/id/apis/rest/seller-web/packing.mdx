@@ -3,7 +3,7 @@ title: Mengemas pesanan
 description: Cara penjual mengerjakan antrean pengemasan di warehouse, dari pesanan yang dibayar sampai label pengiriman tercetak, dan mendengar dari socket merchant milik matching kapan sebuah paket mendapat kurir.
 sidebar:
   order: 7
-sourceHash: "59ee843328fe"
+sourceHash: "7cf7e7915451"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
@@ -33,53 +33,40 @@ Batas waktunya, `same_day_cutoff_at`, mengikuti jam batas merchant
 
 Halaman membuka socket saat dimuat, sebelum membaca antrean, supaya tidak ada push tentang paket yang dikemas sejak
 saat itu yang terlewat. Socket ini memakai session `seller` yang sama dengan panggilan ke warehouse: browser
-mengirim cookie session dan `Origin` bersama upgrade-nya dengan sendirinya, dan halaman menawarkan subprotocol
-`phoenix` atau tidak sama sekali, tidak pernah token. Edge memeriksa session seperti untuk panggilan `/bff/api/`,
-jadi membuka socket terhitung sebagai pemakaian session dan bisa lebih dulu memperbarui token-nya; edge hanya
-menerima `seller`, lalu membuka socket matching dengan access token milik session
-([merchant_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/merchant_socket.tl#L45-L83),
-[session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/session_use.tl#L22-L70)).
-matching memverifikasi token itu lagi dan hanya mengizinkan socket join ke channel yang dinamai menurut
-`principalId` di token
-([merchant_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/merchant_socket.ex#L24-L45),
-[merchant_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/merchant_channel.ex#L32-L41)).
+mengirim cookie session dan `Origin` bersama upgrade-nya dengan sendirinya, tanpa mengirim token. Edge memeriksa
+session dan exact origin, lalu membuka socket event terpadu milik matching ke upstream dengan access token milik
+session serta `X-Edge-Role: seller`
+([event_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L564-L599),
+[event_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L331-L360),
+[session_use.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/session_use.tl#L22-L70)).
+matching memverifikasi token itu lagi dan otomatis membatasi aliran event pada `principalId` di token — tanpa join
+topic Phoenix
+([event_socket_plug.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/event_socket_plug.ex#L94-L100),
+[event_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/event_socket.ex#L77-L98)).
 
 <RestSocket id="matching.merchantSocket" />
 
 `WebSocket` milik browser tidak memperlihatkan status handshake yang ditolak kepada halaman, hanya bahwa koneksinya
 gagal dan tertutup. Halaman lalu membaca session ([Masuk](/id/apis/rest/seller-web/sign-in/), langkah 3):
-`authenticated: false` menampilkan halaman masuk, role `customer` berarti akun yang belum disetujui atau yang
-persetujuannya belum sampai ke session (Menjadi penjual, langkah 5), dan session `seller` membuka socket lagi
-setelah jeda. matching menutup socket-socket-nya bertahap saat restart
-([endpoint.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/endpoint.ex#L19-L26)),
-yang dianggap halaman sebagai koneksi yang putus: halaman menyambung lagi dan join lagi (langkah 3). Client
-JavaScript Phoenix melakukan keduanya sendiri, menyambung lagi setelah jeda singkat yang bertambah sampai 5 detik
-([socket.js](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/assets/js/phoenix/socket.js#L182-L188)).
+`authenticated: false` menampilkan halaman masuk, dan akun yang disetujui setelah sign-in mendapat role `seller`
+begitu edge memperbarui token session atau setelah login ulang. WebSocket upstream matching menutup koneksi setelah
+60 detik tanpa lalu lintas
+([event_socket_plug.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/event_socket_plug.ex#L45-L48)).
 
-## 3. Join ke channel penjual
+## 3. Menerima snapshot awal
 
-Setiap frame adalah array JSON `[join_ref, ref, topic, event, payload]`; sebuah balasan mengulang `ref` milik frame
-yang dijawabnya, dan push dari matching ber-`ref` `null`
-([v2_json_serializer.ex](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/socket/serializers/v2_json_serializer.ex#L63-L98)).
-Join ke topic `merchant:` diikuti `principalId` milik session, dari jawaban masuk atau dari `GET /bff/session`
-(Masuk, langkah 3):
+Setiap frame adalah objek JSON `camelCase` (`event`, `schemaVersion`, `eventId`, `requestId`, `orderId`, `sequence`,
+`occurredAt`, dan `data`)
+([envelope.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/events/envelope.ex#L24-L70)).
+Tepat saat upgrade, matching langsung mem-push `matching.job.snapshot` berisi semua job seller yang belum selesai.
+Halaman menganggap `data.orders` sebagai state terkini, baik saat pertama tersambung maupun setelah reconnect, karena
+perubahan saat socket terputus tidak dikirim ulang:
 
-<RestSocketMessage id="matching.merchantSocket.join" />
+<RestSocketMessage id="matching.merchantSocket.snapshot" />
 
-Tepat setelah join, matching mem-push job kurir milik penjual yang belum selesai. Halaman menganggap daftar itu
-sebagai state terkini, baik setelah join pertama maupun setelah setiap kali tersambung kembali, karena perubahan
-yang terjadi saat socket putus tidak dikirim ulang:
-
-<RestSocketMessage id="matching.merchantSocket.activeOrders" />
-
-Channel ini hanya mem-push. Saat channel gagal, misalnya karena database matching tidak menjawab ketika daftar job
-disusun, Phoenix mem-push `phx_error` dan channel itu hilang sampai di-join lagi
-([socket.ex](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/socket.ex#L560-L569));
-client JavaScript Phoenix join lagi dengan sendirinya, dan `active_orders` yang baru menggantikan daftar itu.
-matching menutup socket yang tidak mengirim apa pun selama 60 detik
-([websocket.ex](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/transports/websocket.ex#L26-L35)),
-jadi halaman mengirim heartbeat setiap 30 detik, seperti yang dilakukan client JavaScript Phoenix dengan sendirinya
-([socket.js](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/assets/js/phoenix/socket.js#L174)):
+Baik edge maupun matching menutup socket yang diam selama 60 detik
+([event_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L28)),
+jadi halaman mengirim `system.ping` tiap ~30 detik:
 
 <RestSocketMessage id="matching.merchantSocket.heartbeat" />
 
@@ -130,7 +117,7 @@ Order menyimpan satu pemesanan kurir per pesanan, jadi laporan yang dikirim ulan
 
 Order meminta kurir untuk paket itu ke matching. matching langsung memesan job-nya, yang di-push socket sebagai
 `pending`, tetapi baru menjawab order dengan nomor resi (AWB) paket itu setelah seorang kurir ditugaskan padanya
-([courier_telemetry_server.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/servers/courier_telemetry_server.ex#L24-L61));
+([courier_telemetry_server.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching/servers/courier_telemetry_server.ex#L24-L45));
 sampai saat itu order bertanya lagi nanti
 ([CourierDispatcher.cs](https://github.com/WildanFrananda/kinetix-order-service/blob/a0167a3ec43e857e85401924b4bee486e596d4fd/Application/Fulfillment/CourierDispatcher.cs#L73-L109)).
 Dengan jawaban itu, order mencatat nomor resi di warehouse lewat gRPC
@@ -139,11 +126,11 @@ Dengan jawaban itu, order mencatat nomor resi di warehouse lewat gRPC
 dan sejak saat itu kartu task di antrean membawanya sebagai `tracking_number`
 ([task_queue_service.rb](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/services/fulfillment/task_queue_service.rb#L54)).
 
-Halaman mencocokkan setiap push dengan sebuah task lewat `order_number`. Job `pending` belum punya kurir: halaman
+Halaman mencocokkan setiap push dengan sebuah task lewat `data.order.orderNumber`. Job `pending` belum punya kurir: halaman
 terus menunggu. Job `assigned` sudah punya, dan halaman membaca antrean lagi (langkah 4). Order baru mengetahui
 nomor resi dari jawaban matching atas salah satu permintaannya, yang bisa datang beberapa waktu setelah push itu,
 jadi selama `tracking_number` task itu masih `null`, halaman membaca antrean lagi nanti. Setelah terisi,
-`tracking_number` sama dengan `awb_number` milik job itu; sebelum itu label belum bisa dicetak. Push berikutnya,
+`tracking_number` sama dengan `awbNumber` milik job itu; sebelum itu label belum bisa dicetak. Push berikutnya,
 `picked_up` dan `delivered`, mengikuti paket dalam perjalanannya ke pembeli.
 
 <RestSocketMessage id="matching.merchantSocket.orderUpdated" />

@@ -13,7 +13,7 @@ export type RestSocket = {
   readonly host?: RestHost;
   readonly via?: RestWebApp;
   readonly path: string;
-  readonly query: string;
+  readonly query?: string;
   readonly summary: RestCatalogueKey;
   readonly access: RestAccess;
   readonly request: RestRequest;

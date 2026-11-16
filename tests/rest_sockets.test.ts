@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { bff } from "../src/site/rest/bff";
 import { messageHeaders, socketHeaders } from "../src/site/rest/message_headers";
-import { phoenixRelease } from "../src/site/rest/phoenix_release";
 import { restOrigins } from "../src/site/rest/rest_origins";
 import { restReleases } from "../src/site/rest/rest_releases";
 import { restSocket, restSocketMessages, restSockets } from "../src/site/rest/rest_sockets";
@@ -14,8 +13,6 @@ import type { RestService } from "../src/site/types/rest_service.type";
 import type { RestSocket } from "../src/site/types/rest_socket.type";
 import type { RestWebApp } from "../src/site/types/rest_web_app.type";
 
-const phoenix = `https://github.com/phoenixframework/phoenix/blob/${phoenixRelease.commit}/`;
-
 function releasePrefix(service: RestService): string {
   const release = restReleases[service];
 
@@ -23,11 +20,11 @@ function releasePrefix(service: RestService): string {
 }
 
 function pinned(services: readonly RestService[], href: string): boolean {
-  return services.some((service) => href.startsWith(releasePrefix(service))) || href.startsWith(phoenix);
+  return services.some((service) => href.startsWith(releasePrefix(service)));
 }
 
 function answering(socket: RestSocket): readonly RestService[] {
-  return socket.via === undefined ? [socket.service] : [socket.service, "edge"];
+  return socket.service === "matching" || socket.service === "edge" ? ["matching", "edge"] : [socket.service];
 }
 
 function probe(via: RestWebApp | undefined): RestSocket {
@@ -36,10 +33,9 @@ function probe(via: RestWebApp | undefined): RestSocket {
     id: `${socket.service}.probe`,
     service: socket.service,
     path: "/ws/v1/example",
-    query: "vsn=2.0.0",
     summary: socket.summary,
     access: socket.access,
-    request: { fields: [], headers: ["Sec-WebSocket-Protocol: phoenix"] },
+    request: { fields: [], headers: ["Authorization: Bearer <accessToken>"] },
     cases: [],
     source: socket.source
   };
@@ -47,29 +43,21 @@ function probe(via: RestWebApp | undefined): RestSocket {
   return via === undefined ? direct : { ...direct, via };
 }
 
-function topicPattern(topic: string): RegExp {
-  const escaped = topic.replace(/[.*+?^$()|[\]\\]/g, "\\$&").replace(/\{[^}]+\}/g, "[^:]+");
-
-  return new RegExp(`^${escaped}$`);
-}
-
 describe("socket frames", () => {
   test("a short frame stays on one line", () => {
-    expect(frameCode(["1", "2", "phoenix", "heartbeat", {}])).toBe('["1", "2", "phoenix", "heartbeat", {}]');
+    expect(frameCode({ event: "system.ping", requestId: "1" })).toBe('{"event": "system.ping", "requestId": "1"}');
   });
 
-  test("a long frame puts each element on its line and keeps what fits compact", () => {
-    const code = frameCode(["1", "5", "driver:17", "phx_reply", { status: "ok", response: { stored: [0] } }]);
+  test("a long frame puts each key on its line and keeps what fits compact", () => {
+    const code = frameCode({ event: "command.ack", requestId: "5", data: { stored: [0] } });
 
     expect(code).toBe(
       [
-        "[",
-        '  "1",',
-        '  "5",',
-        '  "driver:17",',
-        '  "phx_reply",',
-        '  {"status": "ok", "response": {"stored": [0]}}',
-        "]"
+        "{",
+        '  "event": "command.ack",',
+        '  "requestId": "5",',
+        '  "data": {"stored": [0]}',
+        "}"
       ].join("\n")
     );
   });
@@ -95,17 +83,17 @@ describe("socket addresses and headers", () => {
   test("a socket the client opens directly is on its host, with only the headers it sets", () => {
     const direct = probe(undefined);
 
-    expect(socketUrl(direct)).toBe("wss://api.wildanfrananda.my.id/ws/v1/example?vsn=2.0.0");
+    expect(socketUrl(direct)).toBe("wss://api.wildanfrananda.my.id/ws/v1/example");
     expect(socketHeaders(direct)).toEqual(messageHeaders(direct.request));
   });
 
   test("a socket a web app opens through its edge is on the app's host under /bff, with the cookie and Origin", () => {
-    expect(socketUrl(probe("seller-web"))).toBe("wss://seller.wildanfrananda.my.id/bff/ws/v1/example?vsn=2.0.0");
-    expect(socketUrl(probe("backoffice"))).toBe("<backoffice origin>/bff/ws/v1/example?vsn=2.0.0");
+    expect(socketUrl(probe("seller-web"))).toBe("wss://seller.wildanfrananda.my.id/bff/ws/v1/example");
+    expect(socketUrl(probe("backoffice"))).toBe("<backoffice origin>/bff/ws/v1/example");
     expect(socketHeaders(probe("seller-web"))).toEqual([
       "Cookie: __Host-kx_session=<session>",
       "Origin: https://seller.wildanfrananda.my.id",
-      "Sec-WebSocket-Protocol: phoenix"
+      "Authorization: Bearer <accessToken>"
     ]);
   });
 
@@ -168,7 +156,7 @@ describe("REST sockets", () => {
         expect(keys.filter((key) => !key.startsWith(prefix))).toEqual([]);
       });
 
-      test("every link is pinned to its release, to its Phoenix, or to the edge it opens through", () => {
+      test("every link is pinned to its release or to the edge", () => {
         const links = [socket.source, ...socket.cases.map((entry) => entry.source)];
 
         expect(socket.source.href.startsWith(releasePrefix(socket.service))).toBe(true);
@@ -196,25 +184,21 @@ describe("REST sockets", () => {
         expect(keys.filter((key) => !key.startsWith(prefix))).toEqual([]);
       });
 
-      test("every source link is pinned to the release production runs, or to its Phoenix", () => {
-        const service = restSocket(message.socket).service;
+      test("every source link is pinned to the release production runs", () => {
+        const socket = restSocket(message.socket);
         const links = [message.source, ...message.replies.map((reply) => reply.source)];
 
-        expect(links.filter((link) => !pinned([service], link.href))).toEqual([]);
+        expect(links.filter((link) => !pinned(answering(socket), link.href))).toEqual([]);
       });
 
-      test("the frame names its topic and event, and only what a client sends gets replies", () => {
-        const [, ref, topic, event] = message.frame;
-
-        expect(topic).toMatch(topicPattern(message.topic));
-        expect(event.length).toBeGreaterThan(0);
-        expect(event).not.toBe("phx_reply");
+      test("the frame names its event, and only what a client sends gets replies", () => {
+        expect(message.frame.event.length).toBeGreaterThan(0);
 
         if (message.direction === "receive") {
-          expect(ref).toBeNull();
+          expect(message.frame.requestId).toBeUndefined();
           expect(message.replies).toEqual([]);
         } else {
-          expect(ref).not.toBeNull();
+          expect(typeof message.frame.requestId).toBe("string");
           expect(message.replies.length).toBeGreaterThan(0);
         }
       });

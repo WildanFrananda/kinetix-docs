@@ -57,8 +57,8 @@ Approval makes the account a `courier` in identity
 ([courier_onboarding_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/courier_onboarding_usecase.service.ts#L76-L87)),
 but a token keeps the role it was issued with, so the tokens from step 1 still say `customer`. The driver socket
 admits only the roles `courier` and `admin`
-([driver_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/driver_socket.ex#L46-L49))
-and refuses the old access token with `403`. A refresh reads the role from the account
+([event_socket_plug.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/event_socket_plug.ex#L90-L111))
+and refuses the old access token. A refresh reads the role from the account
 ([auth_usecase.service.ts](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/auth_usecase.service.ts#L189-L243)):
 exchange the refresh token from step 1, with the same `X-Kinetix-Client` as step 1, and use the new pair from then
 on. The courier app refreshes when the driver socket refuses its token, then connects again with the new access

@@ -90,13 +90,13 @@ export const matchingAnswers: readonly RestCase[] = [
       errors: { detail: "Bad Request" },
       traceId
     },
-    source: restSource("matching", "lib/fleet_pulse_web/endpoint.ex", 35, 38)
+    source: restSource("matching", "lib/kinetix_matching_web/endpoint.ex", 35, 38)
   },
   {
     status: 401,
     when: "rest.matching.answers.unauthorized",
     json: { error: "unauthorized" },
-    source: restSource("matching", "lib/fleet_pulse_web/plugs/identity_auth.ex", 19, 52)
+    source: restSource("matching", "lib/kinetix_matching_web/plugs/identity_auth.ex", 19, 52)
   },
   {
     status: 403,
@@ -105,7 +105,7 @@ export const matchingAnswers: readonly RestCase[] = [
       error: "forbidden",
       message: "this account is a courier; this route is for admin"
     },
-    source: restSource("matching", "lib/fleet_pulse_web/plugs/require_role.ex", 35, 44)
+    source: restSource("matching", "lib/kinetix_matching_web/plugs/require_role.ex", 35, 44)
   },
   {
     status: 404,
@@ -114,7 +114,7 @@ export const matchingAnswers: readonly RestCase[] = [
       errors: { detail: "Not Found" },
       traceId
     },
-    source: restSource("matching", "lib/fleet_pulse_web/controllers/error_json.ex", 18, 20)
+    source: restSource("matching", "lib/kinetix_matching_web/controllers/error_json.ex", 18, 20)
   },
   {
     status: 406,
@@ -123,7 +123,7 @@ export const matchingAnswers: readonly RestCase[] = [
       errors: { detail: "Not Acceptable" },
       traceId
     },
-    source: restSource("matching", "lib/fleet_pulse_web/router.ex", 8, 11)
+    source: restSource("matching", "lib/kinetix_matching_web/router.ex", 8, 11)
   },
   {
     status: 413,
@@ -132,7 +132,7 @@ export const matchingAnswers: readonly RestCase[] = [
       errors: { detail: "Request Entity Too Large" },
       traceId
     },
-    source: restSource("matching", "lib/fleet_pulse_web/endpoint.ex", 35, 38)
+    source: restSource("matching", "lib/kinetix_matching_web/endpoint.ex", 35, 38)
   },
   {
     status: 500,
@@ -144,7 +144,7 @@ export const matchingAnswers: readonly RestCase[] = [
       },
       traceId
     },
-    source: restSource("matching", "lib/fleet_pulse_web/controllers/error_json.ex", 10, 16)
+    source: restSource("matching", "lib/kinetix_matching_web/controllers/error_json.ex", 10, 16)
   },
   {
     status: 503,
@@ -153,13 +153,13 @@ export const matchingAnswers: readonly RestCase[] = [
       errors: { detail: "Service Unavailable" },
       traceId
     },
-    source: restSource("matching", "lib/fleet_pulse_web/database_unavailable.ex", 1, 7)
+    source: restSource("matching", "lib/kinetix_matching_web/database_unavailable.ex", 1, 7)
   },
   {
     status: 503,
     when: "rest.matching.answers.identityUnavailable",
     json: { error: "identity_unavailable" },
-    source: restSource("matching", "lib/fleet_pulse_web/plugs/identity_auth.ex", 36, 60)
+    source: restSource("matching", "lib/kinetix_matching_web/plugs/identity_auth.ex", 36, 60)
   }
 ];
 
@@ -191,7 +191,7 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
             active: true
           }
         },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_profile_controller.ex", 44, 53)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/driver_profile_controller.ex", 44, 53)
       },
       {
         status: 403,
@@ -200,7 +200,7 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
           error: "pending_approval",
           message: "this vehicle is filed and waiting for an administrator to approve the account"
         },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_profile_controller.ex", 19, 25)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/driver_profile_controller.ex", 19, 25)
       },
       {
         status: 404,
@@ -209,10 +209,10 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
           error: "no_driver_record",
           message: "this account has no vehicle in this fleet yet"
         },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_profile_controller.ex", 27, 33)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/driver_profile_controller.ex", 27, 33)
       }
     ],
-    source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_profile_controller.ex", 11, 35)
+    source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/driver_profile_controller.ex", 11, 35)
   },
   {
     id: "matching.listDrivers",
@@ -235,10 +235,10 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
         json: {
           data: [busyCourier, idleCourier, unplacedCourier]
         },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 41, 51)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/driver_controller.ex", 41, 51)
       }
     ],
-    source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 14, 17)
+    source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/driver_controller.ex", 14, 17)
   },
   {
     id: "matching.nearbyDrivers",
@@ -304,16 +304,16 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
             }
           ]
         },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 53, 55)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/driver_controller.ex", 53, 55)
       },
       {
         status: 400,
         when: "rest.matching.nearbyDrivers.case.invalidQuery",
         json: { error: "invalid_nearby_query" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 67, 92)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/driver_controller.ex", 67, 92)
       }
     ],
-    source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 29, 39)
+    source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/driver_controller.ex", 29, 39)
   },
   {
     id: "matching.getDriver",
@@ -342,22 +342,22 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
         status: 200,
         when: "rest.matching.getDriver.case.found",
         json: { data: busyCourier },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 41, 51)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/driver_controller.ex", 41, 51)
       },
       {
         status: 400,
         when: "rest.matching.getDriver.case.invalidId",
         json: { error: "invalid_id" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 25, 25)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/driver_controller.ex", 25, 25)
       },
       {
         status: 404,
         when: "rest.matching.getDriver.case.notTracked",
         json: { error: "not_found" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 24, 24)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/driver_controller.ex", 24, 24)
       }
     ],
-    source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/driver_controller.ex", 19, 27)
+    source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/driver_controller.ex", 19, 27)
   },
   {
     id: "matching.listDispatches",
@@ -403,28 +403,28 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
           data: [assignedJob, deliveredJob],
           next_cursor: 4812
         },
-        source: restSource("matching", "lib/fleet_pulse/dispatch.ex", 197, 211)
+        source: restSource("matching", "lib/kinetix_matching/dispatch.ex", 198, 212)
       },
       {
         status: 400,
         when: "rest.matching.listDispatches.case.invalidStatus",
         json: { error: "invalid_status" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 137, 147)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 137, 147)
       },
       {
         status: 400,
         when: "rest.matching.listDispatches.case.invalidLimit",
         json: { error: "invalid_limit" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 149, 157)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 149, 157)
       },
       {
         status: 400,
         when: "rest.matching.listDispatches.case.invalidCursor",
         json: { error: "invalid_cursor" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 159, 167)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 159, 167)
       }
     ],
-    source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 14, 24)
+    source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 14, 24)
   },
   {
     id: "matching.dispatchSummary",
@@ -451,10 +451,10 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
             delivered_today: 42
           }
         },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 26, 35)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 26, 35)
       }
     ],
-    source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 26, 35)
+    source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 26, 35)
   },
   {
     id: "matching.getDispatch",
@@ -509,22 +509,22 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
             }
           }
         },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 125, 135)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 125, 135)
       },
       {
         status: 400,
         when: "rest.matching.getDispatch.case.invalidId",
         json: { error: "invalid_id" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 44, 44)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 44, 44)
       },
       {
         status: 404,
         when: "rest.matching.getDispatch.case.notFound",
         json: { error: "not_found" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 43, 43)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 43, 43)
       }
     ],
-    source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 37, 46)
+    source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 37, 46)
   },
   {
     id: "matching.assignDispatch",
@@ -563,52 +563,52 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
         status: 200,
         when: "rest.matching.assignDispatch.case.assigned",
         json: { data: assignedJob },
-        source: restSource("matching", "lib/fleet_pulse/dispatch.ex", 256, 269)
+        source: restSource("matching", "lib/kinetix_matching/dispatch.ex", 257, 270)
       },
       {
         status: 400,
         when: "rest.matching.assignDispatch.case.driverIdRequired",
         json: { error: "driver_id_required" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 76, 76)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 76, 76)
       },
       {
         status: 400,
         when: "rest.matching.assignDispatch.case.invalidId",
         json: { error: "invalid_id" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 72, 72)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 72, 72)
       },
       {
         status: 404,
         when: "rest.matching.assignDispatch.case.notFound",
         json: { error: "not_found" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 67, 67)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 67, 67)
       },
       {
         status: 404,
         when: "rest.matching.assignDispatch.case.driverNotFound",
         json: { error: "driver_not_found" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 68, 68)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 68, 68)
       },
       {
         status: 409,
         when: "rest.matching.assignDispatch.case.alreadyAssigned",
         json: { error: "already_assigned" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 69, 69)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 69, 69)
       },
       {
         status: 409,
         when: "rest.matching.assignDispatch.case.driverNotTracked",
         json: { error: "driver_not_tracked" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 70, 70)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 70, 70)
       },
       {
         status: 409,
         when: "rest.matching.assignDispatch.case.driverUnavailable",
         json: { error: "driver_unavailable" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 71, 71)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 71, 71)
       }
     ],
-    source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 59, 76)
+    source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 59, 76)
   },
   {
     id: "matching.unassignDispatch",
@@ -637,34 +637,34 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
         status: 200,
         when: "rest.matching.unassignDispatch.case.unassigned",
         json: { data: pendingJob },
-        source: restSource("matching", "lib/fleet_pulse/dispatch.ex", 271, 283)
+        source: restSource("matching", "lib/kinetix_matching/dispatch.ex", 272, 284)
       },
       {
         status: 400,
         when: "rest.matching.unassignDispatch.case.invalidId",
         json: { error: "invalid_id" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 90, 90)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 90, 90)
       },
       {
         status: 404,
         when: "rest.matching.unassignDispatch.case.notFound",
         json: { error: "not_found" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 87, 87)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 87, 87)
       },
       {
         status: 409,
         when: "rest.matching.unassignDispatch.case.notAssigned",
         json: { error: "not_assigned" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 88, 88)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 88, 88)
       },
       {
         status: 409,
         when: "rest.matching.unassignDispatch.case.invalidTransition",
         json: { error: "invalid_transition" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 89, 89)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 89, 89)
       }
     ],
-    source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 78, 92)
+    source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 78, 92)
   },
   {
     id: "matching.cancelDispatch",
@@ -708,34 +708,34 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
             inserted_at: "2026-09-08T04:20:15.003871Z"
           }
         },
-        source: restSource("matching", "lib/fleet_pulse/dispatch.ex", 337, 347)
+        source: restSource("matching", "lib/kinetix_matching/dispatch.ex", 338, 348)
       },
       {
         status: 400,
         when: "rest.matching.cancelDispatch.case.invalidId",
         json: { error: "invalid_id" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 103, 103)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 103, 103)
       },
       {
         status: 404,
         when: "rest.matching.cancelDispatch.case.notFound",
         json: { error: "not_found" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 100, 100)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 100, 100)
       },
       {
         status: 409,
         when: "rest.matching.cancelDispatch.case.boundToOrder",
         json: { error: "bound_to_order" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 102, 102)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 102, 102)
       },
       {
         status: 409,
         when: "rest.matching.cancelDispatch.case.invalidTransition",
         json: { error: "invalid_transition" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 101, 101)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 101, 101)
       }
     ],
-    source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 94, 105)
+    source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 94, 105)
   },
   {
     id: "matching.driverDispatches",
@@ -764,16 +764,16 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
         status: 200,
         when: "rest.matching.driverDispatches.case.listed",
         json: { data: [assignedJob] },
-        source: restSource("matching", "lib/fleet_pulse/dispatch.ex", 234, 240)
+        source: restSource("matching", "lib/kinetix_matching/dispatch.ex", 235, 241)
       },
       {
         status: 400,
         when: "rest.matching.driverDispatches.case.invalidId",
         json: { error: "invalid_id" },
-        source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 54, 55)
+        source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 54, 55)
       }
     ],
-    source: restSource("matching", "lib/fleet_pulse_web/controllers/api/v1/dispatch_controller.ex", 48, 57)
+    source: restSource("matching", "lib/kinetix_matching_web/controllers/api/v1/dispatch_controller.ex", 48, 57)
   },
   {
     id: "matching.uploadProofPhoto",
@@ -889,24 +889,24 @@ export const matchingEndpoints: readonly RestEndpoint[] = [
       {
         status: 200,
         when: "rest.matching.uploadProofPhoto.case.stored",
-        source: restSource("matching", "test/fleet_pulse/storage/s3_test.exs", 72, 83)
+        source: restSource("matching", "test/kinetix_matching/storage/s3_test.exs", 72, 83)
       },
       {
         status: 400,
         when: "rest.matching.uploadProofPhoto.case.badDigest",
-        source: restSource("matching", "test/fleet_pulse/storage/s3_test.exs", 85, 93)
+        source: restSource("matching", "test/kinetix_matching/storage/s3_test.exs", 85, 93)
       },
       {
         status: 403,
         when: "rest.matching.uploadProofPhoto.case.signatureRefused",
-        source: restSource("matching", "test/fleet_pulse/storage/s3_test.exs", 145, 171)
+        source: restSource("matching", "test/kinetix_matching/storage/s3_test.exs", 145, 171)
       },
       {
         status: 412,
         when: "rest.matching.uploadProofPhoto.case.alreadyStored",
-        source: restSource("matching", "test/fleet_pulse/storage/s3_test.exs", 95, 104)
+        source: restSource("matching", "test/kinetix_matching/storage/s3_test.exs", 95, 104)
       }
     ],
-    source: restSource("matching", "lib/fleet_pulse/storage/s3.ex", 24, 32)
+    source: restSource("matching", "lib/kinetix_matching/storage/s3.ex", 24, 32)
   }
 ];

@@ -18,7 +18,7 @@ app's own host, and it means nothing anywhere but at the edge.
 
 The tables on this page are generated from the same verified data as the
 [system map](/architecture/system-map/), at the commits linked from each row. The prose is checked
-against edge [v1.3.0](https://github.com/WildanFrananda/kinetix-edge-service/tree/0a52d5805b57a818b16b05848b8333d34115f682),
+against edge [v1.4.0](https://github.com/WildanFrananda/kinetix-edge-service/tree/8c0fa9447c9d9fea964540ed1f8d032a3341b702),
 the version in production. What a page sends and every answer it can get are in the
 [REST reference](/apis/rest/#the-edge); this page is about why the edge works the way it does.
 
@@ -36,13 +36,13 @@ and the image
 ## What it calls
 
 Kong sends the edge
-[the calls under `/bff/` at the web apps' addresses](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L262-L290), and
-[the gateway is its only peer](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/CLAUDE.md#L160-L164).
-The edge serves no gRPC and no other service calls it. It calls identity directly for everything that issues,
-renews or ends tokens, sign-up included, and for the rest of identity's account routes. Every other call goes
-back through the gateway, to a listener that exists only inside Kinetix's network, as the
-[gateway page](/architecture/gateway/#tls-outside-and-listeners-inside) explains; so does the seller web's
-socket to matching.
+[the calls under `/bff/` at the web apps' addresses and `/ws/v1/events` on the API host](https://github.com/WildanFrananda/kinetix-api-gateway/blob/4badbc5eb549e398a9bc99ea538e0e838dbabc1e/config/gateway.pkl#L262-L305),
+and [the gateway is its main peer](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/CLAUDE.md#L160-L164).
+The edge serves no gRPC and no other service calls it. It calls identity directly for `/api/v1/auth/me` during
+Bearer WebSocket upgrades as well as everything that issues, renews or ends tokens. Every other call goes
+back through the gateway, to the listener inside Kinetix's network, as the
+[gateway page](/architecture/gateway/#tls-outside-and-listeners-inside) explains; so does the upstream WebSocket
+to matching's `/ws/v1/matching/events` for couriers and sellers.
 
 <ServiceCalls service="edge" />
 
@@ -288,49 +288,34 @@ Past that, the page gets `503` `API_UNAVAILABLE`, whose message says
 [it is not known whether the request took effect](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/errors.tl#L82-L86):
 the call may have reached the service, and only reading the current state can tell.
 
-## The seller web's merchant socket
+## The unified event socket
 
-matching tells a seller about their jobs over a WebSocket, the merchant socket, and opening it takes an access
-token. The seller web holds none, so the edge opens the socket for it:
-[`/bff/ws/v1/matching/merchant`](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/router.tl#L127-L144),
-and the same path with `/websocket` after it, which Phoenix's JavaScript client dials. Only the seller web
-offers it; on the backoffice it is `404`. Before anything reaches matching, the edge
-[checks, in order](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/merchant_socket.tl#L45-L83):
+All non-chat realtime traffic now terminates at the edge over `camelCase` JSON event frames
+([event_protocol.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_protocol.tl#L176-L271)):
+[`/bff/ws/v1/events`](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/router.tl#L146-L153)
+on the web app hosts, and
+[`/ws/v1/events`](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/router.tl#L154-L161)
+for Bearer mobile clients.
 
-- **An upgrade.** A request that does not ask for a WebSocket gets `426` `WEBSOCKET_REQUIRED`.
-- **The app's own origin.** `Origin` must equal the seller web's, and a request without one is refused too, with
-  `403` `CSRF_REFUSED`. A browser always sends `Origin` when it opens a WebSocket, so a request without one did
-  not come from the app's page; and here, as everywhere, the edge does not rely on `SameSite` alone to keep a
-  page on another site from opening the socket with the seller's cookie.
-- **A usable session**, found, used and renewed exactly as for a call under `/bff/api/`.
-- **A seller.** The seller web admits customers, but
-  [only a `seller` opens the socket](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/apps.tl#L38-L53);
-  anyone else gets `403` `SELLER_REQUIRED` and keeps the session, because an applicant may still use the app.
-
-Then nginx proxies the upgrade to the gateway's internal listener, where
-[the merchant socket's twin](/architecture/gateway/#the-merchant-sockets-twin) passes it to matching. A browser
-cannot set `Authorization` on a WebSocket, so Phoenix takes a token in the handshake instead, as an entry of
-[`Sec-WebSocket-Protocol` that starts with `base64url.bearer.phx.`](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/transports/websocket.ex#L99-L122),
-and matching
-[reads it from there](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/socket_token.ex#L1-L13).
-The edge
-[writes that entry with the session's access token](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/socket_handshake.tl#L67-L69)
-and
-[sends matching nothing else of the browser's](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/nginx/nginx.conf#L84-L113)
-but the handshake's own headers and the user agent: no cookie and no `Origin`, with the browser's address and the
-request id added. matching then checks the token and the role as it does for any client.
-
-The token never comes back. A server answers a WebSocket handshake by naming the subprotocol it chose, and the
-edge
-[drops whatever matching named](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/merchant_socket.tl#L85-L103):
-the browser is answered `phoenix` if it offered `phoenix`, and nothing otherwise, because a browser fails a
-handshake that names a subprotocol it did not offer. `Set-Cookie` is dropped too. An answer other than the
-upgrade, matching's refusal among them, passes through with its status; if the gateway cannot be reached at all,
-the page gets `503` `API_UNAVAILABLE`.
-The edge
-[holds a quiet socket for 90 seconds](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/nginx/nginx.conf#L102-L105),
-longer than Phoenix lets a socket stay silent; the
-[gateway](/architecture/gateway/#ninety-seconds-for-a-quiet-socket) waits as long on both of its hops.
+- **Web app sessions ([serve_bff](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L564-L599)).**
+  Checks the WebSocket upgrade (`426` `WEBSOCKET_REQUIRED`), exact `Origin` match (`403` `CSRF_REFUSED`), and the
+  `__Host-kx_session` cookie (renewing tokens when due), never exposing any token to the browser.
+- **Bearer clients ([serve_bearer](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L601-L630)).**
+  Checks the WebSocket upgrade, reads `Authorization: Bearer <accessToken>`, and verifies the caller once via
+  identity's `GET /api/v1/auth/me`
+  ([#L506-L562](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L506-L562)).
+- **Couriers and sellers upstream ([open_matching_upstream](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L331-L360)).**
+  When `role` is `courier`, `seller` or `admin`, the edge opens `/ws/v1/matching/events` upstream over internal
+  HTTP with the bearer token and `X-Edge-Role` and relays frames transparently both ways (refusing `courier` upgrades
+  with `503` `API_UNAVAILABLE` if matching is unreachable).
+- **Buyer order subscriptions ([handle_subscribe](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L266-L305)).**
+  Buyers open no socket to matching. On `subscription.subscribe`, the edge queries `GET /api/v1/orders/{orderId}` with
+  the caller's token to confirm ownership and resolve `orderNumber`, subscribes to Redis Pub/Sub
+  `matching:position:{orderNumber}`, and coalesces `courier.location.updated` pushes every 250 ms
+  ([#L117-L220](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L117-L220)).
+  The edge also handles `system.ping` when no matching upstream is attached
+  ([#L419-L422](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L419-L422)),
+  and enforces a 60-second idle read timeout (`CLIENT_TIMEOUT_MS`).
 
 ## When something is down
 
@@ -353,7 +338,7 @@ longer than Phoenix lets a socket stay silent; the
 ## What it owns, and what it does not
 
 The edge owns sessions: which token pair a cookie stands for, the sign-ins still waiting for a code, and each
-app's policy — its roles, its lifetimes, whether it offers sign-up, passkeys and the merchant socket, the checks against
+app's policy — its roles, its lifetimes, whether it offers sign-up, passkeys and event sockets, the checks against
 forgery. Its policy is
 [code, compiled and type-checked with the rest](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/README.md#L63),
 not configuration.
@@ -368,7 +353,7 @@ rules. And it is not the gateway: it sits behind Kong, which decides who may rea
 
 | Directory | Holds |
 | --- | --- |
-| `src/http/` | the routes and what each does: sessions, sign-in, sign-up, sign-out, forwarding, the merchant socket, the checks against forgery, errors |
+| `src/http/` | the routes and what each does: sessions, sign-in, sign-up, sign-out, forwarding, the unified event WebSocket and protocol, the checks against forgery, errors |
 | `src/adapters/` | what the routes use from outside: Redis, identity, the HTTP client, metrics, logging, the environment |
 | `src/types/` | one record or enum per file |
 | `config/` | the policy as code: the apps and their roles, lifetimes, timing, what is forwarded and what is refused |
@@ -384,16 +369,13 @@ argument, so a unit test can hand them a fake one.
 
 ## Data
 
-Redis holds
-[three kinds of key](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/README.md#L72-L79),
-each named after the SHA-256 of a cookie and each with an expiry: a session, which lives until its idle or
-absolute end; a pending sign-in, which lives as long as identity's challenge or enrolment; and the renewal lock,
-which lives 15 seconds. The edge connects as a Redis user of its own,
-[allowed only keys under its prefix and only the commands it uses](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/README.md#L72-L76),
-and the integration tests
-[run under that same user](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/tests/integration/main/redis_acl_spec.tl#L12-L30),
-so a command the edge starts to use without listing it fails a test rather than a sign-in. Nothing in Redis is
-needed for long: losing it signs everyone out of the web apps, and loses nothing else.
+Redis holds sessions, pending sign-ins, renewal locks (`15` seconds), and transient Pub/Sub channels
+(`matching:position:{orderNumber}`) subscribed while buyers watch active deliveries. Each session or pending sign-in
+key is named after the SHA-256 of a cookie and carries an explicit expiry. The edge connects as a Redis user of its own,
+[allowed only keys and Pub/Sub channels under its configured prefixes](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/README.md#L72-L76),
+and the integration tests run under that same user, so a Redis command the edge starts using without listing fails a
+test rather than a sign-in or subscription. Nothing in Redis is needed for long: losing it signs everyone out of the
+web apps and drops live position relays, and loses nothing else.
 
 ## How it is tested
 
@@ -430,7 +412,7 @@ it runs as a user rather than root, carries no Teal, and refuses to start withou
 ## Who may do what
 
 - **Anyone who reaches the seller web's host** may read their session, sign up, sign in and sign out. A session
-  there admits a `seller` or a `customer`, and only a `seller`'s opens the merchant socket.
+  there admits a `seller` or a `customer`; a `seller` opens matching's upstream job stream on `/bff/ws/v1/events`.
 - **The backoffice** has no public host. Its Tor onion service connects only a browser holding a client key, and
   its address on Kinetix's staff network answers only that network, at the
   [gateway](/architecture/gateway/#the-staff-gate). The edge keeps each address apart, with its own origin and

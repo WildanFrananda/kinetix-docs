@@ -9,8 +9,8 @@ export const restReleases: Readonly<Record<RestService, RestRelease>> = {
   },
   edge: {
     repository: "kinetix-edge-service",
-    tag: "v1.3.0",
-    commit: "0a52d5805b57a818b16b05848b8333d34115f682"
+    tag: "v1.4.0",
+    commit: "8c0fa9447c9d9fea964540ed1f8d032a3341b702"
   },
   identity: {
     repository: "kinetix-identity-service",
@@ -49,8 +49,8 @@ export const restReleases: Readonly<Record<RestService, RestRelease>> = {
   },
   matching: {
     repository: "kinetix-matching-service",
-    tag: "v1.5.2",
-    commit: "7ef67a0ca1d0e8945f638de8a2f9684e84d06886"
+    tag: "v1.6.0",
+    commit: "c09bc12e39aa22a5d4bb1b17c65011323a897562"
   },
   payment: {
     repository: "kinetix-payment-service",

@@ -23,7 +23,7 @@ only public route is a handset registering itself, and communication has none at
 hosts, which Kong sends to the edge. The edge keeps their sessions, calls identity directly to sign up, to sign
 in and to renew tokens, and sends every other call back to the gateway, to a listener inside Kinetix's network.
 The seller web's socket to matching takes the same way back, through
-[a twin of the merchant socket's route](/architecture/gateway/#the-merchant-sockets-twin); see
+[matching's internal WebSocket twin](/architecture/gateway/#matchings-internal-websocket-twin); see
 [edge](/services/edge/).
 
 **order is the busiest caller.** Checkout is a saga that order coordinates: prices and vouchers from

@@ -1,7 +1,7 @@
 ---
 title: edge
 description: Sesi milik web app — service yang login dan mendaftar ke identity atas nama browser, menyimpan token di Redis di balik cookie HttpOnly yang opak, dan menambahkan token itu ke setiap panggilan dan ke socket web penjual, sehingga tidak ada token yang pernah sampai ke JavaScript.
-sourceHash: "33b1bab2710d"
+sourceHash: "a3d46ed907b7"
 ---
 
 import ServiceCalls from "../../../../components/ServiceCalls.astro";
@@ -20,7 +20,7 @@ hanya mengirimnya ke host app itu sendiri, dan cookie itu tidak berarti apa-apa 
 Tabel-tabel di halaman ini dihasilkan dari data terverifikasi yang sama dengan
 [peta sistem](/id/architecture/system-map/), pada commit yang ditautkan dari setiap baris. Prosanya
 diperiksa terhadap edge
-[v1.3.0](https://github.com/WildanFrananda/kinetix-edge-service/tree/0a52d5805b57a818b16b05848b8333d34115f682),
+[v1.4.0](https://github.com/WildanFrananda/kinetix-edge-service/tree/8c0fa9447c9d9fea964540ed1f8d032a3341b702),
 versi yang berjalan di production. Apa yang dikirim halaman dan setiap jawaban yang bisa ia terima ada di
 [referensi REST](/id/apis/rest/#edge); halaman ini membahas mengapa edge bekerja seperti ini.
 
@@ -38,14 +38,14 @@ dan image-nya
 ## Yang dipanggil
 
 Kong mengirim ke edge
-[panggilan di bawah `/bff/` di alamat web app](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L262-L290),
+[panggilan di bawah `/bff/` di alamat web app dan `/ws/v1/events` di host API](https://github.com/WildanFrananda/kinetix-api-gateway/blob/4badbc5eb549e398a9bc99ea538e0e838dbabc1e/config/gateway.pkl#L262-L305),
 dan
-[gateway adalah satu-satunya lawan bicaranya](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/CLAUDE.md#L160-L164).
-Edge tidak melayani gRPC dan tidak dipanggil service lain. Ia memanggil identity langsung untuk semua yang
-menerbitkan, memperbarui, atau mengakhiri token, termasuk pendaftaran, dan untuk route akun identity lainnya.
-Setiap panggilan lain kembali lewat gateway, ke listener yang hanya ada di dalam jaringan Kinetix, seperti
-dijelaskan [halaman gateway](/id/architecture/gateway/#tls-di-luar-dan-listener-di-dalam); begitu pula
-socket web penjual ke matching.
+[gateway adalah rekan utamanya](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/CLAUDE.md#L160-L164).
+Edge tidak melayani gRPC dan tidak dipanggil service lain. Ia memanggil identity langsung untuk `/api/v1/auth/me`
+saat upgrade WebSocket Bearer serta semua yang menerbitkan, memperbarui, atau mengakhiri token. Setiap panggilan
+lain kembali lewat gateway, ke listener di dalam jaringan Kinetix, seperti dijelaskan
+[halaman gateway](/id/architecture/gateway/#tls-di-luar-dan-listener-di-dalam); begitu pula WebSocket upstream
+ke `/ws/v1/matching/events` milik matching untuk kurir dan seller.
 
 <ServiceCalls service="edge" />
 
@@ -297,51 +297,35 @@ Lewat dari itu, halaman mendapat `503` `API_UNAVAILABLE`, yang pesannya menyatak
 [tidak diketahui apakah request itu berlaku](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/errors.tl#L82-L86):
 panggilan itu mungkin sudah sampai ke service, dan hanya membaca keadaan terkini yang bisa memastikannya.
 
-## Socket merchant milik web penjual
+## Socket event terpadu
 
-matching memberi tahu seorang seller tentang job-nya lewat sebuah WebSocket, socket merchant, dan membukanya
-memerlukan access token. Web penjual tidak memegang token, jadi edge yang membukakan socket itu untuknya:
-[`/bff/ws/v1/matching/merchant`](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/router.tl#L127-L144),
-dan path yang sama dengan `/websocket` di belakangnya, yang dipanggil client JavaScript Phoenix. Hanya web penjual
-yang menyediakannya; di backoffice path itu `404`. Sebelum apa pun sampai ke matching, edge
-[memeriksa, berurutan](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/merchant_socket.tl#L45-L83):
+Semua lalu lintas real-time selain chat kini berakhir di edge memakai frame event JSON `camelCase`
+([event_protocol.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_protocol.tl#L176-L271)):
+[`/bff/ws/v1/events`](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/router.tl#L146-L153)
+di host web app, dan
+[`/ws/v1/events`](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/router.tl#L154-L161)
+untuk client mobile Bearer.
 
-- **Sebuah upgrade.** Request yang tidak meminta WebSocket mendapat `426` `WEBSOCKET_REQUIRED`.
-- **Origin milik app itu sendiri.** `Origin` harus sama dengan milik web penjual, dan request tanpanya juga
-  ditolak, dengan `403` `CSRF_REFUSED`. Browser selalu mengirim `Origin` ketika membuka WebSocket, jadi request
-  tanpanya tidak datang dari halaman app itu; dan di sini, seperti di mana pun, edge tidak bergantung pada
-  `SameSite` saja untuk mencegah halaman di situs lain membuka socket itu dengan cookie milik seller.
-- **Sesi yang bisa dipakai**, dicari, dipakai, dan diperbarui persis seperti untuk panggilan di bawah `/bff/api/`.
-- **Seorang seller.** Web penjual menerima customer, tetapi
-  [hanya `seller` yang membuka socket itu](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/config/apps.tl#L38-L53);
-  selain itu mendapat `403` `SELLER_REQUIRED` dan tetap memegang sesinya, karena seorang pemohon masih boleh
-  memakai app itu.
-
-Lalu nginx mem-proxy upgrade itu ke listener internal gateway, tempat
-[kembaran socket merchant](/id/architecture/gateway/#kembaran-socket-merchant) meneruskannya ke matching. Browser
-tidak bisa memasang `Authorization` pada WebSocket, jadi Phoenix menerima token di handshake sebagai gantinya,
-sebagai entri
-[`Sec-WebSocket-Protocol` yang diawali `base64url.bearer.phx.`](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/transports/websocket.ex#L99-L122),
-dan matching
-[membacanya dari sana](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/socket_token.ex#L1-L13).
-Edge
-[menulis entri itu dengan access token milik sesi](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/socket_handshake.tl#L67-L69)
-dan
-[tidak mengirim apa pun lagi milik browser ke matching](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/nginx/nginx.conf#L84-L113)
-selain header handshake itu sendiri dan user agent: tanpa cookie dan tanpa `Origin`, dengan alamat browser dan
-request id ditambahkan. matching lalu memeriksa token dan role-nya seperti untuk client mana pun.
-
-Token itu tidak pernah kembali. Server menjawab handshake WebSocket dengan menyebut subprotocol yang ia pilih, dan
-edge
-[membuang apa pun yang disebut matching](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/merchant_socket.tl#L85-L103):
-browser dijawab `phoenix` bila ia menawarkan `phoenix`, dan tidak dijawab apa-apa bila tidak, karena browser
-menggagalkan handshake yang menyebut subprotocol yang tidak ia tawarkan. `Set-Cookie` juga dibuang. Jawaban selain
-upgrade, termasuk penolakan dari matching, diteruskan dengan status-nya; bila gateway sama sekali tidak bisa
-dijangkau, halaman mendapat `503` `API_UNAVAILABLE`. Edge
-[menahan socket yang diam selama 90 detik](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/nginx/nginx.conf#L102-L105),
-lebih lama daripada yang diizinkan Phoenix bagi socket untuk diam;
-[gateway](/id/architecture/gateway/#sembilan-puluh-detik-untuk-socket-yang-diam) menunggu selama itu juga di
-kedua hop-nya.
+- **Sesi web app ([serve_bff](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L564-L599)).**
+  Memeriksa upgrade WebSocket (`426` `WEBSOCKET_REQUIRED`), kecocokan persis `Origin` (`403` `CSRF_REFUSED`), dan
+  cookie `__Host-kx_session` (memperbarui token bila waktunya tiba), tanpa pernah menaruh token di browser.
+- **Client Bearer ([serve_bearer](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L601-L630)).**
+  Memeriksa upgrade WebSocket, membaca `Authorization: Bearer <accessToken>`, lalu memverifikasi pemanggil sekali ke
+  `GET /api/v1/auth/me` milik identity
+  ([#L506-L562](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L506-L562)).
+- **Upstream kurir dan seller ([open_matching_upstream](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L331-L360)).**
+  Ketika `role` bernilai `courier`, `seller`, atau `admin`, edge membuka `/ws/v1/matching/events` ke upstream via
+  HTTP internal membawa bearer token dan `X-Edge-Role`, lalu meneruskan frame secara transparan dua arah
+  (menolak upgrade `courier` dengan `503` `API_UNAVAILABLE` bila matching tak terjangkau).
+- **Langganan order pembeli ([handle_subscribe](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L266-L305)).**
+  Pembeli tidak membuka socket ke matching. Saat `subscription.subscribe`, edge menanyakan
+  `GET /api/v1/orders/{orderId}` memakai token pemanggil untuk memastikan kepemilikan dan mengambil `orderNumber`,
+  men-subscribe Redis Pub/Sub `matching:position:{orderNumber}`, dan menggabungkan push `courier.location.updated`
+  paling sering tiap 250 ms
+  ([#L117-L220](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L117-L220)).
+  Edge juga menjawab `system.ping` saat tidak ada upstream matching yang terpasang
+  ([#L419-L422](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L419-L422)),
+  serta menegakkan batas baca idle 60 detik (`CLIENT_TIMEOUT_MS`).
 
 ## Ketika sesuatu mati
 
@@ -363,7 +347,7 @@ kedua hop-nya.
 ## Yang dimilikinya, dan yang tidak
 
 Edge memiliki sesi: pasangan token mana yang diwakili sebuah cookie, login yang masih menunggu kode, dan kebijakan
-setiap app — role-nya, masa hidupnya, apakah ia menyediakan pendaftaran, passkey, dan socket merchant, pemeriksaan terhadap
+setiap app — role-nya, masa hidupnya, apakah ia menyediakan pendaftaran, passkey, dan socket event, pemeriksaan terhadap
 pemalsuan. Kebijakannya adalah
 [kode, dikompilasi dan diperiksa tipenya bersama yang lain](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/README.md#L63),
 bukan konfigurasi.
@@ -379,7 +363,7 @@ di belakang Kong, yang memutuskan siapa boleh menjangkaunya.
 
 | Direktori | Isinya |
 | --- | --- |
-| `src/http/` | route dan apa yang dilakukan masing-masing: sesi, login, pendaftaran, logout, penerusan, socket merchant, pemeriksaan terhadap pemalsuan, error |
+| `src/http/` | route dan apa yang dilakukan masing-masing: sesi, login, pendaftaran, logout, penerusan, WebSocket event terpadu dan protokolnya, pemeriksaan terhadap pemalsuan, error |
 | `src/adapters/` | apa yang dipakai route dari luar: Redis, identity, HTTP client, metrik, logging, environment |
 | `src/types/` | satu record atau enum per file |
 | `config/` | kebijakan sebagai kode: app dan role-nya, masa hidup, timing, apa yang diteruskan dan apa yang ditolak |
@@ -395,16 +379,14 @@ argumen, sehingga unit test bisa memberinya koneksi palsu.
 
 ## Data
 
-Redis menyimpan
-[tiga jenis key](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/README.md#L72-L79),
-masing-masing dinamai menurut SHA-256 sebuah cookie dan masing-masing punya masa berlaku: sesi, yang hidup sampai
-akhir idle atau akhir absolutnya; login tertunda, yang hidup selama challenge atau enrolment identity; dan lock
-pembaruan, yang hidup 15 detik. Edge tersambung sebagai user Redis miliknya sendiri,
-[yang hanya diizinkan memakai key di bawah prefix-nya dan hanya perintah yang ia pakai](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/README.md#L72-L76),
-dan integration test
-[berjalan di bawah user yang sama](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/tests/integration/main/redis_acl_spec.tl#L12-L30),
-sehingga perintah yang mulai dipakai edge tanpa dicantumkan menggagalkan sebuah test, bukan sebuah login. Tidak ada
-isi Redis yang diperlukan lama: kehilangannya mengeluarkan semua orang dari web app, dan tidak menghilangkan hal
+Redis menyimpan sesi, login tertunda, lock pembaruan (`15` detik), dan channel Pub/Sub sementara
+(`matching:position:{orderNumber}`) yang di-subscribe selama pembeli memantau pengantaran aktif. Setiap key sesi
+atau login tertunda dinamai menurut SHA-256 cookie dan memiliki masa berlaku. Edge tersambung sebagai user Redis
+miliknya sendiri,
+[yang hanya diizinkan memakai key dan channel Pub/Sub di bawah prefix yang dikonfigurasi](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/README.md#L72-L76),
+dan integration test berjalan di bawah user yang sama, sehingga perintah Redis yang mulai dipakai edge tanpa
+dicantumkan menggagalkan sebuah test, bukan sebuah login atau langganan. Tidak ada isi Redis yang diperlukan lama:
+kehilangannya mengeluarkan semua orang dari web app serta memutus relay posisi live, dan tidak menghilangkan hal
 lain.
 
 ## Bagaimana ia diuji
@@ -442,7 +424,7 @@ image berjalan sebagai user, bukan root, tidak membawa Teal, dan menolak start t
 ## Siapa boleh melakukan apa
 
 - **Siapa pun yang menjangkau host web penjual** boleh membaca sesinya, mendaftar, login, dan logout. Sesi di sana
-  menerima `seller` atau `customer`, dan hanya sesi `seller` yang membuka socket merchant.
+  menerima `seller` atau `customer`; sesi `seller` membuka aliran job upstream matching di `/bff/ws/v1/events`.
 - **Backoffice** tidak punya host publik. Onion service Tor-nya hanya menyambungkan browser yang memegang kunci
   klien, dan alamatnya di jaringan staf Kinetix hanya menjawab jaringan itu, di
   [gateway](/id/architecture/gateway/#gerbang-staf). Edge memisahkan kedua alamat itu, masing-masing dengan origin

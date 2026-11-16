@@ -4,7 +4,7 @@ description: Setiap endpoint HTTP yang dipanggil aplikasi Kinetix, dikelompokkan
 sidebar:
   label: Ikhtisar
   order: 0
-sourceHash: "9047e075105b"
+sourceHash: "2b5ee6c15be9"
 ---
 
 import RestEndpoint from "../../../../../components/RestEndpoint.astro";
@@ -35,16 +35,16 @@ satu endpoint tertentu.
 Kinetix menjawab di empat host publik:
 
 - `api.wildanfrananda.my.id` melayani setiap endpoint API, di bawah `/api/v1/`; public key milik identity, di
-  `/.well-known/jwks.json`; dua endpoint milik Kong sendiri, `/health` dan `/.well-known/security.txt`; serta dua
-  WebSocket milik matching, `wss://api.wildanfrananda.my.id/ws/v1/matching/driver?vsn=2.0.0` dan
-  `wss://api.wildanfrananda.my.id/ws/v1/matching/merchant?vsn=2.0.0`. Setiap socket juga menjawab bila path-nya
-  diberi akhiran `/websocket`, bentuk yang dipanggil client JavaScript milik Phoenix
-  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L534-L564)).
+  `/.well-known/jwks.json`; dua endpoint milik Kong sendiri, `/health` dan `/.well-known/security.txt`; serta
+  WebSocket event terpadu yang ditangani edge, `wss://api.wildanfrananda.my.id/ws/v1/events`, yang melayani pelacakan
+  order live untuk pembeli secara langsung sekaligus meneruskan kurir dan seller ke socket internal matching
+  ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/4badbc5eb549e398a9bc99ea538e0e838dbabc1e/config/gateway.pkl#L300-L304),
+  [#L572-L584](https://github.com/WildanFrananda/kinetix-api-gateway/blob/4badbc5eb549e398a9bc99ea538e0e838dbabc1e/config/gateway.pkl#L572-L584)).
 - `storage.wildanfrananda.my.id` menyimpan file yang di-upload. Client mengirim file ke sana di URL yang sudah
   ditandatangani service untuknya; bucket di URL itu ditulis `example-bucket` dalam contoh-contohnya
   ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L566-L588)).
 - `seller.wildanfrananda.my.id` melayani panggilan aplikasi web penjual di bawah `/bff/`, yang diteruskan Kong ke
-  edge, dan di bawah `/bff/` juga socket merchant milik matching untuk halamannya ([Realtime](#realtime)). Path lain
+  edge, dan di bawah `/bff/` juga WebSocket event terpadu untuk seller ([Realtime](#realtime)). Path lain
   di host ini, termasuk path `/api/v1/`, mendapat `404 Not found` dari Kong
   ([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L284-L298)).
 - Backoffice tidak punya host publik. Staf membukanya di alamat yang tidak dipublikasikan, ditulis
@@ -252,18 +252,15 @@ Di perjalanan, edge menulis ulang header-nya
 
 ### Realtime
 
-Halaman web penjual mendapat realtime-nya dari socket merchant milik matching, yang dibawa edge: halaman membukanya
-di host-nya sendiri, di bawah `/bff/`, dan [Mengemas pesanan](/id/apis/rest/seller-web/packing/) memberikan alamatnya,
-jawaban handshake-nya, dan pesan-pesannya sesuai urutan yang dipakai web penjual. Browser mengirim cookie session
-bersama handshake, dan halaman tidak mengirim token. Edge memeriksa session seperti untuk panggilan di bawah
-`/bff/api/`, hanya menerima `seller`, lalu membuka socket matching dengan access token milik session; `101` yang
-diteruskannya kembali ke halaman tidak membawa token maupun cookie
-([merchant_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/src/http/merchant_socket.tl#L45-L103)).
-Halaman dan matching lalu bertukar frame Phoenix lewat edge. Seperti pada panggilan, jawaban dari belakang edge
-kembali dengan status-nya, termasuk jawaban Kong sendiri bila matching mati; edge menjawab `503` `API_UNAVAILABLE`
-sendiri hanya bila tidak bisa menjangkau API atau tidak mendapat jawaban handshake dalam 90 detik
-([nginx.conf](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/nginx/nginx.conf#L102-L108)).
-Backoffice tidak punya socket.
+Semua client WebSocket kini memakai satu amplop event JSON `camelCase` terpadu yang ditangani di edge
+([event_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L564-L630)).
+Web penjual membukanya di host-nya sendiri di bawah `/bff/` dengan cookie session, dan [Mengemas pesanan](/id/apis/rest/seller-web/packing/)
+memberikan alamat, jawaban handshake, dan pesan-pesannya. Edge memeriksa session seperti untuk panggilan di bawah
+`/bff/api/` lalu membuka WebSocket upstream matching dengan access token milik session serta `X-Edge-Role: seller`;
+aplikasi mobile (pembeli dan kurir) tersambung langsung ke `wss://api.wildanfrananda.my.id/ws/v1/events` memakai
+`Authorization: Bearer`. Pembeli men-subscribe posisi live kurir yang diteruskan matching lewat Redis Pub/Sub
+([Order saya](/id/apis/rest/buyer-app/orders/)); kurir dan seller diteruskan ke upstream matching (`WebSock`, tanpa
+framing channel Phoenix). Backoffice tidak tersambung ke aliran matching.
 
 ### Panggilan yang ditolak edge
 
@@ -295,8 +292,8 @@ Kirim id sendiri bila nanti ingin mencari request itu di log. Beberapa service m
 misalnya `traceId` milik identity. matching juga mengulangnya sebagai `traceId`, termasuk di jawaban handshake kedua
 socket-nya, bila id itu 20 sampai 200 karakter; id yang lebih pendek atau lebih panjang, yang hanya bisa dikirim
 client, diganti matching dengan id miliknya sendiri
-([request_trace.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/request_trace.ex#L1-L26),
-[error_json.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/controllers/error_json.ex#L22-L29)).
+([request_trace.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/request_trace.ex#L1-L26),
+[error_json.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/controllers/error_json.ex#L22-L29)).
 Body error milik Kong sendiri membawa nilai lain, `request_id`, yaitu id
 internal Kong untuk request itu; Kong juga mengembalikannya di header `X-Kong-Request-Id`
 ([nilai bawaan Kong](https://github.com/Kong/kong/blob/ddc85be461165c9eb4506669343aa0d0c627e687/kong/templates/kong_defaults.lua#L71)).

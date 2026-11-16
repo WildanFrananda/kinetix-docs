@@ -1,6 +1,6 @@
 ---
 title: Go on duty and deliver
-description: A courier opens matching's driver socket, goes on duty and reports positions, receives the job matching assigns, picks it up, uploads the proof photo to storage and reports the delivery.
+description: A courier opens the unified event socket at edge, goes on duty and reports positions, receives the job matching assigns, picks it up, uploads the proof photo to storage and reports the delivery.
 sidebar:
   order: 4
 ---
@@ -9,159 +9,113 @@ import RestEndpoint from "../../../../../components/RestEndpoint.astro";
 import RestSocket from "../../../../../components/RestSocket.astro";
 import RestSocketMessage from "../../../../../components/RestSocketMessage.astro";
 
-Most of a courier's work goes over matching's driver socket, a Phoenix channel, rather than HTTP. The courier
-opens the socket, joins the channel `driver:<driver id>`, goes on duty and sends positions, and receives the
-job matching assigns; there is no offer to accept or decline. Carrying the job, the courier reports the pickup,
-asks matching for an upload address, puts the proof photo straight into storage over HTTP, and reports the
-delivery with the photo and the receiver's signature. Before any of this the courier has
-[signed in](/apis/rest/courier-app/sign-in/): the driver id is `data.id` from that page's last step, and the
-access token must carry the role `courier` and be current when the socket opens
-([Stay signed in](/apis/rest/courier-app/stay-signed-in/)).
+Most of a courier's work goes over the unified `camelCase` JSON event WebSocket handled by edge and relayed
+upstream to matching, rather than HTTP. The courier opens the socket, immediately receives `matching.job.snapshot`,
+goes on duty and sends positions, and receives the job matching assigns; there is no offer to accept or decline.
+Carrying the job, the courier reports the pickup, asks matching for an upload address, puts the proof photo straight
+into storage over HTTP, and reports the delivery with the photo and the receiver's signature. Before any of this the
+courier has [signed in](/apis/rest/courier-app/sign-in/): the access token must carry the role `courier` and be
+current when the socket opens ([Stay signed in](/apis/rest/courier-app/stay-signed-in/)).
 
 ## 1. Open the driver socket
 
-A WebSocket connection to a fixed address. The client sets one header itself, `Sec-WebSocket-Protocol`, with the
-access token in place of the placeholder; the WebSocket library adds the upgrade headers. Kong passes this path,
-and the same path ending in `/websocket`, which Phoenix's JavaScript client dials, to matching without checking
-the token, and counts each connection against the route's [limit per address](/apis/rest/#limits)
-([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L534-L547)).
+A WebSocket connection to `wss://api.wildanfrananda.my.id/ws/v1/events` with `Authorization: Bearer <accessToken>`
+([event_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L601-L630)).
+Edge verifies the Bearer token with identity's `/api/v1/auth/me`, then opens matching's internal upstream
+WebSocket (`WebSock`) with the same token and `X-Edge-Role: courier`
+([#L331-L360](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L331-L360),
+[event_socket_plug.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/event_socket_plug.ex#L24-L48)).
+Kong counts each connection against the route's [limit per address](/apis/rest/#limits).
 
 <RestSocket id="matching.driverSocket" />
 
-The courier app builds this address and these subprotocols
-([channel_client.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L86-L97)),
-and opens the socket only for a session that knows its driver id; a session kept while approval was pending has
-none, and shows the waiting screen instead
-([#L202-L216](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L202-L216)).
-It counts only `401` and `403` as a refusal
-([handshake_refused_exception.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/handshake_refused_exception.dart#L8-L10)):
-then it refreshes the session and connects again
-([connection_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/connection_repository_impl.dart#L95-L134)).
-When the new token is refused too, before a connection has held, it asks `GET /api/v1/matching/driver/me` why:
-on `pending_approval` it shows the waiting screen and keeps the session, on `401`, another `403` or `404` it ends
-the session, and on a `200` naming another driver id it stores that id and connects again
+When `401` or `403` is returned during upgrade, the client refreshes the session and connects again
+([connection_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/connection_repository_impl.dart#L95-L134)),
+and asks `GET /api/v1/matching/driver/me` to distinguish `pending_approval` from missing driver records
 ([#L136-L177](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/connection_repository_impl.dart#L136-L177)).
-After any other answer or a lost connection it connects again after 1, 2, 4 and up to 30 seconds, each wait
-lengthened by up to one second at random
+After a transient answer or lost connection, the courier app backs off 1, 2, 4 and up to 30 seconds
 ([channel_client.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L409-L429)).
 
-## 2. Join the courier's channel
+## 2. Receive the initial snapshot
 
-Every frame is a JSON array `[join_ref, ref, topic, event, payload]`; a reply repeats the `ref` of the frame it
-answers, and a push from matching has `null` for `ref`
-([v2_json_serializer.ex](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/socket/serializers/v2_json_serializer.ex#L63-L98)).
-Join the topic `driver:` followed by the driver id:
+Every frame is a `camelCase` JSON object with `event`, `schemaVersion: 1`, optional `requestId` for command-reply
+correlation, and `data`
+([envelope.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/events/envelope.ex#L24-L70)).
+There is no channel join step: right after upgrade, matching pushes `matching.job.snapshot` with `dutyStatus` and the
+courier's `activeOrder`, so a courier who reconnects mid-delivery resumes at once; step 7 says how the app treats it:
 
-<RestSocketMessage id="matching.driverSocket.join" />
+<RestSocketMessage id="matching.driverSocket.snapshot" />
 
-Right after the join, matching pushes the courier's current job, so a courier who reconnects mid-delivery is
-back on that job at once; step 7 says how the app treats it:
-
-<RestSocketMessage id="matching.driverSocket.activeOrder" />
-
-The courier app sends every later frame with the join's `ref` as `join_ref` and a new `ref`
-([channel_client.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L154-L180),
-[#L272-L297](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L272-L297)).
-It handles `forbidden` and `invalid_topic` as it handles a refused token in step 1, so a driver id that is no
-longer the courier's is replaced by the one `GET /api/v1/matching/driver/me` names, and connects again after
-any other refusal, `join crashed` included
-([#L37-L44](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L37-L44),
-[#L254-L264](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L254-L264)).
-
-Phoenix itself sends two frames the blocks do not show. When the channel fails, for example because matching's
-database did not answer, Phoenix pushes `phx_error` with the join's `ref` in both reference places, and the
-channel is gone until it is joined again; a second `phx_join` for the same topic replaces the joined channel,
-which Phoenix closes with `phx_close` first
-([socket.ex](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/socket.ex#L560-L569),
-[#L769-L786](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/socket.ex#L769-L786),
-[#L866-L898](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/socket.ex#L866-L898));
-the courier app treats both as a lost connection
-([channel_client.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L345-L349)).
-The answers to frames on a topic that is not joined, and the silence for frames with an old `join_ref`, come from
-the same file
-([#L803-L842](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/socket.ex#L803-L842)).
-An event the channel does not know is answered `unknown_event`, and the channel stays joined
-([driver_channel.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/driver_channel.ex#L133-L135)).
+Frames without a valid JSON `event` or with a `schemaVersion` other than `1` receive `command.error`
+(`INVALID_PAYLOAD` or `UNSUPPORTED_SCHEMA_VERSION`), and unknown command names receive `UNKNOWN_EVENT`
+([event_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/event_socket.ex#L203-L234),
+[#L380-L382](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/event_socket.ex#L380-L382)).
 
 ## 3. Keep the socket alive
 
-The 60-second limit is Phoenix's idle timeout for a WebSocket
-([websocket.ex](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/transports/websocket.ex#L26-L35)),
-so a courier who sends no position still sends a heartbeat:
+Both edge and matching enforce a 60-second WebSocket idle timeout
+([event_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L28),
+[event_socket_plug.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/event_socket_plug.ex#L45-L48)),
+so a courier who sends no position keeps the socket open with `system.ping`:
 
 <RestSocketMessage id="matching.driverSocket.heartbeat" />
 
-The courier app sends one every 30 seconds from the moment the join succeeds, and one at once when a push has had
-no reply for 5 seconds. When a heartbeat has no reply within 10 seconds, it closes the socket and connects again
+The courier app sends a heartbeat every 30 seconds (and early when a command goes unanswered for 5 seconds), closing
+and reconnecting if a heartbeat goes unanswered for 10 seconds
 ([channel_client.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L32-L35),
-[#L172-L179](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L172-L179),
 [#L362-L407](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L362-L407)),
-then joins, and declares duty again as step 4 describes.
+then sets `online` duty again as step 4 describes.
 
 ## 4. Go on duty
 
-Push `status` with `online`. When the channel ends, because the socket was closed or dropped, matching sets the
-courier `offline`
-([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/tracking/driver_state.ex#L258-L261),
-[#L290-L293](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/tracking/driver_state.ex#L290-L293)),
-so a courier on duty sends it again after every new join:
+Send `courier.duty.set` with `online`. When the socket terminates, matching sets the courier `offline`
+([event_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/event_socket.ex#L193-L198),
+[driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching/tracking/driver_state.ex#L258-L261),
+[#L290-L293](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching/tracking/driver_state.ex#L290-L293)),
+so a courier on duty sends it again after every reconnect:
 
 <RestSocketMessage id="matching.driverSocket.status" />
 
-The courier app does so; the first time, it asks for location permission and starts the GPS before pushing
-([duty_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L76-L111),
-[#L127-L143](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L127-L143)).
+The courier app asks for location permission and starts GPS before setting duty online
+([duty_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L76-L111)).
 
 ## 5. Send the live position
 
 Automatic dispatch considers only couriers whose position arrived after they went on duty
-([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/tracking/driver_state.ex#L137-L145),
-[dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L529-L537)),
-so the first `ping` follows step 4 at once:
+([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching/tracking/driver_state.ex#L137-L145),
+[dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching/dispatch.ex#L532-L540)),
+so `courier.location.ping` follows step 4 at once:
 
 <RestSocketMessage id="matching.driverSocket.ping" />
 
-The courier app sends one at once, then, every 4 seconds, the newest position when it has moved at least 5
-metres
-([duty_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L21-L22),
-[#L208-L218](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L208-L218),
-[#L254-L278](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L254-L278)).
-A position it cannot send live is kept for step 6: while the socket is down, before `status` `online` has been
-answered, when a `ping` gets no reply, and for the 10 seconds it pauses after `rate_limited`; when the pause
-ends, the newest position goes live
-([#L280-L289](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L280-L289),
-[#L306-L352](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L306-L352),
-[#L478-L490](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L478-L490)).
+When the courier holds an active `assigned` or `picked_up` job bound to a storefront `orderNumber`, matching also
+publishes each accepted ping as `courier.location.updated` onto Redis Pub/Sub `matching:position:{orderNumber}` for
+subscribed buyers
+([event_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/event_socket.ex#L385-L401)).
+The courier app sends a ping right away, then every 4 seconds when it has moved at least 5 metres, falling back to
+step 6 offline buffering when disconnected or `RATE_LIMITED`
+([duty_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L208-L218),
+[#L254-L289](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L254-L289)).
 
 ## 6. Send positions recorded offline
 
-Positions the phone recorded while it had no connection go in `ping_batch` once the socket is back, never as
-live `ping`s:
+Positions the phone recorded while offline go in `courier.location.batch` once the socket is back, never as live
+`courier.location.ping` frames:
 
 <RestSocketMessage id="matching.driverSocket.pingBatch" />
 
-The courier app keeps each position it could not send under the courier who was on duty, and builds a batch only
-from that courier's positions, oldest first, from the same fields as a `ping`; positions another courier left on
-the phone wait for that courier's next sign-in, and positions older than 24 hours are dropped before a batch is
-built
+The courier app keeps offline coordinates per signed-in courier, drops readings older than 24 hours, flushes batches
+oldest first, and deletes a batch only once `command.ack` arrives (`refused` entries included)
 ([offline_position_store.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/offline/offline_position_store.dart#L48-L86),
-[channel_client.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L119-L131),
-[#L182-L188](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/channel/channel_client.dart#L182-L188),
-[duty_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L380-L437)).
-It deletes a batch only once the reply is `ok`, `refused` entries included, because no resend changes those
-verdicts; it tells the courier to set the phone's clock automatically when entries come back
-`ahead_of_server_clock`. It sends the next batch 2.5 seconds after one is settled, 60 seconds after
-`rate_limited`, and after any other refusal or no reply after 5 seconds, doubling up to 5 minutes
-([#L21-L30](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L21-L30),
-[#L439-L476](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L439-L476)).
+[duty_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L380-L476)).
 
 ## 7. Receive the job
 
 There is no offer to accept or decline. matching assigns a job, automatically to the nearest `online` courier
-whose vehicle can carry it, or by an admin's choice, and tells the courier on the channel
-([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L521-L537),
-[#L594-L600](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/dispatch.ex#L594-L600)).
-Beside `active_order` from step 2, three pushes concern the courier's job, at any time after the join:
+whose vehicle can carry it, or by an admin's choice, and pushes `matching.job.assigned` over the socket
+([dispatch.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching/dispatch.ex#L524-L540),
+[#L600-L604](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching/dispatch.ex#L600-L604)).
+Beside `matching.job.snapshot` from step 2, three server pushes concern the courier's job:
 
 <RestSocketMessage id="matching.driverSocket.orderAssigned" />
 
@@ -169,69 +123,56 @@ Beside `active_order` from step 2, three pushes concern the courier's job, at an
 
 <RestSocketMessage id="matching.driverSocket.orderUnassigned" />
 
-The job's `id` is what every later step sends as `order_id`. The courier app opens the job's screen when a job it
-has not shown yet arrives
-([tracking_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/viewmodels/tracking_view_model.dart#L133-L155)).
-A job's screen changes only for news about its own job: `order_updated` with `cancelled` closes it as cancelled,
-`order_unassigned` as taken off the courier, and `active_order` with `null` as no longer active; news about
-another job leaves it as it is
+`data.order.id` is what every later step sends as `orderId`. A job's screen closes as cancelled on
+`matching.job.updated` with `cancelled`, as unassigned on `matching.job.unassigned` (followed by `matching.job.snapshot`),
+or as inactive on `matching.job.snapshot` with `activeOrder: null`
 ([order_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/order_repository_impl.dart#L213-L262),
 [order_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/viewmodels/order_view_model.dart#L185-L211)).
 
 ## 8. Pick up the parcel
 
-At the merchant, push `pickup` with the job's `id`:
+At the merchant, send `matching.job.pickup` with the job's `id` as `orderId`:
 
 <RestSocketMessage id="matching.driverSocket.pickup" />
 
-Because a repeated `pickup` changes nothing, the courier app sends it again until a reply comes, 1, 2, 4 and up
-to 15 seconds apart, while the socket is still the courier's
+Because a repeated pickup changes nothing, the client can safely retry until `command.ack` arrives
 ([order_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/order_repository_impl.dart#L39-L44),
-[retry_mixin.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/mixins/retry_mixin.dart#L4-L45)),
-and shows the proof-of-delivery step once the job's status is `picked_up`
-([order_view.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/ui/widgets/order/order_view.dart#L50-L91)).
+[retry_mixin.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/mixins/retry_mixin.dart#L4-L45)).
 
 ## 9. Ask for the photo's upload address
 
-Hash the photo's exact bytes with SHA-256 and push `pod_upload` with the job's `id` and the hash:
+Hash the JPEG photo's exact bytes with SHA-256 and send `matching.job.podUpload` with `orderId` and `photoSha256`:
 
 <RestSocketMessage id="matching.driverSocket.podUpload" />
 
-Keep `upload_url` and `upload_headers` for step 10 and `photo_url` for step 11. The courier app checks that the
-photo begins as a JPEG does, `FF D8 FF`, before hashing it
+Keep `uploadUrl` and `uploadHeaders` for step 10 and `photoUrl` for step 11. The courier app verifies the JPEG
+magic bytes (`FF D8 FF`) before hashing
 ([order_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/order_repository_impl.dart#L46-L78)).
 
 ## 10. Upload the photo to storage
 
-An HTTP `PUT` of the JPEG's bytes to `upload_url`, unchanged, with the headers of `upload_headers` as they
-came, and no token. The storage host checks the signature and the digest, and keeps nothing it refuses. A `412`
-means an object already exists under this key; the key is the photo's own SHA-256, so the photo is stored and
-the courier goes on to step 11. The courier app counts a `2xx` and a `412` alike as stored
+An HTTP `PUT` of the JPEG's bytes to `uploadUrl`, unchanged, with `uploadHeaders` as returned and no token. Storage
+checks the signature and SHA-256 digest (`2xx` and `412` alike mean the object is stored)
 ([pod_photo_uploader.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/storage/pod_photo_uploader.dart#L17-L38)).
 
 <RestEndpoint id="matching.uploadProofPhoto" />
 
 ## 11. Report the delivery
 
-Push `delivered` with the job's `id`, `photo_url` from step 9 as `pod_photo_url`, and the receiver's signature:
+Send `matching.job.delivered` with `orderId`, `photoUrl` from step 9 as `podPhotoUrl`, and the receiver's PNG
+signature as `podSignature`:
 
 <RestSocketMessage id="matching.driverSocket.delivered" />
 
-The courier app takes the signature on the phone's screen and sends it as a PNG
-([order_view.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/ui/widgets/order/order_view.dart#L102-L147)).
-It sends `delivered` again, as it does `pickup`, while no reply comes and on `proof_unverifiable`
-([order_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/order_repository_impl.dart#L135-L181)).
-Until the delivery is answered, it keeps `photo_url` and the signature on the phone under the courier and the
-job, for at most 24 hours, so a job's screen opened again, after the app was closed, resumes at this step; it
-forgets them when the job is cancelled, taken off the courier or no longer active
-([proof_draft_store.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/storage/proof_draft_store.dart#L17-L112),
-[order_view_model.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/viewmodels/order_view_model.dart#L173-L211)).
+The courier app captures the signature on screen as PNG
+([order_view.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/ui/widgets/order/order_view.dart#L102-L147)),
+retries until answered and on `PROOF_UNVERIFIABLE`, and drafts proof locally for up to 24 hours
+([order_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/order_repository_impl.dart#L135-L181),
+[proof_draft_store.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/services/storage/proof_draft_store.dart#L17-L112)).
 
 ## 12. Go off duty
 
-At the end of the shift, push `status` with `offline`, the message of step 4. matching then offers the courier no
-more jobs, because it assigns jobs only to couriers who are `online`
-([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse/tracking/driver_state.ex#L207-L223)).
-The courier app pushes it when the courier turns duty off while connected
-([duty_repository_impl.dart](https://github.com/WildanFrananda/kinetix-courier-mobile/blob/29a96d33884f3ee9ff2831043e34aee2da235088/lib/repositories/duty_repository_impl.dart#L113-L125)).
+At the end of the shift, send `courier.duty.set` with `offline`, the message of step 4. matching then offers the
+courier no more jobs
+([driver_state.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching/tracking/driver_state.ex#L221-L223)).
 [Signing out](/apis/rest/courier-app/stay-signed-in/) also closes the socket.

@@ -133,7 +133,7 @@
   "map.note.forwarded": "panggilan web app di bawah /bff/api/, dikirim dengan token milik sesi",
   "map.note.internalListener": "panggilan web app di bawah /bff/api/, lewat listener gateway di dalam jaringan Kinetix",
   "map.note.signUp": "pendaftaran di web penjual, yang lalu memulai sesi seperti login",
-  "map.note.merchantSocket": "socket merchant milik web penjual, lewat listener gateway di dalam jaringan Kinetix ke matching",
+  "map.note.merchantSocket": "relay event terpadu untuk kurir dan penjual dari edge, lewat listener gateway di dalam jaringan Kinetix ke matching",
   "map.note.sponsorPays": "dikirim oleh sponsor, proses kedua seal dan satu-satunya yang memegang seed wallet; ia membayar fee dengan DUST",
   "map.node.clients.title": "Client",
   "map.node.clients.summary": "Browser, aplikasi, dan integrasi. Semua yang mereka kirim masuk lewat gateway.",

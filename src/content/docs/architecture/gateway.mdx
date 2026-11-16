@@ -120,57 +120,26 @@ Three more things Kong serves are not on the map:
 
 ## WebSockets
 
-Two sockets, both served by matching:
-[`/ws/v1/matching/driver` and `/ws/v1/matching/merchant`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L534-L564),
-each also with `/websocket` after it, the form Phoenix's JavaScript client dials. A WebSocket starts as an
-ordinary HTTP request asking to upgrade, so Kong routes it like any other request and then passes the
-upgraded connection through. The access token travels with the connection request, and matching checks it
-before the socket opens —
-[a courier's or an admin's for the driver socket](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/driver_socket.ex#L27-L49),
-[a seller's or an admin's for the merchant socket](https://github.com/WildanFrananda/kinetix-matching-service/blob/7ef67a0ca1d0e8945f638de8a2f9684e84d06886/lib/fleet_pulse_web/channels/merchant_socket.ex#L24-L45).
-A request with no token, or a bad one, is refused with `403`, one that matching cannot check because identity
-is unreachable with `503`, and no socket is opened. The courier app's socket is described step by step in
-[Go on duty and deliver](/apis/rest/courier-app/deliver/).
+Edge terminates the public unified event WebSocket,
+[`/ws/v1/events`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/4badbc5eb549e398a9bc99ea538e0e838dbabc1e/config/gateway.pkl#L300-L304),
+and Kong forwards `/bff/` traffic on web app hosts (including `/bff/ws/v1/events`) straight to edge as well. For
+couriers and sellers, edge dials Kong's internal route to matching's unified WebSocket endpoint,
+[`/ws/v1/matching/events`](https://github.com/WildanFrananda/kinetix-api-gateway/blob/4badbc5eb549e398a9bc99ea538e0e838dbabc1e/config/gateway.pkl#L572-L584),
+which strips the prefix and forwards `/ws/v1/events` upstream to matching (`EventSocketPlug`). Edge verifies
+sessions and Bearer tokens before opening any upstream socket
+([event_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L564-L630),
+[event_socket_plug.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/event_socket_plug.ex#L24-L48));
+buyers connect only to edge and subscribe to live courier positions relayed via Redis Pub/Sub, while courier and seller
+flows are described in [Go on duty and deliver](/apis/rest/courier-app/deliver/) and
+[Pack orders](/apis/rest/seller-web/packing/).
 
-### The merchant socket's twin
+### Matching's internal WebSocket twin
 
-The seller web holds no token, so it cannot open the merchant socket on the API host the way the courier app
-opens its own. It asks the edge instead, on its own host, and the edge opens the socket to matching for it with
-the session's access token, as the [edge](/services/edge/#the-seller-webs-merchant-socket) describes. That
-connection goes through the internal listener, so the merchant socket's route is
-[written like an API route](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L549-L564)
-and rendered with a twin: the same two paths and the same service, the guard first, and no staff gate, rate
-limit or token check at Kong, because matching checks the token and the role itself. Kong passes an
-upgrade through a plain-HTTP route as it does through a TLS one, so
-[the twin needs nothing the API's twins lack](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/CLAUDE.md#L271-L278).
-
-The twin stays inside the way every twin does.
-[It names only the gateway's internal host, over plain HTTP](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L181-L196),
-and its guard refuses with `421` anything that did not arrive in plain HTTP on the internal listener, which
-nothing outside Kinetix's network can reach. A plain-HTTP request for the same path that names any other host
-matches no twin and gets Kong's `426`. The courier's socket has no twin at all: the courier app dials the TLS
-listener.
-
-### Ninety seconds for a quiet socket
-
-Phoenix
-[closes a socket that has received nothing for 60 seconds](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/lib/phoenix/endpoint.ex#L1044-L1045),
-and its JavaScript client
-[sends a heartbeat every 30](https://github.com/phoenixframework/phoenix/blob/b5026660dc744424545e7d2e3b7547507443ab40/assets/js/phoenix/socket.js#L174).
-The edge waits
-[90 seconds](https://github.com/WildanFrananda/kinetix-edge-service/blob/0a52d5805b57a818b16b05848b8333d34115f682/nginx/nginx.conf#L102-L105)
-on a quiet merchant socket, so that the proxy is never what ends a socket Phoenix still holds. Kong, by default,
-[gives up after 60 seconds](https://github.com/Kong/kong/blob/ddc85be461165c9eb4506669343aa0d0c627e687/kong/db/schema/entities/services.lua#L40-L42)
-without reading from or writing to a service, and the seller web's socket passes Kong twice: on `/bff/`, between
-the browser and the edge, and on the twin, between the edge and matching. Left at the default, Kong would close a
-quiet socket before either end meant to. So both of Kong's services on that path, the edge's, which takes
-`/bff/` on both web apps' hosts, and the merchant socket's, which takes its public route and its twin, read
-and write for 90 seconds
-([the edge's](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L262-L266),
-[the socket's](https://github.com/WildanFrananda/kinetix-api-gateway/blob/5c31fc4d53c22d0427c72491c2f72bb68c1b5ed7/config/gateway.pkl#L549-L553)).
-Connecting still times out at Kong's default, and every other service keeps Kong's defaults. The price is paid
-where something stalls: a `/bff/` call or a merchant socket, the public route included, that hears nothing now
-waits 90 seconds for Kong's `504` or close instead of 60.
+The edge sits behind Kong's internal network, so when edge opens `/ws/v1/matching/events` for a courier or seller it
+calls Kong's internal listener over plain HTTP with the bearer token and `X-Edge-Role`. Kong's guard restricts that
+twin to the internal host while keeping `read_timeout` and `write_timeout` at `90` seconds to outlast the 60-second
+application idle timeout cleanly
+([gateway.pkl](https://github.com/WildanFrananda/kinetix-api-gateway/blob/4badbc5eb549e398a9bc99ea538e0e838dbabc1e/config/gateway.pkl#L572-L584)).
 
 ## A first lock on tokens
 

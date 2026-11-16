@@ -31,6 +31,5 @@
   "rest.common.socket.handshake": "Handshake answers",
   "rest.common.socket.send": "Client sends",
   "rest.common.socket.receive": "Server pushes",
-  "rest.common.socket.topic": "Topic",
   "rest.common.socket.replies": "Replies"
 }

@@ -8,7 +8,6 @@ export type RestSocketMessage = {
   readonly id: string;
   readonly socket: string;
   readonly direction: RestSocketDirection;
-  readonly topic: string;
   readonly summary: RestCatalogueKey;
   readonly frame: RestSocketFrame;
   readonly replies: readonly RestSocketReply[];

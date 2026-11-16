@@ -3,14 +3,16 @@ title: Order saya
 description: Mendaftar order yang dibuat pembeli dan membaca salah satunya, di order.
 sidebar:
   order: 10
-sourceHash: "5d98339ba09b"
+sourceHash: "7c73a8a29f08"
 ---
 
 import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+import RestSocket from "../../../../../../components/RestSocket.astro";
+import RestSocketMessage from "../../../../../../components/RestSocketMessage.astro";
 
 order menjawab order-order yang pembelinya adalah `sub` milik access token. Aplikasi pembeli mendaftarnya
-(langkah 1) dan membuka salah satunya (langkah 2). Order yang dibuat [checkout](/id/apis/rest/buyer-app/checkout/)
-dibaca dengan cara yang sama.
+(langkah 1), membuka salah satunya (langkah 2), dan melacak pengantaran aktif secara live lewat WebSocket (langkah 3).
+Order yang dibuat [checkout](/id/apis/rest/buyer-app/checkout/) dibaca dengan cara yang sama.
 
 ## 1. Mendaftar order
 
@@ -34,3 +36,37 @@ diterima di sini. Jawabannya menunjukkan `status` order, baris-barisnya dan juml
 [dibuktikan](/id/apis/rest/buyer-app/proofs/#5-mengambil-evidence-order).
 
 <RestEndpoint id="order.getOrder" />
+
+## 3. Lacak posisi kurir secara live
+
+Saat sebuah order sudah di-assign atau diambil kurir, aplikasi pembeli membuka socket event terpadu di
+`wss://api.wildanfrananda.my.id/ws/v1/events` dengan access token Bearer-nya
+([event_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L601-L630)).
+Berbeda dari kurir dan seller, pembeli hanya tersambung ke edge — tidak ada socket upstream yang dibuka ke matching
+([#L331-L334](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L331-L334)).
+
+<RestSocket id="edge.buyerSocket" />
+
+Kirim `subscription.subscribe` dengan `id` order dari langkah 1 atau 2 (UUID `orderId`). Edge memanggil order
+`GET /api/v1/orders/{orderId}` memakai token pembeli untuk memastikan kepemilikan dan mengambil `orderNumber`, lalu
+men-subscribe channel Redis Pub/Sub milik matching untuk nomor order itu
+([#L222-L305](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L222-L305)).
+
+<RestSocketMessage id="edge.buyerSocket.subscribe" />
+
+Pada setiap `courier.location.ping` yang diterima untuk job tersebut, matching menerbitkan `courier.location.updated`
+ke Redis Pub/Sub
+([event_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/event_socket.ex#L385-L401)),
+dan edge menggabungkan pembacaan per channel sehingga paling banyak satu frame sampai ke client setiap 250 ms
+([event_socket.tl](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L117-L151)):
+
+<RestSocketMessage id="edge.buyerSocket.locationUpdated" />
+
+Pertahankan koneksi di dalam batas idle 60 detik milik edge dengan `system.ping`
+([#L419-L422](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L419-L422)),
+dan kirim `subscription.unsubscribe` ketika meninggalkan layar pelacakan
+([#L307-L329](https://github.com/WildanFrananda/kinetix-edge-service/blob/8c0fa9447c9d9fea964540ed1f8d032a3341b702/src/http/event_socket.tl#L307-L329)):
+
+<RestSocketMessage id="edge.buyerSocket.heartbeat" />
+
+<RestSocketMessage id="edge.buyerSocket.unsubscribe" />

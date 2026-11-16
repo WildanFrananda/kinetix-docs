@@ -19,12 +19,12 @@ describe("gateway routes", () => {
     expect(missing).toEqual([]);
   });
 
-  test("the sockets are routed to matching", () => {
+  test("the sockets are routed to edge and matching", () => {
     const sockets = gatewayRoutes().filter((route) => route.path.startsWith("/ws/"));
 
     expect(sockets).toEqual([
-      { path: "/ws/v1/matching/driver", service: "matching" },
-      { path: "/ws/v1/matching/merchant", service: "matching" }
+      { path: "/ws/v1/events", service: "edge" },
+      { path: "/ws/v1/matching/events", service: "matching" }
     ]);
   });
 });
