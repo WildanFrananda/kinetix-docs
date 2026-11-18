@@ -31,6 +31,7 @@ const gatewayPrefixes: Readonly<Record<RestService, readonly string[]>> = {
   notification: ["/api/v1/notifications/devices"],
   seal: [
     "/api/v1/seal/predicates",
+    "/api/v1/seal/cases",
     "/api/v1/seal/courier-credentials",
     "/api/v1/seal/holder",
     "/api/v1/seal/registry",

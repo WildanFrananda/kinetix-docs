@@ -3,6 +3,7 @@ import type { RestEndpoint } from "../../types/rest_endpoint.type";
 import { restSource } from "../rest_source";
 
 const routes = "src/infrastructure/http/predicate_routes.ts";
+const caseRoutes = "src/infrastructure/http/case_routes.ts";
 const caller = "src/infrastructure/http/caller_of.ts";
 const server = "src/infrastructure/http/http_server.ts";
 const credentials = "src/infrastructure/http/credential_routes.ts";
@@ -10,6 +11,9 @@ const holder = "src/infrastructure/http/holder_routes.ts";
 const snapshot = "src/infrastructure/http/registry_snapshot_routes.ts";
 const presentations = "src/infrastructure/http/presentation_routes.ts";
 const templateId = "4b5c6d7e-8f90-4a1b-9c2d-3e4f5a6b7c8d";
+const merchantId = "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d";
+const merchantTag = "3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a";
+const reportNullifier = "7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b";
 const credentialId = "7d8e9fa0-b1c2-4d3e-8f4a-5b6c7d8e9f0a";
 const contractAddress = "5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e";
 const classId = "6b696e657469783a7365616c3a636f75726965723a7631000000000000000000";
@@ -912,5 +916,202 @@ export const sealEndpoints: readonly RestEndpoint[] = [
       }
     ],
     source: restSource("seal", presentations, 36, 69)
+  },
+  {
+    id: "seal.listCases",
+    service: "seal",
+    method: "GET",
+    path: "/api/v1/seal/cases",
+    summary: "rest.seal.listCases.summary",
+    access: {
+      token: "required",
+      gatewayVerifies: true,
+      who: "rest.seal.listCases.who"
+    },
+    request: {
+      fields: [
+        {
+          name: "status",
+          in: "query",
+          type: "string",
+          required: false,
+          rule: "rest.seal.listCases.field.status"
+        }
+      ]
+    },
+    cases: [
+      {
+        status: 200,
+        when: "rest.seal.listCases.case.listed",
+        headers: ["Cache-Control: no-store"],
+        json: {
+          cases: [
+            {
+              merchantPrincipalId: merchantId,
+              merchantTag,
+              merchant: {
+                storeName: "Toko Amanah",
+                status: "verified"
+              },
+              confirmedCount: 2,
+              pendingCount: 1,
+              totalCount: 3,
+              windowCount: 2,
+              earliestWindow: 202610,
+              latestWindow: 202611,
+              firstReportedAt: "2026-10-20T08:00:00.000Z",
+              latestReportedAt: "2026-11-05T12:00:00.000Z",
+              categories: [
+                {
+                  slug: "counterfeit",
+                  label: "Counterfeit product",
+                  count: 2
+                },
+                {
+                  slug: "fraud",
+                  label: "Fraud or misrepresentation",
+                  count: 1
+                }
+              ]
+            }
+          ]
+        },
+        source: restSource("seal", caseRoutes, 97, 99)
+      },
+      {
+        status: 400,
+        when: "rest.seal.listCases.case.invalid",
+        headers: ["Cache-Control: no-store"],
+        json: {
+          error: "INVALID_REQUEST",
+          message: "status must be one of all, confirmed, submitted",
+          traceId
+        },
+        source: restSource("seal", caseRoutes, 85, 89)
+      },
+      {
+        status: 403,
+        when: "rest.seal.listCases.case.notAdmin",
+        headers: ["Cache-Control: no-store"],
+        json: {
+          error: "ADMIN_REQUIRED",
+          message: "only an admin inspects cases",
+          traceId
+        },
+        source: restSource("seal", caseRoutes, 93, 95)
+      }
+    ],
+    source: restSource("seal", caseRoutes, 74, 100)
+  },
+  {
+    id: "seal.getCase",
+    service: "seal",
+    method: "GET",
+    path: "/api/v1/seal/cases/{merchantId}",
+    summary: "rest.seal.getCase.summary",
+    access: {
+      token: "required",
+      gatewayVerifies: true,
+      who: "rest.seal.getCase.who"
+    },
+    request: {
+      fields: [
+        {
+          name: "merchantId",
+          in: "path",
+          type: "string",
+          required: true,
+          rule: "rest.seal.getCase.field.merchantId"
+        },
+        {
+          name: "status",
+          in: "query",
+          type: "string",
+          required: false,
+          rule: "rest.seal.getCase.field.status"
+        }
+      ]
+    },
+    cases: [
+      {
+        status: 200,
+        when: "rest.seal.getCase.case.found",
+        headers: ["Cache-Control: no-store"],
+        json: {
+          merchantPrincipalId: merchantId,
+          merchantTag,
+          merchant: {
+            storeName: "Toko Amanah",
+            status: "verified"
+          },
+          confirmedCount: 1,
+          pendingCount: 1,
+          totalCount: 2,
+          windowCount: 1,
+          earliestWindow: 202611,
+          latestWindow: 202611,
+          firstReportedAt: "2026-11-01T10:00:00.000Z",
+          latestReportedAt: "2026-11-05T12:00:00.000Z",
+          categories: [
+            {
+              slug: "counterfeit",
+              label: "Counterfeit product",
+              count: 2
+            }
+          ],
+          reports: [
+            {
+              nullifier: reportNullifier,
+              category: {
+                slug: "counterfeit",
+                label: "Counterfeit product"
+              },
+              body: "seal was broken before arrival",
+              window: 202611,
+              status: "confirmed",
+              firstGeneration: 1,
+              txId,
+              submittedAt: "2026-11-05T12:00:00.000Z",
+              confirmedAt: "2026-11-05T12:03:00.000Z"
+            }
+          ]
+        },
+        source: restSource("seal", caseRoutes, 137, 137)
+      },
+      {
+        status: 400,
+        when: "rest.seal.getCase.case.invalid",
+        headers: ["Cache-Control: no-store"],
+        json: {
+          error: "INVALID_REQUEST",
+          message: "status must be one of all, confirmed, submitted",
+          traceId
+        },
+        source: restSource("seal", caseRoutes, 115, 119)
+      },
+      {
+        status: 403,
+        when: "rest.seal.getCase.case.notAdmin",
+        headers: ["Cache-Control: no-store"],
+        json: {
+          error: "ADMIN_REQUIRED",
+          message: "only an admin inspects cases",
+          traceId
+        },
+        source: restSource("seal", caseRoutes, 129, 131)
+      },
+      {
+        status: 404,
+        when: "rest.seal.getCase.case.notFound",
+        headers: ["Cache-Control: no-store"],
+        json: {
+          error: "CASE_NOT_FOUND",
+          message: "no reports for that merchant",
+          traceId
+        },
+        source: restSource("seal", caseRoutes, 123, 135)
+      }
+    ],
+    source: restSource("seal", caseRoutes, 102, 139)
   }
 ];

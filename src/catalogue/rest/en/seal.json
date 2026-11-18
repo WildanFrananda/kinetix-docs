@@ -73,5 +73,19 @@
   "rest.seal.presentationStatus.case.answered": "When a presentation of this challenge is on chain, read at most five seconds ago. `predicateId` is the row the proof met; a verifier accepts the answer only when it is the row the verifier asked for.",
   "rest.seal.presentationStatus.case.unanswered": "When the active registry holds no presentation of this challenge yet.",
   "rest.seal.presentationStatus.case.invalid": "When the challenge is not 64 lowercase hex characters.",
-  "rest.seal.presentationStatus.case.unavailable": "When no registry is active, or the chain cannot be read. Try again after `Retry-After`."
+  "rest.seal.presentationStatus.case.unavailable": "When no registry is active, or the chain cannot be read. Try again after `Retry-After`.",
+  "rest.seal.listCases.summary": "List anonymous merchant report cases grouped per merchant for admin review.",
+  "rest.seal.listCases.who": "An admin, from the staff network. Seal checks the token's role itself and fetches each merchant's store name and standing from identity.",
+  "rest.seal.listCases.field.status": "Filter merchants by report state: `all` (default), `confirmed`, or `submitted`.",
+  "rest.seal.listCases.case.listed": "When the caller is an admin. `confirmedCount`, `pendingCount`, and `totalCount` always reflect every report filed against that merchant; `merchant.storeName` and `merchant.status` are `null` when identity has no merchant profile or cannot be reached.",
+  "rest.seal.listCases.case.invalid": "When `status` is not `all`, `confirmed`, or `submitted`.",
+  "rest.seal.listCases.case.notAdmin": "When the token is valid but not an admin's.",
+  "rest.seal.getCase.summary": "Read every report filed against one merchant.",
+  "rest.seal.getCase.who": "An admin, from the staff network.",
+  "rest.seal.getCase.field.merchantId": "The merchant's principal id (`merchantPrincipalId`), a UUID in lower case.",
+  "rest.seal.getCase.field.status": "Filter returned `reports` by state: `all` (default), `confirmed`, or `submitted`.",
+  "rest.seal.getCase.case.found": "When at least one report exists for that merchant. `reports` is ordered newest first and includes both confirmed on-chain reports (`confirmedAt` set) and pending submissions (`confirmedAt` is `null`).",
+  "rest.seal.getCase.case.invalid": "When `status` is not `all`, `confirmed`, or `submitted`.",
+  "rest.seal.getCase.case.notAdmin": "When the token is valid but not an admin's.",
+  "rest.seal.getCase.case.notFound": "When `merchantId` is not a UUID in lower case, or no reports exist for that merchant."
 }

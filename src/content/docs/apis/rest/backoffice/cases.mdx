@@ -1,0 +1,30 @@
+---
+title: Merchant report cases
+description: How an admin lists anonymous merchant report cases and reads the reports filed against one merchant.
+sidebar:
+  order: 10
+---
+
+import RestEndpoint from "../../../../../components/RestEndpoint.astro";
+
+Buyers and couriers who participated in a delivered order may file anonymous reports against the merchant into seal's
+report registry. Seal stores each report under the merchant's keyed pseudonym (`merchantTag`) together with a salted
+commitment on chain, never naming the reporter. For an admin signed in from Kinetix's staff network as on
+[Sign in](/apis/rest/backoffice/sign-in/), seal resolves its own tags back to merchant principal ids and reads each
+merchant's store name and standing from identity, exposing a read-only case queue without mutating merchant standing.
+
+## 1. List merchant cases
+
+Returns one summary per merchant that has at least one filed report, ordered by most recent report first. Every case
+reports both `confirmedCount` (settled on Midnight) and `pendingCount` (`submitted`, awaiting chain confirmation); pass
+`status=confirmed` or `status=submitted` to narrow the queue.
+
+<RestEndpoint id="seal.listCases" via="backoffice" />
+
+## 2. Read one merchant case
+
+Reads every report filed against one `merchantPrincipalId` from step 1, newest first. Seal derives the merchant's tag
+from its issuer secret and returns both category breakdowns and the individual submitted bodies (`submitted` and
+`confirmed`), letting the admin verify each entry against its on-chain transaction id (`txId`).
+
+<RestEndpoint id="seal.getCase" via="backoffice" />

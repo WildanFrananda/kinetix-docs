@@ -73,5 +73,19 @@
   "rest.seal.presentationStatus.case.answered": "Ketika presentasi untuk challenge ini sudah ada di chain, dibaca paling lama lima detik yang lalu. `predicateId` adalah row yang dipenuhi bukti; verifier menerima jawaban hanya jika itu row yang ia minta.",
   "rest.seal.presentationStatus.case.unanswered": "Ketika registry yang aktif belum memegang presentasi untuk challenge ini.",
   "rest.seal.presentationStatus.case.invalid": "Ketika challenge bukan 64 karakter hex huruf kecil.",
-  "rest.seal.presentationStatus.case.unavailable": "Ketika tidak ada registry yang aktif, atau chain tidak bisa dibaca. Coba lagi setelah `Retry-After`."
+  "rest.seal.presentationStatus.case.unavailable": "Ketika tidak ada registry yang aktif, atau chain tidak bisa dibaca. Coba lagi setelah `Retry-After`.",
+  "rest.seal.listCases.summary": "Daftar kasus laporan anonim yang dikelompokkan per merchant untuk ditinjau admin.",
+  "rest.seal.listCases.who": "Admin, dari jaringan staf. Seal memeriksa role token sendiri lalu mengambil nama toko dan status merchant dari identity.",
+  "rest.seal.listCases.field.status": "Saring merchant menurut keadaan laporan: `all` (bawaan), `confirmed`, atau `submitted`.",
+  "rest.seal.listCases.case.listed": "Ketika pemanggil adalah admin. `confirmedCount`, `pendingCount`, dan `totalCount` selalu mencerminkan semua laporan terhadap merchant itu; `merchant.storeName` dan `merchant.status` bernilai `null` bila identity tidak punya profil merchant atau tidak dapat dijangkau.",
+  "rest.seal.listCases.case.invalid": "Ketika `status` bukan `all`, `confirmed`, atau `submitted`.",
+  "rest.seal.listCases.case.notAdmin": "Ketika token sah tetapi bukan milik admin.",
+  "rest.seal.getCase.summary": "Baca seluruh laporan yang masuk terhadap satu merchant.",
+  "rest.seal.getCase.who": "Admin, dari jaringan staf.",
+  "rest.seal.getCase.field.merchantId": "Principal id merchant (`merchantPrincipalId`), sebuah UUID huruf kecil.",
+  "rest.seal.getCase.field.status": "Saring `reports` yang dikembalikan menurut keadaannya: `all` (bawaan), `confirmed`, atau `submitted`.",
+  "rest.seal.getCase.case.found": "Ketika setidaknya ada satu laporan untuk merchant itu. `reports` diurutkan dari yang terbaru dan memuat laporan terkonfirmasi on-chain (`confirmedAt` terisi) maupun kiriman tertunda (`confirmedAt` bernilai `null`).",
+  "rest.seal.getCase.case.invalid": "Ketika `status` bukan `all`, `confirmed`, atau `submitted`.",
+  "rest.seal.getCase.case.notAdmin": "Ketika token sah tetapi bukan milik admin.",
+  "rest.seal.getCase.case.notFound": "Ketika `merchantId` bukan UUID huruf kecil, atau belum ada laporan untuk merchant itu."
 }

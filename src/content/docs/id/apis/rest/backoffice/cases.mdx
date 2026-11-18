@@ -1,0 +1,32 @@
+---
+title: Kasus laporan merchant
+description: Cara admin mendaftar kasus laporan anonim merchant dan membaca laporan yang dikirim terhadap satu merchant.
+sidebar:
+  order: 10
+sourceHash: "8bc6b108574e"
+---
+
+import RestEndpoint from "../../../../../../components/RestEndpoint.astro";
+
+Pembeli dan kurir yang terlibat pada pesanan terkirim dapat mengajukan laporan anonim terhadap merchant ke registry
+laporan milik seal. Seal menyimpan tiap laporan di bawah pseudonim berkunci milik merchant (`merchantTag`) bersama
+commitment bergaram di chain, tanpa pernah menyebut pelapornya. Bagi admin yang masuk dari jaringan staf Kinetix
+seperti di [Masuk](/id/apis/rest/backoffice/sign-in/), seal menyelesaikan tag-nya kembali menjadi principal id merchant
+serta mengambil nama toko dan status merchant dari identity, lalu menyajikan antrean kasus read-only tanpa mengubah
+standing merchant tersebut.
+
+## 1. Daftar kasus merchant
+
+Mengembalikan satu ringkasan per merchant yang memiliki minimal satu laporan masuk, diurutkan dari laporan terbaru.
+Setiap kasus memuat `confirmedCount` (tercatat di Midnight) maupun `pendingCount` (`submitted`, menunggu konfirmasi
+chain); kirim `status=confirmed` atau `status=submitted` untuk menyaring antrean.
+
+<RestEndpoint id="seal.listCases" via="backoffice" />
+
+## 2. Baca satu kasus merchant
+
+Membaca seluruh laporan yang diajukan terhadap satu `merchantPrincipalId` dari langkah 1, terbaru lebih dulu. Seal
+menurunkan tag merchant dari rahasia penerbitnya lalu mengembalikan rincian kategori maupun isi tiap laporan
+(`submitted` dan `confirmed`), sehingga admin dapat memeriksa tiap entri terhadap id transaksi on-chain (`txId`).
+
+<RestEndpoint id="seal.getCase" via="backoffice" />
