@@ -1,23 +1,23 @@
 ---
 title: matching
 description: Armada — kendaraan kurir, posisi live mereka, job pengantaran yang mereka bawa, dan bukti bahwa paket sampai. matching menghitung perjalanan, memilih kurir, dan memberi tahu order ketika paket terkirim.
-sourceHash: "6f917f506475"
+sourceHash: "facb2e01b131"
 ---
 
 import ServiceCalls from "../../../../components/ServiceCalls.astro";
 import ServiceFacts from "../../../../components/ServiceFacts.astro";
 import ServiceServes from "../../../../components/ServiceServes.astro";
 
-matching menjalankan armada. Ia tahu kendaraan dan kapasitas setiap kurir, di mana setiap kurir yang online
-berada saat ini, dan setiap job pengantaran sejak order yang sudah dikemas diserahkan kepadanya sampai
-paketnya terkirim atau job-nya dibatalkan. matching tidak memiliki alamat maupun harga: order memberinya titik
-toko dan titik pembeli, pricing memberi harga pada perjalanan yang ia hitung, dan order yang memutuskan apa
-arti sebuah pengantaran bagi uangnya.
+matching menjalankan armada. Ia memegang posisi live setiap kurir yang online di memori, dan melacak setiap job
+pengantaran sejak order yang sudah dikemas diserahkan kepadanya sampai paketnya terkirim atau job-nya
+dibatalkan. matching tidak memiliki profil kurir, kendaraan, alamat, maupun harga: identity memiliki kendaraan
+dan standing persetujuan setiap kurir, order memberinya titik toko dan titik pembeli, pricing memberi harga pada
+perjalanan yang ia hitung, dan order yang memutuskan apa arti sebuah pengantaran bagi uangnya.
 
 Tabel di halaman ini dibangkitkan dari data terverifikasi yang sama dengan
 [peta sistem](/id/architecture/system-map/), pada commit yang ditautkan dari setiap baris. Teksnya
 dicek terhadap matching
-[v1.6.0](https://github.com/WildanFrananda/kinetix-matching-service/tree/c09bc12e39aa22a5d4bb1b17c65011323a897562),
+[v1.7.0](https://github.com/WildanFrananda/kinetix-matching-service/tree/461281a718a31994f8697198c469b041dd62128f),
 versi yang berjalan di production.
 
 ## Sekilas
@@ -27,20 +27,21 @@ versi yang berjalan di production.
 ## Yang dilayani lewat gRPC
 
 order meminta opsi pengiriman sebuah keranjang ke matching dan, setelah warehouse mengemas sebuah order,
-meminta kurir. identity mendaftarkan kendaraan kurir baru dan mengaktifkan driver-nya ketika admin
-menyetujui akunnya.
+meminta kurir.
 
-matching juga menyajikan [delivery evidence-nya](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching/servers/delivery_evidence_server.ex#L18-L28),
+matching juga menyajikan [delivery evidence-nya](https://github.com/WildanFrananda/kinetix-matching-service/blob/461281a718a31994f8697198c469b041dd62128f/lib/kinetix_matching/servers/delivery_evidence_server.ex#L18-L28),
 satu record per paket yang terkirim beserta hash foto dan tanda tangannya, halaman demi halaman, ke
 [notary](/id/services/notary/), yang meng-anchor-nya di chain. Cursor feed itu adalah transaksi database:
-[ia hanya menyajikan record yang ditulis oleh transaksi yang lebih tua dari setiap transaksi yang masih berjalan](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching/dispatch/evidence_feed.ex#L23-L31),
+[ia hanya menyajikan record yang ditulis oleh transaksi yang lebih tua dari setiap transaksi yang masih berjalan](https://github.com/WildanFrananda/kinetix-matching-service/blob/461281a718a31994f8697198c469b041dd62128f/lib/kinetix_matching/dispatch/evidence_feed.ex#L23-L31),
 sehingga pengantaran yang transaksinya commit terlambat disajikan terlambat dan tidak pernah terlewat.
 
 <ServiceServes service="matching" />
 
 ## Yang dipanggil
 
-matching memanggil keluar untuk satu hal: memberi tahu order bahwa seorang kurir sudah mengantarkan paket.
+matching memanggil keluar untuk dua hal: menanyakan pelat kendaraan, kapasitas, dan standing persetujuan kurir
+ke [identity](/id/services/identity/) (`GetCourierStanding`), serta memberi tahu order bahwa seorang kurir sudah
+mengantarkan paket.
 
 <ServiceCalls service="matching" />
 
@@ -126,11 +127,12 @@ panggilan yang tidak bisa dilakukan berarti tidak diketahui, bukan penolakan —
 
 | Direktori | Isi |
 | --- | --- |
-| `lib/kinetix_matching/dispatch/` | job pengantaran, aturan dan buktinya, menawarkan ulang job yang pending, dan melaporkan pengantaran ke order |
-| `lib/kinetix_matching/tracking/` | kurir dan kendaraannya, satu proses per kurir yang online, posisi live, penerbit Redis Pub/Sub dan penyimpanannya |
+| `lib/kinetix_matching/clients/` | client gRPC untuk identity dan order |
+| `lib/kinetix_matching/dispatch/` | job pengantaran (`Delivery`), aturan dan buktinya, menawarkan ulang job yang pending, dan melaporkan pengantaran ke order |
+| `lib/kinetix_matching/tracking/` | satu proses state di memori per kurir yang online, posisi live, penerbit Redis Pub/Sub dan penyimpanannya |
 | `lib/kinetix_matching/shipping.ex` | perhitungan perjalanan |
 | `lib/kinetix_matching/storage/` | bucket bukti pengantaran dan alamat presigned untuknya |
-| `lib/kinetix_matching/servers/` | server gRPC yang dipanggil order, identity, dan notary |
+| `lib/kinetix_matching/servers/` | server gRPC yang dipanggil order dan notary |
 | `lib/kinetix_matching_web/` | route HTTP, handler WebSocket `WebSock` terpadu (`EventSocket`) serta mapper amplop `camelCase`, dan plug yang mengautentikasi serta mengauditnya |
 
 Context memiliki aturannya; lapisan web dan server gRPC hanya menerjemahkan request menjadi panggilan ke
@@ -138,10 +140,11 @@ context itu.
 
 ## Data
 
-PostgreSQL, lewat Ecto, menyimpan kurir dan kendaraannya, job pengantaran beserta bukti pengantaran dan
-apakah order sudah mendengarnya, admin mana yang melepas job mana dari kurir mana, log bukti pengantaran yang
-hanya bisa ditambah, serta jejak ping posisi. Posisi yang dipakai armada hidup di memori, satu
-proses per kurir yang online;
+PostgreSQL, lewat Ecto, menyimpan job pengantaran (`deliveries`) beserta bukti pengantaran dan apakah order
+sudah mendengarnya, admin mana yang melepas job mana dari kurir mana, log bukti pengantaran yang hanya bisa
+ditambah, serta jejak ping posisi — semuanya memakai kunci `courier_principal_id` tanpa tabel driver lokal.
+Posisi yang dipakai armada hidup di memori, satu proses per kurir yang online, disegarkan dari
+`GetCourierStanding` milik identity;
 [ping ditulis ke PostgreSQL setiap tiga puluh detik](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching/tracking/persistence_batcher.ex#L44)
 dan [disimpan tiga puluh hari](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching/tracking/ping_retention.ex#L23).
 Posisi yang disimpan aplikasi selama tidak ada koneksi datang belakangan dalam batch dan
@@ -155,9 +158,9 @@ Foto paket yang terkirim disimpan di object storage, di bucket tersendiri yang h
 ## Siapa boleh melakukan apa
 
 - **Kurir** terhubung ke WebSocket event terpadu dengan access token identity untuk
-  [akun kurir yang sudah disetujui dan punya kendaraan di armada](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/event_socket_plug.ex#L90-L118),
-  otomatis terikat ke driver id miliknya sendiri
-  ([event_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/event_socket.ex#L38-L63)),
+  [akun kurir yang disetujui dan diizinkan identity (`GetCourierStanding`)](https://github.com/WildanFrananda/kinetix-matching-service/blob/461281a718a31994f8697198c469b041dd62128f/lib/kinetix_matching_web/event_socket_plug.ex#L112-L117),
+  otomatis terikat ke `courier_principal_id` miliknya sendiri
+  ([event_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/461281a718a31994f8697198c469b041dd62128f/lib/kinetix_matching_web/event_socket.ex#L38-L63)),
   dan hanya menggerakkan job yang ditugaskan kepadanya.
 - **Seller** menerima pembaruan job real-time yang otomatis dibatasi pada `principalId` miliknya sendiri — dari
   Seller Web, lewat [edge](/id/apis/rest/#edge), yang menambahkan token dan `X-Edge-Role: seller` — dan
@@ -172,9 +175,8 @@ Foto paket yang terkirim disimpan di object storage, di bucket tersendiri yang h
   ia subscribe lewat edge).
 - **Service lain** menjangkau port gRPC hanya dengan sertifikat dari CA Kinetix yang menyebut service di
   daftar izin matching, dan [sebuah entri bisa menyebut satu service gRPC atau satu method](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching/security/peer_authorization_interceptor.ex#L28-L65).
-  identity hanya boleh mendaftarkan dan mengaktifkan kurir, sehingga ia tidak bisa mengirim kurir atau
-  menghitung perjalanan, dan notary hanya boleh membaca bukti pengantaran; lihat
-  [Siapa yang memanggil?](/id/learn/who-is-calling/).
+  order mengirim kurir dan menghitung perjalanan, sedangkan notary dan seal hanya boleh membaca bukti
+  pengantaran; lihat [Siapa yang memanggil?](/id/learn/who-is-calling/).
 
 ## Mengoperasikannya
 

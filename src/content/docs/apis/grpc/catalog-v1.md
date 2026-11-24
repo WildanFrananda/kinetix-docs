@@ -1,30 +1,30 @@
 ---
 title: "catalog.v1"
-description: "The catalog.v1 gRPC package in kinetix-contracts 1.7.0: its services, messages and enums."
+description: "The catalog.v1 gRPC package in kinetix-contracts 1.8.1: its services, messages and enums."
 editUrl: false
 ---
 
 <div class="grpc-reference">
 
-Generated from release [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v/1.7.0) of kinetix-contracts: [`catalog/v1/catalog.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/catalog/v1/catalog.proto). Servers and callers are those on the [system map](/architecture/system-map/); a dash means the map records none.
+Generated from release [1.8.1](https://www.npmjs.com/package/kinetix-contracts/v/1.8.1) of kinetix-contracts: [`catalog/v1/catalog.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/catalog/v1/catalog.proto). Servers and callers are those on the [system map](/architecture/system-map/); a dash means the map records none.
 
 ## Services
 
 ### CatalogService
 
-[`catalog/v1/catalog.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/catalog/v1/catalog.proto#L8)
+[`catalog/v1/catalog.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/catalog/v1/catalog.proto#L8)
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`ChangedSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/catalog/v1/catalog.proto#L9) | [`ChangedSinceRequest`](#changedsincerequest) → [`ChangedSinceResponse`](#changedsinceresponse) | [catalog](/services/catalog/) | [search](https://github.com/WildanFrananda/kinetix-search-service/blob/ba054100e0e91fd9640842c0035b514d923f674e/internal/catalogclient/client.go#L54) |
-| [`GetProduct`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/catalog/v1/catalog.proto#L10) | [`GetProductRequest`](#getproductrequest) → [`GetProductResponse`](#getproductresponse) | [catalog](/services/catalog/) | [pricing](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0ed7db4cd6fb8d40375cab26dd7ac56ebce16a8a/src/clients/catalog_product_directory.rs#L34), [order](https://github.com/WildanFrananda/kinetix-order-service/blob/a0167a3ec43e857e85401924b4bee486e596d4fd/Infrastructure/Grpc/CatalogProductDirectory.cs#L22) |
-| [`CountProducts`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/catalog/v1/catalog.proto#L11) | [`CountProductsRequest`](#countproductsrequest) → [`CountProductsResponse`](#countproductsresponse) | [catalog](/services/catalog/) | [search](https://github.com/WildanFrananda/kinetix-search-service/blob/ba054100e0e91fd9640842c0035b514d923f674e/internal/catalogclient/client.go#L83) |
+| [`ChangedSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/catalog/v1/catalog.proto#L9) | [`ChangedSinceRequest`](#changedsincerequest) → [`ChangedSinceResponse`](#changedsinceresponse) | [catalog](/services/catalog/) | [search](https://github.com/WildanFrananda/kinetix-search-service/blob/ba054100e0e91fd9640842c0035b514d923f674e/internal/catalogclient/client.go#L54) |
+| [`GetProduct`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/catalog/v1/catalog.proto#L10) | [`GetProductRequest`](#getproductrequest) → [`GetProductResponse`](#getproductresponse) | [catalog](/services/catalog/) | [pricing](https://github.com/WildanFrananda/kinetix-pricing-service/blob/0ed7db4cd6fb8d40375cab26dd7ac56ebce16a8a/src/clients/catalog_product_directory.rs#L34), [order](https://github.com/WildanFrananda/kinetix-order-service/blob/a0167a3ec43e857e85401924b4bee486e596d4fd/Infrastructure/Grpc/CatalogProductDirectory.cs#L22) |
+| [`CountProducts`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/catalog/v1/catalog.proto#L11) | [`CountProductsRequest`](#countproductsrequest) → [`CountProductsResponse`](#countproductsresponse) | [catalog](/services/catalog/) | [search](https://github.com/WildanFrananda/kinetix-search-service/blob/ba054100e0e91fd9640842c0035b514d923f674e/internal/catalogclient/client.go#L83) |
 
 ## Messages
 
 ### Cursor
 
-[`catalog/v1/catalog.proto:14`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/catalog/v1/catalog.proto#L14)
+[`catalog/v1/catalog.proto:14`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/catalog/v1/catalog.proto#L14)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -34,7 +34,7 @@ Generated from release [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### Product
 
-[`catalog/v1/catalog.proto:20`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/catalog/v1/catalog.proto#L20)
+[`catalog/v1/catalog.proto:20`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/catalog/v1/catalog.proto#L20)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -51,7 +51,7 @@ Generated from release [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### ChangedSinceRequest
 
-[`catalog/v1/catalog.proto:33`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/catalog/v1/catalog.proto#L33)
+[`catalog/v1/catalog.proto:33`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/catalog/v1/catalog.proto#L33)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -60,7 +60,7 @@ Generated from release [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### ChangedSinceResponse
 
-[`catalog/v1/catalog.proto:38`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/catalog/v1/catalog.proto#L38)
+[`catalog/v1/catalog.proto:38`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/catalog/v1/catalog.proto#L38)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -71,7 +71,7 @@ Generated from release [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### GetProductRequest
 
-[`catalog/v1/catalog.proto:45`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/catalog/v1/catalog.proto#L45)
+[`catalog/v1/catalog.proto:45`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/catalog/v1/catalog.proto#L45)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -79,7 +79,7 @@ Generated from release [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### GetProductResponse
 
-[`catalog/v1/catalog.proto:49`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/catalog/v1/catalog.proto#L49)
+[`catalog/v1/catalog.proto:49`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/catalog/v1/catalog.proto#L49)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -88,13 +88,13 @@ Generated from release [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### CountProductsRequest
 
-[`catalog/v1/catalog.proto:54`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/catalog/v1/catalog.proto#L54)
+[`catalog/v1/catalog.proto:54`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/catalog/v1/catalog.proto#L54)
 
 No fields.
 
 ### CountProductsResponse
 
-[`catalog/v1/catalog.proto:56`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/catalog/v1/catalog.proto#L56)
+[`catalog/v1/catalog.proto:56`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/catalog/v1/catalog.proto#L56)
 
 | Field | Number | Type |
 | --- | --- | --- |

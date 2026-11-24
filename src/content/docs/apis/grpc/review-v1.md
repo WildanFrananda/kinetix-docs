@@ -1,28 +1,28 @@
 ---
 title: "review.v1"
-description: "The review.v1 gRPC package in kinetix-contracts 1.7.0: its services, messages and enums."
+description: "The review.v1 gRPC package in kinetix-contracts 1.8.1: its services, messages and enums."
 editUrl: false
 ---
 
 <div class="grpc-reference">
 
-Generated from release [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v/1.7.0) of kinetix-contracts: [`review/v1/review.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/review/v1/review.proto). Servers and callers are those on the [system map](/architecture/system-map/); a dash means the map records none.
+Generated from release [1.8.1](https://www.npmjs.com/package/kinetix-contracts/v/1.8.1) of kinetix-contracts: [`review/v1/review.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/review/v1/review.proto). Servers and callers are those on the [system map](/architecture/system-map/); a dash means the map records none.
 
 ## Services
 
 ### ReviewEvidenceService
 
-[`review/v1/review.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/review/v1/review.proto#L8)
+[`review/v1/review.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/review/v1/review.proto#L8)
 
 | RPC | Request → response | Served by | Called by |
 | --- | --- | --- | --- |
-| [`ReviewsSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/review/v1/review.proto#L9) | [`ReviewsSinceRequest`](#reviewssincerequest) → [`ReviewsSinceResponse`](#reviewssinceresponse) | [review](/services/review/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/8446176813c354716d77ca6591038633871bcda5/internal/feeds/review_feed.go#L50), [seal](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/infrastructure/grpc/grpc_review_feed.adapter.ts#L43-L48) |
+| [`ReviewsSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/review/v1/review.proto#L9) | [`ReviewsSinceRequest`](#reviewssincerequest) → [`ReviewsSinceResponse`](#reviewssinceresponse) | [review](/services/review/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/8446176813c354716d77ca6591038633871bcda5/internal/feeds/review_feed.go#L50), [seal](https://github.com/WildanFrananda/kinetix-seal-service/blob/653588f8ab8bc77a1e1662df3b35e49e9ecc83cf/src/infrastructure/grpc/grpc_review_feed.adapter.ts#L43-L48) |
 
 ## Messages
 
 ### ReviewEvidence
 
-[`review/v1/review.proto:18`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/review/v1/review.proto#L18)
+[`review/v1/review.proto:18`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/review/v1/review.proto#L18)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -39,7 +39,7 @@ Generated from release [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### ReviewsSinceRequest
 
-[`review/v1/review.proto:31`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/review/v1/review.proto#L31)
+[`review/v1/review.proto:31`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/review/v1/review.proto#L31)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -48,7 +48,7 @@ Generated from release [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### ReviewsSinceResponse
 
-[`review/v1/review.proto:36`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/review/v1/review.proto#L36)
+[`review/v1/review.proto:36`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/review/v1/review.proto#L36)
 
 | Field | Number | Type |
 | --- | --- | --- |
@@ -60,7 +60,7 @@ Generated from release [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v
 
 ### ReviewKind
 
-[`review/v1/review.proto:12`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/review/v1/review.proto#L12)
+[`review/v1/review.proto:12`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/review/v1/review.proto#L12)
 
 | Name | Number |
 | --- | --- |

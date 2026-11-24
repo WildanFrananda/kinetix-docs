@@ -7,14 +7,15 @@ import ServiceCalls from "../../../components/ServiceCalls.astro";
 import ServiceFacts from "../../../components/ServiceFacts.astro";
 import ServiceServes from "../../../components/ServiceServes.astro";
 
-matching runs the fleet. It knows each courier's vehicle and capacity, where every online courier is right
-now, and every delivery job from the moment a packed order is handed to it until the parcel is delivered or
-the job is cancelled. It owns no address and no price: order gives it the store's and the buyer's points,
-pricing prices the journey it quotes, and order decides what a delivery means for the money.
+matching runs the fleet. It holds each online courier's live position in memory, and tracks every delivery
+job from the moment a packed order is handed to it until the parcel is delivered or the job is cancelled.
+It owns no courier profile, vehicle, address or price: identity owns each courier's vehicle and approval
+standing, order gives it the store's and the buyer's points, pricing prices the journey it quotes, and order
+decides what a delivery means for the money.
 
 The tables on this page are generated from the same verified data as the
 [system map](/architecture/system-map/), at the commits linked from each row. The prose is checked
-against matching [v1.6.0](https://github.com/WildanFrananda/kinetix-matching-service/tree/c09bc12e39aa22a5d4bb1b17c65011323a897562),
+against matching [v1.7.0](https://github.com/WildanFrananda/kinetix-matching-service/tree/461281a718a31994f8697198c469b041dd62128f),
 the version in production.
 
 ## At a glance
@@ -24,19 +25,20 @@ the version in production.
 ## What it serves over gRPC
 
 order asks matching for the shipping options of a cart and, once warehouse has packed an order, for a
-courier. identity files a new courier's vehicle and activates the driver when an admin approves the account.
+courier.
 
-matching also serves [its delivery evidence](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching/servers/delivery_evidence_server.ex#L18-L28),
+matching also serves [its delivery evidence](https://github.com/WildanFrananda/kinetix-matching-service/blob/461281a718a31994f8697198c469b041dd62128f/lib/kinetix_matching/servers/delivery_evidence_server.ex#L18-L28),
 one record per delivered parcel with the hashes of its photo and signature, page by page, to the
 [notary](/services/notary/), which anchors it on chain. The feed's cursor is a database transaction:
-[it serves only records written by transactions older than every transaction still running](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching/dispatch/evidence_feed.ex#L23-L31),
+[it serves only records written by transactions older than every transaction still running](https://github.com/WildanFrananda/kinetix-matching-service/blob/461281a718a31994f8697198c469b041dd62128f/lib/kinetix_matching/dispatch/evidence_feed.ex#L23-L31),
 so a delivery whose transaction commits late is served late and never skipped.
 
 <ServiceServes service="matching" />
 
 ## What it calls
 
-matching calls out for one thing: to tell order that a courier delivered a parcel.
+matching calls out for two things: to ask [identity](/services/identity/) for a courier's vehicle plate,
+capacity and approval standing (`GetCourierStanding`), and to tell order that a courier delivered a parcel.
 
 <ServiceCalls service="matching" />
 
@@ -119,21 +121,23 @@ a call that could not be made is unknown, not a refusal — see [Unknown is not 
 
 | Directory | Holds |
 | --- | --- |
-| `lib/kinetix_matching/dispatch/` | delivery jobs, their rules and proof, re-offering pending jobs, and reporting deliveries to order |
-| `lib/kinetix_matching/tracking/` | couriers and their vehicles, one process per online courier, live positions, Redis Pub/Sub publisher and history |
+| `lib/kinetix_matching/clients/` | the gRPC clients for identity and order |
+| `lib/kinetix_matching/dispatch/` | delivery jobs (`Delivery`), their rules and proof, re-offering pending jobs, and reporting deliveries to order |
+| `lib/kinetix_matching/tracking/` | one in-memory state process per online courier, live positions, Redis Pub/Sub publisher and history |
 | `lib/kinetix_matching/shipping.ex` | the journey quote |
 | `lib/kinetix_matching/storage/` | the proof-of-delivery bucket and the presigned addresses for it |
-| `lib/kinetix_matching/servers/` | the gRPC servers order, identity and the notary call |
+| `lib/kinetix_matching/servers/` | the gRPC servers order and the notary call |
 | `lib/kinetix_matching_web/` | HTTP routes, the unified `WebSock` event handler (`EventSocket`) and `camelCase` envelope mapper, and the plugs that authenticate and audit them |
 
 Contexts own the rules; the web layer and the gRPC servers only translate requests into calls on them.
 
 ## Data
 
-PostgreSQL, through Ecto, holds couriers and their vehicles, delivery jobs with their proof of delivery and
-whether order has heard of them, which admin took which job off which courier, the append-only log of
-delivery evidence, and the trail of position pings. The position the fleet works from lives in
-memory, one process per online courier;
+PostgreSQL, through Ecto, holds delivery jobs (`deliveries`) with their proof of delivery and whether order
+has heard of them, which admin took which job off which courier, the append-only log of delivery evidence,
+and the trail of position pings — all keyed on `courier_principal_id` without a local driver table. The
+position the fleet works from lives in memory, one process per online courier, refreshed from identity's
+`GetCourierStanding`;
 [pings are written to PostgreSQL every thirty seconds](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching/tracking/persistence_batcher.ex#L44)
 and [kept for thirty days](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching/tracking/ping_retention.ex#L23).
 Positions the app kept while it had no connection arrive later in batches and
@@ -148,9 +152,9 @@ write.
 ## Who may do what
 
 - **A courier** connects to the unified event WebSocket with an identity access token for
-  [an approved courier account with a vehicle in the fleet](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/event_socket_plug.ex#L90-L118),
-  is bound automatically to their own driver id
-  ([event_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching_web/event_socket.ex#L38-L63)),
+  [an approved courier account permitted by identity (`GetCourierStanding`)](https://github.com/WildanFrananda/kinetix-matching-service/blob/461281a718a31994f8697198c469b041dd62128f/lib/kinetix_matching_web/event_socket_plug.ex#L112-L117),
+  is bound automatically to their own `courier_principal_id`
+  ([event_socket.ex](https://github.com/WildanFrananda/kinetix-matching-service/blob/461281a718a31994f8697198c469b041dd62128f/lib/kinetix_matching_web/event_socket.ex#L38-L63)),
   and moves only the jobs assigned to them.
 - **A seller** receives real-time job updates automatically scoped to their own `principalId` — from Seller Web,
   through [the edge](/apis/rest/#the-edge), which adds the token and `X-Edge-Role: seller` — and
@@ -164,8 +168,8 @@ write.
   data; no other role reads fleet-wide positions (buyers only receive updates for their own subscribed order via edge).
 - **Other services** reach the gRPC port only with a certificate from Kinetix's CA naming a service on
   matching's allow list, and [an entry can name one gRPC service or one method](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching/security/peer_authorization_interceptor.ex#L28-L65).
-  Identity may file and activate couriers and nothing else, so it cannot dispatch a courier or quote a
-  journey, and the notary may only read the delivery evidence; see [Who is calling?](/learn/who-is-calling/).
+  order dispatches couriers and quotes journeys, and the notary and seal may only read the delivery
+  evidence; see [Who is calling?](/learn/who-is-calling/).
 
 ## Operating it
 

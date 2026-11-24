@@ -1,7 +1,7 @@
 ---
 title: warehouse
 description: Rak, stok, dan task fulfillment — service yang tahu berapa unit sebuah produk milik seorang merchant ada di bin mana, menjanjikan setiap unit ke paling banyak satu order, dan mengubah order yang sudah dibayar menjadi paket.
-sourceHash: "24d05cfc83ad"
+sourceHash: "ba9c88599662"
 ---
 
 import ServiceCalls from "../../../../components/ServiceCalls.astro";
@@ -16,7 +16,7 @@ warehouse ke order ketika siap dijemput kurir.
 Tabel di halaman ini dibangkitkan dari data terverifikasi yang sama dengan
 [peta sistem](/id/architecture/system-map/), pada commit yang ditautkan dari setiap baris. Teksnya dicek
 terhadap warehouse
-[v1.4.0](https://github.com/WildanFrananda/kinetix-warehouse-service/tree/07fc2707413de029830bd1364e722a41b8285d81),
+[v1.5.0](https://github.com/WildanFrananda/kinetix-warehouse-service/tree/89d90d95f9ecfdb6c1c0de9916961ed0c6ce95f3),
 versi yang berjalan di production.
 
 ## Sekilas
@@ -116,9 +116,10 @@ Lapisannya berjalan satu arah, dan method-nya membawa signature Sorbet.
 ## Data
 
 PostgreSQL menyimpan bin, stok setiap produk di setiap bin — satu baris per bin dan produk — beserta
-merchant-nya dan berapa yang sudah di-reserve, ledger reservasi dan operasi stok, task fulfillment beserta
-baris dan labelnya, serta setiap penerimaan dan penyesuaian. Solid Cache, Solid Queue, dan Solid Cable milik
-Rails menyimpan database masing-masing di sebelahnya.
+`merchant_principal_id`-nya dan berapa yang sudah di-reserve, ledger reservasi dan operasi stok,
+pengaturan fulfillment merchant (`fulfillment_settings`, dengan kunci `merchant_principal_id`), task
+fulfillment beserta baris dan labelnya, serta setiap penerimaan dan penyesuaian. Solid Cache, Solid Queue,
+dan Solid Cable milik Rails menyimpan database masing-masing di sebelahnya.
 
 ## Mengoperasikannya
 

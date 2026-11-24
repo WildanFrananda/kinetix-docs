@@ -10,12 +10,12 @@ import ServiceServes from "../../../components/ServiceServes.astro";
 identity owns every account on Kinetix — customers, sellers, couriers and admins — and everything that
 says who someone is: passwords and second factors, the tokens every other service trusts, the principal
 id each person is known by across the estate, the merchant a seller trades as and whether it may sell,
-and the profile and address a courier is sent to. No other service stores a password or signs a token;
-when one needs to know who it is talking to, it verifies identity's signature or asks identity.
+and each courier's vehicle plate, capacity and approval standing. No other service stores a password or
+signs a token; when one needs to know who it is talking to, it verifies identity's signature or asks identity.
 
 The tables on this page are generated from the same verified data as the
 [system map](/architecture/system-map/), at the commits linked from each row. The prose is checked
-against identity [v1.7.1](https://github.com/WildanFrananda/kinetix-identity-service/tree/14a5d4291f2e4987e2ef774f68dc3888c509617c),
+against identity [v1.8.0](https://github.com/WildanFrananda/kinetix-identity-service/tree/06f9df69a10f780e74ecc70e2b460c707c1a3e6b),
 the version in production.
 
 ## At a glance
@@ -24,11 +24,11 @@ the version in production.
 
 ## What it serves over gRPC
 
-Other services ask identity about people and merchants: whether a merchant may sell and where its store
-is, where a customer lives, who a principal is, and which merchants have changed since a cursor. That
-cursor is the database transaction that last changed a merchant, recorded by a trigger in a table of its own,
-and the feed
-[serves only merchants written by transactions older than every transaction still running](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/persistence/adapters/typeorm_merchant_repository.adapter.ts#L63-L91),
+Other services ask identity about people, merchants and couriers: whether a merchant may sell and where its
+store is, a courier's vehicle and whether they may drive (`GetCourierStanding`), where a customer lives, who a
+principal is, and which merchants have changed since a cursor. That cursor is the database transaction that last
+changed a merchant, recorded by a trigger in a table of its own, and the feed
+[serves only merchants written by transactions older than every transaction still running](https://github.com/WildanFrananda/kinetix-identity-service/blob/06f9df69a10f780e74ecc70e2b460c707c1a3e6b/src/infrastructure/persistence/adapters/typeorm_merchant_repository.adapter.ts#L63-L91),
 so a merchant whose transaction commits late is served late and never skipped. A cursor without a
 transaction is still read the old way, by the time a merchant last changed.
 
@@ -36,8 +36,7 @@ transaction is still read the old way, by the time a merchant last changed.
 
 ## What it calls
 
-identity calls out for two things: to file a new courier's vehicle in matching's fleet and to activate
-the driver when an admin approves them, and to place an address on the map.
+identity calls out for one thing: to place an address on the map.
 
 <ServiceCalls service="identity" />
 
@@ -134,13 +133,12 @@ The other roles are granted:
   `suspended`. A merchant
   [may sell only while it is `verified` or `active`](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/domain/merchant_standing.ts#L1-L5),
   and every service that lets a merchant sell — checkout, promotions, products, fulfilment — asks.
-- **A courier** registers with a vehicle, which identity files in matching's fleet; the account stays a
-  customer until
-  [an admin approves it](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/courier_onboarding_usecase.service.ts#L52-L90),
-  which makes it a courier and activates the driver. If the fleet refuses the activation, the account is a
-  customer again, and an approval that could not reach the fleet can be repeated without duplicating anything.
+- **A courier** registers with a vehicle (`vehiclePlate`, `capacityKg`), stored on the courier application in
+  identity; the account stays a customer until
+  [an admin approves it](https://github.com/WildanFrananda/kinetix-identity-service/blob/06f9df69a10f780e74ecc70e2b460c707c1a3e6b/src/application/services/courier_onboarding_usecase.service.ts#L42-L108),
+  which marks the application approved and promotes the account to `courier`.
   An admin may instead
-  [refuse a pending application](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/courier_onboarding_usecase.service.ts#L92-L123),
+  [refuse a pending application](https://github.com/WildanFrananda/kinetix-identity-service/blob/06f9df69a10f780e74ecc70e2b460c707c1a3e6b/src/application/services/courier_onboarding_usecase.service.ts#L109-L140),
   which leaves the account a customer; registering the vehicle again puts the application back to pending.
 - **One account holds one role.** Approval never overwrites a role: a courier or an admin
   [is refused a seller application](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/seller_onboarding_usecase.service.ts#L226-L234),
@@ -170,7 +168,7 @@ never a `401` that would send a signed-in user to sign in again.
 | `src/adapters/` | the HTTP and gRPC controllers, the guards that decide who may call a route, the admin audit, and the mappers onto the contract |
 | `src/application/` | the use cases — sign-in and tokens, the sign-in counters, the client check, seller and courier onboarding, profiles, geocoding, principals |
 | `src/domain/` | entities, the ports the use cases need, and the rules for which merchant may sell, who must have a second factor and how long a sign-in waits — no NestJS, no TypeORM |
-| `src/infrastructure/` | what implements the ports: TypeORM persistence, the signing key, TOTP, WebAuthn, the client registry and the App Check verifier, the Nominatim geocoder, the fleet client, the mesh identity, observability |
+| `src/infrastructure/` | what implements the ports: TypeORM persistence, the signing key, TOTP, WebAuthn, the client registry and the App Check verifier, the Nominatim geocoder, the mesh identity, observability |
 | `src/migrations/` | TypeORM migrations, run by `migrate.ts` |
 
 Most use cases work through ports and are tested with fakes; the token service and the principal
@@ -215,8 +213,8 @@ in a one-shot container that must finish before the service starts.
   — naming a service on identity's allow list, and
   [each is allowed only the calls it makes](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/mesh/peer_allow_list.ts#L48-L63):
   order resolves principals, reads merchants and profiles, and places the address a buyer typed at
-  checkout; warehouse, catalog and pricing read a merchant; notification reads a profile; search follows the
-  merchant change feed. A service that may ask whether a merchant may sell cannot read a customer's address,
+  checkout; warehouse, catalog and pricing read a merchant; matching reads a courier's vehicle and standing;
+  notification reads a profile; search follows the merchant change feed. A service that may ask whether a merchant may sell cannot read a customer's address,
   no running service may validate a token or read a principal over gRPC, and nobody may geocode addresses in
   bulk — communication, in the table above, is not deployed, and is granted nothing until it is. Any other call
   [is refused with `PERMISSION_DENIED` and logged](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/mesh/peer_authorization_interceptor.ts#L27-L35);

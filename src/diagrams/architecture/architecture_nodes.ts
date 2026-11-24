@@ -109,8 +109,6 @@ export const architectureNodes: readonly MapNode[] = [
     repository: `${github}/kinetix-matching-service`,
     serves: [
       "fleet.v1.CourierTelemetryService/DispatchCourier",
-      "fleet.v1.FleetRegistryService/RegisterDriver",
-      "fleet.v1.FleetRegistryService/ActivateDriver",
       "shipping.v1.ShippingService/EstimateShippingOptions",
       "fulfillment.v1.DeliveryEvidenceService/DeliveriesSince"
     ],
@@ -213,6 +211,7 @@ export const architectureNodes: readonly MapNode[] = [
       "identity.v1.IdentityService/GetPrincipal",
       "identity.v1.IdentityService/GetUserProfile",
       "identity.v1.IdentityService/GetMerchantInfo",
+      "identity.v1.IdentityService/GetCourierStanding",
       "identity.v1.IdentityService/MerchantsChangedSince",
       "identity.v1.IdentityService/ValidateToken",
       "geo.v1.GeocodingService/GeocodeAddress",

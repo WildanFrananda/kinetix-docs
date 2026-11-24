@@ -27,7 +27,7 @@
     "@bufbuild/protobuf": "2.16.0",
     "@types/bun": "1.4.4",
     "devicon": "2.17.0",
-    "kinetix-contracts": "1.7.0",
+    "kinetix-contracts": "1.8.1",
     "starlight-links-validator": "0.27.0",
     "svelte-check": "4.7.7",
     "typescript": "6.0.3"

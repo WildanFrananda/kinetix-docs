@@ -1,39 +1,39 @@
 ---
 title: "fleet.v1"
-description: "Paket gRPC fleet.v1 di kinetix-contracts 1.7.0: service, message, dan enum-nya."
+description: "Paket gRPC fleet.v1 di kinetix-contracts 1.8.1: service, message, dan enum-nya."
 editUrl: false
-sourceHash: "5dbb929a02d5"
+sourceHash: "128b6ebdaf72"
 ---
 
 <div class="grpc-reference">
 
-Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v/1.7.0) kinetix-contracts: [`fleet/v1/fleet.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/fleet.proto), [`fleet/v1/registry.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/registry.proto). Server dan pemanggil diambil dari [peta sistem](/id/architecture/system-map/); tanda pisah berarti peta tidak mencatat apa pun.
+Dibuat otomatis dari rilis [1.8.1](https://www.npmjs.com/package/kinetix-contracts/v/1.8.1) kinetix-contracts: [`fleet/v1/fleet.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/fleet/v1/fleet.proto), [`fleet/v1/registry.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/fleet/v1/registry.proto). Server dan pemanggil diambil dari [peta sistem](/id/architecture/system-map/); tanda pisah berarti peta tidak mencatat apa pun.
 
 ## Service
 
 ### CourierTelemetryService
 
-[`fleet/v1/fleet.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/fleet.proto#L8)
+[`fleet/v1/fleet.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/fleet/v1/fleet.proto#L8)
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`DispatchCourier`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/fleet.proto#L9) | [`DispatchCourierRequest`](#dispatchcourierrequest) → [`DispatchCourierResponse`](#dispatchcourierresponse) | [matching](/id/services/matching/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/a0167a3ec43e857e85401924b4bee486e596d4fd/Application/Fulfillment/CourierDispatcher.cs#L75) |
-| [`StreamDriverLocation`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/fleet.proto#L10) | `stream` [`DriverLocationPing`](#driverlocationping) → `stream` [`DriverLocationAck`](#driverlocationack) | — | — |
+| [`DispatchCourier`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/fleet/v1/fleet.proto#L9) | [`DispatchCourierRequest`](#dispatchcourierrequest) → [`DispatchCourierResponse`](#dispatchcourierresponse) | [matching](/id/services/matching/) | [order](https://github.com/WildanFrananda/kinetix-order-service/blob/a0167a3ec43e857e85401924b4bee486e596d4fd/Application/Fulfillment/CourierDispatcher.cs#L75) |
+| [`StreamDriverLocation`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/fleet/v1/fleet.proto#L10) | `stream` [`DriverLocationPing`](#driverlocationping) → `stream` [`DriverLocationAck`](#driverlocationack) | — | — |
 
 ### FleetRegistryService
 
-[`fleet/v1/registry.proto:7`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/registry.proto#L7)
+[`fleet/v1/registry.proto:7`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/fleet/v1/registry.proto#L7)
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`RegisterDriver`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/registry.proto#L8) | [`RegisterDriverRequest`](#registerdriverrequest) → [`RegisterDriverResponse`](#registerdriverresponse) | [matching](/id/services/matching/) | [identity](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L45) |
-| [`ActivateDriver`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/registry.proto#L9) | [`ActivateDriverRequest`](#activatedriverrequest) → [`ActivateDriverResponse`](#activatedriverresponse) | [matching](/id/services/matching/) | [identity](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L62) |
+| [`RegisterDriver`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/fleet/v1/registry.proto#L8) | [`RegisterDriverRequest`](#registerdriverrequest) → [`RegisterDriverResponse`](#registerdriverresponse) | — | — |
+| [`ActivateDriver`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/fleet/v1/registry.proto#L9) | [`ActivateDriverRequest`](#activatedriverrequest) → [`ActivateDriverResponse`](#activatedriverresponse) | — | — |
 
 ## Message
 
 ### DispatchCourierRequest
 
-[`fleet/v1/fleet.proto:13`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/fleet.proto#L13)
+[`fleet/v1/fleet.proto:13`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/fleet/v1/fleet.proto#L13)
 
 | Field | Nomor | Tipe | Catatan |
 | --- | --- | --- | --- |
@@ -49,7 +49,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### DispatchCourierResponse
 
-[`fleet/v1/fleet.proto:25`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/fleet.proto#L25)
+[`fleet/v1/fleet.proto:25`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/fleet/v1/fleet.proto#L25)
 
 | Field | Nomor | Tipe | Catatan |
 | --- | --- | --- | --- |
@@ -65,7 +65,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### DriverLocationPing
 
-[`fleet/v1/fleet.proto:37`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/fleet.proto#L37)
+[`fleet/v1/fleet.proto:37`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/fleet/v1/fleet.proto#L37)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -78,7 +78,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### DriverLocationAck
 
-[`fleet/v1/fleet.proto:46`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/fleet.proto#L46)
+[`fleet/v1/fleet.proto:46`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/fleet/v1/fleet.proto#L46)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -88,7 +88,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### RegisterDriverRequest
 
-[`fleet/v1/registry.proto:12`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/registry.proto#L12)
+[`fleet/v1/registry.proto:12`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/fleet/v1/registry.proto#L12)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -98,7 +98,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### RegisterDriverResponse
 
-[`fleet/v1/registry.proto:18`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/registry.proto#L18)
+[`fleet/v1/registry.proto:18`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/fleet/v1/registry.proto#L18)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -109,7 +109,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ActivateDriverRequest
 
-[`fleet/v1/registry.proto:25`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/registry.proto#L25)
+[`fleet/v1/registry.proto:25`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/fleet/v1/registry.proto#L25)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -117,7 +117,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ActivateDriverResponse
 
-[`fleet/v1/registry.proto:29`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/fleet/v1/registry.proto#L29)
+[`fleet/v1/registry.proto:29`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/fleet/v1/registry.proto#L29)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |

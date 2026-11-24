@@ -77,16 +77,7 @@ export const architectureEdges: readonly MapEdge[] = [
     to: "nominatim",
     kind: "external",
     calls: [
-      { operation: "GET /search", source: { label: "nominatim_geocoding.adapter.ts:33", href: "https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/geocoding/nominatim_geocoding.adapter.ts#L33" } }
-    ]
-  },
-  {
-    from: "identity",
-    to: "matching",
-    kind: "grpc",
-    calls: [
-      { operation: "fleet.v1.FleetRegistryService/RegisterDriver", source: { label: "fleet_registry_grpc.adapter.ts:45", href: "https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L45" } },
-      { operation: "fleet.v1.FleetRegistryService/ActivateDriver", source: { label: "fleet_registry_grpc.adapter.ts:62", href: "https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/mesh/fleet_registry_grpc.adapter.ts#L62" } }
+      { operation: "GET /search", source: { label: "nominatim_geocoding.adapter.ts:34", href: "https://github.com/WildanFrananda/kinetix-identity-service/blob/06f9df69a10f780e74ecc70e2b460c707c1a3e6b/src/infrastructure/geocoding/nominatim_geocoding.adapter.ts#L34" } }
     ]
   },
   {
@@ -207,10 +198,18 @@ export const architectureEdges: readonly MapEdge[] = [
   },
   {
     from: "matching",
+    to: "identity",
+    kind: "grpc",
+    calls: [
+      { operation: "identity.v1.IdentityService/GetCourierStanding", source: { label: "identity_grpc.ex:56", href: "https://github.com/WildanFrananda/kinetix-matching-service/blob/461281a718a31994f8697198c469b041dd62128f/lib/kinetix_matching/clients/identity_grpc.ex#L56" } }
+    ]
+  },
+  {
+    from: "matching",
     to: "order",
     kind: "grpc",
     calls: [
-      { operation: "order.v1.OrderService/OrderDelivered", source: { label: "order_grpc.ex:58", href: "https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching/clients/order_grpc.ex#L58" } }
+      { operation: "order.v1.OrderService/OrderDelivered", source: { label: "order_grpc.ex:58", href: "https://github.com/WildanFrananda/kinetix-matching-service/blob/461281a718a31994f8697198c469b041dd62128f/lib/kinetix_matching/clients/order_grpc.ex#L58" } }
     ]
   },
   {

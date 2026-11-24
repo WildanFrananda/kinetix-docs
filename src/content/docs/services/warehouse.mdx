@@ -14,7 +14,7 @@ to order when it is ready for a courier.
 
 The tables on this page are generated from the same verified data as the
 [system map](/architecture/system-map/), at the commits linked from each row. The prose is checked
-against warehouse [v1.4.0](https://github.com/WildanFrananda/kinetix-warehouse-service/tree/07fc2707413de029830bd1364e722a41b8285d81),
+against warehouse [v1.5.0](https://github.com/WildanFrananda/kinetix-warehouse-service/tree/89d90d95f9ecfdb6c1c0de9916961ed0c6ce95f3),
 the version in production.
 
 ## At a glance
@@ -111,7 +111,8 @@ The layers run in one direction, and their methods carry Sorbet signatures.
 ## Data
 
 PostgreSQL holds the bins, the stock of each product in each bin — one row per bin and product — with its
-merchant and how much of it is reserved, the reservations and stock operations ledgers, fulfillment tasks
+`merchant_principal_id` and how much of it is reserved, the reservations and stock operations ledgers,
+merchant fulfillment settings (`fulfillment_settings`, keyed on `merchant_principal_id`), fulfillment tasks
 with their lines and labels, and every receipt and adjustment. Rails' Solid Cache, Solid Queue and Solid
 Cable keep their own databases beside it.
 

@@ -1,43 +1,43 @@
 ---
 title: "order.v1"
-description: "Paket gRPC order.v1 di kinetix-contracts 1.7.0: service, message, dan enum-nya."
+description: "Paket gRPC order.v1 di kinetix-contracts 1.8.1: service, message, dan enum-nya."
 editUrl: false
-sourceHash: "aa52031f7b49"
+sourceHash: "9603c5ef33b3"
 ---
 
 <div class="grpc-reference">
 
-Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contracts/v/1.7.0) kinetix-contracts: [`order/v1/lifecycle.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/lifecycle.proto), [`order/v1/order.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto). Server dan pemanggil diambil dari [peta sistem](/id/architecture/system-map/); tanda pisah berarti peta tidak mencatat apa pun.
+Dibuat otomatis dari rilis [1.8.1](https://www.npmjs.com/package/kinetix-contracts/v/1.8.1) kinetix-contracts: [`order/v1/lifecycle.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/lifecycle.proto), [`order/v1/order.proto`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto). Server dan pemanggil diambil dari [peta sistem](/id/architecture/system-map/); tanda pisah berarti peta tidak mencatat apa pun.
 
 ## Service
 
 ### OrderLifecycleService
 
-[`order/v1/lifecycle.proto:9`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/lifecycle.proto#L9)
+[`order/v1/lifecycle.proto:9`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/lifecycle.proto#L9)
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`LifecycleEventsSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/lifecycle.proto#L10) | [`LifecycleEventsSinceRequest`](#lifecycleeventssincerequest) → [`LifecycleEventsSinceResponse`](#lifecycleeventssinceresponse) | [order](/id/services/order/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/8446176813c354716d77ca6591038633871bcda5/internal/feeds/lifecycle_feed.go#L50) |
+| [`LifecycleEventsSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/lifecycle.proto#L10) | [`LifecycleEventsSinceRequest`](#lifecycleeventssincerequest) → [`LifecycleEventsSinceResponse`](#lifecycleeventssinceresponse) | [order](/id/services/order/) | [notary](https://github.com/WildanFrananda/kinetix-notary-service/blob/8446176813c354716d77ca6591038633871bcda5/internal/feeds/lifecycle_feed.go#L50) |
 
 ### OrderService
 
-[`order/v1/order.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L8)
+[`order/v1/order.proto:8`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L8)
 
 | RPC | Request → response | Dilayani oleh | Dipanggil oleh |
 | --- | --- | --- | --- |
-| [`GetOrderDetails`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L9) | [`GetOrderDetailsRequest`](#getorderdetailsrequest) → [`GetOrderDetailsResponse`](#getorderdetailsresponse) | [order](/id/services/order/) | [review](https://github.com/WildanFrananda/kinetix-review-service/blob/e3ca897c68947dd7ba4a47f04355e5e91da9afa8/app/Clients/GrpcOrderClient.php#L79) |
-| [`ListOrdersForPrincipal`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L10) | [`ListOrdersForPrincipalRequest`](#listordersforprincipalrequest) → [`ListOrdersForPrincipalResponse`](#listordersforprincipalresponse) | [order](/id/services/order/) | — |
-| [`FulfillmentPacked`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L11) | [`FulfillmentPackedRequest`](#fulfillmentpackedrequest) → [`FulfillmentPackedResponse`](#fulfillmentpackedresponse) | [order](/id/services/order/) | [warehouse](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/clients/order/grpc_client.rb#L60) |
-| [`OrderDelivered`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L12) | [`OrderDeliveredRequest`](#orderdeliveredrequest) → [`OrderDeliveredResponse`](#orderdeliveredresponse) | [order](/id/services/order/) | [matching](https://github.com/WildanFrananda/kinetix-matching-service/blob/c09bc12e39aa22a5d4bb1b17c65011323a897562/lib/kinetix_matching/clients/order_grpc.ex#L58) |
-| [`OpenReturn`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L13) | [`OpenReturnRequest`](#openreturnrequest) → [`OpenReturnResponse`](#openreturnresponse) | [order](/id/services/order/) | [warehouse](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/clients/order/grpc_client.rb#L86) |
-| [`ReturnGoodsReceived`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L14) | [`ReturnGoodsReceivedRequest`](#returngoodsreceivedrequest) → [`ReturnGoodsReceivedResponse`](#returngoodsreceivedresponse) | [order](/id/services/order/) | [warehouse](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/clients/order/grpc_client.rb#L119) |
-| [`OrdersChangedSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L15) | [`OrdersChangedSinceRequest`](#orderschangedsincerequest) → [`OrdersChangedSinceResponse`](#orderschangedsinceresponse) | [order](/id/services/order/) | [search](https://github.com/WildanFrananda/kinetix-search-service/blob/ba054100e0e91fd9640842c0035b514d923f674e/internal/orderclient/client.go#L54) |
+| [`GetOrderDetails`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L9) | [`GetOrderDetailsRequest`](#getorderdetailsrequest) → [`GetOrderDetailsResponse`](#getorderdetailsresponse) | [order](/id/services/order/) | [review](https://github.com/WildanFrananda/kinetix-review-service/blob/e3ca897c68947dd7ba4a47f04355e5e91da9afa8/app/Clients/GrpcOrderClient.php#L79) |
+| [`ListOrdersForPrincipal`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L10) | [`ListOrdersForPrincipalRequest`](#listordersforprincipalrequest) → [`ListOrdersForPrincipalResponse`](#listordersforprincipalresponse) | [order](/id/services/order/) | — |
+| [`FulfillmentPacked`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L11) | [`FulfillmentPackedRequest`](#fulfillmentpackedrequest) → [`FulfillmentPackedResponse`](#fulfillmentpackedresponse) | [order](/id/services/order/) | [warehouse](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/clients/order/grpc_client.rb#L60) |
+| [`OrderDelivered`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L12) | [`OrderDeliveredRequest`](#orderdeliveredrequest) → [`OrderDeliveredResponse`](#orderdeliveredresponse) | [order](/id/services/order/) | [matching](https://github.com/WildanFrananda/kinetix-matching-service/blob/461281a718a31994f8697198c469b041dd62128f/lib/kinetix_matching/clients/order_grpc.ex#L58) |
+| [`OpenReturn`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L13) | [`OpenReturnRequest`](#openreturnrequest) → [`OpenReturnResponse`](#openreturnresponse) | [order](/id/services/order/) | [warehouse](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/clients/order/grpc_client.rb#L86) |
+| [`ReturnGoodsReceived`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L14) | [`ReturnGoodsReceivedRequest`](#returngoodsreceivedrequest) → [`ReturnGoodsReceivedResponse`](#returngoodsreceivedresponse) | [order](/id/services/order/) | [warehouse](https://github.com/WildanFrananda/kinetix-warehouse-service/blob/07fc2707413de029830bd1364e722a41b8285d81/app/clients/order/grpc_client.rb#L119) |
+| [`OrdersChangedSince`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L15) | [`OrdersChangedSinceRequest`](#orderschangedsincerequest) → [`OrdersChangedSinceResponse`](#orderschangedsinceresponse) | [order](/id/services/order/) | [search](https://github.com/WildanFrananda/kinetix-search-service/blob/ba054100e0e91fd9640842c0035b514d923f674e/internal/orderclient/client.go#L54) |
 
 ## Message
 
 ### LifecycleEvent
 
-[`order/v1/lifecycle.proto:32`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/lifecycle.proto#L32)
+[`order/v1/lifecycle.proto:32`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/lifecycle.proto#L32)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -56,7 +56,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### LifecycleEventsSinceRequest
 
-[`order/v1/lifecycle.proto:47`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/lifecycle.proto#L47)
+[`order/v1/lifecycle.proto:47`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/lifecycle.proto#L47)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -65,7 +65,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### LifecycleEventsSinceResponse
 
-[`order/v1/lifecycle.proto:52`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/lifecycle.proto#L52)
+[`order/v1/lifecycle.proto:52`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/lifecycle.proto#L52)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -75,7 +75,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### OpenReturnRequest
 
-[`order/v1/order.proto:26`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L26)
+[`order/v1/order.proto:26`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L26)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -86,7 +86,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### OpenReturnResponse
 
-[`order/v1/order.proto:33`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L33)
+[`order/v1/order.proto:33`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L33)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -98,7 +98,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ReturnedLine
 
-[`order/v1/order.proto:41`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L41)
+[`order/v1/order.proto:41`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L41)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -107,7 +107,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ReturnGoodsReceivedRequest
 
-[`order/v1/order.proto:46`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L46)
+[`order/v1/order.proto:46`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L46)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -120,7 +120,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ReturnGoodsReceivedResponse
 
-[`order/v1/order.proto:55`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L55)
+[`order/v1/order.proto:55`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L55)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -131,7 +131,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### OrderDeliveredRequest
 
-[`order/v1/order.proto:62`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L62)
+[`order/v1/order.proto:62`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L62)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -141,7 +141,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### OrderDeliveredResponse
 
-[`order/v1/order.proto:68`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L68)
+[`order/v1/order.proto:68`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L68)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -151,7 +151,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### FulfillmentPackedRequest
 
-[`order/v1/order.proto:74`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L74)
+[`order/v1/order.proto:74`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L74)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -161,7 +161,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### FulfillmentPackedResponse
 
-[`order/v1/order.proto:80`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L80)
+[`order/v1/order.proto:80`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L80)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -172,7 +172,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### GetOrderDetailsRequest
 
-[`order/v1/order.proto:87`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L87)
+[`order/v1/order.proto:87`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L87)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -180,7 +180,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### OrderLine
 
-[`order/v1/order.proto:91`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L91)
+[`order/v1/order.proto:91`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L91)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -192,7 +192,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### GetOrderDetailsResponse
 
-[`order/v1/order.proto:99`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L99)
+[`order/v1/order.proto:99`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L99)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -212,7 +212,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ListOrdersForPrincipalRequest
 
-[`order/v1/order.proto:115`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L115)
+[`order/v1/order.proto:115`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L115)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -223,7 +223,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ListOrdersForPrincipalResponse
 
-[`order/v1/order.proto:122`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L122)
+[`order/v1/order.proto:122`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L122)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -232,7 +232,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### OrderCursor
 
-[`order/v1/order.proto:127`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L127)
+[`order/v1/order.proto:127`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L127)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -242,7 +242,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### OrderRecord
 
-[`order/v1/order.proto:133`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L133)
+[`order/v1/order.proto:133`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L133)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -256,7 +256,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### OrdersChangedSinceRequest
 
-[`order/v1/order.proto:143`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L143)
+[`order/v1/order.proto:143`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L143)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -265,7 +265,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### OrdersChangedSinceResponse
 
-[`order/v1/order.proto:148`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L148)
+[`order/v1/order.proto:148`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L148)
 
 | Field | Nomor | Tipe |
 | --- | --- | --- |
@@ -277,7 +277,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### LifecycleEventKind
 
-[`order/v1/lifecycle.proto:13`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/lifecycle.proto#L13)
+[`order/v1/lifecycle.proto:13`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/lifecycle.proto#L13)
 
 | Nama | Nomor |
 | --- | --- |
@@ -291,7 +291,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### LifecycleActorKind
 
-[`order/v1/lifecycle.proto:23`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/lifecycle.proto#L23)
+[`order/v1/lifecycle.proto:23`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/lifecycle.proto#L23)
 
 | Nama | Nomor |
 | --- | --- |
@@ -304,7 +304,7 @@ Dibuat otomatis dari rilis [1.7.0](https://www.npmjs.com/package/kinetix-contrac
 
 ### ReturnStatus
 
-[`order/v1/order.proto:18`](https://github.com/WildanFrananda/kinetix-contracts/blob/26984a992109936bbd3ce775a509eca4a028fe63/proto/order/v1/order.proto#L18)
+[`order/v1/order.proto:18`](https://github.com/WildanFrananda/kinetix-contracts/blob/fc35a273a6be4fa42887a88dbec4f51f06f86913/proto/order/v1/order.proto#L18)
 
 | Nama | Nomor |
 | --- | --- |

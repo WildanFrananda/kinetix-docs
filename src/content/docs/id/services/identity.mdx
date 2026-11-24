@@ -1,7 +1,7 @@
 ---
 title: identity
 description: Akun, sign-in, token, dan principal — satu-satunya service yang boleh menyatakan siapa seseorang, peran apa yang ia pegang, dan apakah sebuah merchant boleh berjualan, sekaligus satu-satunya yang menandatangani token.
-sourceHash: "d8c67ef70c73"
+sourceHash: "ceb026e2382a"
 ---
 
 import ServiceCalls from "../../../../components/ServiceCalls.astro";
@@ -11,14 +11,14 @@ import ServiceServes from "../../../../components/ServiceServes.astro";
 identity memiliki setiap akun di Kinetix — pelanggan, seller, kurir, dan admin — dan semua yang
 menyatakan siapa seseorang: password dan faktor kedua, token yang dipercaya setiap service lain, id
 principal yang mewakili setiap orang di seluruh estate, merchant tempat seorang seller berjualan dan apakah
-merchant itu boleh berjualan, serta profil dan alamat tujuan kurir. Tidak ada service lain yang menyimpan
-password atau menandatangani token; ketika sebuah service perlu tahu dengan siapa ia berbicara, ia
-memverifikasi tanda tangan identity atau bertanya ke identity.
+merchant itu boleh berjualan, serta pelat kendaraan, kapasitas, dan standing persetujuan setiap kurir. Tidak ada
+service lain yang menyimpan password atau menandatangani token; ketika sebuah service perlu tahu dengan siapa ia
+berbicara, ia memverifikasi tanda tangan identity atau bertanya ke identity.
 
 Tabel di halaman ini dibangkitkan dari data terverifikasi yang sama dengan
 [peta sistem](/id/architecture/system-map/), pada commit yang ditautkan dari setiap baris. Teksnya
 dicek terhadap identity
-[v1.7.1](https://github.com/WildanFrananda/kinetix-identity-service/tree/14a5d4291f2e4987e2ef774f68dc3888c509617c),
+[v1.8.0](https://github.com/WildanFrananda/kinetix-identity-service/tree/06f9df69a10f780e74ecc70e2b460c707c1a3e6b),
 versi yang berjalan di production.
 
 ## Sekilas
@@ -27,11 +27,12 @@ versi yang berjalan di production.
 
 ## Yang dilayani lewat gRPC
 
-Service lain bertanya ke identity tentang orang dan merchant: apakah sebuah merchant boleh berjualan dan di
-mana tokonya, di mana seorang pelanggan tinggal, siapa sebuah principal, dan merchant mana yang berubah
-sejak sebuah cursor. Cursor itu adalah transaksi database yang terakhir mengubah sebuah merchant, dicatat oleh
-trigger di tabelnya sendiri, dan feed-nya
-[hanya menyajikan merchant yang ditulis oleh transaksi yang lebih tua dari setiap transaksi yang masih berjalan](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/persistence/adapters/typeorm_merchant_repository.adapter.ts#L63-L91),
+Service lain bertanya ke identity tentang orang, merchant, dan kurir: apakah sebuah merchant boleh berjualan
+dan di mana tokonya, kendaraan seorang kurir dan apakah ia boleh berkendara (`GetCourierStanding`), di mana
+seorang pelanggan tinggal, siapa sebuah principal, dan merchant mana yang berubah sejak sebuah cursor. Cursor
+itu adalah transaksi database yang terakhir mengubah sebuah merchant, dicatat oleh trigger di tabelnya sendiri,
+dan feed-nya
+[hanya menyajikan merchant yang ditulis oleh transaksi yang lebih tua dari setiap transaksi yang masih berjalan](https://github.com/WildanFrananda/kinetix-identity-service/blob/06f9df69a10f780e74ecc70e2b460c707c1a3e6b/src/infrastructure/persistence/adapters/typeorm_merchant_repository.adapter.ts#L63-L91),
 sehingga merchant yang transaksinya commit terlambat disajikan terlambat dan tidak pernah terlewat. Cursor tanpa
 transaksi masih dibaca dengan cara lama, lewat waktu terakhir merchant berubah.
 
@@ -39,8 +40,7 @@ transaksi masih dibaca dengan cara lama, lewat waktu terakhir merchant berubah.
 
 ## Yang dipanggil
 
-identity memanggil keluar untuk dua hal: mendaftarkan kendaraan kurir baru di fleet milik matching dan
-mengaktifkan driver-nya ketika admin menyetujuinya, serta menempatkan sebuah alamat di peta.
+identity memanggil keluar untuk satu hal: menempatkan sebuah alamat di peta.
 
 <ServiceCalls service="identity" />
 
@@ -138,13 +138,12 @@ Peran lain diberikan:
   `suspended`. Sebuah merchant
   [boleh berjualan hanya selama statusnya `verified` atau `active`](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/domain/merchant_standing.ts#L1-L5),
   dan setiap service yang membiarkan merchant berjualan — checkout, promo, produk, fulfilment — bertanya.
-- **Kurir** mendaftar beserta kendaraannya, yang didaftarkan identity di fleet milik matching; akunnya
-  tetap pelanggan sampai
-  [admin menyetujuinya](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/courier_onboarding_usecase.service.ts#L52-L90),
-  yang menjadikannya kurir dan mengaktifkan driver-nya. Kalau fleet menolak aktivasinya, akunnya kembali
-  menjadi pelanggan, dan persetujuan yang tidak bisa menjangkau fleet bisa diulang tanpa menggandakan apa pun.
+- **Kurir** mendaftar beserta kendaraannya (`vehiclePlate`, `capacityKg`), yang disimpan langsung pada
+  permohonan kurir di identity; akunnya tetap pelanggan sampai
+  [admin menyetujuinya](https://github.com/WildanFrananda/kinetix-identity-service/blob/06f9df69a10f780e74ecc70e2b460c707c1a3e6b/src/application/services/courier_onboarding_usecase.service.ts#L42-L108),
+  yang menandai permohonan itu disetujui dan menjadikan akunnya `courier`.
   Admin juga bisa
-  [menolak pengajuan yang masih menunggu](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/courier_onboarding_usecase.service.ts#L92-L123),
+  [menolak pengajuan yang masih menunggu](https://github.com/WildanFrananda/kinetix-identity-service/blob/06f9df69a10f780e74ecc70e2b460c707c1a3e6b/src/application/services/courier_onboarding_usecase.service.ts#L109-L140),
   yang membiarkan akunnya tetap pelanggan; mendaftarkan kendaraannya lagi mengembalikan pengajuannya ke pending.
 - **Satu akun memegang satu peran.** Persetujuan tidak pernah menimpa peran: kurir atau admin
   [ditolak saat mengajukan diri sebagai seller](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/application/services/seller_onboarding_usecase.service.ts#L226-L234),
@@ -176,7 +175,7 @@ tidak pernah `401` yang akan menyuruh pengguna yang sedang sign-in untuk sign-in
 | `src/adapters/` | controller HTTP dan gRPC, guard yang memutuskan siapa boleh memanggil sebuah route, audit admin, dan mapper ke kontrak |
 | `src/application/` | use case — sign-in dan token, penghitung sign-in, pengecekan client, onboarding seller dan kurir, profil, geocoding, principal |
 | `src/domain/` | entity, port yang dibutuhkan use case, dan aturan merchant mana yang boleh berjualan, siapa yang wajib punya faktor kedua, dan berapa lama sebuah sign-in menunggu — tanpa NestJS, tanpa TypeORM |
-| `src/infrastructure/` | yang mengimplementasikan port: persistence TypeORM, kunci tanda tangan, TOTP, WebAuthn, registri client dan verifier App Check, geocoder Nominatim, client fleet, identitas mesh, observability |
+| `src/infrastructure/` | yang mengimplementasikan port: persistence TypeORM, kunci tanda tangan, TOTP, WebAuthn, registri client dan verifier App Check, geocoder Nominatim, identitas mesh, observability |
 | `src/migrations/` | migrasi TypeORM, dijalankan oleh `migrate.ts` |
 
 Sebagian besar use case bekerja lewat port dan diuji dengan tiruan; token service dan principal resolver
@@ -221,8 +220,8 @@ di container sekali jalan yang harus selesai sebelum service dimulai.
   — yang menyebut service di daftar izin identity, dan
   [masing-masing hanya diizinkan panggilan yang memang ia lakukan](https://github.com/WildanFrananda/kinetix-identity-service/blob/14a5d4291f2e4987e2ef774f68dc3888c509617c/src/infrastructure/mesh/peer_allow_list.ts#L48-L63):
   order me-resolve principal, membaca merchant dan profil, dan menempatkan alamat yang diketik pembeli saat
-  checkout; warehouse, catalog, dan pricing membaca merchant; notification membaca profil; search mengikuti
-  change feed merchant. Service yang boleh menanyakan apakah merchant boleh berjualan tidak bisa membaca
+  checkout; warehouse, catalog, dan pricing membaca merchant; matching membaca kendaraan dan standing kurir;
+  notification membaca profil; search mengikuti change feed merchant. Service yang boleh menanyakan apakah merchant boleh berjualan tidak bisa membaca
   alamat pelanggan, tidak ada service yang berjalan yang boleh memvalidasi token atau membaca principal lewat
   gRPC, dan tidak ada yang boleh melakukan geocoding alamat secara massal — communication, di tabel di atas,
   belum di-deploy, dan tidak diberi izin apa pun sampai ia di-deploy.
