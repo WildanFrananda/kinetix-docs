@@ -2292,6 +2292,20 @@ export const identityEndpoints: readonly RestEndpoint[] = [
           type: "string or null",
           required: false,
           rule: "rest.identity.updateProfile.field.avatarUrl"
+        },
+        {
+          name: "latitude",
+          in: "body",
+          type: "number",
+          required: false,
+          rule: "rest.identity.updateProfile.field.latitude"
+        },
+        {
+          name: "longitude",
+          in: "body",
+          type: "number",
+          required: false,
+          rule: "rest.identity.updateProfile.field.longitude"
         }
       ],
       json: {
